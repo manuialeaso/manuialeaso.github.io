@@ -243,9 +243,9 @@ function playerAttack() {
         // 匕首/矛出血（力量/60 機率）＋🔧 出血精通：雙刀也比照匕首觸發（力量/60）；匕首/矛/雙刀皆可疊 10 層、每秒總傷害 ×(1+0.1×層)
         let _bleedWpnId = player.eq.wpn ? player.eq.wpn.id : '';
         let _canBleed = weaponHasBleed(_bleedWpnId) || (hasMastery('d_bleed') && getWeaponTags(_bleedWpnId).includes('雙刀'));
-        let _bleedChance = _canBleed ? ((player.d.str || 0) / 60) : 0;
+        let _bleedChance = _canBleed ? (((DB.items[_bleedWpnId] || {}).relicPlus >= 10) ? 1 : ((player.d.str || 0) / 60)) : 0;   /* 🔌 加掛版補丁:+10 遺物出血必中 */
         if (player.eq.wpn && target.curHp > 0 && !player.classicMode && Math.random() < _bleedChance) {   // 🎮 經典模式：停用出血
-            applyBleed(target, result.dmg * (20 + ((DB.items[_bleedWpnId] || {}).relicBleedBonus || 0)) / 20, hasMastery('d_bleed') ? 10 : 5, hasMastery('d_bleed'));   /* 🔌 加掛版補丁:強化遺物出血加成 */   // 🔧 出血精通：上限 10 層 + 每層 +10% 傷害
+            applyBleed(target, result.dmg * (20 + ((DB.items[_bleedWpnId] || {}).relicBleedBonus || 0)) / 20, ((DB.items[_bleedWpnId] || {}).relicPlus >= 10) ? 20 : (hasMastery('d_bleed') ? 10 : 5), hasMastery('d_bleed'));   /* 🔌 加掛版補丁:強化遺物出血加成＋+10 遺物 20 層 */   // 🔧 出血精通：上限 10 層 + 每層 +10% 傷害
         }
         if (player.buffs.sk_warrior_throwaxe > 0 && !result.ranged && target.curHp > 0) { applyBleed(target, result.dmg, 5, hasMastery('k_dualaxe')); try { _vfxProjectile(_vfxSlotRect(target.uid), 'axe'); } catch(e){} }   // ✨ VFX：每次觸發射出旋轉金屬斧   // ⚔️ v3.1.74 戰斧投擲：持續(64秒)期間內每次近戰一般攻擊都附加出血，不消耗 buff；不輸出逐擊日誌（同匕首出血，避免洗版，出血傷害本身每秒有日誌）；🏅 雙斧精通：每層+10%
         // 單手鈍器鈍擊：命中使目標攻擊延遲 1 秒；每個敵人攻擊週期僅延遲一次（攻擊後重置），故最多 +1 秒、不會無限延遲

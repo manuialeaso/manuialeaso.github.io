@@ -527,7 +527,38 @@ function patchRelicSpecialScale() {
   if (any) { changed++; console.log('[patch] 強化遺物特殊效果分級＋兔腳可戴兩個'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale];
+// ── 補丁 17：+10 以上遺物的出血規則＋持續傷害每秒上限（js/04＋js/06）──────────────────
+//   ‧遺物 +10 以上（relicPlus ≥ 10）的匕首／單手矛：出血每一下必定觸發（原本力量÷60）、層數上限 20
+//     （疊滿 20 層時持續 30 秒由 afk-relicplus 包 applyBleed 處理）
+//   ‧持續傷害上限：中毒＋出血對同一隻怪，每秒最多造成牠最大 HP 的 1%（window.__afkDotCap；外掛沒載＝不限制）
+function patchRelicDotRules() {
+  const edits = [
+    ['js/04-combat-attack.js', "let _bleedChance = _canBleed ? ((player.d.str || 0) / 60) : 0;",
+      "let _bleedChance = _canBleed ? (((DB.items[_bleedWpnId] || {}).relicPlus >= 10) ? 1 : ((player.d.str || 0) / 60)) : 0;   /* 🔌 加掛版補丁:+10 遺物出血必中 */"],
+    ['js/04-combat-attack.js', "/ 20, hasMastery('d_bleed') ? 10 : 5, hasMastery('d_bleed'));   /* 🔌 加掛版補丁:強化遺物出血加成 */",
+      "/ 20, ((DB.items[_bleedWpnId] || {}).relicPlus >= 10) ? 20 : (hasMastery('d_bleed') ? 10 : 5), hasMastery('d_bleed'));   /* 🔌 加掛版補丁:強化遺物出血加成＋+10 遺物 20 層 */"],
+    ['js/06-status-allies.js', "let _bleedChance = _allyCanBleed ? ((d.str||0)/60) : 0;",
+      "let _bleedChance = _allyCanBleed ? (((DB.items[wpnInst.id] || {}).relicPlus >= 10) ? 1 : ((d.str||0)/60)) : 0;   /* 🔌 加掛版補丁:+10 遺物出血必中 */"],
+    ['js/06-status-allies.js', "/ 20, allyHasMastery(ally, 'd_bleed') ? 10 : 5, allyHasMastery(ally, 'd_bleed'), _dpsAllySrc(ally));",
+      "/ 20, ((DB.items[wpnInst.id] || {}).relicPlus >= 10) ? 20 : (allyHasMastery(ally, 'd_bleed') ? 10 : 5), allyHasMastery(ally, 'd_bleed'), _dpsAllySrc(ally));"],
+    ['js/06-status-allies.js', "            let _pdc = _teamDotCrit(s.poisonDmg);   // 🏺 v3.1.80 永不終止的夢魘：中毒 DoT 可爆擊\n",
+      "            let _pdc = _teamDotCrit(s.poisonDmg);   // 🏺 v3.1.80 永不終止的夢魘：中毒 DoT 可爆擊\n            if (typeof window.__afkDotCap === 'function') _pdc.dmg = window.__afkDotCap(m, _pdc.dmg);   /* 🔌 加掛版補丁:持續傷害每秒上限 */\n"],
+    ['js/06-status-allies.js', "            let _bdc = _teamDotCrit(bleedTotal);   // 🏺 v3.1.80 永不終止的夢魘：出血 DoT 可爆擊\n",
+      "            let _bdc = _teamDotCrit(bleedTotal);   // 🏺 v3.1.80 永不終止的夢魘：出血 DoT 可爆擊\n            if (typeof window.__afkDotCap === 'function') _bdc.dmg = window.__afkDotCap(m, _bdc.dmg);   /* 🔌 加掛版補丁:持續傷害每秒上限 */\n"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes(B)) continue;
+    if (s.indexOf(A) < 0) throw new Error(`[${FILE}] 找不到持續傷害錨點：${A.slice(0, 60)}…`);
+    s = s.replace(A, B);
+    if (!CHECK) writeFileSync(FILE, s);
+    any = true;
+  }
+  if (any) { changed++; console.log('[patch] +10 遺物出血規則＋持續傷害每秒上限'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules];
 
 try {
   for (const p of PATCHES) p();

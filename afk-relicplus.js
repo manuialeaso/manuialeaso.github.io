@@ -15,6 +15,8 @@
  *          主屬性強化（百變的透明內衣）每 +5 再 +1；火焰化解（火熱愛意）+5 每 5 秒、+10 完全免疫
  *   ‧+10 第二詞綴：隨機抽一件同部位的其他遺物，繼承它的特效（只加原本沒有的欄位）；抽到本身沒有特效的 → 四屬性抗性 +10
  *   ‧幸運暴走兔腳：兩邊耳環可以各戴一個，遺物掉落判定 ×2 → ×4
+ *   ‧+10 以上：中毒必定觸發；匕首／單手矛出血每一下必中、最多 20 層，疊滿 20 層時持續 30 秒（核心補丁 17）
+ *   ‧持續傷害上限（全遊戲）：中毒＋出血對同一隻怪，每秒最多扣牠最大 HP 的 1%（window.__afkDotCap）
  *
  * 做法（不改核心戰鬥程式）
  *   +N 遺物是一個「衍生物品」：id＝原遺物 id + "~r" + N（+10 以上再加 "~" + 特效來源 id），
@@ -105,6 +107,11 @@
       if (hasEffect(donor)) Object.keys(donor).forEach(function (f) { if (!NOT_FX.has(f) && !(f in b)) d[f] = clone(donor[f]); });
       else { RES4.forEach(function (f) { d[f] = (Number(d[f]) || 0) + 10; }); d.relicFxRes = true; }
       fxName = donor.n;
+    }
+    // +10 以上：中毒必定觸發（出血必中與 20 層由核心補丁 17 依 relicPlus 判斷）
+    if (n >= 10) {
+      Object.keys(d).forEach(function (f) { var v = d[f]; if (v && typeof v === 'object' && /^procPoison$/.test(f) && typeof v.rate === 'number') v.rate = 100; });
+      if (typeof d.procPoisonRate === 'number') d.procPoisonRate = 100;
     }
     d.d = (b.d || '') + ' 〔遺物合成 +' + n + '〕' + (fxName ? (d.relicFxRes ? '〔第二詞綴：抽到「' + fxName + '」（無特效）→ 四屬性抗性 +10〕' : '〔第二詞綴：繼承「' + fxName + '」的特效〕') : '') + (n >= 15 ? '〔可升級：材料未知〕' : '');
     return d;
@@ -430,6 +437,28 @@
     }
     clearInterval(navTimer);
   }, 2000);
+
+  // ── +10 以上遺物的出血：疊滿 20 層時，所有層持續 30 秒 ──
+  if (typeof window.applyBleed === 'function') {
+    var oBleed = window.applyBleed;
+    window.applyBleed = function (m, hitDmg, maxLayers) {
+      var r = oBleed.apply(this, arguments);
+      try { if (maxLayers >= 20 && m && m.bleeds && m.bleeds.length >= 20) m.bleeds.forEach(function (b) { if (b.ticksLeft < 300) b.ticksLeft = 300; }); } catch (e) {}
+      return r;
+    };
+  }
+  // ── 持續傷害上限：中毒＋出血對同一隻怪，每秒最多扣牠最大 HP 的 1%（核心補丁 17 呼叫；玩家 2026-10-21 選定）──
+  window.__afkDotCap = function (m, dmg) {
+    try {
+      if (!m || !(dmg > 0)) return dmg;
+      var sec = Math.floor(((typeof state !== 'undefined' && state && state.ticks) || 0) / 10);
+      if (m._dotSec !== sec) { m._dotSec = sec; m._dotUsed = 0; }
+      var cap = Math.max(1, Math.floor((Number(m.hp) || Number(m.curHp) || 0) * 0.01));
+      var allow = Math.max(0, Math.min(dmg, cap - (m._dotUsed || 0)));
+      m._dotUsed = (m._dotUsed || 0) + allow;
+      return allow;
+    } catch (e) { return dmg; }
+  };
 
   // 幸運暴走兔腳：可以戴兩個，遺物掉落判定 ×2 → 兩個 ×4（核心補丁 16 讀這個函式）
   window.__afkRelicDropMult = function () {

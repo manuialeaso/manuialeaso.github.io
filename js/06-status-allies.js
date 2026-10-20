@@ -193,6 +193,7 @@ function processMobStatusTick(m, i) {
         s.poison--;
         if(state.ticks % (s.poisonTick || 30) === 0) {
             let _pdc = _teamDotCrit(s.poisonDmg);   // 🏺 v3.1.80 永不終止的夢魘：中毒 DoT 可爆擊
+            if (typeof window.__afkDotCap === 'function') _pdc.dmg = window.__afkDotCap(m, _pdc.dmg);   /* 🔌 加掛版補丁:持續傷害每秒上限 */
             m.curHp -= _pdc.dmg; m.justHit = 'magic'; mobWake(m); _dpsCreditDot(s.poisonSrc, _pdc.dmg);   // 🎯 DPS：中毒 DoT 依施加者歸因（玩家/傭兵/召喚·未標記→玩家）
             logCombat(`<span class="${getMobColor(m.lv)}">${m.n}</span> 受到中毒傷害 ${_pdc.dmg} 點。${_pdc.crit ? ' <span class="text-yellow-500 font-bold">(爆擊!)</span>' : ''}`, 'dot');   // 🟢 中毒 DoT→綠色持續傷害分類
             if(m.curHp <= 0) { killMob(i); return true; }
@@ -212,6 +213,7 @@ function processMobStatusTick(m, i) {
             // 🔧 出血精通：每秒出血總傷害 ×(1 + 0.1×層數)（每層 +10%、10 層 = +100%）
             if(m._bleedMastery) bleedTotal = Math.floor(bleedTotal * (1 + 0.10 * m.bleeds.length));
             let _bdc = _teamDotCrit(bleedTotal);   // 🏺 v3.1.80 永不終止的夢魘：出血 DoT 可爆擊
+            if (typeof window.__afkDotCap === 'function') _bdc.dmg = window.__afkDotCap(m, _bdc.dmg);   /* 🔌 加掛版補丁:持續傷害每秒上限 */
             m.curHp -= _bdc.dmg; m.justHit = 'magic'; mobWake(m); _dpsCreditDot(m._bleedSrc, _bdc.dmg);   // 🎯 DPS：出血 DoT 依施加者歸因（玩家/傭兵/寵物·未標記→玩家）
             logCombat(`<span class="${getMobColor(m.lv)}">${m.n}</span> 受到出血傷害 ${_bdc.dmg} 點（${m.bleeds.length} 層）。${_bdc.crit ? ' <span class="text-yellow-500 font-bold">(爆擊!)</span>' : ''}`, 'dot');   // 🟢 出血 DoT→綠色持續傷害分類(原 'player' 藍色一般攻擊)
             if(m.curHp <= 0) { killMob(i); return true; }
@@ -2029,9 +2031,9 @@ function allyOnHitEffects(ally, t, res) {
     }
     // 匕首/矛：力量/60 機率出血；🔧 出血精通：雙刀也比照匕首觸發（力量/60）；匕首/矛/雙刀皆可疊 10 層、每秒總傷害 ×(1+0.1×層)
     let _allyCanBleed = weaponHasBleed(wpnInst.id) || (allyHasMastery(ally, 'd_bleed') && getWeaponTags(wpnInst.id).includes('雙刀'));
-    let _bleedChance = _allyCanBleed ? ((d.str||0)/60) : 0;
+    let _bleedChance = _allyCanBleed ? (((DB.items[wpnInst.id] || {}).relicPlus >= 10) ? 1 : ((d.str||0)/60)) : 0;   /* 🔌 加掛版補丁:+10 遺物出血必中 */
     if (_bleedChance > 0 && t.curHp > 0 && !t._dead && !ally.classicMode && Math.random() < _bleedChance) {   // 🎮 經典模式：傭兵停用出血
-        applyBleed(t, res.dmg * (20 + ((DB.items[wpnInst.id] || {}).relicBleedBonus || 0)) / 20, allyHasMastery(ally, 'd_bleed') ? 10 : 5, allyHasMastery(ally, 'd_bleed'), _dpsAllySrc(ally));   // 🔧 出血精通：上限 10 層 + 每層 +10%；🎯 DPS 歸該傭兵
+        applyBleed(t, res.dmg * (20 + ((DB.items[wpnInst.id] || {}).relicBleedBonus || 0)) / 20, ((DB.items[wpnInst.id] || {}).relicPlus >= 10) ? 20 : (allyHasMastery(ally, 'd_bleed') ? 10 : 5), allyHasMastery(ally, 'd_bleed'), _dpsAllySrc(ally));   // 🔧 出血精通：上限 10 層 + 每層 +10%；🎯 DPS 歸該傭兵
     }
     // ⚔️ v3.1.74 戰斧投擲（傭兵鏡像玩家 js/04）：持續期間內近戰一般攻擊皆附加出血。
     //    傭兵原本能自我維持此 buff（js/06 _isMercSelfBuff 區塊·reqWpnBlunt 已把關）卻沒有任何攻擊端掛點＝白扣 MP，此處補上。
