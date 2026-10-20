@@ -105,8 +105,10 @@
     if (fx && DB.items[fx]) {
       // +10 第二詞綴：繼承抽到的遺物特效；抽到「本身沒有特效」的遺物 → 改給四屬性抗性 +10
       var donor = DB.items[fx];
-      if (hasEffect(donor)) Object.keys(donor).forEach(function (f) { if (!NOT_FX.has(f) && !(f in b)) d[f] = clone(donor[f]); });
-      else { RES4.forEach(function (f) { d[f] = (Number(d[f]) || 0) + 10; }); d.relicFxRes = true; }
+      var copied = 0;
+      if (hasEffect(donor)) Object.keys(donor).forEach(function (f) { if (!NOT_FX.has(f) && !(f in b)) { d[f] = clone(donor[f]); copied++; } });
+      // 抽到沒有特效的遺物，或抽到的特效跟本身完全重複（例如兩把都只有出血）→ 改給四屬性抗性 +10，避免「繼承了卻什麼都沒有」
+      if (!copied) { RES4.forEach(function (f) { d[f] = (Number(d[f]) || 0) + 10; }); d.relicFxRes = true; }
       fxName = donor.n;
     }
     // +10 以上：中毒必定觸發（出血必中與 20 層由核心補丁 17 依 relicPlus 判斷）
