@@ -18,6 +18,8 @@
     <script src="afk-mapsync.js"></script>
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->
     <script src="afk-autoreload.js"></script>
+    <!-- afk-droplog：短暫卡頓補跑中的擊殺／掉落照常顯示（原版 <3 秒補跑完全不印） -->
+    <script src="afk-droplog.js"></script>
     <!-- afk-synccompress：存檔即時壓縮（預設關）——開啟後把 _lzSet 換回同步壓縮，根治登出/多開後存檔未壓縮爆滿。緊接 lzcache、在任何會存檔的外掛之前 -->
     <script src="afk-synccompress.js"></script>
     <!-- afk-clanroster：血盟名冊瘦身——名冊只增不減（上限一萬筆），而野外 PVP 每生一個對手就整包讀改寫一次，越玩越慢。排在 synccompress 之後（它包 _lzSet，我們包 _clanWriteState，互不干擾） -->
