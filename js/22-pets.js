@@ -1451,7 +1451,7 @@ function _petAnimApply() {
         // 清掉不在場的
         layer.querySelectorAll('[data-pet]').forEach(el => { if (!show || !outs.some(p => p.uid === el.getAttribute('data-pet'))) el.remove(); });
         if (!show) return;
-        let hostRect = host.getBoundingClientRect();
+        let hostRect = (typeof window.__afkHostRect === 'function') ? window.__afkHostRect(host) : host.getBoundingClientRect();   /* 🔌 加掛版補丁:戰場大小快取 */
         for (let p of outs) {
             if (!p._downed) _petWanderStep(p, host, hostRect);   // 倒地/死亡殘影不再移動（v3.2.19 修：原本倒地仍會閒晃漂移）
             let dir = (p._dir != null) ? p._dir : 6;

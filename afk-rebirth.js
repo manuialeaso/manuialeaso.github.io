@@ -1,7 +1,8 @@
 /* ============================================================================
  * afk-rebirth.js — 輪迴轉生（玩家 2026-10-21 指定）
  *
- * 條件：Lv100；每個角色可轉生一次。在席琳神殿向席琳祈禱的畫面多一個「輪迴轉生」。
+ * 條件：Lv100、集齊六種時空材料；每個角色可轉生一次。入口＝時空裂痕入口的「時空裂痕-冥王域」（afk-dreamstar.js），
+ *   進入時提醒「輪迴開始」，轉生後傳送回說話之島。
  * 轉生後：
  *   ‧所有屬性（基礎、配點、萬能藥）保留；屬性上限提升到 200
  *     （配點上限 60 → 200；屬性效果上限 100 → 200，100 以上的效果依 80→100 那段的成長幅度往上延伸）
@@ -10,7 +11,7 @@
  *   ‧所有武器都可以雙持：主手已有武器時，再裝一把任何武器（包含兩把弓）就會放到副手，副手會追加一次攻擊
  *   ‧面板能力 +50：近距離傷害／命中、遠距離傷害／命中、魔法傷害／命中、額外魔法點數、
  *     四屬性抗性、MR、迴避各 +50，AC −50
- * 核心掛點：補丁 20（屬性上限、配點上限）；其餘包 recomputeStats／lookupStep／雙持判定／席琳祈禱介面。
+ * 核心掛點：補丁 20（屬性上限、配點上限）；其餘包 recomputeStats／lookupStep／雙持判定。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -73,7 +74,6 @@
       player.hp = player.mhp; player.mp = player.mmp;
       try { logSys('<span class="c-sherine font-bold">♻️ 輪迴轉生！</span><span class="text-fuchsia-200">你回到了 Lv1，但保留了全部屬性；屬性上限提升到 200、裝備不限職業、所有武器都能雙持，面板能力 +50。</span>'); } catch (e) {}
       try { updateUI(); renderTabs(true); saveGame(); } catch (e) {}
-      var el = document.getElementById('interaction-content'); if (el && typeof renderSherinePray === 'function') { try { renderSherinePray(el); } catch (e) {} }
     };
     if (force) { go(); return { ok: true }; }
     var msg = '輪迴轉生後等級回到 1、經驗歸零（屬性、技能、裝備、背包都保留）。\n換來：屬性上限 200、裝備不限職業、所有武器可雙持、面板能力 +50。\n每個角色只能轉生一次，確定嗎？';
@@ -81,24 +81,6 @@
     else if (confirm(msg)) go();
     return { ok: true, pending: true };
   };
-  if (typeof window.renderSherinePray === 'function') {
-    var oPray = window.renderSherinePray;
-    window.renderSherinePray = function (div) {
-      var r = oPray.apply(this, arguments);
-      try {
-        if (div.querySelector('#afk-rebirth-card')) return r;
-        var box = div.querySelector('.flex.flex-col.gap-3') || div, done = reborn(), ok = (player.lv || 1) >= 100;
-        box.insertAdjacentHTML('beforeend',
-          '<div id="afk-rebirth-card" class="bg-slate-950/80 border ' + (done ? 'border-emerald-600' : 'border-slate-700') + ' rounded p-3 text-sm leading-relaxed">'
-          + '<div class="font-bold mb-1 text-emerald-200">♻️ 輪迴轉生：' + (done ? '<span class="text-emerald-300">已轉生</span>' : '<span class="text-slate-400">尚未轉生</span>') + '</div>'
-          + '<div class="text-slate-200 text-xs">需要 Lv100，每個角色一次。等級回到 1、保留全部屬性；屬性上限 200、裝備不限職業、所有武器可雙持（包含兩把弓）、'
-          + '近／遠／魔法傷害與命中、額外魔法點數、四屬性抗性、MR、迴避各 +50，AC −50。</div></div>'
-          + (done ? '' : '<button type="button" class="btn py-3 text-base font-bold ' + (ok ? 'bg-emerald-900 hover:bg-emerald-800 border-emerald-500' : 'bg-slate-600 border-slate-500 opacity-60 cursor-not-allowed') + '" ' + (ok ? '' : 'disabled ') + 'onclick="doRebirth()">' + (ok ? '♻️ 祈禱：輪迴轉生' : '等級不足（需 Lv100）') + '</button>'));
-      } catch (e) {}
-      return r;
-    };
-  }
-
   window.__afkRebirth = { reborn: reborn };
   console.log('[AFK-rebirth] 已啟用：輪迴轉生');
 })();

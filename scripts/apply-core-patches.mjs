@@ -644,7 +644,20 @@ function patchCardRebirth() {
   if (any) { changed++; console.log('[patch] 白金／鑽石卡圖鑑顯示＋輪迴轉生屬性上限'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth];
+function patchPetHostRect() {
+  const FILE = 'js/22-pets.js';
+  const A = "        let hostRect = host.getBoundingClientRect();";
+  const B = "        let hostRect = (typeof window.__afkHostRect === 'function') ? window.__afkHostRect(host) : host.getBoundingClientRect();   /* 🔌 加掛版補丁:戰場大小快取 */";
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(B)) { already++; return; }
+  const n = s.split(A).length - 1;
+  if (n !== 1) throw new Error(`[${FILE}] 寵物圖層 hostRect 錨點應出現 1 次，實際 ${n} 次`);
+  s = s.replace(A, B);
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 寵物圖層戰場大小快取');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect];
 
 try {
   for (const p of PATCHES) p();

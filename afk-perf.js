@@ -398,5 +398,100 @@
     window.__afkPerfMem = function () { return { 預算MB: BUDGET / 1048576, 畫面中MB: memStats.protectedMB, 保留MB: memStats.keptMB, 已淘汰組數: memStats.evicted, 已淘汰MB: Math.round(memStats.evictedMB) }; };
   }
 
-  console.log('[AFK-perf] 已啟用：' + [on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : '', on('perf-dom') ? '同值不重寫' : '', on('perf-mem') ? '動畫快取記憶體上限' : ''].filter(Boolean).join('、'));
+  // ──────────────────────────────────────────────────────────────────────
+  // ⑤ 特效讀位置合併到下一幀（perf-vfx，2026-10-21 量測）
+  //    8 人隊伍 30 秒取樣：getBoundingClientRect 佔 2.65%（大多是 _vfxFlush 在每次重建怪物格「之後立刻」量座標
+  //    ＝每個 tick 都強迫瀏覽器多排版一次）。改成：
+  //      ・_vfxFlush（傷害數字／濺血）與 vfxMiss（未命中）延到下一幀開頭一起量、一起畫——一幀最多排版一次
+  //      ・_vfxSlotRect（法術拋射物起點）同一幀內同一格只量一次
+  //      ・寵物圖層的戰場寬高改用 ResizeObserver 快取，不再每秒 8 次重新量（需核心補丁 21）
+  //    飄字位置照舊是怪物圖層的實際位置，只是晚最多一幀（約 16 毫秒）出現。
+  // ──────────────────────────────────────────────────────────────────────
+  if (on('perf-vfx')) {
+    var raf = function (fn) { if (document.hidden) setTimeout(fn, 0); else requestAnimationFrame(fn); };
+    if (typeof window._vfxFlush === 'function') {
+      var oFlush = window._vfxFlush, flushQ = false;
+      window._vfxFlush = function () {
+        if (flushQ) return;
+        flushQ = true;
+        raf(function () { flushQ = false; try { oFlush(); } catch (e) {} });
+      };
+    }
+    if (typeof window.vfxMiss === 'function' && typeof window._vfxNumber === 'function') {
+      var missQ = [], missSched = false;
+      var flushMiss = function () {
+        missSched = false;
+        var q = missQ; missQ = [];
+        if (document.hidden || window.__vfxNumOff || !q.length) return;
+        var ml = document.getElementById('mob-list'); if (!ml) return;
+        var pts = [];
+        for (var i = 0; i < q.length; i++) {   // 先全部量完
+          var slot = ml.querySelector('.mob-target[data-uid="' + q[i] + '"]'); if (!slot) continue;
+          var box = slot.querySelector('.mob-img-inner') || slot.querySelector('.mob-img-wrap') || slot;
+          var r = box.getBoundingClientRect(); if (r.width === 0) continue;
+          pts.push([r.left + r.width / 2, r.top + r.height * 0.40]);
+        }
+        var layer = _vfxLayer();
+        for (var j = 0; j < pts.length; j++) {   // 再一起畫
+          if (layer.childElementCount >= 200) break;
+          _vfxNumber(pts[j][0] + (Math.random() * 18 - 9), pts[j][1], '未命中', 'miss');
+        }
+      };
+      window.vfxMiss = function (mob) {
+        if (window.__vfxNumOff || !mob || document.hidden || (typeof state !== 'undefined' && state.ff)) return;
+        if (missQ.length < 60) missQ.push(mob.uid);
+        if (!missSched) { missSched = true; raf(flushMiss); }
+      };
+    }
+    if (typeof window._vfxSlotRect === 'function') {
+      var oRect = window._vfxSlotRect, rectCache = null;
+      window._vfxSlotRect = function (uid) {
+        if (!rectCache) { rectCache = {}; raf(function () { rectCache = null; }); }
+        if (!(uid in rectCache)) rectCache[uid] = oRect(uid);
+        var r = rectCache[uid];
+        return r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null;
+      };
+    }
+    // 角色朝向：原版每一幀每個角色都量自己與目標的位置（8 人隊伍＝每幀 8 次強制排版）；改成同一目標 0.2 秒內沿用上次朝向
+    if (typeof window._classFacing8 === 'function') {
+      var oFace = window._classFacing8, faceMemo = new WeakMap();   // WeakMap：不在角色物件上加欄位（不會進存檔）
+      window._classFacing8 = function (who, el) {
+        if (!who || typeof who !== 'object') return oFace.apply(this, arguments);
+        var now = Date.now(), m = faceMemo.get(who);
+        if (m && who._faceD != null && m.uid === who._faceTgtUid && now - m.at < 200) return who._faceD;
+        var r = oFace.apply(this, arguments);
+        faceMemo.set(who, { uid: who._faceTgtUid, at: now });
+        return r;
+      };
+    }
+    var hostSize = new WeakMap();
+    var ro = (typeof ResizeObserver === 'function') ? new ResizeObserver(function (ents) { ents.forEach(function (e) { hostSize.delete(e.target); }); }) : null;
+    window.__afkHostRect = function (host) {
+      if (!ro) return host.getBoundingClientRect();
+      var c = hostSize.get(host);
+      if (!c) { var r = host.getBoundingClientRect(); c = { width: r.width, height: r.height }; hostSize.set(host, c); try { ro.observe(host); } catch (e) {} }
+      return c;
+    };
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // ⑥ 喝治癒藥水不重算能力值（perf-pot，2026-10-21 量測）
+  //    離線補跑 1 小時（龍之谷，Lv100 王族）：calcStats 被叫 2,949 次、佔整段結算 32%，其中約七成來自 useItem
+  //    ——核心喝完任何消耗品都會整套重算能力值，但治癒藥水只動 HP，重算結果完全一樣（重算本身也不看當前 HP）。
+  //    改成：治癒藥水（紅／橙／白／濃縮…、安特的水果）使用期間跳過那一次 calcStats；其餘消耗品照舊。
+  // ──────────────────────────────────────────────────────────────────────
+  if (on('perf-pot') && typeof window.useItem === 'function') {
+    var isHeal = function (id) { return !!id && (id.indexOf('potion_heal') >= 0 || id === 'potion_strong' || id === 'potion_ult' || id === 'new_item_141'); };
+    var noop = function () {};
+    var oUseItem = window.useItem;
+    window.useItem = function (u) {
+      var it = (typeof player !== 'undefined' && player && player.inv) ? player.inv.find(function (i) { return i.uid === u; }) : null;
+      if (!it || !isHeal(it.id)) return oUseItem.apply(this, arguments);
+      var cs = window.calcStats;
+      window.calcStats = noop;
+      try { return oUseItem.apply(this, arguments); } finally { window.calcStats = cs; }
+    };
+  }
+
+  console.log('[AFK-perf] 已啟用：' + [on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : '', on('perf-dom') ? '同值不重寫' : '', on('perf-mem') ? '動畫快取記憶體上限' : '', on('perf-vfx') ? '特效讀位置合併' : '', on('perf-pot') ? '治癒藥水不重算' : ''].filter(Boolean).join('、'));
 })();

@@ -131,7 +131,7 @@ function installProbes(extra) {
 }
 
 // ── 主流程：一格一個全新分頁（重複用同一頁會讓計時器/監聽疊加，數字全污染）──
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const results = [];
 
 // 單存檔位的檔要先借一個載入好遊戲的分頁,用遊戲自己的 _saveWrap 包成 localStorage 格式

@@ -27,7 +27,7 @@
  *   ‧100%  龍之鑽石 5000
  *   ‧50%   三個隨機昇華支配材料
  *   ‧0.01% 鑽白金幻化（可自選任一隻怪的鑽石卡）
- *   集齊六種時空材料：時空裂痕入口可開啟「時空裂痕-冥王域」（內容待規劃）
+ *   集齊六種時空材料＋Lv100：時空裂痕入口可進入「時空裂痕-冥王域」＝輪迴轉生（等級回 1、回到說話之島）
  * ========================================================================== */
 (function () {
   'use strict';
@@ -308,15 +308,25 @@
     if (S().dreamStar) sys('<span class="font-bold" style="color:#c084fc;">🌌 你消耗了 ' + SOLO_CORES + ' 顆龜裂之核，潛入暗夢星迴……只有夢境者的投影在等著你。（15 分鐘內必須擊倒，否則它會自爆）</span>');
   };
   var hasAllTS = function () { return TS.every(function (id) { return invCnt(id) > 0; }); };
-  window.unlockHades = function () {
-    if (player.hadesUnlocked) return;
-    if (!hasAllTS()) { sys('<span class="text-red-400">需要集齊六種時空材料才能開啟冥王域。</span>'); return; }
-    player.hadesUnlocked = true;
-    sys('<span class="font-bold" style="color:#fda4af;">⚰️ 六種時空材料共鳴——「時空裂痕-冥王域」的大門開啟了！（冥王域的內容還在規劃中）</span>');
-    try { saveGame(); } catch (e) {}
-    var b = document.getElementById('afk-hades-btn');
-    if (b) { b.disabled = true; b.removeAttribute('onclick'); b.textContent = '⚰️ 時空裂痕-冥王域（已開啟・內容規劃中）'; }
+  // 冥王域＝輪迴轉生：集齊六種時空材料、Lv100 才能進入；進去後輪迴開始 → 等級回 1、回到說話之島（轉生內容見 afk-rebirth.js）
+  window.enterHades = function () {
+    if (!hasAllTS()) { sys('<span class="text-red-400">需要集齊六種時空材料，冥王域的大門才會開啟。</span>'); return; }
+    if (player.rebirth > 0) { sys('<span class="text-slate-300">你已經走過一次輪迴，冥王域不再回應你。</span>'); return; }
+    if ((player.lv || 1) < 100) { sys('<span class="text-red-400">冥王域只接受 Lv100 的靈魂（目前 Lv' + (player.lv || 1) + '）。</span>'); return; }
+    if (S().riftRun) { sys('<span class="text-amber-300">請先離開時空裂痕再進入冥王域。</span>'); return; }
+    var go = function () {
+      player.hadesUnlocked = true;
+      var r = (typeof window.doRebirth === 'function') ? window.doRebirth(true) : { ok: false, msg: '輪迴轉生未啟用。' };
+      if (!r || !r.ok) { sys('<span class="text-red-400">' + ((r && r.msg) || '輪迴失敗') + '</span>'); return; }
+      sys('<span class="font-bold" style="color:#fda4af;">⚰️ 輪迴開始——冥王域吞沒了你的一切等級，你在說話之島重新睜開雙眼。</span>');
+      try { setMapSelectors('town_talking'); changeMap(true); } catch (e) {}
+      try { saveGame(); } catch (e) {}
+    };
+    var msg = '⚰️ 輪迴開始\n\n進入冥王域就會輪迴轉生：等級回到 1、經驗歸零，並傳送回說話之島。\n屬性、技能、裝備、背包都保留；換來屬性上限 200、裝備不限職業、所有武器可雙持、面板能力 +50。\n每個角色只能輪迴一次，確定要進入嗎？';
+    if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '⚰️ 輪迴開始', message: msg, okText: '進入冥王域', cancelText: '取消', danger: true, onOk: go });
+    else if (confirm(msg)) go();
   };
+  window.unlockHades = window.enterHades;   // 舊名稱相容
   if (typeof window.renderRiftEntrance === 'function') {
     var oEnt = window.renderRiftEntrance;
     window.renderRiftEntrance = function (container) {
@@ -332,9 +342,9 @@
             + '<button id="afk-ds-multi" onclick="enterDreamStar(\'multi\')" class="btn w-full py-2 font-bold bg-slate-800 border border-slate-600 text-slate-300">👥 暗夢星迴・多人（境滅亡域鑰匙 ' + keys + '）— 製作中</button>'
             + '<div class="text-xs text-fuchsia-200 leading-relaxed bg-slate-950/70 border border-fuchsia-800/60 rounded p-2">只出現頭目（名字上方標示「裂縫夢境者投影」），一次一隻；會相消、暈眩、聖結界（要魔法相消術或相消術卷軸打破）、血壁空間、堅固防禦，第 3／5／6 分各放一次全幻覺／鏡反射／疼痛歡愉，7 分起四屬性風暴、10 分四大究極魔法、15 分自爆。'
             + '每隻必掉一種時空材料＋5000 龍鑽，50% 再掉三個昇華材料，0.01% 鑽白金幻化。不記排名、不給裂痕獎勵。</div>'
-            + (player.hadesUnlocked
-              ? '<button id="afk-hades-btn" disabled class="btn w-full py-3 font-bold bg-rose-950 border border-rose-700 text-rose-200 opacity-80">⚰️ 時空裂痕-冥王域（已開啟・內容規劃中）</button>'
-              : '<button id="afk-hades-btn" onclick="unlockHades()" ' + (tsHave >= 6 ? '' : 'disabled ') + 'class="btn w-full py-3 font-bold ' + (tsHave >= 6 ? 'bg-rose-900 hover:bg-rose-800 border-rose-500' : 'bg-slate-800 border-slate-600 opacity-60') + ' border text-white">⚰️ 開啟時空裂痕-冥王域（時空材料 ' + tsHave + '／6 種）</button>')
+            + (player.rebirth > 0
+              ? '<button id="afk-hades-btn" disabled class="btn w-full py-3 font-bold bg-rose-950 border border-rose-700 text-rose-200 opacity-80">⚰️ 時空裂痕-冥王域（已輪迴轉生）</button>'
+              : '<button id="afk-hades-btn" onclick="enterHades()" ' + (tsHave >= 6 ? '' : 'disabled ') + 'class="btn w-full py-3 font-bold ' + (tsHave >= 6 ? 'bg-rose-900 hover:bg-rose-800 border-rose-500' : 'bg-slate-800 border-slate-600 opacity-60') + ' border text-white">⚰️ 進入時空裂痕-冥王域・輪迴轉生（時空材料 ' + tsHave + '／6 種，需 Lv100）</button>')
             + '</div>');
         }
       } catch (e) {}
