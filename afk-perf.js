@@ -15,8 +15,8 @@
  *    核心 renderTabs 每次背包有變動（撿物、扣箭、賣物…）就把 裝備／武器／防具／道具／技能 五頁全部
  *    砍掉重建；大背包＝每次 2.6 萬個 DOM 節點，其中八成在看不到的分頁裡。改為：
  *      ・五頁都沒在顯示 → 不重建，記下「待更新」
- *      ・正在看武器／防具／道具其中一頁 → 只把「該頁類型的物品」交給核心重建（呼叫期間暫時把
- *        player.inv 換成過濾後的陣列，try/finally 保證還原；物品物件是同一批參照，點擊/雙擊照舊）
+ *      ・正在看武器／防具／道具其中一頁 → 核心照常重建，但「逐列建立」只走訪該頁類型的物品
+ *        （呼叫期間給背包陣列掛一個只走訪該類的 forEach，try/finally 移除；查數量／篩選等仍讀完整背包）
  *      ・正在看裝備／技能頁 → 照常重建這兩頁，背包三頁標記待更新
  *    切換到被標記的分頁時（switchTab）立刻強制重建，畫面跟原版一致。
  *
@@ -148,15 +148,19 @@
         for (var k in dirty) dirty[k] = true;
         return;
       }
-      var fullInv = player.inv;
+      var inv = player.inv;
       var only = INV_TABS[vis] ? vis : '';   // 背包三頁之一＝只建該類；裝備/技能頁＝背包三頁都不建
-      var sub = fullInv.filter(function (i) { return only && tabOfItem(i) === only; });
       for (var t in INV_TABS) dirty[t] = (t !== only);
       dirty.equip = dirty.skill = false;   // 裝備/技能兩頁每次都由核心一併重建（節點少、便宜）
+      // ⚠️ 不替換 player.inv：快速強化表頭用 player.inv.find 查祝福卷數量（卷軸在道具類）、快速廢品用 filter——
+      //    換成「只有該類」的陣列會讓它們讀到 0。改為只在這次呼叫期間，給真正的背包陣列掛一個自己的 forEach，
+      //    只走訪該類物品（核心 renderTabs 內「逐列建立」是唯一的 player.inv.forEach）；find/filter/some/map/length 全是完整背包。
+      var keep = function (i) { return !!only && tabOfItem(i) === only; };
+      Object.defineProperty(inv, 'forEach', { configurable: true, enumerable: false, writable: true,
+        value: function (fn, thisArg) { for (var k = 0; k < this.length; k++) { var it = this[k]; if (keep(it)) fn.call(thisArg, it, k, this); } } });
       inCall = true;
-      player.inv = sub;
       try { return origTabs.call(this, force); }
-      finally { player.inv = fullInv; inCall = false; }
+      finally { delete inv.forEach; inCall = false; }
     };
     perfRenderTabs.__afkPerf = true;
     window.renderTabs = perfRenderTabs;
@@ -170,5 +174,63 @@
     window.__afkPerfTabsDirty = function () { return Object.assign({}, dirty); };
   }
 
-  console.log('[AFK-perf] 已啟用：' + [on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : ''].filter(Boolean).join('、'));
+  // ──────────────────────────────────────────────────────────────────────
+  // ③ 內容相同就不寫入（innerText / textContent）
+  //    量測（8 人隊伍＠BOSS 房）：能力分頁每秒被重繪 40 次以上——核心 updateUI 每個 tick 把 50 多個
+  //    欄位用 innerText 重寫，renderStatusEffects 每 tick 1~2 次重設 #dt-buffs 的 innerHTML，
+  //    「值沒變」也照寫。對同值的 innerText/innerHTML 賦值，瀏覽器仍會丟掉舊節點、建新節點 → 排版＋重繪。
+  //    這裡在 setter 前比對「畫面上現有內容」：完全相同才跳過（結果的 DOM 一模一樣，只是不重建）。
+  //    保守條件：innerText/textContent 只在「目前恰好是一個文字節點且字串相同」時跳過（含換行的值不跳過）——
+  //    此時元素內沒有任何子元素，不會有事件監聽或狀態被保留的副作用。
+  // ──────────────────────────────────────────────────────────────────────
+  if (on('perf-dom')) {
+    var hookText = function (proto, prop) {
+      var d = Object.getOwnPropertyDescriptor(proto, prop);
+      if (!d || !d.set) return;
+      Object.defineProperty(proto, prop, {
+        configurable: true, enumerable: d.enumerable, get: d.get,
+        set: function (v) {
+          if (typeof v !== 'string' && typeof v !== 'number') return d.set.call(this, v);
+          var s = String(v), fc = this.firstChild;
+          if (s.indexOf('\n') < 0 && fc && fc === this.lastChild && fc.nodeType === 3 && fc.data === s) return;   // 同值：跳過
+          return d.set.call(this, v);
+        }
+      });
+    };
+    hookText(HTMLElement.prototype, 'innerText');
+    hookText(Node.prototype, 'textContent');
+    // innerHTML 刻意不攔：「重寫 HTML 後再對新按鈕 addEventListener」的寫法，跳過重寫會讓舊按鈕被掛兩次監聽。
+    //   實測 BOSS 房 innerHTML 同值跳過每秒僅約 1 次（效益可忽略），#dt-buffs 另以下方暫存比對處理。
+  }
+
+  // ③-b 狀態欄 #dt-buffs：核心每 tick 用 innerHTML 重寫，之後 afk-trackinfo 再往裡面補幾格（所以畫面內容
+  //     永遠不等於核心寫入的字串，上面的同值判斷攔不到）。改為：整條包裝鏈（核心＋trackinfo＋battlebuffs）
+  //     先畫到一個隱藏的暫存節點，跟畫面上的比對，有差才把內容換上去。必須在所有外掛都包好之後才裝
+  //     （window load 之後），本層才會是最外層。
+  if (on('perf-dom')) {
+    var installBuffStage = function () {
+      var orig = window.renderStatusEffects;
+      if (typeof orig !== 'function' || orig.__afkPerfStage) return;
+      var staged = function () {
+        var real = document.getElementById('dt-buffs');
+        if ((typeof state !== 'undefined' && state.ff) || !real || !real.parentNode) return orig.apply(this, arguments);
+        var stage = real.cloneNode(false), r;
+        stage.style.display = 'none';
+        real.id = 'dt-buffs__live';
+        real.parentNode.insertBefore(stage, real);
+        try { r = orig.apply(this, arguments); }
+        finally {
+          stage.remove(); real.id = 'dt-buffs';
+          if (stage.innerHTML !== real.innerHTML) { var frag = document.createDocumentFragment(); while (stage.firstChild) frag.appendChild(stage.firstChild); real.replaceChildren(frag); }
+        }
+        return r;
+      };
+      staged.__afkPerfStage = true;
+      window.renderStatusEffects = staged;
+    };
+    if (document.readyState === 'complete') setTimeout(installBuffStage, 0);
+    else window.addEventListener('load', function () { setTimeout(installBuffStage, 0); });
+  }
+
+  console.log('[AFK-perf] 已啟用：' + [on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : '', on('perf-dom') ? '同值不重寫' : ''].filter(Boolean).join('、'));
 })();
