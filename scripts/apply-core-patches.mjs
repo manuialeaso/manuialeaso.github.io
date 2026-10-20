@@ -430,7 +430,34 @@ function patchBuyerEnHook() {
   console.log(`[patch] 收購強化值判定開放給外掛（${FILE}）`);
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook];
+// ── 補丁 14：js/24 收購 NPC 生成鉤子＋公開目前叫賣者清單 ─────────────────────
+//   玩家指定的新收購規則（裝備依安定值定價、+10 以上／8 級以上法術書／卡片改收龍鑽、
+//   收購物品每小時換一輪、依 6 區塊輪替）需要在「叫賣者剛生成」時改寫內容；_makeWanderer 關在 IIFE 裡。
+//   鉤子回 false＝這輪不生成；沒載外掛／外掛關掉＝完全等同原版。
+//   另外公開 pandoraListWanderers()，讓世界頻道外掛能讓目前在場的收購者講話（唯讀）。
+function patchWandererMakeHook() {
+  const FILE = 'js/24-pandora-relic-market.js';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes('__afkWandererMake')) { already++; return; }   // 冪等
+  const ANCHOR = '        return buyer;\n    }\n\n    function _activeSignature(';
+  if (s.indexOf(ANCHOR) < 0) throw new Error(`[${FILE}] 找不到 _makeWanderer 結尾錨點——上游可能改寫了收購 NPC 生成，請人工檢查。`);
+  s = s.replace(ANCHOR,
+    '        /* 🔌 加掛版補丁:收購 NPC 生成後交給外掛改寫內容(物品/強化值/報酬/停留時間);回 false＝這輪不生成。 */\n' +
+    '        if (typeof window !== \'undefined\' && typeof window.__afkWandererMake === \'function\') {\n' +
+    '            try {\n' +
+    '                let _afkR = window.__afkWandererMake(buyer, { rand: tag => _rand(st, tag), safeValue: _safeValue, isEnhanceable: _isEnhanceableDef });\n' +
+    '                if (_afkR === false) return null;\n' +
+    '            } catch (e) { try { console.warn(\'[afk] __afkWandererMake 失敗，改用原版內容\', e); } catch (e2) {} }\n' +
+    '        }\n' + ANCHOR);
+  const EXP = '    window.pandoraRestoreSharedDiamonds = pandoraRestoreSharedDiamonds;\n';
+  if (s.indexOf(EXP) < 0) throw new Error(`[${FILE}] 找不到 window 匯出錨點。`);
+  s = s.replace(EXP, EXP + '    window.pandoraListWanderers = function () { return _readState().wanderers.filter(w => _wandererPresent(w)); };   // 🔌 加掛版補丁:唯讀清單（世界頻道外掛用）\n');
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++;
+  console.log(`[patch] 收購 NPC 生成鉤子＋叫賣者清單（${FILE}）`);
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook];
 
 try {
   for (const p of PATCHES) p();

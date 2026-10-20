@@ -163,7 +163,7 @@
             for (var i = 0; i < list.length; i++) {
                 var w = list[i];
                 if (!w) continue;
-                if (!wandererId || w.id === wandererId) return { id: w.itemId, en: w.en };
+                if (!wandererId || w.id === wandererId) return { id: w.itemId, en: w.en, w: w };
             }
         } catch (e) {}
         return null;
@@ -201,6 +201,14 @@
         if (!pick) return _withSession(_origTrade, self, args, key, null);   // 有剛好符合的 → 原版流程
 
         var msg = '將交出：' + _pickText(pick);
+        try {   // 寫清楚「高強化用低強化的價格賣出」與實際報酬，避免誤賣
+            var have = Math.floor(Number(pick.item.en) || 0);
+            var w = req.w || {};
+            var pay = w.currency === 'gold'
+                ? (Math.max(1, Math.floor(Number(w.price) || 1))).toLocaleString() + ' 金幣'
+                : '龍之鑽石 × ' + Math.max(1, Math.floor(Number(w.reward) || 1));
+            msg += '\n\n你的 +' + have + ' 會用 +' + req.en + ' 的價格賣出，只拿到 ' + pay + '。\n高出的強化值不會多算錢，確定要賣嗎？';
+        } catch (e) {}
         var go = function () { _withSession(_origTrade, self, args, key, pick); };
         if (window.AFK_UI && typeof AFK_UI.confirm === 'function') {
             AFK_UI.confirm({ title: '交出更高強化的裝備', message: msg, okText: '確定', cancelText: '取消', danger: true, onOk: go });

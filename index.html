@@ -575,7 +575,7 @@
 <script src="js/21-relic-book.js?v=7d118874fb.8.15-legacy-import-smooth"></script>
     <script src="js/23-summons.js?v=f5f505462f.8.23-sherine-set-rework"></script>
     <script src="js/22-pets.js?v=665accdc36.8.23-sherine-set-rework"></script>
-    <script src="js/24-pandora-relic-market.js?v=7f16b2804b.7.70"></script>
+    <script src="js/24-pandora-relic-market.js?v=ecc8c9803e.7.70"></script>
     <script src="js/25-clan-system.js?v=c78fb35df2.8.7-social-private"></script>
     <script src="js/26-world-channel.js?v=9f45eaff51.8.13-private-bond"></script>
 <script src="js/28-pvp-arena.js?v=3448feb9f9.7.89-stage33-host-sign"></script>
@@ -590,7 +590,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=74e4d68990"></script>
+    <script src="afk-toggles.js?v=70892ed531"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
     <script src="afk-banner.js?v=29fa2d5746"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
@@ -607,6 +607,18 @@
     <script src="afk-droplog.js?v=2c6ae01cc4"></script>
     <!-- afk-dropcount：統計分頁「本圖掉落物品」標上實際打到的數量（×N，離開地圖清除） -->
     <script src="afk-dropcount.js?v=dd09771d04"></script>
+    <!-- afk-rotation：世界頻道／收購 NPC 共用的 6 區塊輪替時鐘（基礎設施） -->
+    <script src="afk-rotation.js?v=4d09825d97"></script>
+    <!-- afk-worldchat-data1～3：世界頻道擴充對話資料（6 區塊） -->
+    <script src="afk-worldchat-data1.js?v=09ca554b86"></script>
+    <script src="afk-worldchat-data2.js?v=12c1623f53"></script>
+    <script src="afk-worldchat-data3.js?v=fa9eb8846e"></script>
+    <!-- afk-worldchat：世界頻道擴充（每分鐘約 15 句、6 區塊輪替、可一鍵關閉閒聊） -->
+    <script src="afk-worldchat.js?v=4d1d33b4bc"></script>
+    <!-- afk-buyerprice：收購 NPC 新定價（需核心補丁 14 的 __afkWandererMake 鉤子） -->
+    <script src="afk-buyerprice.js?v=5b7e2d24de"></script>
+    <!-- afk-marketnocard：潘朵拉黑市隨機上架不再出卡片 -->
+    <script src="afk-marketnocard.js?v=01ad5b2930"></script>
     <!-- afk-synccompress：存檔即時壓縮（預設關）——開啟後把 _lzSet 換回同步壓縮，根治登出/多開後存檔未壓縮爆滿。緊接 lzcache、在任何會存檔的外掛之前 -->
     <script src="afk-synccompress.js?v=920a9aa04d"></script>
     <!-- afk-clanroster：血盟名冊瘦身——名冊只增不減（上限一萬筆），而野外 PVP 每生一個對手就整包讀改寫一次，越玩越慢。排在 synccompress 之後（它包 _lzSet，我們包 _clanWriteState，互不干擾） -->
@@ -705,7 +717,7 @@
     <!-- afk-locksafe：上鎖的裝備不會被潘朵拉收購/遺物布告欄拿走 -->
     <script src="afk-locksafe.js?v=a1ab38bb29"></script>
     <!-- afk-buyercompat：收購 NPC 向下兼容（收 +6 也可以繳 +15）——需搭配 apply-core-patches 補丁 13 的 __afkBuyerEnMatch 鉤子；排在 afk-locksafe 之後＝在最外層 -->
-    <script src="afk-buyercompat.js?v=c724720a1b"></script>
+    <script src="afk-buyercompat.js?v=68a8198b02"></script>
     <!-- 傳統模式(偽)/自動衝裝：需搭配 scripts/apply-core-patches.mjs 的 gainItem _tEn 鉤子 -->
     <script src="afk-traditional.js?v=99472abfb1"></script>
     <script src="afk-warehouse.js?v=ae8c589300"></script>

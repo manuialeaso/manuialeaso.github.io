@@ -752,6 +752,13 @@
         } else {
             buyer.reward = Math.max(1, Math.ceil((11 - weight) * mult));
         }
+        /* 🔌 加掛版補丁:收購 NPC 生成後交給外掛改寫內容(物品/強化值/報酬/停留時間);回 false＝這輪不生成。 */
+        if (typeof window !== 'undefined' && typeof window.__afkWandererMake === 'function') {
+            try {
+                let _afkR = window.__afkWandererMake(buyer, { rand: tag => _rand(st, tag), safeValue: _safeValue, isEnhanceable: _isEnhanceableDef });
+                if (_afkR === false) return null;
+            } catch (e) { try { console.warn('[afk] __afkWandererMake 失敗，改用原版內容', e); } catch (e2) {} }
+        }
         return buyer;
     }
 
@@ -1976,6 +1983,7 @@
     window.pandoraGetSharedDiamonds = pandoraGetSharedDiamonds;
     window.pandoraAdjustSharedDiamonds = pandoraAdjustSharedDiamonds;
     window.pandoraRestoreSharedDiamonds = pandoraRestoreSharedDiamonds;
+    window.pandoraListWanderers = function () { return _readState().wanderers.filter(w => _wandererPresent(w)); };   // 🔌 加掛版補丁:唯讀清單（世界頻道外掛用）
 
     setTimeout(wanderingBuyerSystemTick, 1500);
     setInterval(wanderingBuyerSystemTick, 30000);
