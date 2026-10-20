@@ -144,10 +144,10 @@ function recomputeStats() {
     if (p.eq) { for (let _gk in p.eq) { let _ge = p.eq[_gk]; if (_ge && _ge.gw && Array.isArray(_ge.gw)) _ge.gw.forEach(w => { if (w === 'str1') d.str += 1; else if (w === 'dex1') d.dex += 1; else if (w === 'int1') d.int += 1; else if (w === 'wis1') d.wis += 1; else if (w === 'con1') d.con += 1; else if (w === 'cha1') d.cha += 1; }); } }
 
     // 🏺 遺物「百變的透明內衣」(highestAttrPlus)：目前最高的六維屬性 +1（並列最高皆 +1）。置於六維加總完、上限夾擠前→吃進衍生值(HP/近傷/命中等)。掃 p.eq(玩家或換身傭兵)。
-    { let _hap = false; if (p.eq) { for (let _k in p.eq) { let _e = p.eq[_k]; if (_e) { let _hd = DB.items[_e.id]; if (_hd && _hd.highestAttrPlus) { _hap = true; break; } } } }
+    { let _hap = false; if (p.eq) { for (let _k in p.eq) { let _e = p.eq[_k]; if (_e) { let _hd = DB.items[_e.id]; if (_hd && _hd.highestAttrPlus) { _hap = Math.max(+_hap || 0, _hd.highestAttrPlus === true ? 1 : (Number(_hd.highestAttrPlus) || 1)); }   /* 🔌 加掛版補丁:強化遺物分級 */ } } }
       if (_hap) { let _mx = Math.max(d.str, d.dex, d.con, d.int, d.wis, d.cha);
-        if (d.str === _mx) d.str += 1; if (d.dex === _mx) d.dex += 1; if (d.con === _mx) d.con += 1;
-        if (d.int === _mx) d.int += 1; if (d.wis === _mx) d.wis += 1; if (d.cha === _mx) d.cha += 1; } }
+        if (d.str === _mx) d.str += +_hap; if (d.dex === _mx) d.dex += +_hap; if (d.con === _mx) d.con += +_hap;
+        if (d.int === _mx) d.int += +_hap; if (d.wis === _mx) d.wis += +_hap; if (d.cha === _mx) d.cha += +_hap; } }
 
     // 🏺 v3.7.20 百變化身（手套 polyAllStats/polyAtkSpdPct）：變身時全屬性+N＋攻速+N%。
     //    置於 Phase 1 段（上限夾擠前）→ 屬性實際吃進衍生值（HP/近傷/命中）；變身判定＝套裝變身或藥水變身進行中（與下方 _polyForm 同式）。
@@ -392,7 +392,7 @@ d.mr += (baseMr + bonusMr);
         if(ed.instakillFull) d.instakillFull += ed.instakillFull;  // 🏺 遺物 隱蔽的死亡草葉：一般攻擊命中滿血怪即死率
         if(ed.onDmgHeal) { d.onDmgHeal = ed.onDmgHeal; d.onDmgHealCd = ed.onDmgHealCd || 5; d.onDmgHealName = ed.n; }   // 🏺 遺物 白螞蟻蛋殼(初級/5秒) / 孵育螞蟻精華(中級/8秒)：受擊自癒技能 id＋冷卻秒數＋來源名稱（cd 由 _shellHealCd 節流·僅單一副手槽→無疊加）
         if(ed.hurtExplode) d.hurtExplode += ed.hurtExplode;   // 🏺 遺物 爆彈花蕊：受擊爆裂火魔傷固定值
-        if(ed.fireNullify) d.fireNullify = true;              // 🏺 遺物 火熱愛意：免疫火屬性傷害（10秒節流·js/04 攔截）
+        if(ed.fireNullify) { d.fireNullify = true; d.fireNullifyTicks = Math.min(d.fireNullifyTicks || 100, ed.fireNullifyTicks || 100); }   /* 🔌 加掛版補丁:強化遺物分級 */              // 🏺 遺物 火熱愛意：免疫火屬性傷害（10秒節流·js/04 攔截）
         if(ed.wearerEle) d.wearerEle = ed.wearerEle;          // 🏺 遺物 火焰/寒冷化身：裝備者化為某屬性（受擊屬性剋制·js/04）
         if(ed.physDrGated) d.physDrGated += ed.physDrGated;   // 🐍 遺物 祭祀儀式陶罐：受一般攻擊傷害減少%（3秒節流·js/04）
         if(ed.lowMpRegenBonus) d.lowMpRegenBonus += ed.lowMpRegenBonus;   // 🐍 遺物 蛇神的凝視：MP<15% 時 MP自然恢復額外+N（js/03 _regenMP）

@@ -245,7 +245,7 @@ function playerAttack() {
         let _canBleed = weaponHasBleed(_bleedWpnId) || (hasMastery('d_bleed') && getWeaponTags(_bleedWpnId).includes('雙刀'));
         let _bleedChance = _canBleed ? ((player.d.str || 0) / 60) : 0;
         if (player.eq.wpn && target.curHp > 0 && !player.classicMode && Math.random() < _bleedChance) {   // 🎮 經典模式：停用出血
-            applyBleed(target, result.dmg, hasMastery('d_bleed') ? 10 : 5, hasMastery('d_bleed'));   // 🔧 出血精通：上限 10 層 + 每層 +10% 傷害
+            applyBleed(target, result.dmg * (20 + ((DB.items[_bleedWpnId] || {}).relicBleedBonus || 0)) / 20, hasMastery('d_bleed') ? 10 : 5, hasMastery('d_bleed'));   /* 🔌 加掛版補丁:強化遺物出血加成 */   // 🔧 出血精通：上限 10 層 + 每層 +10% 傷害
         }
         if (player.buffs.sk_warrior_throwaxe > 0 && !result.ranged && target.curHp > 0) { applyBleed(target, result.dmg, 5, hasMastery('k_dualaxe')); try { _vfxProjectile(_vfxSlotRect(target.uid), 'axe'); } catch(e){} }   // ✨ VFX：每次觸發射出旋轉金屬斧   // ⚔️ v3.1.74 戰斧投擲：持續(64秒)期間內每次近戰一般攻擊都附加出血，不消耗 buff；不輸出逐擊日誌（同匕首出血，避免洗版，出血傷害本身每秒有日誌）；🏅 雙斧精通：每層+10%
         // 單手鈍器鈍擊：命中使目標攻擊延遲 1 秒；每個敵人攻擊週期僅延遲一次（攻擊後重置），故最多 +1 秒、不會無限延遲
@@ -1163,7 +1163,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         }
         // 🏺 v3.1.77 稽核中#9 火熱愛意：火屬性怪物的一般攻擊也免疫（原僅攔火法術·與魔法路徑共用 10 秒節流 _fireNullCd；灼燒等持續傷害不在免疫範圍）
         if (mob.e === 'fire' && player.d.fireNullify && state.ticks >= (player._fireNullCd || 0)) {
-            player._fireNullCd = state.ticks + 100;
+            player._fireNullCd = state.ticks + (player.d.fireNullifyTicks || 100);
             logCombat(`<span class="font-bold" style="color:#fca5a5;">【火熱愛意】</span>你化解了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的火屬性攻擊。`, 'magic');
             return;
         }
@@ -1537,7 +1537,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
     }
     // 🏺 v3.2.40 稽核修 火熱愛意（傭兵鏡像·物理）：火屬性怪物的一般攻擊免疫·每傭兵獨立 10 秒節流（鏡像玩家 js/04:797·同批 wearerEle 已有鏡像唯此欄漏接）
     if (mob.e === 'fire' && d.fireNullify && state.ticks >= (ally._fireNullCd || 0)) {
-        ally._fireNullCd = state.ticks + 100;
+        ally._fireNullCd = state.ticks + (d.fireNullifyTicks || 100);
         logCombat(`<span class="font-bold" style="color:#fca5a5;">【火熱愛意】</span>協力·${ally._allyName} 化解了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的火屬性攻擊。`, 'magic');
         return;
     }
@@ -1973,7 +1973,7 @@ function _applyMobMagicToAllyInner(mob, sk, ally) {
         resF = Math.max(0, Math.min(1, resF));
         // 🏺 v3.2.40 稽核修 火熱愛意（傭兵鏡像·魔法）：免疫火屬性法術·與物理路徑共用每傭兵 10 秒節流（鏡像玩家 js/04:1523）
         if (sk.ele === 'fire' && d.fireNullify && state.ticks >= (ally._fireNullCd || 0)) {
-            ally._fireNullCd = state.ticks + 100;
+            ally._fireNullCd = state.ticks + (d.fireNullifyTicks || 100);
             logCombat(`<span class="font-bold" style="color:#fca5a5;">【火熱愛意】</span>協力·${ally._allyName} 化解了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的火屬性傷害。`, 'magic');
             return;
         }
@@ -2384,7 +2384,7 @@ function _applyMobMagicInner(mob, sk) {
         resFactor = Math.max(0, Math.min(1, resFactor));
         // 🏺 遺物 火熱愛意：免疫受到的火屬性傷害（每 10 秒最多觸發 1 次·player._fireNullCd 節流）
         if (sk.ele === 'fire' && player.d.fireNullify && state.ticks >= (player._fireNullCd || 0)) {
-            player._fireNullCd = state.ticks + 100;   // 10 秒（100 ticks）節流
+            player._fireNullCd = state.ticks + (player.d.fireNullifyTicks || 100);   // 10 秒（100 ticks）節流
             logCombat(`<span class="font-bold" style="color:#fca5a5;">【火熱愛意】</span>你化解了 <span class="${getMobColor(mob.lv)}">${mob.n}</span> 的火屬性傷害。`, 'magic');
             return;
         }
@@ -2620,7 +2620,7 @@ function allRelicIds() {
 //   命中 0.001% 後，再從「全部遺物」等機率抽 1 件（非依 gachaWeight 權重──遺物權重一律 0，用權重抽會全員 0 抽不出東西）。
 function playerNpcRelicDrop(mob) {
     if (typeof isSiegeArea === 'function' && isSiegeArea(mapState.current)) return;   // 🏰 攻城區一律不掉（比照 pledgeBonusDrop 首行·防無冷卻攻城變成刷遺物場）
-    let _relicX2 = (typeof mainPlayerHasEquippedEffect === 'function' && mainPlayerHasEquippedEffect('relicDropX2')) ? 2 : 1;   // 幸運暴走兔腳只讀主操作玩家裝備；傭兵／寵物裝備不影響掉落率
+    let _relicX2 = (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : ((typeof mainPlayerHasEquippedEffect === 'function' && mainPlayerHasEquippedEffect('relicDropX2')) ? 2 : 1);   /* 🔌 加掛版補丁:兔腳可戴兩個 */   // 幸運暴走兔腳只讀主操作玩家裝備；傭兵／寵物裝備不影響掉落率
     let _npcRelicRate = 0.00001 * _relicX2 * classicDropMult();
     if (typeof partyDropRate === 'function') _npcRelicRate = partyDropRate(_npcRelicRate);
     if (Math.random() >= _npcRelicRate) return;   // 0.001% 基礎；兔腳與有效隊伍人數倍率依序套用

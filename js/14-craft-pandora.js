@@ -1957,7 +1957,7 @@ window.onload = () => {
             if(typeof WAND_LIGHTARROW_IDS !== 'undefined' && WAND_LIGHTARROW_IDS.includes(id)) _eff.push('共鳴（攻擊時依智力免費施放光箭）');
             // 🔧 武器標籤特效（反擊/居合/鈍擊/出血）：來自 WEAPON_TAGS（非 eff 欄位），與背包資訊欄一致顯示
             if(d.type === 'wpn' && typeof getWeaponTags === 'function'){
-                if(typeof weaponHasBleed === 'function' && weaponHasBleed(id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害20%）');
+                if(typeof weaponHasBleed === 'function' && weaponHasBleed(id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害' + (20 + ((DB.items[id] || {}).relicBleedBonus || 0)) + '%）');
                 let _tg = getWeaponTags(id);
                 if(_tg.includes('單手劍'))   _eff.push('反擊（受一般攻擊命中時50%反擊；格檔時必定）');
                 if(_tg.includes('武士刀'))   _eff.push('居合（無盾且迴避／敵人未命中時50%反擊）');

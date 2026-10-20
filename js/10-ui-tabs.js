@@ -810,7 +810,7 @@ function relicPurposeLabels(d) {
     if (d.counterBarrierX2) out.push('反擊屏障強化（反擊傷害×2）');
     if (d.crushDr) out.push(`重擊防護（受到重擊傷害-${d.crushDr}%）`);
     if (d.physDrGated) out.push(`物理防護（一般攻擊傷害-${d.physDrGated}%，每3秒一次）`);
-    if (d.fireNullify) out.push('火焰化解（每10秒可免疫一次火屬性傷害）');
+    if (d.fireNullify) out.push('火焰化解（每' + ((d.fireNullifyTicks || 100) / 10) + '秒可免疫一次火屬性傷害）');
     if (d.wearerEle === 'wind') out.push('風之化身（自身轉為風屬性；受到地屬性傷害增加、受到水屬性傷害減少）');
     else if (d.wearerEle) out.push(`${eleName(d.wearerEle)}之化身（自身轉為${eleName(d.wearerEle)}屬性，承受傷害套用屬性剋制）`);
     if (d.necroBook) out.push('骷髏復生（造屍術改為不消耗MP；敵人被擊敗時自動召喚1隻骷髏，全隊場上最多6隻；已達上限時完全恢復HP最低的骷髏）');
@@ -856,7 +856,7 @@ function relicPurposeLabels(d) {
     if (d.castOnHurt) out.push(`護身反擊 ${d.castOnHurt.rate}%（玩家受到物理或魔法傷害時，免費施放目前設定的自動攻擊傷害法術）`);
 
     if (d.lvDmgDiv || d.lvHitDiv) out.push(`等級成長（每${d.lvDmgDiv || d.lvHitDiv}級，傷害與命中提高）`);
-    if (d.highestAttrPlus) out.push('主屬性強化（目前最高的六維屬性+1；並列皆增加）');
+    if (d.highestAttrPlus) out.push('主屬性強化（目前最高的六維屬性+' + (d.highestAttrPlus === true ? 1 : d.highestAttrPlus) + '；並列皆增加）');
     if (d.swordStr) out.push(`握劍強化（主手裝備單手劍或雙手劍時，力量+${d.swordStr}）`);
     if (d.raceBonus) out.push(`${d.raceBonus.race}剋星（對${d.raceBonus.race}傷害×${d.raceBonus.mult}）`);
     if (d.raceFlat) out.push(`${d.raceFlat.race}剋星（對${d.raceFlat.race}額外傷害+${d.raceFlat.add}）`);
@@ -1142,7 +1142,7 @@ function buildItemDescHTML(item) {
         if (d.poisonedBonusDmg)      _eff.push(`中毒專攻（攻擊中毒目標額外傷害+${d.poisonedBonusDmg}）`);
         if (d.slowedBonusDmg)        _eff.push(`緩速專攻（攻擊緩速目標額外傷害+${d.slowedBonusDmg}）`);
         if (d.immParalyzeBonusDmg)   _eff.push(`強韌專攻（攻擊免疫麻痺目標額外傷害+${d.immParalyzeBonusDmg}）`);
-        if (typeof weaponHasBleed === 'function' && weaponHasBleed(item.id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害20%）');
+        if (typeof weaponHasBleed === 'function' && weaponHasBleed(item.id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害' + (20 + ((DB.items[item.id] || {}).relicBleedBonus || 0)) + '%）');   /* 🔌 加掛版補丁:強化遺物出血加成 */
         if (typeof getWeaponTags === 'function' && getWeaponTags(item.id).includes('單手劍')) _eff.push('反擊（受一般攻擊命中時50%反擊；格檔時必定）');
         if (typeof getWeaponTags === 'function' && getWeaponTags(item.id).includes('武士刀')) _eff.push('居合（無盾且迴避／敵人未命中時50%反擊）');
         if (typeof getWeaponTags === 'function' && getWeaponTags(item.id).includes('單手鈍器')) _eff.push('鈍擊（命中時延遲目標攻擊1秒）');

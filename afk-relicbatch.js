@@ -66,7 +66,7 @@
     });
   }
   function isRelicId(id) {
-    try { var d = ITEMS()[id]; return !!(d && typeof isRelic === 'function' && isRelic(d)); } catch (e) { return false; }
+    try { var d = ITEMS()[id]; return !!(d && !d.relicPlus && typeof isRelic === 'function' && isRelic(d)); } catch (e) { return false; }   // 🔨 合成過的 +N 遺物（afk-relicplus）不列入整理，避免被一起賣掉
   }
   function fullNameHtml(it) {
     try {

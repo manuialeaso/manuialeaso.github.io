@@ -2031,7 +2031,7 @@ function allyOnHitEffects(ally, t, res) {
     let _allyCanBleed = weaponHasBleed(wpnInst.id) || (allyHasMastery(ally, 'd_bleed') && getWeaponTags(wpnInst.id).includes('雙刀'));
     let _bleedChance = _allyCanBleed ? ((d.str||0)/60) : 0;
     if (_bleedChance > 0 && t.curHp > 0 && !t._dead && !ally.classicMode && Math.random() < _bleedChance) {   // 🎮 經典模式：傭兵停用出血
-        applyBleed(t, res.dmg, allyHasMastery(ally, 'd_bleed') ? 10 : 5, allyHasMastery(ally, 'd_bleed'), _dpsAllySrc(ally));   // 🔧 出血精通：上限 10 層 + 每層 +10%；🎯 DPS 歸該傭兵
+        applyBleed(t, res.dmg * (20 + ((DB.items[wpnInst.id] || {}).relicBleedBonus || 0)) / 20, allyHasMastery(ally, 'd_bleed') ? 10 : 5, allyHasMastery(ally, 'd_bleed'), _dpsAllySrc(ally));   // 🔧 出血精通：上限 10 層 + 每層 +10%；🎯 DPS 歸該傭兵
     }
     // ⚔️ v3.1.74 戰斧投擲（傭兵鏡像玩家 js/04）：持續期間內近戰一般攻擊皆附加出血。
     //    傭兵原本能自我維持此 buff（js/06 _isMercSelfBuff 區塊·reqWpnBlunt 已把關）卻沒有任何攻擊端掛點＝白扣 MP，此處補上。

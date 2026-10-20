@@ -1165,7 +1165,7 @@
         if (!d || !d.relic || !player || !player.eq) return 1;
         for (let slot in player.eq) {
             let eq = player.eq[slot], ed = eq && DB.items[eq.id];
-            if (ed && ed.relicDropX2) return 2;
+            if (ed && ed.relicDropX2) return (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : 2;   /* 🔌 加掛版補丁:兔腳可戴兩個 */
         }
         return 1;
     }

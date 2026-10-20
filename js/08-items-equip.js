@@ -987,7 +987,7 @@ function equipItem(item) {
     // 🦻 不能同時裝備兩個名字相同的耳環
     if (slot === 'ear1' || slot === 'ear2') {
         let _other = (slot === 'ear1') ? player.eq.ear2 : player.eq.ear1;
-        if (_other && DB.items[_other.id] && DB.items[_other.id].n === d.n) {
+        if (_other && DB.items[_other.id] && DB.items[_other.id].n === d.n && !(d.relicDropX2 && typeof window.__afkRelicDropMult === 'function')) {   /* 🔌 加掛版補丁:兔腳可戴兩個 */
             logSys(`<span class="text-amber-300">「${d.n}」無法同時裝備兩個名字相同的耳環。</span>`);
             return;
         }

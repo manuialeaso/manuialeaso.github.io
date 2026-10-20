@@ -457,7 +457,77 @@ function patchWandererMakeHook() {
   console.log(`[patch] 收購 NPC 生成鉤子＋叫賣者清單（${FILE}）`);
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook];
+// ── 補丁 15：出血傷害比例開放給「強化遺物」加成（js/04＋js/06＋js/10＋js/14）─────────────
+//   遺物合成（afk-relicplus）每 +5 讓遺物特效 +5%，匕首／單手矛的「出血每秒 20%」也算在內。
+//   出血比例寫死在 applyBleed 的呼叫端，故在玩家／傭兵兩處把傷害乘上 (20+加成)/20；
+//   tooltip 兩處的「20%」改成實際數字。沒有 relicBleedBonus 的武器＝乘 1，與原版完全相同。
+function patchRelicBleedBonus() {
+  const edits = [
+    ['js/04-combat-attack.js', "applyBleed(target, result.dmg, hasMastery('d_bleed') ? 10 : 5, hasMastery('d_bleed'));",
+      "applyBleed(target, result.dmg * (20 + ((DB.items[_bleedWpnId] || {}).relicBleedBonus || 0)) / 20, hasMastery('d_bleed') ? 10 : 5, hasMastery('d_bleed'));   /* 🔌 加掛版補丁:強化遺物出血加成 */"],
+    ['js/06-status-allies.js', "applyBleed(t, res.dmg, allyHasMastery(ally, 'd_bleed') ? 10 : 5,",
+      "applyBleed(t, res.dmg * (20 + ((DB.items[wpnInst.id] || {}).relicBleedBonus || 0)) / 20, allyHasMastery(ally, 'd_bleed') ? 10 : 5,"],
+    ['js/10-ui-tabs.js', "if (typeof weaponHasBleed === 'function' && weaponHasBleed(item.id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害20%）');",
+      "if (typeof weaponHasBleed === 'function' && weaponHasBleed(item.id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害' + (20 + ((DB.items[item.id] || {}).relicBleedBonus || 0)) + '%）');   /* 🔌 加掛版補丁:強化遺物出血加成 */"],
+    ['js/14-craft-pandora.js', "if(typeof weaponHasBleed === 'function' && weaponHasBleed(id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害20%）');",
+      "if(typeof weaponHasBleed === 'function' && weaponHasBleed(id)) _eff.push('出血（命中疊加8秒流血，每秒造成該次傷害' + (20 + ((DB.items[id] || {}).relicBleedBonus || 0)) + '%）');"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes(B)) { continue; }
+    if (s.indexOf(A) < 0) throw new Error(`[${FILE}] 找不到出血錨點——上游可能改寫了出血呼叫，請人工檢查（此補丁供強化遺物的出血加成）。`);
+    s = s.replace(A, B);
+    if (!CHECK) writeFileSync(FILE, s);
+    any = true;
+  }
+  if (any) { changed++; console.log('[patch] 出血比例開放給強化遺物加成（js/04、js/06、js/10、js/14）'); } else already++;
+}
+
+// ── 補丁 16：強化遺物的特殊效果分級＋幸運暴走兔腳可戴兩個（js/02＋js/04＋js/05＋js/08＋js/10＋js/27）─────
+//   百變的透明內衣 highestAttrPlus：原本 true＝+1 → 也接受數字（+5 起由 afk-relicplus 改成 2、3…）
+//   火熱愛意 fireNullify：免疫冷卻原本寫死 100 ticks → 讀 fireNullifyTicks（沒有就 100）
+//   幸運暴走兔腳：耳環「同名不能戴兩個」對它開例外；遺物掉落判定次數改由 window.__afkRelicDropMult()（戴兩個＝×4）
+//   沒有載外掛時所有值都退回原本的 1／100／×2，行為與上游相同。
+function patchRelicSpecialScale() {
+  const edits = [
+    ['js/02-stats-recompute.js', "if (_hd && _hd.highestAttrPlus) { _hap = true; break; }",
+      "if (_hd && _hd.highestAttrPlus) { _hap = Math.max(+_hap || 0, _hd.highestAttrPlus === true ? 1 : (Number(_hd.highestAttrPlus) || 1)); }   /* 🔌 加掛版補丁:強化遺物分級 */"],
+    ['js/02-stats-recompute.js', "        if (d.str === _mx) d.str += 1; if (d.dex === _mx) d.dex += 1; if (d.con === _mx) d.con += 1;\n        if (d.int === _mx) d.int += 1; if (d.wis === _mx) d.wis += 1; if (d.cha === _mx) d.cha += 1; } }",
+      "        if (d.str === _mx) d.str += +_hap; if (d.dex === _mx) d.dex += +_hap; if (d.con === _mx) d.con += +_hap;\n        if (d.int === _mx) d.int += +_hap; if (d.wis === _mx) d.wis += +_hap; if (d.cha === _mx) d.cha += +_hap; } }"],
+    ['js/02-stats-recompute.js', "if(ed.fireNullify) d.fireNullify = true;",
+      "if(ed.fireNullify) { d.fireNullify = true; d.fireNullifyTicks = Math.min(d.fireNullifyTicks || 100, ed.fireNullifyTicks || 100); }   /* 🔌 加掛版補丁:強化遺物分級 */"],
+    ['js/04-combat-attack.js', "            player._fireNullCd = state.ticks + 100;\n", "            player._fireNullCd = state.ticks + (player.d.fireNullifyTicks || 100);\n"],
+    ['js/04-combat-attack.js', "        ally._fireNullCd = state.ticks + 100;\n", "        ally._fireNullCd = state.ticks + (d.fireNullifyTicks || 100);\n"],
+    ['js/04-combat-attack.js', "            ally._fireNullCd = state.ticks + 100;\n", "            ally._fireNullCd = state.ticks + (d.fireNullifyTicks || 100);\n"],
+    ['js/04-combat-attack.js', "            player._fireNullCd = state.ticks + 100;   // 10 秒", "            player._fireNullCd = state.ticks + (player.d.fireNullifyTicks || 100);   // 10 秒"],
+    ['js/10-ui-tabs.js', "if (d.fireNullify) out.push('火焰化解（每10秒可免疫一次火屬性傷害）');",
+      "if (d.fireNullify) out.push('火焰化解（每' + ((d.fireNullifyTicks || 100) / 10) + '秒可免疫一次火屬性傷害）');"],
+    ['js/10-ui-tabs.js', "if (d.highestAttrPlus) out.push('主屬性強化（目前最高的六維屬性+1；並列皆增加）');",
+      "if (d.highestAttrPlus) out.push('主屬性強化（目前最高的六維屬性+' + (d.highestAttrPlus === true ? 1 : d.highestAttrPlus) + '；並列皆增加）');"],
+    ['js/05-kill-progression.js', "let _relicX2 = (DB.items[itemId].relic && typeof mainPlayerHasEquippedEffect === 'function' && mainPlayerHasEquippedEffect('relicDropX2')) ? 2 : 1;",
+      "let _relicX2 = !DB.items[itemId].relic ? 1 : (typeof window.__afkRelicDropMult === 'function' ? window.__afkRelicDropMult() : ((typeof mainPlayerHasEquippedEffect === 'function' && mainPlayerHasEquippedEffect('relicDropX2')) ? 2 : 1));   /* 🔌 加掛版補丁:兔腳可戴兩個 */"],
+    ['js/04-combat-attack.js', "let _relicX2 = (typeof mainPlayerHasEquippedEffect === 'function' && mainPlayerHasEquippedEffect('relicDropX2')) ? 2 : 1;",
+      "let _relicX2 = (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : ((typeof mainPlayerHasEquippedEffect === 'function' && mainPlayerHasEquippedEffect('relicDropX2')) ? 2 : 1);   /* 🔌 加掛版補丁:兔腳可戴兩個 */"],
+    ['js/27-offline-rewards.js', "            if (ed && ed.relicDropX2) return 2;",
+      "            if (ed && ed.relicDropX2) return (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : 2;   /* 🔌 加掛版補丁:兔腳可戴兩個 */"],
+    ['js/08-items-equip.js', "if (_other && DB.items[_other.id] && DB.items[_other.id].n === d.n) {",
+      "if (_other && DB.items[_other.id] && DB.items[_other.id].n === d.n && !(d.relicDropX2 && typeof window.__afkRelicDropMult === 'function')) {   /* 🔌 加掛版補丁:兔腳可戴兩個 */"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes(B)) continue;
+    const n = s.split(A).length - 1;
+    if (n < 1) throw new Error(`[${FILE}] 找不到強化遺物分級錨點：${A.slice(0, 60)}…`);
+    s = s.replace(A, B);
+    if (!CHECK) writeFileSync(FILE, s);
+    any = true;
+  }
+  if (any) { changed++; console.log('[patch] 強化遺物特殊效果分級＋兔腳可戴兩個'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale];
 
 try {
   for (const p of PATCHES) p();
