@@ -36,6 +36,31 @@
         // ⚠ 刻意不設 font-size:手機直式本來就正常(核心那條 media query 給 18px),我們這條排在後面,
         //   一寫死字級就會把「原本沒壞的手機」一起改小。只補「原本缺的可見性」,不動已經對的東西。
         + '#load-page-tabs button::after{content:none !important;}';
+    // 🎨 2026-10-20 桌機/平板：改用腳本產生的四圈底圖（scripts/build-load-4pages.py → load-4p.png），
+    //    分頁鈕恢復成原版的「透明熱區」，四顆分別疊在畫好的 ① ② ③ ④ 上（與原版兩顆圈同一套做法）。
+    //    幾何（底圖 640×480 像素）：圈心 x=274/307/340/373、y=287；熱區直徑 19.4px＝原版按鈕大小。
+    //    手機版面（下方 media query）底圖不對位，維持上面那套「看得見的數字鈕」不變。
+    var MOBILE_MQ = '(max-width: 768px), (max-height: 520px) and (pointer: coarse)';
+    var ART4 = (maxPage === 4);
+    if (ART4) {
+        var R = 9.7, X0 = 274 - R, X1 = 373 + R, W = X1 - X0;
+        var pct = function (v, of) { return (v / of * 100).toFixed(3) + '%'; };
+        var D = 'html.afk-ls-desk ';   // 只在非手機版面生效（class 由下方 matchMedia 維護）
+        css = D + '#load-page-tabs{left:' + pct(X0, 640) + ';top:' + pct(287 - 14.6, 480) + ';width:' + pct(W, 640) + ';height:' + pct(29.2, 480) + ';display:block;}'
+            + D + '#load-page-tabs button{position:absolute;top:50%;transform:translateY(-50%);width:' + pct(2 * R, W) + ';aspect-ratio:1;border:0;border-radius:50%;background:transparent;color:transparent;font-size:0;cursor:pointer;}'
+            + [274, 307, 340, 373].map(function (cx, i) { return D + '#load-page-' + (i + 1) + '{left:' + pct(cx - R - X0, W) + ';right:auto;}'; }).join('')
+            + D + '#load-page-tabs button::after{content:none !important;}'
+            + '@media ' + MOBILE_MQ + '{' + css + '}';   // 手機：沿用原本看得見的數字鈕
+        var mq = window.matchMedia(MOBILE_MQ);
+        var syncMq = function () { document.documentElement.classList.toggle('afk-ls-desk', !mq.matches); };
+        syncMq(); try { mq.addEventListener('change', syncMq); } catch (e) { mq.addListener(syncMq); }
+        var swapBg = function () {
+            var bg = document.getElementById('load-select-bg');
+            if (bg && bg.getAttribute('src').indexOf('load-4p.png') < 0) bg.setAttribute('src', bg.getAttribute('src').replace('load.png', 'load-4p.png'));
+        };
+        swapBg();
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', swapBg);
+    }
     var st = document.createElement('style'); st.id = 'afk-loadslots-css'; st.textContent = css;
     (document.head || document.documentElement).appendChild(st);
 
