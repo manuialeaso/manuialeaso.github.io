@@ -62,7 +62,7 @@
       if (!cur) return oCard.apply(this, arguments);
       try {
         var t = Number(tier) || 1;
-        if (t >= 1 && t <= 3) { var c = cards[cur] || (cards[cur] = [0, 0, 0]); c[t - 1] += Math.max(1, Number(count) || 1); }
+        if (t >= 1 && t <= 5) { var c = cards[cur] || (cards[cur] = [0, 0, 0, 0, 0]); c[t - 1] += Math.max(1, Number(count) || 1); }   // 4／5＝白金／鑽石（afk-cardplus）
       } catch (e) {}
       inCard++;
       try { return oCard.apply(this, arguments); } finally { inCard--; }
@@ -76,10 +76,10 @@
   var itemColor = function (id) { try { return getItemColor({ id: id }); } catch (e) { return ''; } };
   var badge = function (n) { return n > 0 ? ' <b class="text-green-400">×' + n.toLocaleString() + '</b>' : ''; };
   var sumOver = function (names) {
-    var out = {}, k = 0, cd = [0, 0, 0];
+    var out = {}, k = 0, cd = [0, 0, 0, 0, 0];
     names.forEach(function (n) {
       k += kills[n] || 0;
-      if (cards[n]) for (var i = 0; i < 3; i++) cd[i] += cards[n][i];
+      if (cards[n]) for (var i = 0; i < 5; i++) cd[i] += cards[n][i] || 0;
       var g = got[n]; if (!g) return;
       for (var id in g) out[id] = (out[id] || 0) + g[id];
     });
@@ -98,11 +98,11 @@
     if (typeof CARD_MOB_INFO === 'undefined') return false;
     return names.some(function (n) { var a = (typeof CARD_DROP_ALIAS !== 'undefined' && CARD_DROP_ALIAS[n]) || n; return !!CARD_MOB_INFO[a]; });
   };
-  var TIER_CLS = ['c-card-common', 'c-card-silver', 'c-card-gold'], TIER_N = ['普卡', '銀卡', '金卡'];
+  var TIER_CLS = ['c-card-common', 'c-card-silver', 'c-card-gold', 'c-card-plat', 'c-card-diamond'], TIER_N = ['普卡', '銀卡', '金卡', '白金卡', '鑽石卡'];
   var cardHtml = function (cd, show) {
-    if (!show && !(cd[0] + cd[1] + cd[2])) return '';
+    if (!show && !(cd[0] + cd[1] + cd[2] + cd[3] + cd[4])) return '';
     return '<div class="text-xs leading-relaxed mt-1"><span class="text-slate-500">卡片：</span>'
-      + [0, 1, 2].map(function (i) { return '<span class="' + TIER_CLS[i] + '">' + TIER_N[i] + '</span>' + badge(cd[i]); }).join('、') + '</div>';
+      + [0, 1, 2, 3, 4].filter(function (i) { return i < 3 || cd[i] > 0; }).map(function (i) { return '<span class="' + TIER_CLS[i] + '">' + TIER_N[i] + '</span>' + badge(cd[i]); }).join('、') + '</div>';
   };
 
   window.renderAuditDrops = function (el) {
@@ -146,7 +146,7 @@
         return '<div class="bg-slate-800/40 rounded p-2"><div class="font-bold text-slate-300 mb-1">' + esc(n)
           + ' <span class="text-slate-300 text-xs font-normal">擊殺 <b class="text-green-400">' + s.kills.toLocaleString() + '</b></span></div>'
           + cardHtml(s.cards, false)
-          + (otherHtml(s.items, []) || ((s.cards[0] + s.cards[1] + s.cards[2]) ? '' : '<div class="text-xs text-slate-500">（沒有掉落）</div>')) + '</div>';
+          + (otherHtml(s.items, []) || ((s.cards[0] + s.cards[1] + s.cards[2] + s.cards[3] + s.cards[4]) ? '' : '<div class="text-xs text-slate-500">（沒有掉落）</div>')) + '</div>';
       }).join('');
     }
     var mins = Math.max(0, (Date.now() - since) / 60000);

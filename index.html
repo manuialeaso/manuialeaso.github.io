@@ -553,7 +553,7 @@
     <script src="js/anim-manifest.js?v=8168f3d2c7.8.12-necro-relics"></script>
     <script src="js/00-data.js?v=2f8dce5aab.8.34-merc-trial-class-loot"></script>
 <script src="js/01-drops-config.js?v=97c2d34557.8.26-flywing-relics"></script>
-<script src="js/02-stats-recompute.js?v=de3a568f90.8.26-flywing-relics"></script>
+<script src="js/02-stats-recompute.js?v=0d8d16c54d.8.26-flywing-relics"></script>
     <script src="js/03-combat-core.js?v=af1e6b6cc1.8.26-flywing-relics"></script>
     <script src="js/04-combat-attack.js?v=a50391674b.8.26-flywing-relics"></script>
 <script src="js/05-kill-progression.js?v=0c158df31b.8.34-merc-trial-class-loot"></script>
@@ -564,9 +564,9 @@
     <script src="js/10-ui-tabs.js?v=1dab9d8be2.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=2d1dd16aac.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=c0155e520d.8.34-merc-trial-class-loot"></script>
-<script src="js/13-shop-save.js?v=a95bb3ba57.8.18-desktop-save-isolation"></script>
+<script src="js/13-shop-save.js?v=100b60436a.8.18-desktop-save-isolation"></script>
 <script src="js/14-craft-pandora.js?v=3335e41014.8.17-item-stack-source"></script>
-<script src="js/15-cards.js?v=b1159fb025.7.66"></script>
+<script src="js/15-cards.js?v=9a420e48e7.7.66"></script>
 <script src="js/16-equip-book.js?v=b65ee3ef7a.8.15-legacy-import-smooth"></script>
 <script src="js/18-misc-book.js?v=efb9d0a866.8.15-legacy-import-smooth"></script>
 <script src="js/17-audio.js?v=07c972f6fe.8.1-monia-sfx"></script>
@@ -590,7 +590,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=6db12aa1cb"></script>
+    <script src="afk-toggles.js?v=4a507f4c21"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
     <script src="afk-banner.js?v=29fa2d5746"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
@@ -604,11 +604,13 @@
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->
     <script src="afk-autoreload.js?v=e421ce7024"></script>
     <!-- afk-dreamhell：瘋狂席琳夢艷地獄模式（需核心補丁 18）；排在 afk-droplog／afk-dropcount 之前，讓它們看得到新掉落 -->
-    <script src="afk-dreamhell.js?v=22e50f6e47"></script>
+    <script src="afk-dreamhell.js?v=940676ebbd"></script>
+    <!-- afk-cardplus：白金／鑽石卡、圖鑑全滿夢艷 ×3、鑽白金幻化（需核心補丁 20）；排在 afk-dropcount 之前，讓掉落統計數得到白金／鑽石卡 -->
+    <script src="afk-cardplus.js?v=9a55a34188"></script>
     <!-- afk-droplog：短暫卡頓補跑中的擊殺／掉落照常顯示（原版 <3 秒補跑完全不印） -->
     <script src="afk-droplog.js?v=2c6ae01cc4"></script>
     <!-- afk-dropcount：統計分頁「本圖掉落物品」標上實際打到的數量（×N，離開地圖清除） -->
-    <script src="afk-dropcount.js?v=dd09771d04"></script>
+    <script src="afk-dropcount.js?v=393b9f4af6"></script>
     <!-- afk-rotation：世界頻道／收購 NPC 共用的 6 區塊輪替時鐘（基礎設施） -->
     <script src="afk-rotation.js?v=4d09825d97"></script>
     <!-- afk-worldchat-data1～3：世界頻道擴充對話資料（6 區塊） -->
@@ -678,9 +680,11 @@
     <!-- 遺物整理：重複的遺物一次清掉（賣金幣／回收換龍鑽）；每個遺物 id 自動保留最好的 1 件。排在 afk-relicaffix 之後＝在最外層包 renderRelicBook -->
     <script src="afk-relicbatch.js?v=7c448bbdfd"></script>
     <!-- afk-relicplus：遺物合成（武器 +1～+15，需核心補丁 15 的出血加成）；排在 afk-relicbatch 之後 -->
-    <script src="afk-relicplus.js?v=c01b49aed2"></script>
+    <script src="afk-relicplus.js?v=51784a3fcd"></script>
     <!-- afk-dreamstar：暗夢星迴（單機版）；需 afk-dreamhell、afk-relicplus，排在 afk-relicplus 之後 -->
-    <script src="afk-dreamstar.js?v=11ffe0756a"></script>
+    <script src="afk-dreamstar.js?v=1d97c27044"></script>
+    <!-- afk-rebirth：輪迴轉生（需核心補丁 20；裝備不限職業沿用 afk-anyclass） -->
+    <script src="afk-rebirth.js?v=bf81eb0fde"></script>
     <script src="afk-bmprice.js?v=ec643849be"></script>
     <!-- 只迴避指定頭目：把上游「迴避頭目(瞬移卷軸)」的範圍從「全部的王」縮小到玩家挑的那幾隻（每張地圖各自一份） -->
     <script src="afk-bossavoid.js?v=57b4e8083e"></script>
@@ -719,7 +723,7 @@
     <!-- afk-dollcursor：關閉魔法娃娃游標（預設關）——包 applyDollCursor；手機上那顆「點一下留下的光點」也是同一個東西，一起關 -->
     <script src="afk-dollcursor.js?v=dd9163f19b"></script>
     <!-- afk-anyclass：去除裝備職業限制（預設關）——包 checkCanEquip，執行期間暫時放行職業那幾關 -->
-    <script src="afk-anyclass.js?v=533d290037"></script>
+    <script src="afk-anyclass.js?v=0be4fdf375"></script>
     <!-- afk-locksafe：上鎖的裝備不會被潘朵拉收購/遺物布告欄拿走 -->
     <script src="afk-locksafe.js?v=a1ab38bb29"></script>
     <!-- afk-buyercompat：收購 NPC 向下兼容（收 +6 也可以繳 +15）——需搭配 apply-core-patches 補丁 13 的 __afkBuyerEnMatch 鉤子；排在 afk-locksafe 之後＝在最外層 -->

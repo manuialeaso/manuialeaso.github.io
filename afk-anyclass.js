@@ -32,7 +32,7 @@
 
   // ⚠️ 這支預設「關」,所以讀不到 AFK_TOGGLES 時要當**關閉**——不可沿用其他外掛那條
   //    「讀不到就當開啟」(那是給預設開的外掛用的,套在這裡會變成沒有開關就自動改動遊戲規則)。
-  function on() { return !!(window.AFK_TOGGLES && AFK_TOGGLES.enabled('anyclass')); }
+  function on() { return !!(window.AFK_TOGGLES && AFK_TOGGLES.enabled('anyclass')) || !!(typeof player !== 'undefined' && player && player.rebirth > 0); }   // ♻️ 輪迴轉生的角色一律不限職業（afk-rebirth）
 
   // 職業那幾關(js/08):checkCanEquip 執行期間暫時一律放行;不在的就跳過(上游改名不會壞)
   var CLASS_GATES = ['reqAllowsClass', 'darkEquipOk', 'illusionEquipOk', 'dragonEquipOk', 'warriorEquipOk', 'royalEquipOk'];

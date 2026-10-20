@@ -1,29 +1,33 @@
 /* ============================================================================
  * afk-dreamstar.js — 暗夢星迴（單機版，玩家 2026-10-21 指定）
  *
- * 進入：時空裂痕入口多一顆「🌌 暗夢星迴」按鈕（同樣消耗 1 顆龜裂之核）。
- *   ‧只出頭目，一次一隻（中央格），打倒後才出下一隻
- *   ‧頭目一律顯示為「裂縫夢境者投影」，外觀隨機抽一隻頭目
- *   ‧頭目套用瘋狂席琳夢艷地獄的頭目狀態（不需要另外開夢艷地獄）
- *   ‧單機版不吃夢艷地獄的掉落倍率；不記時空裂痕排名、不給裂痕停留獎勵
+ * 進入：時空裂痕入口多一組「🌌 暗夢星迴」按鈕。
+ *   ‧單人模式：消耗 1000 顆龜裂之核
+ *   ‧多人模式：消耗 1 把境滅亡域鑰匙（連線功能尚未製作，按鈕先標示製作中）
+ *   ‧只出頭目，一次一隻（中央格），打倒後才出下一隻；名字上方標示「裂縫夢境者投影」，外觀與名稱沿用抽到的那隻頭目
+ *   ‧頭目套用瘋狂席琳夢艷地獄的頭目狀態（不需要另外開夢艷地獄）；單機版不吃夢艷地獄的掉落倍率
+ *   ‧不記時空裂痕排名、不給裂痕停留獎勵
  *
  * 頭目時間軸（以該頭目出生時起算）
  *   每 15 秒  魔法相消術：隨機一名角色（你或傭兵）的增益全部被驅散
  *   每 30 秒  衝擊之暈：隨機一名角色暈眩（受魔防影響）
- *   每 30 秒  聖結界（自己）：10 秒內免疫一切直接傷害與持續傷害；你或傭兵施放「魔法相消術」可立即打破
+ *   每 30 秒  聖結界（自己）：免疫一切直接傷害與持續傷害，一直持續到被魔法相消術打破
+ *             （你或傭兵施放魔法相消術；或身上有相消術卷軸時自動使用 1 張）
  *   每 45 秒  血壁空間：3 秒內隨機反射 近距離／遠距離／魔法 傷害
  *   每 1 分   堅固防禦：15 秒傷害減免提升
- *   每 3 分   幻術・全幻覺：30 秒內頭目傷害 ×1.5
- *   每 5 分   鏡反射：10 秒內反射魔法傷害
- *   每 6 分   疼痛歡愉：10 秒內反射物理傷害
- *   7 分起    四屬性風暴：每秒對全隊每人造成 地／水／火／風 各 100（共 400）傷害
- *   10 分     四大究極魔法：連續 4 發，每發造成每人最大 HP 20% 傷害
+ *   第 3 分   幻術・全幻覺：30 秒內頭目傷害 ×1.5（只放這一次）
+ *   第 5 分   鏡反射：10 秒內反射魔法傷害（只放這一次）
+ *   第 6 分   疼痛歡愉：10 秒內反射物理傷害（只放這一次）
+ *   7 分起    四屬性風暴：每秒對全隊每人造成 地／水／火／風 各 100 傷害，各自吃對應屬性抗性
+ *   10 分     四大究極魔法：連續 4 發（火／水／風／地），每發最大 HP 20%、吃對應屬性抗性，但每發至少最大 HP 10%
  *   15 分     自爆：全隊死亡
  *
  * 掉落（固定機率，不受任何倍率影響；頭目原本的掉落、金幣、經驗全部沒有）
- *   ‧50%   隨機一個昇華支配材料（夢艷結晶／地獄精華／四屬性滅魔蔑視水晶／至暗星塵，少數機率境滅亡域鑰匙）
- *   ‧1%    隨機一件「+0 ○○昇華支配」遺物
- *   ‧0.1%  夢域塵
+ *   ‧100%  六種時空材料其中一種：滅魔蔑視水晶(地/水/風/火)(時空)、暗星塵(時空)、夢域塵(時空)
+ *   ‧100%  龍之鑽石 5000
+ *   ‧50%   三個隨機昇華支配材料
+ *   ‧0.01% 鑽白金幻化（可自選任一隻怪的鑽石卡）
+ *   集齊六種時空材料：時空裂痕入口可開啟「時空裂痕-冥王域」（內容待規劃）
  * ========================================================================== */
 (function () {
   'use strict';
@@ -108,6 +112,21 @@
     try { if (t === player) applyMobMagic(m, sk); else applyMobMagicToAlly(m, sk, t); } catch (e) {}
   };
 
+  var effRes = function (t, ele) {
+    var d = t.d || {}, v = { fire: d.resFire, water: d.resWater, wind: d.resWind, earth: d.resEarth }[ele] || 0;
+    var pct = (typeof effResistPct === 'function') ? effResistPct(v) : v;
+    return Math.max(0, Math.min(1, 1 - pct / 100));
+  };
+  var invCnt = function (id) { return (player.inv || []).reduce(function (s2, i) { return s2 + (i && i.id === id ? Math.max(1, Math.floor(Number(i.cnt) || 1)) : 0); }, 0); };
+  var takeN = function (id, k) {
+    for (var i = player.inv.length - 1; i >= 0 && k > 0; i--) {
+      var it = player.inv[i]; if (!it || it.id !== id || it.lock) continue;
+      var c = Math.max(1, Math.floor(Number(it.cnt) || 1)), use = Math.min(c, k);
+      k -= use; if (c - use <= 0) player.inv.splice(i, 1); else it.cnt = c - use;
+    }
+    return k <= 0;
+  };
+
   // ── 聖結界：免疫直接傷害（包 reflectWallOnDamage，所有直擊點都會經過）與持續傷害（包 __afkDotCap）──
   var holy = function (m) { return !!(m && m._dsHolyUntil && (S().ticks || 0) <= m._dsHolyUntil); };
   var oRW = window.reflectWallOnDamage;
@@ -158,8 +177,15 @@
       if (every(age, 15)) dispel(m, pick());
       if (every(age, 30)) {
         stun(m, pick());
-        m._dsHolyUntil = t + 10 * SEC;
-        log(tag('聖結界', '#fde68a') + NAME + ' 張開了聖結界，10 秒內免疫一切傷害！（魔法相消術可打破）');
+        if (!holy(m)) {
+          m._dsHolyUntil = Infinity;
+          log(tag('聖結界', '#fde68a') + NAME + ' 張開了聖結界，免疫一切傷害！（需要魔法相消術打破）');
+          if (invCnt('afk_cancel_scroll') > 0 && takeN('afk_cancel_scroll', 1)) {
+            m._dsHolyUntil = 0;
+            log(tag('相消術卷軸', '#86efac') + '你自動撕開一張相消術卷軸，聖結界被打破了！（剩 ' + invCnt('afk_cancel_scroll') + ' 張）');
+            try { if (typeof renderTabs === 'function' && !S().ff) renderTabs(true); } catch (e) {}
+          }
+        }
       }
       if (every(age, 45)) {
         var k = ['melee', 'ranged', 'magic'][Math.floor(Math.random() * 3)];
@@ -167,20 +193,24 @@
         log(tag('血壁空間', '#f87171') + NAME + ' 3 秒內反射' + { melee: '近距離', ranged: '遠距離', magic: '魔法' }[k] + '傷害！');
       }
       if (every(age, 60)) { try { applyMobMagic(m, { type: 'self_buff', buffKind: 'guard', skn: '堅固防禦', drBase: 10, dr50: 12, drStep: 2 }); } catch (e) {} }
-      if (every(age, 180)) { m._dsIllu = t + 30 * SEC; m.rageDmgMult = m._dsRage * 1.5; log(tag('幻術・全幻覺', '#a78bfa') + NAME + ' 化身全幻覺，30 秒內傷害 ×1.5！'); }
-      if (every(age, 300)) { m._reflectWall = { kind: 'magic', until: t + 10 * SEC }; log(tag('鏡反射', '#93c5fd') + NAME + ' 10 秒內反射魔法傷害！'); }
-      if (every(age, 360)) { m._reflectWall = { kind: 'phys', until: t + 10 * SEC }; log(tag('疼痛歡愉', '#fca5a5') + NAME + ' 10 秒內反射物理傷害！'); }
+      if (age === 180 * SEC) { m._dsIllu = t + 30 * SEC; m.rageDmgMult = m._dsRage * 1.5; log(tag('幻術・全幻覺', '#a78bfa') + NAME + ' 化身全幻覺，30 秒內傷害 ×1.5！'); }
+      if (age === 300 * SEC) { m._reflectWall = { kind: 'magic', until: t + 10 * SEC }; log(tag('鏡反射', '#93c5fd') + NAME + ' 10 秒內反射魔法傷害！'); }
+      if (age === 360 * SEC) { m._reflectWall = { kind: 'phys', until: t + 10 * SEC }; log(tag('疼痛歡愉', '#fca5a5') + NAME + ' 10 秒內反射物理傷害！'); }
       if (age >= 420 * SEC && age % SEC === 0) {
         var dead = false;
-        members().forEach(function (x) { if (!dead) dead = hurt(x, 400, '四屬性風暴'); });
-        if (age % (10 * SEC) === 0) log(tag('四屬性風暴', '#fb923c') + '地、水、火、風四道洪流不斷沖刷全隊（每秒每人 400 傷害）！');
+        members().forEach(function (x) {
+          if (dead) return;
+          var dm = ['earth', 'water', 'fire', 'wind'].reduce(function (a, e) { return a + 100 * effRes(x, e); }, 0);
+          if (dm >= 1) dead = hurt(x, dm, '四屬性風暴');
+        });
+        if (age % (10 * SEC) === 0) log(tag('四屬性風暴', '#fb923c') + '地、水、火、風四道洪流不斷沖刷全隊（每秒每屬性 100，吃屬性抗性）！');
         if (dead) return;
       }
       if (age >= 600 * SEC && age <= 603 * SEC && age % SEC === 0) {
-        var nm = ['隕石流星', '冰雪颶風', '雷霆風暴', '大地屏障崩裂'][(age - 600 * SEC) / SEC];
-        log(tag('究極魔法・' + nm, '#f472b6') + NAME + ' 施放究極魔法！全隊受到最大 HP 20% 的傷害！');
+        var k4 = (age - 600 * SEC) / SEC, nm = ['流星雨', '冰雪颶風', '雷霆風暴', '大地崩裂'][k4], ele = ['fire', 'water', 'wind', 'earth'][k4];
+        log(tag('究極魔法・' + nm, '#f472b6') + NAME + ' 施放究極魔法！全隊受到最大 HP 20% 的傷害（吃屬性抗性，最少 10%）！');
         var dd = false;
-        members().forEach(function (x) { if (!dd) dd = hurt(x, (x.mhp || x.hp || x.curHp || 1) * 0.2, '究極魔法'); });
+        members().forEach(function (x) { if (dd) return; var mh = x.mhp || x.hp || x.curHp || 1; dd = hurt(x, Math.max(mh * 0.1, mh * 0.2 * effRes(x, ele)), '究極魔法'); });
         if (dd) return;
       }
       if (age >= 900 * SEC) {
@@ -199,8 +229,11 @@
   };
 
   // ── 擊殺：只給固定掉落 ──
-  var MATS = [['afk_dream_crystal', 30], ['afk_hell_essence', 20], ['afk_contempt_earth', 10], ['afk_contempt_water', 10], ['afk_contempt_wind', 10], ['afk_contempt_fire', 10], ['afk_dark_stardust', 8], ['afk_abyss_key', 2]];
+  var TS = ['afk_ts_contempt_earth', 'afk_ts_contempt_water', 'afk_ts_contempt_wind', 'afk_ts_contempt_fire', 'afk_ts_dark_stardust', 'afk_ts_dream_dust'];
+  var MATS = [['afk_dream_crystal', 30], ['afk_hell_essence', 20], ['afk_contempt_earth', 8], ['afk_contempt_water', 8], ['afk_contempt_wind', 8], ['afk_contempt_fire', 8], ['afk_dark_stardust', 8], ['afk_dream_dust', 4], ['afk_abyss_key', 2]];
   var pickW = function (arr) { var tot = 0; arr.forEach(function (x) { tot += x[1]; }); var r = Math.random() * tot; for (var i = 0; i < arr.length; i++) { r -= arr[i][1]; if (r < 0) return arr[i][0]; } return arr[arr.length - 1][0]; };
+  var addDia = function (n) { try { if (typeof window.pandoraAdjustSharedDiamonds === 'function') return !!(window.pandoraAdjustSharedDiamonds(n) || {}).ok; } catch (e) {} return false; };
+  // （舊規格的 1% 昇華支配遺物已依 2026-10-21 新規格移除；relicBases/randomAscRelic 保留給測試與日後使用）
   var relicBases = function () {
     return Object.keys(DB.items).filter(function (id) {
       var d = DB.items[id];
@@ -235,9 +268,11 @@
       try { _lootMobInfo = { n: NAME, lv: m.lv, boss: true }; } catch (e) {}
       try {
         var got = [];
-        if (Math.random() < 0.5) { var mat = pickW(MATS); if (DB.items[mat]) { gainItem(mat, 1); got.push(DB.items[mat].n); } }
-        if (Math.random() < 0.01) { var rid = randomAscRelic(); if (rid) { gainItem(rid, 1); got.push((typeof getItemFullName === 'function' ? getItemFullName({ id: rid }) : DB.items[rid].n)); } }
-        if (Math.random() < 0.001 && DB.items.afk_dream_dust) { gainItem('afk_dream_dust', 1); got.push(DB.items.afk_dream_dust.n); }
+        var ts = TS[Math.floor(Math.random() * TS.length)];
+        if (DB.items[ts]) { gainItem(ts, 1); got.push(DB.items[ts].n); }
+        if (addDia(5000)) got.push('龍之鑽石 5000');
+        if (Math.random() < 0.5) { for (var q = 0; q < 3; q++) { var mat = pickW(MATS); if (DB.items[mat]) { gainItem(mat, 1); got.push(DB.items[mat].n); } } }
+        if (Math.random() < 0.0001 && DB.items.afk_card_pick) { gainItem('afk_card_pick', 1); got.push(DB.items.afk_card_pick.n); }
         sys('<span class="font-bold" style="color:#c084fc;">🌌 ' + NAME + ' 消散了。</span>' + (got.length ? '<span class="text-fuchsia-200">獲得：' + got.join('、') + '</span>' : '<span class="text-slate-400">這次什麼也沒留下。</span>'));
       } finally { try { _lootMobInfo = info; } catch (e) {} }
     }
@@ -256,12 +291,31 @@
     return r;
   };
 
-  // ── 入口 ──
-  window.enterDreamStar = function () {
+  // ── 入口：單人 1000 顆龜裂之核；多人要境滅亡域鑰匙（連線尚未製作）──
+  var SOLO_CORES = 1000;
+  window.enterDreamStar = function (mode) {
+    if (mode === 'multi') { sys('<span class="text-amber-300">暗夢星迴多人模式（境滅亡域鑰匙）還在製作中，目前只開放單人模式。</span>'); return; }
     if ((player.lv || 1) < 40) { sys('<span class="text-red-400">等級未達 40，無法進入暗夢星迴。</span>'); return; }
+    if (player.riftRewardMs != null) { sys('<span class="text-amber-300">請先在時空裂痕入口「領取獎勵」，才能進入暗夢星迴。</span>'); return; }
+    var have = invCnt('mat_crack_core');
+    if (have < SOLO_CORES) { sys('<span class="text-red-400">單人暗夢星迴需要 ' + SOLO_CORES + ' 顆龜裂之核（目前 ' + have + ' 顆）。</span>'); return; }
+    var p = player, snap = p.inv.slice(), cnts = p.inv.map(function (x) { return x && x.cnt; });
+    takeN('mat_crack_core', SOLO_CORES - 1);   // 剩下 1 顆由 enterRift 自己扣
     S().dreamStar = true;
-    try { window.enterRift(); } finally { if (!S().riftRun) S().dreamStar = false; }
-    if (S().dreamStar) sys('<span class="font-bold" style="color:#c084fc;">🌌 你潛入了暗夢星迴……只有夢境者的投影在等著你。（15 分鐘內必須擊倒，否則它會自爆）</span>');
+    try { window.enterRift(); } finally {
+      if (!S().riftRun) { S().dreamStar = false; p.inv = snap; snap.forEach(function (x, j2) { if (x) x.cnt = cnts[j2]; }); }
+    }
+    if (S().dreamStar) sys('<span class="font-bold" style="color:#c084fc;">🌌 你消耗了 ' + SOLO_CORES + ' 顆龜裂之核，潛入暗夢星迴……只有夢境者的投影在等著你。（15 分鐘內必須擊倒，否則它會自爆）</span>');
+  };
+  var hasAllTS = function () { return TS.every(function (id) { return invCnt(id) > 0; }); };
+  window.unlockHades = function () {
+    if (player.hadesUnlocked) return;
+    if (!hasAllTS()) { sys('<span class="text-red-400">需要集齊六種時空材料才能開啟冥王域。</span>'); return; }
+    player.hadesUnlocked = true;
+    sys('<span class="font-bold" style="color:#fda4af;">⚰️ 六種時空材料共鳴——「時空裂痕-冥王域」的大門開啟了！（冥王域的內容還在規劃中）</span>');
+    try { saveGame(); } catch (e) {}
+    var b = document.getElementById('afk-hades-btn');
+    if (b) { b.disabled = true; b.removeAttribute('onclick'); b.textContent = '⚰️ 時空裂痕-冥王域（已開啟・內容規劃中）'; }
   };
   if (typeof window.renderRiftEntrance === 'function') {
     var oEnt = window.renderRiftEntrance;
@@ -269,11 +323,19 @@
       var r = oEnt.apply(this, arguments);
       try {
         var box = container && container.querySelector('button[onclick="enterRift()"]');
-        if (box && !container.querySelector('#afk-ds-btn')) {
+        if (box && !container.querySelector('#afk-ds-box')) {
+          var cores = invCnt('mat_crack_core'), keys = invCnt('afk_abyss_key');
+          var tsHave = TS.filter(function (id) { return invCnt(id) > 0; }).length;
           box.insertAdjacentHTML('afterend',
-            '<button id="afk-ds-btn" onclick="enterDreamStar()" class="btn w-full py-4 text-xl font-bold bg-fuchsia-950 hover:bg-fuchsia-900 border border-fuchsia-500 text-white shadow-lg">🌌 進入暗夢星迴（單機）</button>'
-            + '<div class="text-xs text-fuchsia-200 leading-relaxed bg-slate-950/70 border border-fuchsia-800/60 rounded p-2">消耗 1 顆龜裂之核。只出現「裂縫夢境者投影」頭目，一次一隻；會相消、暈眩、聖結界（要用魔法相消術打破）、血壁空間、鏡反射、疼痛歡愉，7 分起四屬性風暴、10 分四大究極魔法、15 分自爆。'
-            + '掉落：50% 昇華支配材料、1% 昇華支配遺物、0.1% 夢域塵。不記排名、不給裂痕獎勵。</div>');
+            '<div id="afk-ds-box" class="flex flex-col gap-2">'
+            + '<button id="afk-ds-btn" onclick="enterDreamStar()" class="btn w-full py-4 text-xl font-bold ' + (cores >= SOLO_CORES ? 'bg-fuchsia-950 hover:bg-fuchsia-900 border-fuchsia-500' : 'bg-slate-700 border-slate-500 opacity-70') + ' border text-white shadow-lg">🌌 暗夢星迴・單人（龜裂之核 ' + cores.toLocaleString() + '／' + SOLO_CORES + '）</button>'
+            + '<button id="afk-ds-multi" onclick="enterDreamStar(\'multi\')" class="btn w-full py-2 font-bold bg-slate-800 border border-slate-600 text-slate-300">👥 暗夢星迴・多人（境滅亡域鑰匙 ' + keys + '）— 製作中</button>'
+            + '<div class="text-xs text-fuchsia-200 leading-relaxed bg-slate-950/70 border border-fuchsia-800/60 rounded p-2">只出現頭目（名字上方標示「裂縫夢境者投影」），一次一隻；會相消、暈眩、聖結界（要魔法相消術或相消術卷軸打破）、血壁空間、堅固防禦，第 3／5／6 分各放一次全幻覺／鏡反射／疼痛歡愉，7 分起四屬性風暴、10 分四大究極魔法、15 分自爆。'
+            + '每隻必掉一種時空材料＋5000 龍鑽，50% 再掉三個昇華材料，0.01% 鑽白金幻化。不記排名、不給裂痕獎勵。</div>'
+            + (player.hadesUnlocked
+              ? '<button id="afk-hades-btn" disabled class="btn w-full py-3 font-bold bg-rose-950 border border-rose-700 text-rose-200 opacity-80">⚰️ 時空裂痕-冥王域（已開啟・內容規劃中）</button>'
+              : '<button id="afk-hades-btn" onclick="unlockHades()" ' + (tsHave >= 6 ? '' : 'disabled ') + 'class="btn w-full py-3 font-bold ' + (tsHave >= 6 ? 'bg-rose-900 hover:bg-rose-800 border-rose-500' : 'bg-slate-800 border-slate-600 opacity-60') + ' border text-white">⚰️ 開啟時空裂痕-冥王域（時空材料 ' + tsHave + '／6 種）</button>')
+            + '</div>');
         }
       } catch (e) {}
       return r;
@@ -288,10 +350,11 @@
       try {
         (mapState.mobs || []).forEach(function (m) {
           if (!m || !m._dsName) return;
-          var el = document.querySelector('.mob-target[data-uid="' + m.uid + '"] .mob-name > span');
-          if (!el) return;
-          el.textContent = m._dsName + (holy(m) ? '【聖結界】' : '');
-          el.title = m._dsName + '（' + m.n + ' 的投影）';
+          var nmEl = document.querySelector('.mob-target[data-uid="' + m.uid + '"] .mob-name');
+          if (!nmEl) return;
+          var tg = nmEl.previousElementSibling;
+          if (!tg || !tg.classList.contains('afk-ds-tag')) { tg = document.createElement('div'); tg.className = 'afk-ds-tag text-[11px] font-bold text-center'; tg.style.color = '#c084fc'; nmEl.parentNode.insertBefore(tg, nmEl); }
+          tg.textContent = m._dsName + (holy(m) ? '【聖結界】' : '');
         });
       } catch (e) {}
       return r;

@@ -620,7 +620,31 @@ function patchAscAttrStar() {
   if (any) { changed++; console.log('[patch] 昇華支配武器屬性魔法 5 星'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar];
+function patchCardRebirth() {
+  const edits = [
+    ['js/15-cards.js', "    let bonusLine = [1, 2, 3].map(tt => {",
+      "    let bonusLine = CARD_TIERS.map(x => x.t).map(tt => {   /* 🔌 加掛版補丁:白金／鑽石卡 */"],
+    ['js/15-cards.js', "收集 普${cP} / 銀${cS} / 金${cG}　共 ${total} 種",
+      "收集 普${cP} / 銀${cS} / 金${cG}${CARD_TIERS.length > 3 ? ' / 白金' + names.filter(n => cardDexTier(n) >= 4).length + ' / 鑽石' + names.filter(n => cardDexTier(n) >= 5).length : ''}　共 ${total} 種"],
+    ['js/02-stats-recompute.js', "    { let _ATTR_CAP = 100;",
+      "    { let _ATTR_CAP = (typeof window.__afkAttrCap === 'function') ? window.__afkAttrCap() : 100;   /* 🔌 加掛版補丁:輪迴轉生屬性上限 */"],
+    ['js/13-shop-save.js', "    let capN = 60;   // 屬性配點上限",
+      "    let capN = (typeof window.__afkAllocCap === 'function') ? window.__afkAllocCap() : 60;   /* 🔌 加掛版補丁:輪迴轉生 */   // 屬性配點上限"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes(B)) continue;
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 白金卡／轉生錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 60)}…`);
+    s = s.replace(A, B);
+    if (!CHECK) writeFileSync(FILE, s);
+    any = true;
+  }
+  if (any) { changed++; console.log('[patch] 白金／鑽石卡圖鑑顯示＋輪迴轉生屬性上限'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth];
 
 try {
   for (const p of PATCHES) p();

@@ -372,8 +372,10 @@
     c.equip.forEach(function (nm) { if (nameCnt(nm) < 1) miss.push(nm); });
     return miss;
   }
-  var dustUse = 0;
-  function ascend(key, dust) {
+  var dustUse = 0, stoneUse = false;
+  var STONE = { wpn: 'afk_asc_stone_wpn', arm: 'afk_asc_stone_arm', acc: 'afk_asc_stone_acc' };
+  var stoneOf = function (base) { var d = DB.items[base]; return d ? STONE[d.type] : null; };
+  function ascend(key, dust, useStone) {
     var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
     if (typeof state !== 'undefined' && state && state.ff) return { ok: false, msg: '補跑中，請稍候再試。' };
     var g = groups().filter(function (x) { return x.key === key; })[0];
@@ -381,7 +383,13 @@
     if (g.n !== maxOf(g.base)) return { ok: false, msg: '需要先強化到 +' + maxOf(g.base) + '。' };
     var A = g.asc == null ? 0 : g.asc + 1;
     if (A > 5) return { ok: false, msg: '已經是昇華支配 +5（最高）。' };
-    var c = ascCost(A), miss = ascMissing(c);
+    var c = ascCost(A), miss;
+    if (useStone) {
+      if (A < 1) return { ok: false, msg: '昇華支配強化石只能用在昇華支配 +1～+5。' };
+      var sid = stoneOf(g.base); if (!sid) return { ok: false, msg: '找不到對應的強化石。' };
+      c = { dia: 0, items: {}, equip: [], rate: 1 }; c.items[sid] = 1; dust = 0;
+    }
+    miss = ascMissing(c);
     dust = Math.max(0, Math.min(5, Math.floor(Number(dust) || 0), invCnt(DUST)));
     if (miss.length) return { ok: false, msg: '材料不足：' + miss.join('、') };
     var newId = makeId(g.base, g.n, g.fx, A);
@@ -404,7 +412,7 @@
     try { if (typeof renderTabs === 'function') renderTabs(true); } catch (e) {}
     try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
     var nm = (DB.items[g.base] || {}).n;
-    var msg = success ? '✨ 昇華支配成功：+' + A + ' ' + nm + '昇華支配' + (dust ? '（使用夢域塵 ' + dust + ' 顆）' : '') + '！'
+    var msg = success ? '✨ 昇華支配成功：+' + A + ' ' + nm + '昇華支配' + (useStone ? '（使用昇華支配強化石）' : (dust ? '（使用夢域塵 ' + dust + ' 顆）' : '')) + '！'
                       : '昇華支配失敗：' + nm + ' 維持原樣，材料已消耗（成功率 ' + Math.round(rate * 100) + '%）。';
     try { logSys('<span class="' + (success ? 'text-fuchsia-300 font-bold' : 'text-slate-300') + '">' + msg + '</span>'); } catch (e) {}
     return { ok: true, success: success, msg: msg, rate: rate, id: success ? newId : null };
@@ -426,6 +434,39 @@
     return { ok: true, made: ok, tries: times, msg: msg };
   }
 
+
+  // 滅魔蔑視水晶碎片 100 → 指定屬性水晶 1；昇華支配碎片 100 → 自選強化石 1；相消術卷軸 10 龍鑽 1 張
+  function exchange(kind, arg, times) {
+    var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
+    if (typeof state !== 'undefined' && state && state.ff) return { ok: false, msg: '補跑中，請稍候再試。' };
+    times = Math.max(1, Math.floor(Number(times) || 1));
+    var from, to, per, nmTo;
+    if (kind === 'shard') { from = 'afk_contempt_shard'; per = 100; to = 'afk_contempt_' + arg; }
+    else if (kind === 'ascshard') { from = 'afk_asc_shard'; per = 100; to = STONE[arg]; }
+    else if (kind === 'cancel') {
+      var cost = 10 * times;
+      if (diamonds() < cost) return { ok: false, msg: '龍之鑽石不足 ' + cost + '。' };
+      var pay = adjustDia(-cost); if (!pay.ok) return { ok: false, msg: pay.error };
+      gainItem('afk_cancel_scroll', times, true, true);
+      if (!saveOk()) { try { saveGame(); } catch (e) {} }
+      try { if (typeof renderTabs === 'function') renderTabs(true); } catch (e) {}
+      var m0 = '向哈瑪大師買了相消術卷軸 × ' + times + '（' + cost + ' 龍鑽）。';
+      try { logSys('<span class="text-emerald-300">' + m0 + '</span>'); } catch (e) {}
+      return { ok: true, msg: m0 };
+    } else return { ok: false, msg: '未知的兌換。' };
+    if (!DB.items[to]) return { ok: false, msg: '找不到兌換目標。' };
+    times = Math.min(times, Math.floor(invCnt(from) / per));
+    if (times < 1) return { ok: false, msg: (DB.items[from] || {}).n + '不足 ' + per + ' 個。' };
+    var undo = snapInv();
+    if (!takeId(from, per * times)) { undo(); return { ok: false, msg: '背包資料變動。' }; }
+    gainItem(to, times, true, true);
+    if (!saveOk()) { undo(); try { saveGame(); } catch (e) {} return { ok: false, msg: '存檔失敗，什麼都沒有改變。' }; }
+    try { if (typeof renderTabs === 'function') renderTabs(true); } catch (e) {}
+    nmTo = DB.items[to].n;
+    var msg = '哈瑪大師用 ' + (per * times) + ' 個' + DB.items[from].n + '換成了 ' + nmTo + ' × ' + times + '。';
+    try { logSys('<span class="text-fuchsia-300">' + msg + '</span>'); } catch (e) {}
+    return { ok: true, msg: msg };
+  }
 
   // ── +15 以上遺物武器的屬性卷軸（只有哈瑪大師可以；裝備在武器欄的那一把）────────────
   //   規則沿用碧恩：每張 7%、同屬性升階、第 5 階同屬性卷軸 1% 附加／重抽魔法；遺物免強化值門檻、原本有觸發特效的也能附加魔法。
@@ -543,10 +584,12 @@
     document.getElementById('rp-tools').addEventListener('click', function (e) {
       var ab = e.target.closest('[data-attr]');
       if (ab && !ab.disabled) { var ar = hamaAttr(ab.getAttribute('data-attr')); if (!ar.ok) { try { logSys('<span class="text-red-400">' + esc(ar.msg) + '</span>'); } catch (e3) {} } render(); return; }
+      var xb = e.target.closest('[data-ex]');
+      if (xb && !xb.disabled) { var xr = exchange(xb.getAttribute('data-ex'), xb.getAttribute('data-arg'), Number(xb.getAttribute('data-n')) || 1); if (!xr.ok) { try { logSys('<span class="text-red-400">' + esc(xr.msg) + '</span>'); } catch (e4) {} } render(); return; }
       var b = e.target.closest('[data-craft]'); if (!b || b.disabled) return;
       var r = craftStardust(Number(b.getAttribute('data-craft'))); if (!r.ok) { try { logSys('<span class="text-red-400">' + esc(r.msg) + '</span>'); } catch (e2) {} } render();
     });
-    document.getElementById('rp-tools').addEventListener('change', function (e) { if (e.target.id === 'rp-dust') { dustUse = Number(e.target.value) || 0; render(); } });
+    document.getElementById('rp-tools').addEventListener('change', function (e) { if (e.target.id === 'rp-dust') { dustUse = Number(e.target.value) || 0; render(); } if (e.target.id === 'rp-stone') { stoneUse = !!e.target.checked; render(); } });
   }
   function render() {
     var bal = document.getElementById('rp-bal'); if (bal) bal.textContent = '龍鑽 ' + diamonds().toLocaleString() + '｜金幣 ' + gold().toLocaleString();
@@ -559,7 +602,16 @@
         + '<button type="button" data-craft="1"' + (ess >= 20 ? '' : ' disabled') + '>合成星塵 ×1（20 精華・70%）</button>'
         + '<button type="button" data-craft="10"' + (ess >= 200 ? '' : ' disabled') + '>×10</button>'
         + attrPanel()
-        + '<span style="margin-left:auto">昇華支配使用夢域塵（每顆 +10%，持有 ' + dustHave + '）</span><select id="rp-dust">' + opts + '</select>';
+        + '<span style="margin-left:auto">昇華支配使用夢域塵（每顆 +10%，持有 ' + dustHave + '）</span><select id="rp-dust">' + opts + '</select>'
+        + '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="rp-stone"' + (stoneUse ? ' checked' : '') + '>改用昇華支配強化石（武 ' + invCnt(STONE.wpn) + '／防 ' + invCnt(STONE.arm) + '／飾 ' + invCnt(STONE.acc) + '）</label>'
+        + '<div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center">'
+        + '<span>蔑視水晶碎片 <b>' + invCnt('afk_contempt_shard') + '</b>（100 合 1）</span>'
+        + [['earth', '地'], ['water', '水'], ['wind', '風'], ['fire', '火']].map(function (x) { return '<button type="button" data-ex="shard" data-arg="' + x[0] + '"' + (invCnt('afk_contempt_shard') >= 100 ? '' : ' disabled') + '>' + x[1] + '</button>'; }).join('')
+        + '<span>｜昇華支配碎片 <b>' + invCnt('afk_asc_shard') + '</b>（100 換 1 顆強化石）</span>'
+        + [['wpn', '武器'], ['arm', '防具'], ['acc', '飾品']].map(function (x) { return '<button type="button" data-ex="ascshard" data-arg="' + x[0] + '"' + (invCnt('afk_asc_shard') >= 100 ? '' : ' disabled') + '>' + x[1] + '</button>'; }).join('')
+        + '<span>｜相消術卷軸 <b>' + invCnt('afk_cancel_scroll') + '</b>（每張 10 鑽）</span>'
+        + [1, 10, 100].map(function (n) { return '<button type="button" data-ex="cancel" data-n="' + n + '"' + (diamonds() >= 10 * n ? '' : ' disabled') + '>買 ' + n + '</button>'; }).join('')
+        + '</div>';
     }
     var list = document.getElementById('rp-list'); if (!list) return;
     var gs = groups();
@@ -571,7 +623,9 @@
         var A = g.asc == null ? 0 : g.asc + 1;
         if (A > 5) btn = '<button class="rp-go" disabled>可升級<br><span style="font-weight:600;font-size:11px">材料未知</span></button>';
         else {
-          var ac = ascCost(A), miss = ascMissing(ac), rate = Math.min(1, ac.rate + 0.1 * dustUse);
+          var ac = ascCost(A), rate = Math.min(1, ac.rate + 0.1 * dustUse);
+          if (stoneUse && A >= 1 && stoneOf(g.base)) { ac = { dia: 0, items: {}, equip: [], rate: 1 }; ac.items[stoneOf(g.base)] = 1; rate = 1; }
+          var miss = ascMissing(ac);
           btn = '<button class="rp-go rp-asc" type="button" data-k="' + esc(g.key) + '"' + (miss.length ? ' disabled' : '') + '>昇華支配 +' + A + '<br><span style="font-weight:600;font-size:11px">成功率 ' + Math.round(rate * 100) + '%</span></button>';
           var need = [];
           if (ac.dia) need.push('龍鑽 ' + ac.dia.toLocaleString());
@@ -619,9 +673,11 @@
   function askAsc(key) {
     var g = groups().filter(function (x) { return x.key === key; })[0]; if (!g) return render();
     var A = g.asc == null ? 0 : g.asc + 1, c = ascCost(A), rate = Math.min(1, c.rate + 0.1 * dustUse), nm = DB.items[g.base].n;
+    var st = stoneUse && A >= 1 && stoneOf(g.base);
+    if (st) { c = { dia: 0, items: {}, equip: [], rate: 1 }; rate = 1; }
     var msg = (A === 0 ? '把 +' + g.n + ' ' + nm + ' 昇華為「+0 ' + nm + '昇華支配」' : '強化為「+' + A + ' ' + nm + '昇華支配」') + '，成功率 ' + Math.round(rate * 100) + '%'
-      + (dustUse ? '（使用夢域塵 ' + dustUse + ' 顆）' : '') + '。\n會消耗清單上的全部材料' + (c.equip.length ? '（包含四大古代龍鱗盔甲與真．冥皇套裝各 1 件）' : '') + '；失敗時材料消耗、遺物不會消失。';
-    var go = function () { var r = ascend(key, dustUse); render(); if (!r.ok) { try { logSys('<span class="text-red-400">' + esc(r.msg) + '</span>'); } catch (e) {} } };
+      + (st ? '（使用 1 顆' + DB.items[stoneOf(g.base)].n + '，不需要其他材料）' : (dustUse ? '（使用夢域塵 ' + dustUse + ' 顆）' : '')) + '。\n會消耗清單上的全部材料' + (c.equip.length ? '（包含四大古代龍鱗盔甲與真．冥皇套裝各 1 件）' : '') + '；失敗時材料消耗、遺物不會消失。';
+    var go = function () { var r = ascend(key, dustUse, !!st); render(); if (!r.ok) { try { logSys('<span class="text-red-400">' + esc(r.msg) + '</span>'); } catch (e) {} } };
     if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '昇華支配', message: msg, okText: '確定', cancelText: '取消', danger: true, onOk: go });
     else if (confirm(msg)) go();
   }
@@ -707,6 +763,6 @@
     } catch (e) { return 1; }
   };
 
-  window.__afkRelicPlus = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
+  window.__afkRelicPlus = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
   console.log('[AFK-relicplus] 已啟用：遺物合成（武器 +1～+15）');
 })();

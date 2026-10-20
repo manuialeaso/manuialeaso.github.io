@@ -19,7 +19,8 @@
  *   ‧經驗 0、金幣 0；每殺一隻 0.1% 機率掉龍之鑽石（掉的時候一半是 1～499 隨機、一半是 500）
  *   ‧掉落機率 ×50（恩賜 ×10 × 5）；裝備掉落 100% 祝福；席琳結晶掉率 ×5
  *   ‧新掉落：夢艷結晶（一般怪 10%、頭目必掉 3 顆）、地獄精華（頭目必掉）、
- *            80 級以上的怪掉四屬性滅魔蔑視水晶（一般怪 1%、頭目必掉，隨機一種屬性）
+ *            80 級以上的頭目必掉四屬性滅魔蔑視水晶（隨機一種屬性）；一般怪固定 1% 掉滅魔蔑視水晶碎片（100 個合 1 顆）
+ *   ‧白金卡全部收集滿：每殺一隻 0.05% 掉昇華支配強化石、0.1% 掉昇華支配碎片
  *   ‧被侵蝕的瘋狂安塔瑞斯（任何模式）：必掉 滅魔蔑視水晶(地)
  * 新道具（昇華支配材料）：夢艷結晶、地獄精華、滅魔蔑視水晶(地／水／風／火)、至暗星塵、夢域塵、境滅亡域鑰匙
  * 核心掛點：補丁 18（掉落 ×50、結晶 ×5、出怪 −3 秒、phys 免疫）；其餘包 applySherineBuff／killMob／tick／席琳祈禱介面。
@@ -37,13 +38,25 @@
   var ITEMS = {
     afk_dream_crystal: { n: '夢艷結晶', c: 'text-fuchsia-300', d: '夢艷地獄中凝結的妖豔結晶，昇華支配的材料。（夢艷地獄：一般怪隨機掉落、頭目必掉）' },
     afk_hell_essence: { n: '地獄精華', c: 'text-red-400', d: '夢艷地獄頭目體內淬鍊出的精華，昇華支配的材料；20 個可在哈瑪大師合成至暗星塵。（夢艷地獄頭目必掉）' },
-    afk_contempt_earth: { n: '滅魔蔑視水晶(地)', c: 'text-amber-300', d: '蔑視一切魔力的大地水晶，昇華支配的材料。（被侵蝕的瘋狂安塔瑞斯、夢艷地獄 80 級以上的怪）' },
-    afk_contempt_water: { n: '滅魔蔑視水晶(水)', c: 'text-sky-300', d: '蔑視一切魔力的水之水晶，昇華支配的材料。（被侵蝕的瘋狂法利昂、夢艷地獄 80 級以上的怪）' },
-    afk_contempt_wind: { n: '滅魔蔑視水晶(風)', c: 'text-emerald-300', d: '蔑視一切魔力的風之水晶，昇華支配的材料。（被侵蝕的瘋狂林德拜爾、夢艷地獄 80 級以上的怪）' },
-    afk_contempt_fire: { n: '滅魔蔑視水晶(火)', c: 'text-orange-400', d: '蔑視一切魔力的火之水晶，昇華支配的材料。（被侵蝕的瘋狂巴拉卡斯、夢艷地獄 80 級以上的怪）' },
+    afk_contempt_earth: { n: '滅魔蔑視水晶(地)', c: 'text-amber-300', d: '蔑視一切魔力的大地水晶，昇華支配的材料。（被侵蝕的瘋狂安塔瑞斯、夢艷地獄 80 級以上的頭目；碎片 100 個合成）' },
+    afk_contempt_water: { n: '滅魔蔑視水晶(水)', c: 'text-sky-300', d: '蔑視一切魔力的水之水晶，昇華支配的材料。（被侵蝕的瘋狂法利昂、夢艷地獄 80 級以上的頭目；碎片 100 個合成）' },
+    afk_contempt_wind: { n: '滅魔蔑視水晶(風)', c: 'text-emerald-300', d: '蔑視一切魔力的風之水晶，昇華支配的材料。（被侵蝕的瘋狂林德拜爾、夢艷地獄 80 級以上的頭目；碎片 100 個合成）' },
+    afk_contempt_fire: { n: '滅魔蔑視水晶(火)', c: 'text-orange-400', d: '蔑視一切魔力的火之水晶，昇華支配的材料。（被侵蝕的瘋狂巴拉卡斯、夢艷地獄 80 級以上的頭目；碎片 100 個合成）' },
     afk_dark_stardust: { n: '至暗星塵', c: 'text-violet-300', d: '以 20 個地獄精華合成（成功率 70%），昇華支配升級的材料。' },
     afk_dream_dust: { n: '夢域塵', c: 'text-pink-300', d: '暗夢星迴才會掉落的夢之塵，每顆使昇華支配成功率 +10%，一次最多 5 顆。' },
-    afk_abyss_key: { n: '境滅亡域鑰匙', c: 'text-rose-400', d: '夢艷地獄難度四大龍副本必掉的鑰匙，昇華支配 +5 的材料。' }
+    afk_abyss_key: { n: '境滅亡域鑰匙', c: 'text-rose-400', d: '夢艷地獄難度四大龍副本必掉的鑰匙，昇華支配 +5 的材料；也是暗夢星迴多人模式的入場鑰匙。（目前暗夢星迴頭目也會掉）' },
+    afk_contempt_shard: { n: '滅魔蔑視水晶碎片', c: 'text-amber-200', d: '夢艷地獄的一般怪固定 1% 掉落。100 個可在哈瑪大師合成 1 顆指定屬性的滅魔蔑視水晶。' },
+    afk_ts_contempt_earth: { n: '滅魔蔑視水晶(地)(時空)', c: 'text-amber-300', d: '暗夢星迴頭目掉落的時空結晶。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
+    afk_ts_contempt_water: { n: '滅魔蔑視水晶(水)(時空)', c: 'text-sky-300', d: '暗夢星迴頭目掉落的時空結晶。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
+    afk_ts_contempt_wind: { n: '滅魔蔑視水晶(風)(時空)', c: 'text-emerald-300', d: '暗夢星迴頭目掉落的時空結晶。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
+    afk_ts_contempt_fire: { n: '滅魔蔑視水晶(火)(時空)', c: 'text-orange-400', d: '暗夢星迴頭目掉落的時空結晶。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
+    afk_ts_dark_stardust: { n: '暗星塵(時空)', c: 'text-violet-300', d: '暗夢星迴頭目掉落的時空星塵。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
+    afk_ts_dream_dust: { n: '夢域塵(時空)', c: 'text-pink-300', d: '暗夢星迴頭目掉落的時空之塵。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
+    afk_cancel_scroll: { n: '相消術卷軸', c: 'text-emerald-300', d: '哈瑪大師販售（10 龍鑽）。帶在身上時，暗夢星迴的頭目一張開聖結界就會自動使用 1 張把它打破。' },
+    afk_asc_stone_wpn: { n: '昇華支配強化石(武器)', c: 'text-fuchsia-300', d: '在哈瑪大師對遺物武器做昇華支配 +1～+5 時使用：不需要其他材料、必定成功。' },
+    afk_asc_stone_arm: { n: '昇華支配強化石(防具)', c: 'text-fuchsia-300', d: '在哈瑪大師對遺物防具做昇華支配 +1～+5 時使用：不需要其他材料、必定成功。' },
+    afk_asc_stone_acc: { n: '昇華支配強化石(飾品)', c: 'text-fuchsia-300', d: '在哈瑪大師對遺物飾品做昇華支配 +1～+5 時使用：不需要其他材料、必定成功。' },
+    afk_asc_shard: { n: '昇華支配碎片', c: 'text-fuchsia-200', d: '白金卡收集全滿後，夢艷地獄每殺一隻 0.1% 掉落。100 個可在哈瑪大師換一顆自選的昇華支配強化石。' }
   };
   var ICON = '';
   try { ICON = getIconUrl(DB.items.sherine_crystal); } catch (e) {}
@@ -165,7 +178,12 @@
           try {
             if (m.boss) { gainItem('afk_dream_crystal', 3); gainItem('afk_hell_essence', 1); }
             else if (Math.random() < 0.10) gainItem('afk_dream_crystal', 1);
-            if ((m.lv || 0) >= 80 && (m.boss || Math.random() < 0.01)) gainItem(CONTEMPT[Math.floor(Math.random() * 4)], 1);
+            if (m.boss && (m.lv || 0) >= 80) gainItem(CONTEMPT[Math.floor(Math.random() * 4)], 1);
+            if (!m.boss && Math.random() < 0.01) gainItem('afk_contempt_shard', 1);   // 一般怪：固定 1% 碎片（玩家 2026-10-21 改）
+            if (window.__afkCardPlus && window.__afkCardPlus.platFull()) {   // 白金卡全滿
+              if (Math.random() < 0.0005) gainItem(['afk_asc_stone_wpn', 'afk_asc_stone_arm', 'afk_asc_stone_acc'][Math.floor(Math.random() * 3)], 1);
+              if (Math.random() < 0.001) gainItem('afk_asc_shard', 1);
+            }
           } finally { try { _lootMobInfo = savedInfo; } catch (e) {} }
           if (Math.random() < 0.001) {
             var n = Math.random() < 0.5 ? 1 + Math.floor(Math.random() * 499) : 500;
@@ -207,7 +225,7 @@
           + '<div class="font-bold mb-1 ' + (on ? 'text-fuchsia-300' : 'text-fuchsia-200') + '">🌙 瘋狂席琳夢艷地獄：目前 ' + (on ? '<span class="text-fuchsia-300">開啟</span>' : '<span class="text-slate-400">關閉</span>') + '</div>'
           + '<div class="text-slate-200 text-xs">以瘋狂席琳為底：全部怪物處於恩賜狀態（HP 共 ×50）、隨時狂暴、AC/魔防再提高、命中 ×3、減傷與迴避 +15、傷害（一般怪 ×2／頭目 ×5）、持續傷害 ×5、會回血；'
           + '一般怪出生 10 秒隨機免疫物理或魔法。<span class="text-red-300">沒有經驗與金幣</span>，改為 0.1% 掉龍之鑽石；掉落 ×50、裝備必定祝福、席琳結晶 ×5，'
-          + '並掉落<span class="text-fuchsia-300 font-bold">夢艷結晶</span>、<span class="text-red-300 font-bold">地獄精華</span>、<span class="text-amber-300 font-bold">滅魔蔑視水晶</span>（昇華支配材料）。</div></div>'
+          + '並掉落<span class="text-fuchsia-300 font-bold">夢艷結晶</span>、<span class="text-red-300 font-bold">地獄精華</span>、<span class="text-amber-300 font-bold">滅魔蔑視水晶</span>與碎片（昇華支配材料）。</div></div>'
           + '<button type="button" class="btn py-3 text-base font-bold ' + (!lvOk ? 'bg-slate-600 border-slate-500 opacity-60 cursor-not-allowed' : (on ? 'bg-slate-700 hover:bg-slate-600 border-slate-500' : 'bg-fuchsia-950 hover:bg-fuchsia-900 border-fuchsia-600'))
           + '" ' + (!lvOk ? 'disabled' : '') + ' onclick="toggleSherineDream()">' + (!lvOk ? '等級不足（需 Lv40）' : (on ? '🙏 祈禱：關閉夢艷地獄' : '🌙 祈禱：開啟瘋狂席琳夢艷地獄')) + '</button>');
       } catch (e) {}

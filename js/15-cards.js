@@ -779,13 +779,13 @@ function renderCardBook() {
     let cG = names.filter(n => cardDexTier(n) >= 3).length;
     let rt = cardRegionTier(reg.key);
     let lab = CARD_STAT_LABEL[reg.stat] || reg.stat;
-    let bonusLine = [1, 2, 3].map(tt => {
+    let bonusLine = CARD_TIERS.map(x => x.t).map(tt => {   /* 🔌 加掛版補丁:白金／鑽石卡 */
         let on = rt >= tt;
         return `<span class="${on ? CARD_TIERS[tt - 1].col + ' font-bold' : 'text-slate-500'}">全${CARD_TIERS[tt - 1].sfx} ${lab}+${reg.vals[tt - 1]}${on ? ' ✓' : ''}</span>`;
     }).join('<span class="text-slate-600 mx-1">/</span>');
 
     let head = `<div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-        <div class="text-xl font-bold text-amber-200">${reg.name}<span class="text-sm text-slate-400 font-normal ml-2">收集 普${cP} / 銀${cS} / 金${cG}　共 ${total} 種</span></div>
+        <div class="text-xl font-bold text-amber-200">${reg.name}<span class="text-sm text-slate-400 font-normal ml-2">收集 普${cP} / 銀${cS} / 金${cG}${CARD_TIERS.length > 3 ? ' / 白金' + names.filter(n => cardDexTier(n) >= 4).length + ' / 鑽石' + names.filter(n => cardDexTier(n) >= 5).length : ''}　共 ${total} 種</span></div>
         <div class="text-sm">完成加成（取最高）：${bonusLine}</div>
     </div>`;
 

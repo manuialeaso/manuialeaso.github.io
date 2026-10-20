@@ -162,7 +162,7 @@ function recomputeStats() {
     //    故在此(Phase 1 加總完、Phase 2 換算前)把最終屬性夾擠至 ≤100：
     //    ① 讓 HP/MP 線性成長(getConGrowth/getWisGrowth·原本無上限)亦止於 100；② 資訊欄(讀 d.str)顯示不超過 100，避免玩家誤會配更高有加成。
     //    註：只夾「衍生最終值 d.*」，不動 player.base/alloc/panacea(原始配點保留、可回憶蠟燭退還)；各效果自身更低的內部上限(ER封60/MpReduce封45/MR封60·項圈計數封60)刻意不隨拓展、維持原值。
-    { let _ATTR_CAP = 100;
+    { let _ATTR_CAP = (typeof window.__afkAttrCap === 'function') ? window.__afkAttrCap() : 100;   /* 🔌 加掛版補丁:輪迴轉生屬性上限 */
       d.str = Math.min(_ATTR_CAP, d.str); d.dex = Math.min(_ATTR_CAP, d.dex); d.int = Math.min(_ATTR_CAP, d.int);
       d.con = Math.min(_ATTR_CAP, d.con); d.wis = Math.min(_ATTR_CAP, d.wis); d.cha = Math.min(_ATTR_CAP, d.cha); }
 
