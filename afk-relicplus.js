@@ -1,19 +1,20 @@
 /* ============================================================================
- * afk-relicplus.js — 遺物合成（武器遺物 +1～+15，玩家 2026-10-20 指定）
+ * afk-relicplus.js — 遺物合成（武器／防具 +1～+15、飾品 +1～+5；燃柳村 NPC「哈瑪大師」，玩家 2026-10-20／21 指定）
  *
  * 合成規則
- *   ‧+1～+10：兩個「同款、同強化值」的遺物合成一個高一級的
- *       做出 +1～+6：每次 500 龍鑽＋5,000 萬金幣
- *       做出 +7～+10：每高一級再多 100 龍鑽＋1,000 萬（+7＝600／6,000 萬 … +10＝900／9,000 萬）
- *   ‧+11～+15：只用一個，每次 50,000 龍鑽，成功率 10%，失敗遺物不會消失
- *   ‧+15 上限（之後的「進化」另外規劃）
- *   ‧目前只開放武器遺物；只看背包（不含倉庫、不含穿在身上的）；上鎖的不列入
+ *   ‧+1～+10：同款同強化值合成高一級。武器／防具 2 個：做出 +1～+6 每次 500 龍鑽＋5,000 萬，
+ *     +7～+10 每高一級再多 100 龍鑽＋1,000 萬（+10＝900／9,000 萬）
+ *   ‧原作者強化上限 +5 的道具（戒指、耳環、項鍊、腰帶…）：最高 +5；每級 3 個同級、龍鑽與金幣 ×3、席琳結晶 500 顆
+ *   ‧+11～+15：只用一個，每次 50,000 龍鑽，成功率 10%，失敗不會消失；+15 顯示「可升級：材料未知」（進化另外規劃）
+ *   ‧只看背包（不含倉庫、不含穿在身上的）；上鎖的不列入
  * 每一級的能力
- *   ‧每 +1：武器大小傷各 +1
- *   ‧每 +3：原本有的白字能力（近距命中、近距傷害、屬性點…）各 +1
- *   ‧每 +5：原本遺物特效的機率 +5%（中毒、觸發技能、連擊…；匕首／單手矛的出血每秒比例也 +5%）
- *       ※「一擊必殺」這類以小數表示的極低機率不加
- *   ‧+10：從同類武器（同一個圖鑑分類，例如匕首）的其他遺物，隨機繼承一種特效（只加原本沒有的欄位）
+ *   ‧武器：每 +1 大小傷 +1；每 +3 原本的白字能力各 +1
+ *   ‧防具／飾品：每 +1 AC-1、MR+1；每 +3 ER+1；每 +5 傷害減免 +1
+ *   ‧共通：每 +5 遺物特效 +5%（機率型；「一擊必殺」這類小數機率不加）；匕首／單手矛出血每秒比例同樣 +5%
+ *          HP／MP 自然恢復每 +1 多 1（本身 ≥50 的多 10）
+ *          主屬性強化（百變的透明內衣）每 +5 再 +1；火焰化解（火熱愛意）+5 每 5 秒、+10 完全免疫
+ *   ‧+10 第二詞綴：隨機抽一件同部位的其他遺物，繼承它的特效（只加原本沒有的欄位）；抽到本身沒有特效的 → 四屬性抗性 +10
+ *   ‧幸運暴走兔腳：兩邊耳環可以各戴一個，遺物掉落判定 ×2 → ×4
  *
  * 做法（不改核心戰鬥程式）
  *   +N 遺物是一個「衍生物品」：id＝原遺物 id + "~r" + N（+10 以上再加 "~" + 特效來源 id），
@@ -43,7 +44,8 @@
   var hasEffect = function (b) { return Object.keys(b).some(function (f) { return !NOT_FX.has(f); }); };
   var KIND_OK = function (d) { return !!(d && isRelic(d) && !d.isArrow && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && ['pet', 'petwpn', 'petarm', 'doll'].indexOf(d.slot) < 0); };
   // 戒指／耳環／項鍊／腰帶等強化上限 +5 的飾品：最高 +5，沒有 +10 繼承特效
-  var maxOf = function (base) { var d = DB.items[base]; return (d && d.type === 'acc') ? 5 : 15; };
+  //   判斷依原作者的強化上限（enhanceCap）：上限 +5 的道具都算這一類
+  var maxOf = function (base) { var d = DB.items[base]; if (!d) return 15; var cap = 15; try { cap = enhanceCap(d); } catch (e) { cap = d.type === 'acc' ? 5 : 15; } return cap <= 5 ? 5 : 15; };
 
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
   var parseId = function (id) {
@@ -80,8 +82,8 @@
     // HP／MP 自然恢復：每 +1 多 +1；本身 ≥50 的每 +1 多 +10
     ['hpR', 'mpR'].forEach(function (f) { if (typeof b[f] === 'number' && b[f] > 0) d[f] = b[f] + n * (b[f] >= 50 ? 10 : 1); });
     if (k5) {
-      if (hasEffect(b)) {
-        // 每 +5：遺物特效 +5%
+      {
+        // 每 +5：遺物特效 +5%（沒有特效的遺物這一步沒有東西可加）
         Object.keys(b).forEach(function (f) {
           var v = b[f];
           if (typeof v === 'number' && RATE_TOP.test(f)) d[f] = Math.min(100, v + r);
@@ -92,20 +94,19 @@
         });
         // 特殊效果：每 +5 強化一級
         if (b.highestAttrPlus) d.highestAttrPlus = 1 + k5;                 // 主屬性 +1 → +2 → +3 → +4
-        if (b.fireNullify) d.fireNullifyTicks = 50;                         // 火焰化解每 10 秒 → 每 5 秒
-      } else {
-        // 沒有特效的遺物：每 +5 四屬性抗性 +10
-        RES4.forEach(function (f) { d[f] = (Number(b[f]) || 0) + 10 * k5; });
+        if (b.fireNullify) d.fireNullifyTicks = n >= 10 ? 1 : 50;          // 火焰化解每 10 秒 → +5 每 5 秒 → +10 完全免疫
       }
       try { if (b.type === 'wpn' && typeof weaponHasBleed === 'function' && weaponHasBleed(base)) d.relicBleedBonus = r; } catch (e) {}
     }
     var fxName = '';
     if (fx && DB.items[fx]) {
+      // +10 第二詞綴：繼承抽到的遺物特效；抽到「本身沒有特效」的遺物 → 改給四屬性抗性 +10
       var donor = DB.items[fx];
-      Object.keys(donor).forEach(function (f) { if (!NOT_FX.has(f) && !(f in b)) d[f] = clone(donor[f]); });
+      if (hasEffect(donor)) Object.keys(donor).forEach(function (f) { if (!NOT_FX.has(f) && !(f in b)) d[f] = clone(donor[f]); });
+      else { RES4.forEach(function (f) { d[f] = (Number(d[f]) || 0) + 10; }); d.relicFxRes = true; }
       fxName = donor.n;
     }
-    d.d = (b.d || '') + ' 〔遺物合成 +' + n + '〕' + (fxName ? '〔繼承「' + fxName + '」的特效〕' : '');
+    d.d = (b.d || '') + ' 〔遺物合成 +' + n + '〕' + (fxName ? (d.relicFxRes ? '〔第二詞綴：抽到「' + fxName + '」（無特效）→ 四屬性抗性 +10〕' : '〔第二詞綴：繼承「' + fxName + '」的特效〕') : '') + (n >= 15 ? '〔可升級：材料未知〕' : '');
     return d;
   }
   function ensure(id) {
@@ -186,8 +187,7 @@
     var ck = catOf(base), b = DB.items[base];
     return Object.keys(DB.items).filter(function (id) {
       var d = DB.items[id];
-      if (id === base || !d || !isRelic(d) || d.type !== b.type || catOf(id) !== ck) return false;
-      return Object.keys(d).some(function (f) { return !NOT_FX.has(f) && !(f in b); });
+      return id !== base && !!d && isRelic(d) && d.type === b.type && catOf(id) === ck;   // 同部位所有遺物都可能抽到（沒有特效的 → 四屬性抗性 +10）
     });
   }
 
@@ -285,10 +285,10 @@
   function statLine(d, base) {
     var b = DB.items[base], out = b.type === 'wpn' ? ['大小傷 ' + d.dmgS + '/' + d.dmgL] : ['AC ' + (d.ac || 0) + '、MR ' + (d.mr || 0)];
     ['er', 'dr', 'hpR', 'mpR'].forEach(function (f) { if ((d[f] || 0) !== (b[f] || 0)) out.push(f + ' ' + (b[f] || 0) + '→' + d[f]); });
-    if ((d.resFire || 0) !== (b.resFire || 0)) out.push('四屬性抗性 +' + ((d.resFire || 0) - (b.resFire || 0)));
+    if ((d.resFire || 0) !== (b.resFire || 0) && !d.relicFxRes) out.push('四屬性抗性 +' + ((d.resFire || 0) - (b.resFire || 0)));
     if (d.highestAttrPlus && d.highestAttrPlus !== b.highestAttrPlus && d.highestAttrPlus !== true) out.push('主屬性強化 +' + d.highestAttrPlus);
-    if (d.fireNullifyTicks) out.push('火焰化解每 ' + d.fireNullifyTicks / 10 + ' 秒');
-    WHITE.forEach(function (f) { if (typeof b[f] === 'number' && b[f] !== 0 && d[f] !== b[f]) out.push(f + ' ' + b[f] + '→' + d[f]); });
+    if (d.fireNullifyTicks) out.push(d.fireNullifyTicks <= 1 ? '火焰化解：完全免疫' : '火焰化解每 ' + d.fireNullifyTicks / 10 + ' 秒');
+    if (b.type === 'wpn') WHITE.forEach(function (f) { if (typeof b[f] === 'number' && b[f] !== 0 && d[f] !== b[f]) out.push(f + ' ' + b[f] + '→' + d[f]); });
     Object.keys(b).forEach(function (f) {
       var v = b[f];
       if (typeof v === 'number' && RATE_TOP.test(f) && d[f] !== v) out.push(f + ' ' + v + '%→' + d[f] + '%');
@@ -333,10 +333,10 @@
   function build() {
     css();
     var m = document.createElement('div'); m.id = 'rp-modal';
-    m.innerHTML = '<div class="rp-box"><div class="rp-head">🔨 遺物合成<span class="rp-bal" id="rp-bal"></span><button class="rp-x" type="button" id="rp-x">✕</button></div>'
+    m.innerHTML = '<div class="rp-box"><div class="rp-head">🔨 哈瑪大師・遺物強化<span class="rp-bal" id="rp-bal"></span><button class="rp-x" type="button" id="rp-x">✕</button></div>'
       + '<div class="rp-rule">兩個同款同強化值合成高一級：做出 +1～+6 每次 500 鑽＋5,000 萬；+7～+10 每級再多 100 鑽＋1,000 萬。+11～+15 單件強化：每次 5 萬鑽、成功率 10%，失敗不會消失。'
       + '<br>武器：每 +1 大小傷 +1、每 +3 白字各 +1。防具／飾品：每 +1 AC-1 與 MR+1、每 +3 ER+1、每 +5 傷害減免+1。'
-      + '<br>共通：每 +5 遺物特效 +5%（沒有特效的改為四屬性抗性 +10）；HP／MP 恢復每 +1 多 1（本身 ≥50 的多 10）；+10 隨機繼承同部位遺物的一種特效。'
+      + '<br>共通：每 +5 遺物特效 +5%；HP／MP 恢復每 +1 多 1（本身 ≥50 的多 10）；+10 獲得第二詞綴：隨機抽一件同部位遺物繼承它的特效，抽到沒有特效的則改為四屬性抗性 +10。+15 之後可升級，材料未知。'
       + '<br>戒指、耳環、項鍊、腰帶最高 +5，每級要 3 個同級遺物、龍鑽與金幣 ×3，另需席琳結晶 500 顆。只計算背包裡未上鎖的遺物。</div>'
       + '<div class="rp-list" id="rp-list"></div></div>';
     document.body.appendChild(m);
@@ -355,18 +355,18 @@
     list.innerHTML = gs.map(function (g) {
       var bd = DB.items[g.base], cur = DB.items[makeId(g.base, g.n, g.fx)] || bd;
       var mx = maxOf(g.base), t = g.n + 1, c = t <= mx ? costOf(t, g.base) : null, btn;
-      if (!c) btn = '<button class="rp-go" disabled>已滿級 +' + mx + '</button>';
+      if (!c) btn = mx >= 15 ? '<button class="rp-go" disabled>可升級<br><span style="font-weight:600;font-size:11px">材料未知</span></button>' : '<button class="rp-go" disabled>已滿級 +' + mx + '</button>';
       else {
         var enough = g.cnt >= c.need && diamonds() >= c.dia && gold() >= c.gold && (!c.crystal || crystals() >= c.crystal);
         btn = '<button class="rp-go" type="button" data-k="' + esc(g.key) + '"' + (enough ? '' : ' disabled') + '>'
           + (c.merge ? '合成 +' + t : '強化 +' + t + '（10%）') + '<br><span style="font-weight:600;font-size:11px">' + c.dia.toLocaleString() + ' 鑽' + (c.gold ? '＋' + (c.gold / 10000).toLocaleString() + ' 萬' : '') + (c.crystal ? '＋結晶 ' + c.crystal : '') + (c.need > 2 ? '（' + c.need + ' 個）' : '') + '</span></button>';
       }
       var nextTxt = '';
-      if (c) { var nid = makeId(g.base, t, g.fx); var nd = DB.items[nid] || buildDef(g.base, t, g.fx); nextTxt = '下一級：' + pretty(statLine(nd, g.base)) + (t === 10 && !g.fx && mx >= 10 ? '、隨機繼承同部位遺物特效' : ''); }
+      if (c) { var nid = makeId(g.base, t, g.fx); var nd = DB.items[nid] || buildDef(g.base, t, g.fx); nextTxt = '下一級：' + pretty(statLine(nd, g.base)) + (t === 10 && !g.fx && mx >= 10 ? '、獲得第二詞綴（隨機同部位遺物特效）' : ''); }
       var img = ''; try { img = getIconUrl(bd); } catch (e) {}
       return '<div class="rp-row"><img src="' + esc(img) + '" alt="" onerror="this.style.visibility=\'hidden\'">'
         + '<div class="rp-mid"><div class="rp-nm">' + (g.n ? '+' + g.n + ' ' : '') + esc(bd.n) + ' <span style="color:#94a3b8;font-weight:600">× ' + g.cnt + '</span></div>'
-        + '<div class="rp-sub">目前：' + pretty(statLine(cur, g.base)) + (g.fx && DB.items[g.fx] ? '、已繼承「' + esc(DB.items[g.fx].n) + '」特效' : '') + '</div>'
+        + '<div class="rp-sub">目前：' + pretty(statLine(cur, g.base)) + (g.fx && DB.items[g.fx] ? (cur.relicFxRes ? '、第二詞綴：四屬性抗性 +10' : '、第二詞綴：「' + esc(DB.items[g.fx].n) + '」特效') : '') + '</div>'
         + (nextTxt ? '<div class="rp-sub" style="color:#fcd34d">' + esc(nextTxt) + '</div>' : '') + '</div>' + btn + '</div>';
     }).join('');
   }
@@ -406,6 +406,20 @@
       return r;
     };
   }
+  // 燃柳村 NPC「哈瑪大師」：點了直接打開遺物強化視窗
+  try {
+    var town = DB.towns && DB.towns.town_gludio;
+    if (town && Array.isArray(town.npcs) && !town.npcs.some(function (x) { return x.id === 'npc_hama'; })) {
+      town.npcs.push({ id: 'npc_hama', n: '哈瑪大師', title: '遺物強化', type: 'relicsmith',
+        d: '鑽研古老遺物數十年的工匠大師，能把同款遺物熔鑄合一，喚醒沉睡其中的力量。武器與防具最高 +15，戒指、耳環等飾品最高 +5。' });
+    }
+    if (typeof NPC_SPR_FIXED !== 'undefined' && !NPC_SPR_FIXED.npc_hama) NPC_SPR_FIXED.npc_hama = '1768';   // 矮人鐵匠外型（與火焰鐵匠同款）
+  } catch (e) {}
+  if (typeof window.interactNPC === 'function') {
+    var oNpc = window.interactNPC;
+    window.interactNPC = function (npcId) { if (npcId === 'npc_hama') { open(); return; } return oNpc.apply(this, arguments); };
+  }
+
   var navTimer = setInterval(function () {
     var row = document.getElementById('m-afk-navrow');
     if (!row) return;

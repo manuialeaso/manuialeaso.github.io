@@ -502,7 +502,7 @@ function patchRelicSpecialScale() {
     ['js/04-combat-attack.js', "            ally._fireNullCd = state.ticks + 100;\n", "            ally._fireNullCd = state.ticks + (d.fireNullifyTicks || 100);\n"],
     ['js/04-combat-attack.js', "            player._fireNullCd = state.ticks + 100;   // 10 秒", "            player._fireNullCd = state.ticks + (player.d.fireNullifyTicks || 100);   // 10 秒"],
     ['js/10-ui-tabs.js', "if (d.fireNullify) out.push('火焰化解（每10秒可免疫一次火屬性傷害）');",
-      "if (d.fireNullify) out.push('火焰化解（每' + ((d.fireNullifyTicks || 100) / 10) + '秒可免疫一次火屬性傷害）');"],
+      "if (d.fireNullify) out.push((d.fireNullifyTicks || 100) <= 1 ? '火焰化解（免疫火屬性傷害）' : '火焰化解（每' + ((d.fireNullifyTicks || 100) / 10) + '秒可免疫一次火屬性傷害）');"],
     ['js/10-ui-tabs.js', "if (d.highestAttrPlus) out.push('主屬性強化（目前最高的六維屬性+1；並列皆增加）');",
       "if (d.highestAttrPlus) out.push('主屬性強化（目前最高的六維屬性+' + (d.highestAttrPlus === true ? 1 : d.highestAttrPlus) + '；並列皆增加）');"],
     ['js/05-kill-progression.js', "let _relicX2 = (DB.items[itemId].relic && typeof mainPlayerHasEquippedEffect === 'function' && mainPlayerHasEquippedEffect('relicDropX2')) ? 2 : 1;",

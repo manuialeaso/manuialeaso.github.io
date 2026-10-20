@@ -810,7 +810,7 @@ function relicPurposeLabels(d) {
     if (d.counterBarrierX2) out.push('反擊屏障強化（反擊傷害×2）');
     if (d.crushDr) out.push(`重擊防護（受到重擊傷害-${d.crushDr}%）`);
     if (d.physDrGated) out.push(`物理防護（一般攻擊傷害-${d.physDrGated}%，每3秒一次）`);
-    if (d.fireNullify) out.push('火焰化解（每' + ((d.fireNullifyTicks || 100) / 10) + '秒可免疫一次火屬性傷害）');
+    if (d.fireNullify) out.push((d.fireNullifyTicks || 100) <= 1 ? '火焰化解（免疫火屬性傷害）' : '火焰化解（每' + ((d.fireNullifyTicks || 100) / 10) + '秒可免疫一次火屬性傷害）');
     if (d.wearerEle === 'wind') out.push('風之化身（自身轉為風屬性；受到地屬性傷害增加、受到水屬性傷害減少）');
     else if (d.wearerEle) out.push(`${eleName(d.wearerEle)}之化身（自身轉為${eleName(d.wearerEle)}屬性，承受傷害套用屬性剋制）`);
     if (d.necroBook) out.push('骷髏復生（造屍術改為不消耗MP；敵人被擊敗時自動召喚1隻骷髏，全隊場上最多6隻；已達上限時完全恢復HP最低的骷髏）');
