@@ -10,7 +10,8 @@
  *     （補跑／背景期間也算，跟背包同步；只有真正進背包的才會呼叫這個掛點）
  *   ‧核心 auditReset（換地圖、進傲慢之塔樓層／遺忘之島／時空裂痕、按「重置」）時一併清除
  *   ‧取代核心 renderAuditDrops 的畫面：版面相同，每個物品後面加 ×N（有打到才顯示），
- *     怪名旁加擊殺數；不在掉落表上的額外掉落（碎片、卡片、萬能藥…）列在「其他掉落」
+ *     怪名旁加擊殺數；有卡片的怪多一行「卡片：普卡、銀卡、金卡」（圖鑑未開通時卡片直接自動登錄、不進背包，
+ *     所以另外在 acquireCard 計數）；不在掉落表上的額外掉落（碎片、萬能藥…）列在「其他掉落」
  *   統計分頁開著時核心每 2 秒重繪一次，數字會自己往上加。
  * ========================================================================== */
 (function () {
@@ -24,6 +25,8 @@
   }
 
   var got = {};     // 怪名 → { 物品id: 數量 }
+  var cards = {};   // 怪名 → [普, 銀, 金] 張數（含自動登錄進圖鑑、沒有進背包的）
+  var inCard = 0;
   var kills = {};   // 怪名 → 擊殺數
   var since = Date.now();
   var cur = null;
@@ -43,7 +46,7 @@
   var oAudit = window.auditTrackGain;
   window.auditTrackGain = function (res) {
     try {
-      if (cur && res && res.id) {
+      if (cur && !inCard && res && res.id) {
         var g = got[cur] || (got[cur] = {});
         g[res.id] = (g[res.id] || 0) + (Number(res.cnt) || 1);
       }
@@ -51,20 +54,36 @@
     return oAudit.apply(this, arguments);
   };
 
+  // 卡片：圖鑑未開通時會直接自動登錄、不進背包，原本的統計掛點看不到 → 在 acquireCard 計數
+  //   （開通時退回的溢出實體卡屬於換算，不算掉落，所以整段期間不走上面的物品計數）
+  if (typeof window.acquireCard === 'function') {
+    var oCard = window.acquireCard;
+    window.acquireCard = function (name, tier, count) {
+      if (!cur) return oCard.apply(this, arguments);
+      try {
+        var t = Number(tier) || 1;
+        if (t >= 1 && t <= 3) { var c = cards[cur] || (cards[cur] = [0, 0, 0]); c[t - 1] += Math.max(1, Number(count) || 1); }
+      } catch (e) {}
+      inCard++;
+      try { return oCard.apply(this, arguments); } finally { inCard--; }
+    };
+  }
+
   var oReset = window.auditReset;
-  window.auditReset = function () { got = {}; kills = {}; since = Date.now(); return oReset.apply(this, arguments); };
+  window.auditReset = function () { got = {}; kills = {}; cards = {}; since = Date.now(); return oReset.apply(this, arguments); };
 
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var itemColor = function (id) { try { return getItemColor({ id: id }); } catch (e) { return ''; } };
   var badge = function (n) { return n > 0 ? ' <b class="text-green-400">×' + n.toLocaleString() + '</b>' : ''; };
   var sumOver = function (names) {
-    var out = {}, k = 0;
+    var out = {}, k = 0, cd = [0, 0, 0];
     names.forEach(function (n) {
       k += kills[n] || 0;
+      if (cards[n]) for (var i = 0; i < 3; i++) cd[i] += cards[n][i];
       var g = got[n]; if (!g) return;
       for (var id in g) out[id] = (out[id] || 0) + g[id];
     });
-    return { items: out, kills: k };
+    return { items: out, kills: k, cards: cd };
   };
   var otherHtml = function (items, listed) {
     var ids = Object.keys(items).filter(function (id) { return listed.indexOf(id) === -1 && DB.items[id]; })
@@ -72,6 +91,18 @@
     if (!ids.length) return '';
     return '<div class="text-xs leading-relaxed mt-1"><span class="text-slate-500">其他掉落：</span>'
       + ids.map(function (id) { return '<span class="' + itemColor(id) + '">' + esc(DB.items[id].n) + '</span>' + badge(items[id]); }).join('、') + '</div>';
+  };
+
+  // 這隻怪（或變身鏈）有沒有卡片可掉
+  var hasCard = function (names) {
+    if (typeof CARD_MOB_INFO === 'undefined') return false;
+    return names.some(function (n) { var a = (typeof CARD_DROP_ALIAS !== 'undefined' && CARD_DROP_ALIAS[n]) || n; return !!CARD_MOB_INFO[a]; });
+  };
+  var TIER_CLS = ['c-card-common', 'c-card-silver', 'c-card-gold'], TIER_N = ['普卡', '銀卡', '金卡'];
+  var cardHtml = function (cd, show) {
+    if (!show && !(cd[0] + cd[1] + cd[2])) return '';
+    return '<div class="text-xs leading-relaxed mt-1"><span class="text-slate-500">卡片：</span>'
+      + [0, 1, 2].map(function (i) { return '<span class="' + TIER_CLS[i] + '">' + TIER_N[i] + '</span>' + badge(cd[i]); }).join('、') + '</div>';
   };
 
   window.renderAuditDrops = function (el) {
@@ -102,6 +133,7 @@
           + '<div class="font-bold ' + nameCls + ' mb-1">' + (mob.boss ? '👑 ' : '') + esc(mob.n) + ' <span class="text-slate-500 text-xs">Lv.' + mob.lv + '</span>'
           + (s.kills ? ' <span class="text-slate-300 text-xs font-normal">擊殺 <b class="text-green-400">' + s.kills.toLocaleString() + '</b></span>' : '') + '</div>'
           + '<div class="text-xs leading-relaxed">' + dropHtml + '</div>'
+          + cardHtml(s.cards, hasCard(names))
           + otherHtml(s.items, drops)
           + '</div>';
       }).join('');
@@ -113,7 +145,8 @@
         var s = sumOver([n]);
         return '<div class="bg-slate-800/40 rounded p-2"><div class="font-bold text-slate-300 mb-1">' + esc(n)
           + ' <span class="text-slate-300 text-xs font-normal">擊殺 <b class="text-green-400">' + s.kills.toLocaleString() + '</b></span></div>'
-          + (otherHtml(s.items, []) || '<div class="text-xs text-slate-500">（沒有掉落）</div>') + '</div>';
+          + cardHtml(s.cards, false)
+          + (otherHtml(s.items, []) || ((s.cards[0] + s.cards[1] + s.cards[2]) ? '' : '<div class="text-xs text-slate-500">（沒有掉落）</div>')) + '</div>';
       }).join('');
     }
     var mins = Math.max(0, (Date.now() - since) / 60000);
@@ -128,6 +161,6 @@
       + body + '</div>';
   };
 
-  window.__afkDropCount = { data: function () { return { kills: kills, got: got }; } };
+  window.__afkDropCount = { data: function () { return { kills: kills, got: got, cards: cards }; } };
   console.log('[AFK-dropcount] 已啟用：統計分頁的本圖掉落物品會標上實際打到的數量');
 })();
