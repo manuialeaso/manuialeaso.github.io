@@ -490,6 +490,7 @@ function applyAttrMagicBuff(owner, skId, sourceLabel) {
 }
 function playerAttrMagicProc(target, inst, wpn) {
     let proc = (typeof getAttrMagicProc === 'function') ? getAttrMagicProc(inst) : null;
+    if (proc && proc.star >= 5 && typeof window.__afkAttr5 === 'function') { window.__afkAttr5(target, inst, wpn, proc); return; }   /* 🔌 加掛版補丁:5 星新魔法 */
     if (!proc || Math.random() * 100 >= proc.rate) return;
     let sk = DB.skills[proc.skId];
     if (!sk) return;
@@ -729,7 +730,7 @@ function procFreeMagicSkill(t, skId, en, areaHit, sourceItem, illusionRecoverMp)
     let spCoef = (sourceItem && sourceItem.type === 'wpn')
         ? weaponMagicDamageCoef(player.d, sourceItem, t, sk.ele || 'none')
         : magicDamageCoef(player.d, magicAttrDefense(t, sk.ele || 'none'), sk.tier);
-    let mageDmgMult = 1.0;
+    let mageDmgMult = (typeof window !== 'undefined' && window.__afkSpellMult) || 1.0;   /* 🔌 加掛版補丁:免費觸發法術倍率 */
     let critMult = isCrit ? (1 + player.d.magicCritDmg / 100) : 1.0;
     let dmgArray = sk.multiDmg || (sk.dmgDice ? [[sk.dmgDice[0], sk.dmgDice[1]]] : []);
     let total = 0;

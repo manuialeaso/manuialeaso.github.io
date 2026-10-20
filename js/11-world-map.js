@@ -1010,7 +1010,7 @@ function doBianAttr(slotKey, ele) {
             let picked = pool[Math.floor(Math.random() * pool.length)];
             let sameMagic = !!(oldMagic && oldMagic.skId === picked.skId);
             let oldStar = oldMagic ? oldMagic.star : 0;
-            let nextStar = sameMagic ? Math.min(3, oldStar + 1) : 1;
+            let nextStar = sameMagic ? Math.min(((DB.items[item.id] || {}).relicAsc != null) ? 5 : 3, oldStar + 1) : 1;   /* 🔌 加掛版補丁:昇華支配 5 星 */
             item.attrMagic = picked.skId;
             item.attrMagicStar = nextStar;
             let skName = (DB.skills[picked.skId] && DB.skills[picked.skId].n) || picked.skId;

@@ -592,7 +592,35 @@ function patchDreamHell() {
   if (any) { changed++; console.log('[patch] 瘋狂席琳夢艷地獄模式掛點'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell];
+// ── 補丁 19：昇華支配武器的屬性魔法 5 星（js/04＋js/08＋js/11）──────────────────────
+//   ‧屬性魔法星數上限：昇華支配遺物（relicAsc 有值）5 星，其餘維持 3 星
+//   ‧5 星時改由 window.__afkAttr5(target, inst, wpn, proc) 處理（轉換成四種新魔法）
+//   ‧免費觸發法術傷害倍率開放 window.__afkSpellMult（新魔法 ×1.5 用；沒設＝1，同原版）
+function patchAscAttrStar() {
+  const edits = [
+    ['js/08-items-equip.js', "let star = Math.max(1, Math.min(3, Math.floor(Number(item.attrMagicStar) || 1)));",
+      "let star = Math.max(1, Math.min(((DB.items[item.id] || {}).relicAsc != null) ? 5 : 3, Math.floor(Number(item.attrMagicStar) || 1)));   /* 🔌 加掛版補丁:昇華支配 5 星 */"],
+    ['js/11-world-map.js', "let nextStar = sameMagic ? Math.min(3, oldStar + 1) : 1;",
+      "let nextStar = sameMagic ? Math.min(((DB.items[item.id] || {}).relicAsc != null) ? 5 : 3, oldStar + 1) : 1;   /* 🔌 加掛版補丁:昇華支配 5 星 */"],
+    ['js/04-combat-attack.js', "    let proc = (typeof getAttrMagicProc === 'function') ? getAttrMagicProc(inst) : null;\n    if (!proc || Math.random() * 100 >= proc.rate) return;\n",
+      "    let proc = (typeof getAttrMagicProc === 'function') ? getAttrMagicProc(inst) : null;\n    if (proc && proc.star >= 5 && typeof window.__afkAttr5 === 'function') { window.__afkAttr5(target, inst, wpn, proc); return; }   /* 🔌 加掛版補丁:5 星新魔法 */\n    if (!proc || Math.random() * 100 >= proc.rate) return;\n"],
+    ['js/04-combat-attack.js', "        : magicDamageCoef(player.d, magicAttrDefense(t, sk.ele || 'none'), sk.tier);\n    let mageDmgMult = 1.0;\n    let critMult = isCrit ? (1 + player.d.magicCritDmg / 100) : 1.0;",
+      "        : magicDamageCoef(player.d, magicAttrDefense(t, sk.ele || 'none'), sk.tier);\n    let mageDmgMult = (typeof window !== 'undefined' && window.__afkSpellMult) || 1.0;   /* 🔌 加掛版補丁:免費觸發法術倍率 */\n    let critMult = isCrit ? (1 + player.d.magicCritDmg / 100) : 1.0;"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes(B)) continue;
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 昇華支配 5 星錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 60)}…`);
+    s = s.replace(A, B);
+    if (!CHECK) writeFileSync(FILE, s);
+    any = true;
+  }
+  if (any) { changed++; console.log('[patch] 昇華支配武器屬性魔法 5 星'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar];
 
 try {
   for (const p of PATCHES) p();

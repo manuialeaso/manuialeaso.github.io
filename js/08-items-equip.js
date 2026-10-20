@@ -269,7 +269,7 @@ function getAttrMagicProc(item) {
     let proc = ATTR_MAGIC_BY_SKILL[item.attrMagic] || null;
     let aff = getAttrAffix(item.attr);
     if (!proc || !aff || aff.tier !== 5 || aff.ele !== proc.ele) return null;
-    let star = Math.max(1, Math.min(3, Math.floor(Number(item.attrMagicStar) || 1)));
+    let star = Math.max(1, Math.min(((DB.items[item.id] || {}).relicAsc != null) ? 5 : 3, Math.floor(Number(item.attrMagicStar) || 1)));   /* 🔌 加掛版補丁:昇華支配 5 星 */
     return { ele: proc.ele, skId: proc.skId, baseRate: proc.rate, star: star, rate: proc.rate * star };
 }
 
