@@ -232,5 +232,80 @@
     else window.addEventListener('load', function () { setTimeout(installBuffStage, 0); });
   }
 
-  console.log('[AFK-perf] 已啟用：' + [on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : '', on('perf-dom') ? '同值不重寫' : ''].filter(Boolean).join('、'));
+  // ──────────────────────────────────────────────────────────────────────
+  // ④ 動畫圖片快取改以「記憶體大小」設上限（長時間掛機記憶體爆炸的主因）
+  //    量測（8 人隊伍，每 20 秒換一張地圖、20 分鐘）：算圖行程 730→1,578MB。JS 只有 30～100MB 且持平，
+  //    增加的全是動畫圖片：怪物動畫快取核心以「種類數」設限（48 種＋八方向 96 組），不管每組多大——
+  //    大型頭目一組就數十 MB，實測快取內圖片解碼後估計達 860MB＋282MB；職業／變身快取完全沒有上限。
+  //    做法：每 10 秒估算各快取項目的解碼大小（寬×高×4）；畫面上正在顯示的（含同一隻怪／寵物／隊員的
+  //    其他朝向）一律保護；其餘依「最近使用時間」由舊到新淘汰，直到總量 ≤ 預算。被淘汰的項目再出現時，
+  //    核心會照原本流程重新載入（讀瀏覽器快取，看到的只是第一次出現時那半秒靜態圖）。
+  // ──────────────────────────────────────────────────────────────────────
+  if (on('perf-mem')) {
+    var BUDGET = 192 * 1048576;   // 不在畫面上的動畫圖片，最多保留這麼多（解碼後估計）
+    var GET = {
+      mob: function () { return typeof _mobAnimCache !== 'undefined' ? _mobAnimCache : null; },
+      mob8: function () { return typeof _mob8Cache !== 'undefined' ? _mob8Cache : null; },
+      morph: function () { return typeof _morphBattleCache !== 'undefined' ? _morphBattleCache : null; },
+      pet8: function () { return typeof _pet8Cache !== 'undefined' ? _pet8Cache : null; },
+      spell: function () { return typeof _spellFxCache !== 'undefined' ? _spellFxCache : null; },
+      death: function () { return typeof _deathFxCache !== 'undefined' ? _deathFxCache : null; }
+    };
+    var sizeMemo = new WeakMap(), lastUsed = new Map(), memStats = { evicted: 0, evictedMB: 0, keptMB: 0, protectedMB: 0, runs: 0 };
+    var imagesOf = function (v, out, depth) {
+      if (!v || depth > 6) return out;
+      if (v instanceof HTMLImageElement) { out.push(v); return out; }
+      if (Array.isArray(v)) { for (var i = 0; i < v.length; i++) imagesOf(v[i], out, depth + 1); return out; }
+      if (typeof v === 'object') for (var k in v) imagesOf(v[k], out, depth + 1);
+      return out;
+    };
+    var bytesOf = function (v, imgs) {
+      if (sizeMemo.has(v)) return sizeMemo.get(v);
+      var b = 0; for (var i = 0; i < imgs.length; i++) b += (imgs[i].naturalWidth || 0) * (imgs[i].naturalHeight || 0) * 4;
+      var allDone = imgs.every(function (im) { return im.complete; });
+      if (allDone) sizeMemo.set(v, b);   // 還在載入的下一輪再算
+      return b;
+    };
+    var groupOf = function (key) { var s = String(key), i = s.lastIndexOf('#'); return i > 0 ? s.slice(0, i) : s; };
+    var trimMem = function () {
+      try {
+        if (typeof state !== 'undefined' && state.ff) return;
+        var now = Date.now(), srcs = new Set();
+        for (var i = 0; i < document.images.length; i++) srcs.add(document.images[i].src);
+        var entries = [], used = new Set();
+        for (var cn in GET) {
+          var c = GET[cn](); if (!c) continue;
+          for (var key in c) {
+            var v = c[key]; if (!v || v === 'probing' || typeof v !== 'object') continue;
+            var imgs = imagesOf(v, [], 0); if (!imgs.length) continue;
+            var id = cn + '|' + key;
+            if (!lastUsed.has(id)) lastUsed.set(id, now);
+            for (var j = 0; j < imgs.length; j++) if (srcs.has(imgs[j].src)) { used.add(cn + '|' + groupOf(key)); break; }
+            entries.push({ cn: cn, key: key, id: id, c: c, bytes: bytesOf(v, imgs) });
+          }
+        }
+        var total = 0, prot = 0, free = [];
+        for (var e = 0; e < entries.length; e++) {
+          var en = entries[e];
+          if (used.has(en.cn + '|' + groupOf(en.key))) { lastUsed.set(en.id, now); prot += en.bytes; }
+          else { total += en.bytes; free.push(en); }
+        }
+        if (total > BUDGET) {
+          free.sort(function (a, b) { return lastUsed.get(a.id) - lastUsed.get(b.id); });
+          for (var f = 0; f < free.length && total > BUDGET; f++) {
+            var x = free[f];
+            if (x.c[x.key] === undefined || x.c[x.key] === 'probing') continue;
+            delete x.c[x.key]; lastUsed.delete(x.id);
+            total -= x.bytes; memStats.evicted++; memStats.evictedMB += x.bytes / 1048576;
+          }
+        }
+        memStats.keptMB = Math.round(total / 1048576); memStats.protectedMB = Math.round(prot / 1048576); memStats.runs++;
+        if (lastUsed.size > 4000) lastUsed.forEach(function (t, k) { if (now - t > 3600000) lastUsed.delete(k); });
+      } catch (e) {}
+    };
+    setInterval(trimMem, 10000);
+    window.__afkPerfMem = function () { return { 預算MB: BUDGET / 1048576, 畫面中MB: memStats.protectedMB, 保留MB: memStats.keptMB, 已淘汰組數: memStats.evicted, 已淘汰MB: Math.round(memStats.evictedMB) }; };
+  }
+
+  console.log('[AFK-perf] 已啟用：' + [on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : '', on('perf-dom') ? '同值不重寫' : '', on('perf-mem') ? '動畫快取記憶體上限' : ''].filter(Boolean).join('、'));
 })();

@@ -100,6 +100,7 @@
         { id: 'mapsync', name: '地圖選單自我校正', desc: '回城／出發後地區與地圖下拉若與所在地不符，自動校正（不改回城規則）', group: '遊戲介面' },
         { id: 'perf', name: '卡頓修正', desc: '量測找出的兩個主要卡頓來源的修正；關掉＝完全回到原版行為', group: '系統與其他' },
         { id: 'perf-log', name: '日誌批次寫入', desc: '戰鬥／系統／世界日誌每一幀合併寫入一次（原版每則訊息都強制重新排版）', group: '系統與其他', parent: 'perf' },
+        { id: 'perf-mem', name: '動畫快取記憶體上限', desc: '不在畫面上的動畫圖片最多保留約 192MB，長時間掛機記憶體不再一直長（舊怪再出現時會重新載入）', group: '系統與其他', parent: 'perf' },
         { id: 'perf-dom', name: '內容相同就不重寫', desc: '能力分頁、狀態列等數值沒變時不重建畫面（原版每個 tick 都重寫）', group: '系統與其他', parent: 'perf' },
         { id: 'perf-tabs', name: '背包分頁按需重建', desc: '撿物時只重建正在看的分頁；其他分頁切過去時才更新（大背包差最多）', group: '系統與其他', parent: 'perf' },
         { id: 'reissueid', name: '換發身分證', desc: '⚠️ 把複製出來的角色換成各自獨立的身分；會改寫全部存檔且無法復原', group: '存檔工具', parent: 'storage' },
