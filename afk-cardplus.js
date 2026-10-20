@@ -3,8 +3,10 @@
  *
  * 卡片新增兩階（在金卡之上）：
  *   ‧白金卡：瘋狂席琳（含夢艷地獄）中掉落；鑽石卡：只有瘋狂席琳夢艷地獄掉落
- *   ‧掉落率沿用卡片「每高一階 ÷10」的舊規則：普 0.1%、銀 0.01%、金 0.001%、白金 0.0001%、鑽石 0.00001%
- *     只乘隊伍人數（最高 ×8），不吃席琳／夢艷地獄的掉落倍率
+ *   ‧掉落率：白金、鑽石都是 0.001%，乘隊伍人數（最高 ×8）；視為遺物掉落，裝備幸運爆走兔腳時再 ×2（兩個 ×4）
+ *     不吃席琳／夢艷地獄的掉落倍率
+ *   ‧白金卡 20 張 → 自選一隻五階魔法娃娃；鑽石卡 20 張 → 六階魔法娃娃「哈瑪」（九隻五階娃娃能力融合）
+ *     在威頓村魔法娃娃商人兌換（只算已登錄到該階的重複卡）
  *   ‧地區完成加成「往上一階」：照該地區原本每一階的增加幅度再加（例：AC 1/2/3 → 白金 4、鑽石 5；HP 3/5/10 → 15、20）
  *   ‧圖鑑積分：白金 = 1000、鑽石 = 10000（沿用原本的共用圖鑑桶，只增不減，跨角色共用）
  *   ‧取得白金／鑽石卡：該怪還沒到這一階 → 自動登錄；已經到了 → 實體卡進背包
@@ -27,8 +29,8 @@
 
   // ── 新階級 ──
   var PLUS = [
-    { t: 4, key: 'w', sfx: '白金卡', col: 'c-card-plat', img: 'assets/icons/items/白金卡.png', price: 100000, weight: 0, score: 1000, rate: 0.000001 },
-    { t: 5, key: 'd', sfx: '鑽石卡', col: 'c-card-diamond', img: 'assets/icons/items/鑽石卡.png', price: 1000000, weight: 0, score: 10000, rate: 0.0000001 }
+    { t: 4, key: 'w', sfx: '白金卡', col: 'c-card-plat', img: 'assets/icons/items/白金卡.png', price: 100000, weight: 0, score: 1000, rate: 0.00001 },
+    { t: 5, key: 'd', sfx: '鑽石卡', col: 'c-card-diamond', img: 'assets/icons/items/鑽石卡.png', price: 1000000, weight: 0, score: 10000, rate: 0.00001 }
   ];
   PLUS.forEach(function (x) { if (!CARD_TIERS[x.t - 1]) CARD_TIERS.push({ t: x.t, key: x.key, sfx: x.sfx, col: x.col, img: x.img, price: x.price, weight: x.weight }); });
   try {
@@ -119,8 +121,9 @@
       var nm = (typeof CARD_DROP_ALIAS !== 'undefined' && CARD_DROP_ALIAS[mob.n]) || mob.n;
       if (!CARD_MOB_INFO[nm]) return r;
       var pool = (typeof CARD_CHAIN_BY_FINAL !== 'undefined' && CARD_CHAIN_BY_FINAL[nm]) || null;
-      if (mob._dream) _cardDropRoll(nm, 5, PLUS[1].rate, pool);
-      _cardDropRoll(nm, 4, PLUS[0].rate, pool);
+      var rx = (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : 1;   // 視為遺物：幸運爆走兔腳 ×2
+      if (mob._dream) _cardDropRoll(nm, 5, PLUS[1].rate * rx, pool);
+      _cardDropRoll(nm, 4, PLUS[0].rate * rx, pool);
     } catch (e) {}
     return r;
   };
@@ -149,7 +152,7 @@
   triple('miscCollectionBonus', miscFull, [['d', '_miscWeightBonus'], ['p', '_miscPotionBonus']]);
 
   // ── 鑽白金幻化 ──
-  DB.items.afk_card_pick = DB.items.afk_card_pick || { n: '鑽白金幻化', type: 'misc', eff: 'afk_card_pick', c: 'c-card-diamond', img: PLUS[1].img, p: 0, gachaWeight: 0,
+  DB.items.afk_card_pick = DB.items.afk_card_pick || { n: '鑽白金幻化', type: 'misc', eff: 'afk_card_pick', c: 'c-card-diamond', img: 'assets/icons/items/鑽白金幻化.png', p: 0, gachaWeight: 0,
     d: '暗夢星迴頭目 0.01% 掉落。使用後可以自選任一隻怪物，獲得牠的鑽石卡（未登錄會自動登錄到鑽石卡）。' };
   var pickLayer = null;
   var closePick = function () { var m = document.getElementById('afk-cardpick'); if (m) m.remove(); if (pickLayer && window.AFK_UI) { try { AFK_UI.closeLayer(pickLayer); } catch (e) {} } pickLayer = null; };
@@ -201,6 +204,106 @@
     return oUseItem.apply(this, arguments);
   };
 
-  window.__afkCardPlus = { platFull: platFull, equipFull: equipFull, miscFull: miscFull, pickCard: pickCard, openPick: openPick, bump: bump };
+
+  // ── 魔法娃娃：白金卡 20 張換自選五階、鑽石卡 20 張換六階「哈瑪」──
+  var HAMA = 'doll_哈瑪', NEED = 20;
+  var T5 = (typeof DOLL_BY_TIER !== 'undefined' && DOLL_BY_TIER[5]) ? DOLL_BY_TIER[5].slice() : [];
+  (function buildHama() {
+    if (DB.items[HAMA] || !T5.length) return;
+    var SKIP = { p: 1, safe: 1, dollTier: 1, gachaWeight: 0, procRateBase: 1 };
+    var d = { n: '魔法娃娃：哈瑪', type: 'acc', slot: 'doll', req: 'all', safe: 0, p: 0, doll: true, dollTier: 6, noEnhance: true, gachaWeight: 0, c: 'text-cyan-300', afkHama: true };
+    var procs = [], parts = [];
+    T5.forEach(function (id) {
+      var x = DB.items[id]; if (!x) return;
+      parts.push(x.n.replace('魔法娃娃：', ''));
+      Object.keys(x).forEach(function (k) {
+        if (SKIP[k] != null) return;
+        if (typeof x[k] === 'number') d[k] = (d[k] || 0) + x[k];
+        else if (k === 'procSkill') procs.push(x[k]);
+        else if (typeof x[k] === 'boolean' && x[k] && !(k in d)) d[k] = true;
+        else if (k === 'procDmgReduce' || k === 'procBonusDmg') d[k] = d[k] || JSON.parse(JSON.stringify(x[k]));
+      });
+    });
+    if (procs.length) { d.procSkill = procs[0]; d.procRateBase = 1; d.afkExtraProcs = procs.slice(1); }
+    d.d = '六階魔法娃娃。由鑽石卡兌換：融合全部五階魔法娃娃（' + parts.join('、') + '）的能力'
+      + (procs.length ? '，攻擊時各自 1% 觸發 ' + procs.map(function (sk) { return (DB.skills[sk] || {}).n || sk; }).join('、') : '') + '。裝於魔法娃娃欄，游標變成哈瑪大師。';
+    d.img = 'assets/icons/accessories/魔法娃娃：哈瑪.png';
+    DB.items[HAMA] = d;
+  })();
+  // 哈瑪的額外觸發魔法（核心只讀一個 procSkill）
+  if (typeof window.weaponSpellProc === 'function') {
+    var oWsp = window.weaponSpellProc;
+    window.weaponSpellProc = function (target) {
+      var r = oWsp.apply(this, arguments);
+      try {
+        var dl = player.eq && player.eq.doll ? DB.items[player.eq.doll.id] : null;
+        if (dl && dl.afkExtraProcs && !arguments[2]) dl.afkExtraProcs.forEach(function (sk) {
+          if (Math.random() * 100 >= (dl.procRateBase || 1)) return;
+          var t2 = (target && target.curHp > 0) ? target : null;
+          if (!t2) { var al = mapState.mobs.filter(function (m) { return m && m.curHp > 0; }); if (al.length) t2 = al[Math.floor(Math.random() * al.length)]; }
+          if (t2) procFreeMagicSkill(t2, sk, 0, false, dl);
+        });
+      } catch (e) {}
+      return r;
+    };
+  }
+  // 哈瑪不當六階重組的材料、也不算在六階數量裡
+  var hamaCnt = function () { return player.inv.reduce(function (a, i) { return a + (i.id === HAMA && !i.lock ? (i.cnt || 1) : 0); }, 0); };
+  if (typeof window.dollTierCount === 'function') {
+    var oDtc = window.dollTierCount;
+    window.dollTierCount = function (t) { var n = oDtc.apply(this, arguments); return t === 6 ? Math.max(0, n - hamaCnt()) : n; };
+  }
+  ['dollRerollT6', 'dollRerollT6All'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function () {
+      var locked = player.inv.filter(function (i) { return i.id === HAMA && !i.lock; });
+      locked.forEach(function (i) { i.lock = true; });
+      try { return o.apply(this, arguments); } finally { locked.forEach(function (i) { if (player.inv.indexOf(i) >= 0) i.lock = false; }); }
+    };
+  });
+  var excess = function (tier) { return player.inv.filter(function (it) { var d = DB.items[it.id]; return d && d.eff === 'card' && !it.lock && d.cardTier === tier && cardDexTier(d.cardMob) >= tier; }); };
+  var excessCnt = function (tier) { return excess(tier).reduce(function (a, i) { return a + (i.cnt || 1); }, 0); };
+  var takeCards = function (tier, n) {
+    var pool = excess(tier); if (pool.reduce(function (a, i) { return a + (i.cnt || 1); }, 0) < n) return false;
+    var rm = [];
+    pool.forEach(function (it) { if (n <= 0) return; var c = it.cnt || 1; if (c <= n) { n -= c; rm.push(it.uid); } else { it.cnt = c - n; n = 0; } });
+    player.inv = player.inv.filter(function (i) { return rm.indexOf(i.uid) < 0; });
+    return true;
+  };
+  var after = function () { try { renderTabs(true); updateUI(); saveGame(); } catch (e) {} var c = document.getElementById('interaction-content'); if (c && typeof renderCardSynth === 'function') { try { renderCardSynth(c); } catch (e) {} } };
+  window.afkPlatToDoll = function (dollId) {
+    if (T5.indexOf(dollId) < 0) return { ok: false, msg: '請選一隻五階魔法娃娃。' };
+    if (!takeCards(4, NEED)) { logSys('<span class="text-red-400">需要 ' + NEED + ' 張已登錄白金階的重複白金卡。</span>'); return { ok: false }; }
+    gainItem(dollId, 1, true, true);
+    logSys('🎴 → 🪆 用 <span class="c-card-plat font-bold">' + NEED + ' 張白金卡</span> 兌換了 <span class="text-orange-300 font-bold">' + DB.items[dollId].n + '</span>。');
+    after(); return { ok: true };
+  };
+  window.afkDiamondToHama = function () {
+    if (!DB.items[HAMA]) return { ok: false };
+    if (!takeCards(5, NEED)) { logSys('<span class="text-red-400">需要 ' + NEED + ' 張已登錄鑽石階的重複鑽石卡。</span>'); return { ok: false }; }
+    gainItem(HAMA, 1, true, true);
+    logSys('🎴 → 🪆 用 <span class="c-card-diamond font-bold">' + NEED + ' 張鑽石卡</span> 兌換了 <span class="text-cyan-300 font-bold">魔法娃娃：哈瑪</span>！');
+    after(); return { ok: true };
+  };
+  if (typeof window.renderCardSynth === 'function') {
+    var oSynth = window.renderCardSynth;
+    window.renderCardSynth = function (div) {
+      var r = oSynth.apply(this, arguments);
+      try {
+        var pc = excessCnt(4), dc = excessCnt(5), okP = pc >= NEED, okD = dc >= NEED;
+        var html = '<div id="afk-cp-doll" class="px-4 pb-3 pt-2 border-t border-slate-700/60 space-y-2">'
+          + '<div class="text-sm text-slate-300">💎 <b>白金／鑽石卡兌換</b> <span class="text-xs text-slate-400">（已登錄到該階的重複卡・只算背包）</span></div>'
+          + '<div class="bg-slate-900/50 border border-slate-700 rounded px-3 py-2 text-sm"><div><span class="c-card-plat font-bold">白金卡</span> ' + NEED + ' 張 → 自選一隻五階魔法娃娃　持有：<span class="' + (okP ? 'c-card-plat' : 'text-slate-500') + ' font-bold">' + pc + '</span> 張</div>'
+          + '<div class="flex flex-wrap gap-1 mt-2">' + T5.map(function (id) { return '<button class="btn px-2 py-1 text-xs ' + (okP ? 'bg-slate-600 hover:bg-slate-500 border-slate-400' : 'bg-slate-700 border-slate-600 opacity-50 cursor-not-allowed') + '" ' + (okP ? '' : 'disabled ') + 'onclick="afkPlatToDoll(\'' + id + '\')">' + DB.items[id].n.replace('魔法娃娃：', '') + '</button>'; }).join('') + '</div></div>'
+          + '<div class="flex items-center justify-between bg-slate-900/50 border border-slate-700 rounded px-3 py-2"><span class="text-sm"><span class="c-card-diamond font-bold">鑽石卡</span> ' + NEED + ' 張 → 六階 <span class="text-cyan-300 font-bold">魔法娃娃：哈瑪</span>（五階全部能力融合）　持有：<span class="' + (okD ? 'c-card-diamond' : 'text-slate-500') + ' font-bold">' + dc + '</span> 張</span>'
+          + '<button class="btn px-3 py-1 text-xs font-bold ' + (okD ? 'bg-cyan-800 hover:bg-cyan-700 border-cyan-500' : 'bg-slate-700 border-slate-600 opacity-50 cursor-not-allowed') + '" ' + (okD ? '' : 'disabled ') + 'onclick="afkDiamondToHama()">兌換</button></div></div>';
+        var old = div.querySelector('#afk-cp-doll'); if (old) old.remove();
+        div.insertAdjacentHTML('beforeend', html);
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  window.__afkCardPlus = { platFull: platFull, equipFull: equipFull, miscFull: miscFull, pickCard: pickCard, openPick: openPick, bump: bump, HAMA: HAMA, T5: T5 };
   console.log('[AFK-cardplus] 已啟用：白金／鑽石卡、圖鑑全滿夢艷 ×3、鑽白金幻化');
 })();

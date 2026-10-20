@@ -22,6 +22,7 @@
  *            80 級以上的頭目必掉四屬性滅魔蔑視水晶（隨機一種屬性）；一般怪固定 1% 掉滅魔蔑視水晶碎片（100 個合 1 顆）
  *   ‧白金卡全部收集滿：每殺一隻 0.05% 掉昇華支配強化石、0.1% 掉昇華支配碎片
  *   ‧被侵蝕的瘋狂安塔瑞斯（任何模式）：必掉 滅魔蔑視水晶(地)
+ *   ‧四大侵蝕的龍副本（目前只有安塔瑞斯）任何怪：瘋狂席琳 0.01%、夢艷地獄 1% 掉境滅亡域鑰匙
  * 新道具（昇華支配材料）：夢艷結晶、地獄精華、滅魔蔑視水晶(地／水／風／火)、至暗星塵、夢域塵、境滅亡域鑰匙
  * 核心掛點：補丁 18（掉落 ×50、結晶 ×5、出怪 −3 秒、phys 免疫）；其餘包 applySherineBuff／killMob／tick／席琳祈禱介面。
  * ========================================================================== */
@@ -44,7 +45,7 @@
     afk_contempt_fire: { n: '滅魔蔑視水晶(火)', c: 'text-orange-400', d: '蔑視一切魔力的火之水晶，昇華支配的材料。（被侵蝕的瘋狂巴拉卡斯、夢艷地獄 80 級以上的頭目；碎片 100 個合成）' },
     afk_dark_stardust: { n: '至暗星塵', c: 'text-violet-300', d: '以 20 個地獄精華合成（成功率 70%），昇華支配升級的材料。' },
     afk_dream_dust: { n: '夢域塵', c: 'text-pink-300', d: '暗夢星迴才會掉落的夢之塵，每顆使昇華支配成功率 +10%，一次最多 5 顆。' },
-    afk_abyss_key: { n: '境滅亡域鑰匙', c: 'text-rose-400', d: '夢艷地獄難度四大龍副本必掉的鑰匙，昇華支配 +5 的材料；也是暗夢星迴多人模式的入場鑰匙。（目前暗夢星迴頭目也會掉）' },
+    afk_abyss_key: { n: '境滅亡域鑰匙', c: 'text-rose-400', d: '四大侵蝕的龍副本掉落（瘋狂席琳 0.01%、夢艷地獄 1%；暗夢星迴頭目也會掉）。昇華支配 +5 的材料，也是暗夢星迴多人模式的入場鑰匙。' },
     afk_contempt_shard: { n: '滅魔蔑視水晶碎片', c: 'text-amber-200', d: '夢艷地獄的一般怪固定 1% 掉落。100 個可在哈瑪大師合成 1 顆指定屬性的滅魔蔑視水晶。' },
     afk_ts_contempt_earth: { n: '滅魔蔑視水晶(地)(時空)', c: 'text-amber-300', d: '暗夢星迴頭目掉落的時空結晶。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
     afk_ts_contempt_water: { n: '滅魔蔑視水晶(水)(時空)', c: 'text-sky-300', d: '暗夢星迴頭目掉落的時空結晶。集齊六種時空材料可開啟「時空裂痕-冥王域」。' },
@@ -58,14 +59,15 @@
     afk_asc_stone_acc: { n: '昇華支配強化石(飾品)', c: 'text-fuchsia-300', d: '在哈瑪大師對遺物飾品做昇華支配 +1～+5 時使用：不需要其他材料、必定成功。' },
     afk_asc_shard: { n: '昇華支配碎片', c: 'text-fuchsia-200', d: '白金卡收集全滿後，夢艷地獄每殺一隻 0.1% 掉落。100 個可在哈瑪大師換一顆自選的昇華支配強化石。' }
   };
-  var ICON = '';
-  try { ICON = getIconUrl(DB.items.sherine_crystal); } catch (e) {}
   Object.keys(ITEMS).forEach(function (id) {
     if (DB.items[id]) return;
     var x = ITEMS[id];
-    DB.items[id] = { n: x.n, type: 'etc', p: 0, c: x.c, noUse: true, gachaWeight: 0, d: x.d, img: ICON };
+    DB.items[id] = { n: x.n, type: 'etc', p: 0, c: x.c, noUse: true, gachaWeight: 0, d: x.d, img: 'assets/icons/items/' + x.n + '.png' };   // 圖示：scratchpad mkicons.py 產生（缺圖時遊戲本身會退回預設圖）
   });
   var CONTEMPT = ['afk_contempt_earth', 'afk_contempt_water', 'afk_contempt_wind', 'afk_contempt_fire'];
+  // 四大侵蝕的龍副本地圖（目前只有安塔瑞斯；法利昂／巴拉卡斯／林德拜爾做好後加進來）
+  var CORRUPT_MAPS = ['antharas_nest_1', 'antharas_nest_2', 'antharas_nest_3', 'antharas_lair'];
+  window.__afkCorruptDragonMaps = CORRUPT_MAPS;
 
   var dreamOn = function () { return !!(typeof player !== 'undefined' && player && player.sherineDream && player.sherineMad); };
 
@@ -172,6 +174,12 @@
       if (m && m._dead && !m._afkDreamPaid) {
         m._afkDreamPaid = true;
         if (m.n === '被侵蝕的瘋狂安塔瑞斯') gainItem('afk_contempt_earth', 1);
+        // 境滅亡域鑰匙：四大侵蝕的龍副本（目前只有安塔瑞斯）——瘋狂席琳 0.01%、夢艷地獄 1%（固定，不吃倍率）
+        if (CORRUPT_MAPS.indexOf(mapState.current) >= 0 && m._sherineMad && Math.random() < (dream ? 0.01 : 0.0001)) {
+          var keepInfo = (typeof _lootMobInfo !== 'undefined') ? _lootMobInfo : null;
+          try { _lootMobInfo = { n: m.n, lv: m.lv, boss: !!m.boss }; } catch (e) {}
+          try { gainItem('afk_abyss_key', 1); } finally { try { _lootMobInfo = keepInfo; } catch (e) {} }
+        }
         if (dream) {
           var savedInfo = (typeof _lootMobInfo !== 'undefined') ? _lootMobInfo : null;
           try { _lootMobInfo = { n: m.n, lv: m.lv, boss: !!m.boss }; } catch (e) {}
