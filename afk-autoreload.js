@@ -1,12 +1,12 @@
 /* ============================================================================
- * afk-autoreload.js — 長時間掛機：定時自動重新整理（預設開啟，每 8 小時）
+ * afk-autoreload.js — 長時間掛機：定時自動重新整理（預設開啟，每 4 小時）
  *
  * 為什麼：量測顯示遊戲自身的記憶體已有上限（afk-perf 的 perf-mem），但瀏覽器自己的圖片解碼快取、
  *   繪圖快取等會隨著走過的地圖／看過的怪物種類增加；這些由瀏覽器管理，記憶體吃緊時才會釋放。
  *   掛 24～72 小時的玩家，唯一能「全部歸零」的方式是重新整理頁面。
  *
  * 流程：
- *   1. 頁面開啟滿 N 小時（預設 8，可用 localStorage「afk_autoreload_hours」改成 1～48）後，每分鐘檢查一次是否安全：
+ *   1. 頁面開啟滿 N 小時（預設 4，可用 localStorage「afk_autoreload_hours」改成 1～48）後，每分鐘檢查一次是否安全：
  *      在遊戲中、角色沒死、沒在補跑、沒在時空裂痕／傲慢之塔攀登／遺忘之島／安塔瑞斯／攻城，
  *      沒有開著物品視窗、沒有輸入框在打字，且玩家 3 分鐘內沒有操作（不打斷正在操作的人）。
  *      不安全就等下一分鐘再看，不會強制。
@@ -22,7 +22,7 @@
   if (T && !T.enabled('autoreload')) return;
 
   var FLAG = 'afk_autoreload_resume';
-  var hours = 8;
+  var hours = 4;   // 預設 4 小時（2026-10-20 玩家指定：兼顧 8GB 電腦與常換地圖的掛法）
   try { var hr = localStorage.getItem('afk_autoreload_hours'); var h = Number(hr); if (hr !== null && h >= 0.001 && h <= 48) hours = h; } catch (e) {}
   var DUE_MS = hours * 3600 * 1000;
   var IDLE_MS = 3 * 60 * 1000;
