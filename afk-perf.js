@@ -156,12 +156,103 @@
       //    換成「只有該類」的陣列會讓它們讀到 0。改為只在這次呼叫期間，給真正的背包陣列掛一個自己的 forEach，
       //    只走訪該類物品（核心 renderTabs 內「逐列建立」是唯一的 player.inv.forEach）；find/filter/some/map/length 全是完整背包。
       var keep = function (i) { return !!only && tabOfItem(i) === only; };
+      // ②-b 可視範圍：該頁物品很多時，只建「看得到的列＋上下各約兩個畫面」，其餘用等高的空白撐住捲動高度
+      var win = only ? planWindow(only) : null;
+      var tabDiv = only ? document.getElementById('tab-' + only) : null;
       Object.defineProperty(inv, 'forEach', { configurable: true, enumerable: false, writable: true,
-        value: function (fn, thisArg) { for (var k = 0; k < this.length; k++) { var it = this[k]; if (keep(it)) fn.call(thisArg, it, k, this); } } });
+        value: function (fn, thisArg) {
+          var idx = 0, topDone = false;
+          for (var k = 0; k < this.length; k++) {
+            var it = this[k]; if (!keep(it)) continue;
+            if (win && (idx < win.start || idx >= win.end)) { idx++; continue; }
+            if (win && !topDone) { topDone = true; if (win.startRow > 0 && tabDiv) tabDiv.appendChild(makeSpacer(win.startRow, win)); }
+            fn.call(thisArg, it, k, this); idx++;
+          }
+          if (win && tabDiv && win.totalRows > win.endRow) tabDiv.appendChild(makeSpacer(win.totalRows - win.endRow, win));
+        } });
       inCall = true;
       try { return origTabs.call(this, force); }
-      finally { delete inv.forEach; inCall = false; }
+      finally {
+        delete inv.forEach; inCall = false;
+        if (only) { winState[only] = win; try { measureGeom(only); } catch (e) {} }
+      }
     };
+
+    // ── 可視範圍（虛擬捲動）──────────────────────────────────────────
+    //  量測（8 人＠BOSS 房，停在防具頁 1,669 列）：每分鐘真的重建 18 次、每次中位 166ms（最慢 456ms），
+    //  長任務每分鐘 44 次（停在能力頁只有 12 次）。核心每次都把整頁的每一列建出來；條列式外掛的
+    //  content-visibility 只省「畫」，省不了「建」。
+    //  做法：沿用上面的 forEach 掛鉤，只讓核心建出可視範圍內的列；上下各插一個空白元素撐住高度
+    //  （格狀：grid-row 橫跨被省略的列數＝高度分毫不差；條列式：高度＝列數×列距－間距）。
+    //  空白是在「核心還原捲動位置之前」就放進去的，所以捲動位置照原樣。捲到接近建好範圍的邊緣時再補建。
+    //  以下情況改回完整建立（不冒險）：該頁物品 < 150 件、搜尋框有字、該頁開著快速強化／快速廢品、
+    //  背包不是自己捲動的版面（手機版）、還沒量到列高。
+    var winState = {}, geom = {};
+    var MIN_ITEMS = 150;
+    var countOf = function (tab) { var n = 0, inv = player.inv; for (var i = 0; i < inv.length; i++) if (tabOfItem(inv[i]) === tab) n++; return n; };
+    var vpOf = function (tab) { var el = document.getElementById('tab-' + tab); return el && el.querySelector('.classic-inventory-viewport'); };
+    var fullBuildReason = function (tab) {
+      var q = document.getElementById('afk-isearch-input'); if (q && q.value.trim()) return '搜尋中';
+      var ty = tab === 'weapons' ? 'wpn' : tab === 'armors' ? 'arm' : 'item';
+      if (typeof quickEnh !== 'undefined' && quickEnh[ty] && quickEnh[ty].active) return '快速強化';
+      if (typeof quickJunk !== 'undefined' && quickJunk[ty] && quickJunk[ty].active) return '快速廢品';
+      return '';
+    };
+    var planWindow = function (tab) {
+      if (window.__afkPerfNoWindow) return null;   // 測試用：強制完整建立（逐列比對內容）
+      var g = geom[tab]; if (!g || !g.pitch || !g.cols || !g.scrolls) return null;
+      if (fullBuildReason(tab)) return null;
+      var total = countOf(tab); if (total < MIN_ITEMS) return null;
+      var vp = vpOf(tab), top = vp ? vp.scrollTop : 0, viewH = (vp && vp.clientHeight) || g.viewH || 400;
+      var totalRows = Math.ceil(total / g.cols), visRows = Math.ceil(viewH / g.pitch) + 1, over = Math.max(8, visRows * 2);
+      var firstRow = Math.floor(top / g.pitch);
+      var startRow = Math.max(0, firstRow - over), endRow = Math.min(totalRows, firstRow + visRows + over);
+      return { start: startRow * g.cols, end: Math.min(total, endRow * g.cols), startRow: startRow, endRow: endRow, totalRows: totalRows, visRows: visRows, cols: g.cols, pitch: g.pitch, gap: g.gap, grid: g.grid, total: total };
+    };
+    var makeSpacer = function (rows, w) {
+      var d = document.createElement('div');
+      d.className = 'afk-vspacer'; d.setAttribute('aria-hidden', 'true');
+      d.style.cssText = 'grid-column:1 / -1;flex:0 0 auto;width:100%;margin:0;padding:0;border:0;background:transparent;pointer-events:none;content-visibility:visible;'
+        + (w.grid ? 'grid-row:span ' + rows + ';' : 'height:' + Math.max(0, rows * w.pitch - w.gap) + 'px;');
+      return d;
+    };
+    var measureGeom = function (tab) {
+      var vp = vpOf(tab); if (!vp) return;
+      var cs = getComputedStyle(vp), scrolls = /auto|scroll/.test(cs.overflowY);
+      var rows = vp.querySelectorAll(':scope > .list-item'); if (rows.length < 2) { geom[tab] = null; return; }
+      var t0 = rows[0].offsetTop, cols = 1; while (cols < rows.length && rows[cols].offsetTop === t0) cols++;
+      if (cols >= rows.length) return;
+      var pitch = rows[cols].offsetTop - t0; if (!(pitch > 4)) return;
+      geom[tab] = { cols: cols, pitch: pitch, gap: Math.max(0, pitch - rows[0].offsetHeight), grid: cs.display === 'grid', scrolls: scrolls, viewH: vp.clientHeight };
+    };
+    // 捲到接近已建範圍的邊緣 → 補建（滑鼠按著捲軸時等放開再建）
+    var pendingRewin = false;
+    var rewin = function () {
+      pendingRewin = false;
+      if (typeof _tabPointerDown !== 'undefined' && _tabPointerDown) { window.addEventListener('pointerup', function () { setTimeout(rewin, 0); }, { once: true }); return; }
+      try { window.renderTabs(true); } catch (e) {}
+    };
+    document.addEventListener('scroll', function (ev) {
+      var vp = ev.target; if (!vp || !vp.classList || !vp.classList.contains('classic-inventory-viewport')) return;
+      var tabEl = vp.closest('[id^="tab-"]'); var tab = tabEl && tabEl.id.slice(4); var w = winState[tab]; if (!w) return;
+      var firstRow = Math.floor(vp.scrollTop / w.pitch), margin = Math.max(3, Math.floor(w.visRows / 2));
+      var nearTop = w.startRow > 0 && firstRow < w.startRow + margin;
+      var nearBottom = w.endRow < w.totalRows && firstRow + w.visRows > w.endRow - margin;
+      if ((nearTop || nearBottom) && !pendingRewin) { pendingRewin = true; requestAnimationFrame(function () { if (pendingRewin) rewin(); }); setTimeout(function () { if (pendingRewin) rewin(); }, 120); }   // rAF 在背景/被遮住的頁面會延遲 → 加計時器保底
+    }, true);
+    // 回到前景：若畫面落在未建立的範圍（例如捲動後馬上切走），立刻補建
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) return;
+      var vis = visibleTab(), w = vis && winState[vis], vp = vis && vpOf(vis); if (!w || !vp) return;
+      var firstRow = Math.floor(vp.scrollTop / w.pitch);
+      if (firstRow < w.startRow || firstRow + w.visRows > w.endRow) rewin();
+    });
+    // 搜尋框一有變動：先把目前分頁完整建立，再讓搜尋外掛過濾（document 捕獲階段＝比搜尋外掛自己的 input 事件先跑）
+    document.addEventListener('input', function (ev) {
+      if (!ev.target || ev.target.id !== 'afk-isearch-input') return;
+      var vis = visibleTab(); if (vis && winState[vis]) { try { window.renderTabs(true); } catch (e) {} }
+    }, true);
+    window.__afkPerfInvWindow = function () { var o = {}; for (var t in winState) o[t] = winState[t] ? { 建立: (winState[t].end - winState[t].start) + '/' + winState[t].total, 列: winState[t].startRow + '~' + winState[t].endRow + '/' + winState[t].totalRows } : '完整建立'; return o; };
     perfRenderTabs.__afkPerf = true;
     window.renderTabs = perfRenderTabs;
 
