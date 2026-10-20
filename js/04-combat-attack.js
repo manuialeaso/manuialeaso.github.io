@@ -1773,7 +1773,7 @@ function reflectWallOnDamage(mob, dmg, kind, ally) {
     if (!mob || !mob._reflectWall || !(dmg > 0)) return;
     let rw = mob._reflectWall;
     if (state.ticks > rw.until) { mob._reflectWall = null; return; }
-    if (rw.kind !== kind) return;
+    if (rw.kind !== kind && !(rw.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))) return;   /* 🔌 加掛版補丁:phys＝近距離＋遠距離 */
     // 🌅 恐怖的面貌（block:true·巨大骷髏）：攔截該類傷害——把剛扣的血補回（含致死打擊：所有掛點的 killMob 判定都在本呼叫之後，故補血先於死亡判定）；訊息每秒節流
     if (rw.block) {
         if (mob._dead) return;
@@ -1781,12 +1781,12 @@ function reflectWallOnDamage(mob, dmg, kind, ally) {
         let _now = Date.now();
         if (!reflectWallOnDamage._blockLogAt || _now - reflectWallOnDamage._blockLogAt >= 1000) {
             reflectWallOnDamage._blockLogAt = _now;
-            logCombat(`<span class="font-bold" style="color:#a78bfa;">【恐怖的面貌】</span><span class="${getMobColor(mob.lv)}">${mob.n}</span> 免疫了${{ melee: '近距離', ranged: '遠距離', magic: '魔法' }[rw.kind] || rw.kind}傷害！`, 'enemy');
+            logCombat(`<span class="font-bold" style="color:#a78bfa;">【恐怖的面貌】</span><span class="${getMobColor(mob.lv)}">${mob.n}</span> 免疫了${{ melee: '近距離', ranged: '遠距離', magic: '魔法', phys: '物理' }[rw.kind] || rw.kind}傷害！`, 'enemy');
         }
         return;
     }
     if (mob.curHp <= 0) return;
-    let _k = { melee: '近距離', ranged: '遠距離', magic: '魔法' }[rw.kind] || rw.kind;
+    let _k = { melee: '近距離', ranged: '遠距離', magic: '魔法', phys: '物理' }[rw.kind] || rw.kind;
     if (ally) {
         ally.curHp -= dmg;
         logCombat(`<span class="font-bold" style="color:#f87171;text-shadow:0 0 6px #dc2626;">【血壁空間】</span><span class="${getMobColor(mob.lv)}">${mob.n}</span> 反彈了${_k}傷害，協力·${ally._allyName} 受到 ${dmg} 點傷害！`, 'enemy');
@@ -2038,7 +2038,7 @@ function _applyMobMagicInner(mob, sk) {
         let _kinds = ['melee', 'ranged', 'magic'];
         let _k = _kinds[Math.floor(Math.random() * _kinds.length)];
         mob._reflectWall = { kind: _k, until: state.ticks + (sk.dur || 10) * 10 };
-        logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 施放 ${sk.skn || '血壁空間'}，獲得了<span class="font-bold" style="color:#f87171;">${{ melee: '近距離', ranged: '遠距離', magic: '魔法' }[_k]}反射</span>（10 秒）！`, 'enemy');
+        logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 施放 ${sk.skn || '血壁空間'}，獲得了<span class="font-bold" style="color:#f87171;">${{ melee: '近距離', ranged: '遠距離', magic: '魔法', phys: '物理' }[_k]}反射</span>（10 秒）！`, 'enemy');
         return;
     }
     // 🌅 恐怖的面貌（巨大骷髏）：自我增益·隨機免疫 近距離/遠距離/魔法 傷害之一（持續 dur 秒）——重用血壁 _reflectWall 結構（block:true→reflectWallOnDamage 改攔截回復而非反彈·所有直擊掛點自動涵蓋·DoT/寵物/召喚沿血壁慣例不受影響）
@@ -2047,7 +2047,7 @@ function _applyMobMagicInner(mob, sk) {
         let _kinds = ['melee', 'ranged', 'magic'];
         let _k = _kinds[Math.floor(Math.random() * _kinds.length)];
         mob._reflectWall = { kind: _k, until: state.ticks + (sk.dur || 10) * 10, block: true };
-        logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 展露 ${sk.skn || '恐怖的面貌'}，<span class="font-bold" style="color:#a78bfa;">免疫${{ melee: '近距離', ranged: '遠距離', magic: '魔法' }[_k]}傷害</span>（${sk.dur || 10} 秒）！`, 'enemy');
+        logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 展露 ${sk.skn || '恐怖的面貌'}，<span class="font-bold" style="color:#a78bfa;">免疫${{ melee: '近距離', ranged: '遠距離', magic: '魔法', phys: '物理' }[_k]}傷害</span>（${sk.dur || 10} 秒）！`, 'enemy');
         return;
     }
     // 🛡️ v3.6.20 反擊屏障（玩家NPC二模板·騎士）：自我增益·獲得 1 層屏障（無時限·至被消耗為止）；

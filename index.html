@@ -554,9 +554,9 @@
     <script src="js/00-data.js?v=2f8dce5aab.8.34-merc-trial-class-loot"></script>
 <script src="js/01-drops-config.js?v=97c2d34557.8.26-flywing-relics"></script>
 <script src="js/02-stats-recompute.js?v=de3a568f90.8.26-flywing-relics"></script>
-    <script src="js/03-combat-core.js?v=061ad25cbd.8.26-flywing-relics"></script>
-    <script src="js/04-combat-attack.js?v=eba18c846c.8.26-flywing-relics"></script>
-<script src="js/05-kill-progression.js?v=3dbdbef229.8.34-merc-trial-class-loot"></script>
+    <script src="js/03-combat-core.js?v=af1e6b6cc1.8.26-flywing-relics"></script>
+    <script src="js/04-combat-attack.js?v=414814c254.8.26-flywing-relics"></script>
+<script src="js/05-kill-progression.js?v=0c158df31b.8.34-merc-trial-class-loot"></script>
     <script src="js/06-status-allies.js?v=c3a753372e.8.34-merc-trial-class-loot"></script>
     <script src="js/07-skills-cast.js?v=4fd4b0a386.8.26-flywing-relics"></script>
 <script src="js/08-items-equip.js?v=b28ae21cfc.8.16-wis-regen-interval"></script>
@@ -590,7 +590,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=664dbe8f20"></script>
+    <script src="afk-toggles.js?v=73d243831a"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
     <script src="afk-banner.js?v=29fa2d5746"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
@@ -603,6 +603,8 @@
     <script src="afk-mapsync.js?v=f0c11680ea"></script>
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->
     <script src="afk-autoreload.js?v=e421ce7024"></script>
+    <!-- afk-dreamhell：瘋狂席琳夢艷地獄模式（需核心補丁 18）；排在 afk-droplog／afk-dropcount 之前，讓它們看得到新掉落 -->
+    <script src="afk-dreamhell.js?v=22e50f6e47"></script>
     <!-- afk-droplog：短暫卡頓補跑中的擊殺／掉落照常顯示（原版 <3 秒補跑完全不印） -->
     <script src="afk-droplog.js?v=2c6ae01cc4"></script>
     <!-- afk-dropcount：統計分頁「本圖掉落物品」標上實際打到的數量（×N，離開地圖清除） -->

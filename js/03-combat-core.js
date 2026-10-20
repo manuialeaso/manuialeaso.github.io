@@ -568,6 +568,7 @@ function maybeSpawnMobs() {
                     if (player.buffs.sk_sunlight > 0) _mv *= 0.8;                     // ☀️ v3.4.26 日光術：重生延遲 ×0.8（原「固定 −1 秒」→乘算）
                     if (sherineWorldActive() && !isSiegeArea(mapState.current)) _mv *= 0.8;   // 🔮 v3.4.26 席琳的世界：重生延遲 ×0.8（與日光術相乘疊加）
                     delay = Math.max(5, Math.round(50 * _mv));                       // 🚧 下限 5 tick＝0.5 秒
+                    if (typeof window.__afkSpawnDelayAdj === 'function') delay = window.__afkSpawnDelayAdj(delay);   /* 🔌 加掛版補丁:夢艷地獄出怪 −3 秒 */
                     if (isSiegeArea(mapState.current) && typeof npcClanSiegeRespawnMultiplier === 'function') {
                         delay = Math.max(1, Math.round(delay * npcClanSiegeRespawnMultiplier()));
                     }

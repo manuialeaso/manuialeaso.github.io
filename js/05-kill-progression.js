@@ -487,7 +487,7 @@ function killMob(idx) {
 
     // === 怪物專屬掉落（依「怪物掉落資料.md」）：每樣物品各自獨立判定一次 ===
     let dropList = _kbNoReward ? [] : (MOB_DROPS[mob.n] || []);   // 🔧 魔獸軍王之室：除頭目外不掉落物品
-    let _dropBase = (mob._grace ? 10 : (mob._sherine ? (mob._sherineMad ? 5 : 3) : 1));   // 🔮 席琳的世界 ×3（瘋狂×5）／恩賜怪 ×10
+    let _dropBase = (mob._dream ? 50 : (mob._grace ? 10 : (mob._sherine ? (mob._sherineMad ? 5 : 3) : 1)));   /* 🔌 加掛版補丁:夢艷地獄 ×50 */   // 🔮 席琳的世界 ×3（瘋狂×5）／恩賜怪 ×10
     let _dropMult = _dropBase * classicDropMult() * partyRewardMult();   // 席琳／恩賜／模式倍率後再乘有效隊伍人數（最高 ×8）
     dropList.forEach(entry => {
         let itemId = entry[0];
@@ -575,7 +575,7 @@ function killMob(idx) {
     //    機率＝0.001%×怪物等級（頭目＝0.01%×頭目等級）→ Lv100 頭目＝1%（原誤植為小數比例·Lv100 頭目變 100% 必掉）。
     //    瘋狂的席琳世界再 ×3。結晶＝遺骸的唯一產出來源（NPC 伊奧：1 顆換 1 件指定部位遺骸）。
     if (!_kbNoReward && mob._sherine) {   // 🗝️ 軍王之室小怪零產出
-        let _cr = (mob.boss ? 0.0001 : 0.00001) * (mob.lv || 1) * (mob._sherineMad ? 3 : 1);
+        let _cr = (mob.boss ? 0.0001 : 0.00001) * (mob.lv || 1) * (mob._dream ? 5 : (mob._sherineMad ? 3 : 1));   /* 🔌 加掛版補丁:夢艷地獄結晶 ×5 */
         if (_cr > 0 && Math.random() < partyDropRate(_cr * classicDropMult())) {
             gainItem('sherine_crystal', 1);
             logSys(`<span class="c-sherine font-bold">✦✦ 席琳結晶 從 ${mob.n} 的殘骸中浮現！✦✦</span>`);

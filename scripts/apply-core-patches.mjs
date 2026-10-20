@@ -476,6 +476,7 @@ function patchRelicBleedBonus() {
   for (const [FILE, A, B] of edits) {
     let s = readFileSync(FILE, 'utf8');
     if (s.includes(B)) { continue; }
+    if (s.indexOf(A) < 0 && s.includes('relicBleedBonus')) continue;   // 已補過、之後又被補丁 17 疊加改寫（例如加上 20 層判斷）
     if (s.indexOf(A) < 0) throw new Error(`[${FILE}] 找不到出血錨點——上游可能改寫了出血呼叫，請人工檢查（此補丁供強化遺物的出血加成）。`);
     s = s.replace(A, B);
     if (!CHECK) writeFileSync(FILE, s);
@@ -558,7 +559,40 @@ function patchRelicDotRules() {
   if (any) { changed++; console.log('[patch] +10 遺物出血規則＋持續傷害每秒上限'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules];
+// ── 補丁 18：瘋狂席琳夢艷地獄模式的核心掛點（js/03＋js/04＋js/05）─────────────────────
+//   ‧掉落倍率：夢艷地獄怪（mob._dream）＝恩賜 ×10 × 掉落 ×5＝×50
+//   ‧席琳結晶掉率：夢艷地獄 ×5（瘋狂 ×3）
+//   ‧出怪等待：window.__afkSpawnDelayAdj(delay)（夢艷地獄 −3 秒，下限 0.5 秒）
+//   ‧血壁型免疫支援 kind:'phys'（近距離＋遠距離都算），供夢艷地獄小怪出生 10 秒隨機免疫物理或魔法
+//   沒有夢艷地獄怪、外掛沒載時全部等同原版。
+function patchDreamHell() {
+  const edits = [
+    ['js/05-kill-progression.js', "let _dropBase = (mob._grace ? 10 : (mob._sherine ? (mob._sherineMad ? 5 : 3) : 1));",
+      "let _dropBase = (mob._dream ? 50 : (mob._grace ? 10 : (mob._sherine ? (mob._sherineMad ? 5 : 3) : 1)));   /* 🔌 加掛版補丁:夢艷地獄 ×50 */"],
+    ['js/05-kill-progression.js', "let _cr = (mob.boss ? 0.0001 : 0.00001) * (mob.lv || 1) * (mob._sherineMad ? 3 : 1);",
+      "let _cr = (mob.boss ? 0.0001 : 0.00001) * (mob.lv || 1) * (mob._dream ? 5 : (mob._sherineMad ? 3 : 1));   /* 🔌 加掛版補丁:夢艷地獄結晶 ×5 */"],
+    ['js/03-combat-core.js', "                    delay = Math.max(5, Math.round(50 * _mv));                       // 🚧 下限 5 tick＝0.5 秒\n",
+      "                    delay = Math.max(5, Math.round(50 * _mv));                       // 🚧 下限 5 tick＝0.5 秒\n                    if (typeof window.__afkSpawnDelayAdj === 'function') delay = window.__afkSpawnDelayAdj(delay);   /* 🔌 加掛版補丁:夢艷地獄出怪 −3 秒 */\n"],
+    ['js/04-combat-attack.js', "    if (rw.kind !== kind) return;\n",
+      "    if (rw.kind !== kind && !(rw.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))) return;   /* 🔌 加掛版補丁:phys＝近距離＋遠距離 */\n"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes(B)) continue;
+    if (s.indexOf(A) < 0) throw new Error(`[${FILE}] 找不到夢艷地獄錨點：${A.slice(0, 60)}…`);
+    s = s.replace(A, B);
+    if (!CHECK) writeFileSync(FILE, s);
+    any = true;
+  }
+  // 免疫訊息的類型名稱補上「物理」
+  { const FILE = 'js/04-combat-attack.js'; let s = readFileSync(FILE, 'utf8');
+    const A = "{ melee: '近距離', ranged: '遠距離', magic: '魔法' }", B = "{ melee: '近距離', ranged: '遠距離', magic: '魔法', phys: '物理' }";
+    if (s.includes(A)) { s = s.split(A).join(B); if (!CHECK) writeFileSync(FILE, s); any = true; } }
+  if (any) { changed++; console.log('[patch] 瘋狂席琳夢艷地獄模式掛點'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell];
 
 try {
   for (const p of PATCHES) p();
