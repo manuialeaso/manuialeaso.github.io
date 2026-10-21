@@ -1063,7 +1063,8 @@ function allyAttackOnce(ally, _arrowDelay) {   // 🏹 v3.2.14 _arrowDelay(選�
         if (wpn && wpn.selfBreakProc && Math.random() < 0.03) { dmg = Math.max(1, Math.floor(dmg * 1.5)); if (!ally.statuses) ally.statuses = {}; ally.statuses.broken = (wpn.selfBreakProc.dur || 5) * 10; }   // 🐍 v3.1.76 特產易碎泥偶（傭兵）：3% 傷害×1.5＋自身壞物術（期間傷害-20%·鏡像玩家 js/04:122）
         if (ally.d && ally.d.instakillFull && t.curHp === t.hp) { let _rif = mapState.mobs.findIndex(m => m && m.uid === t.uid); if (_rif !== -1 && tryInstakill(t, { p: ally.d.instakillFull, tag: null }, `【協力·${ally._allyName}】隱蔽的死亡草葉`, _rif)) return; }   // 🏺 v3.1.76 隱蔽的死亡草葉（傭兵）：命中滿血非BOSS怪機率即死（鏡像玩家 js/04:72）
         markBossPhysicalHit(t);
-        t.curHp -= dmg; t.justHit = getWpnEle(ally.eq ? ally.eq.wpn : null, wpn, ally); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(ally, t, dmg); mobWake(t);
+        if (window.__afkRelicDmg) dmg = window.__afkRelicDmg(ally, t, dmg, wpn);   /* 🔌 加掛版補丁:遺物強化特效 */
+        t.curHp -= dmg; if (window.__afkRelicHit) window.__afkRelicHit(ally, t, dmg, wpn); t.justHit = getWpnEle(ally.eq ? ally.eq.wpn : null, wpn, ally); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(ally, t, dmg); mobWake(t);
         if (wpn && wpn.bonespike && (t._bonespike || 0) > 0 && t.curHp > 0) { let _bs = t._bonespike * 20; t._bonespike = 0; t.curHp -= _bs; t._spellHurt = true; mobWake(t); logCombat(`<span class="font-bold" style="color:#e5e7eb;text-shadow:0 0 6px #6b7280;">【協力·${ally._allyName}·骨刺爆裂】</span>引爆目標身上的骨刺，額外造成 ${_bs} 點固定傷害。`, 'player-special'); }   // 🏺 骸骨意志之弓（傭兵）：一般攻擊引爆所有骨刺（每層 20 固定傷害）
         if (typeof reflectWallOnDamage === 'function') reflectWallOnDamage(t, dmg, isRanged ? 'ranged' : 'melee', ally);   // 🌑 v3.4.14 血壁空間：傭兵物理普攻主擊反射（鏡像玩家 js/04:132）
         // ☠️ v3.5.90 反彈可能當場把傭兵打成倒地（reflectWallOnDamage 內設 _downed＋_reviveCd）：不早退的話會繼續跑所有命中特效，
@@ -1461,8 +1462,9 @@ function allyRapidfire(ally, forceProc, classicOk) {
     if (!rate || (forceProc && (!wpn || !wpn.hurtRapidfire)) || (!forceProc && roll(1, 100) > rate)) return;
     let _allyRapid = allyHasMastery(ally, 'e_rapid');   // 🔧 傭兵連射精通：箭數隨機 1~5、傷害 50%（疊疾風5/5 → 100%）
     let _allyRfMax = _allyRapid ? 5 : 3;
-    let n = (wpn && wpn.rapidMax) ? _allyRfMax : roll(1, _allyRfMax);   // 🏺 復仇者的十字弩弓 rapidMax：必定最大箭數
+    let n = (wpn && wpn.rapidCount) ? (wpn.rapidFixed ? wpn.rapidCount : roll(1, Math.max(_allyRfMax, wpn.rapidCount))) : ((wpn && wpn.rapidMax) ? _allyRfMax : roll(1, _allyRfMax));   /* 🔌 加掛版補丁:遺物強化特效 */   // 🏺 復仇者的十字弩弓 rapidMax：必定最大箭數
     let _rfMult = ally._setGale5 ? (_allyRapid ? 1.00 : 0.80) : (_allyRapid ? 0.50 : 0.30);
+    if (wpn && wpn.rapidArrowPct) _rfMult = Math.max(_rfMult, wpn.rapidArrowPct / 100);   /* 🔌 加掛版補丁:遺物強化特效 */
     for (let i = 0; i < n; i++) {
         let alive = []; mapState.mobs.forEach((m, idx) => { if (m && m.curHp > 0) alive.push(idx); });
         if (!alive.length) break;

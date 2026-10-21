@@ -907,7 +907,36 @@ function patchSetLate() {
   changed++; console.log('[patch] 新套裝效果');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun, patchSetLate];
+// 35. 遺物強化特效（afk-relicfx）：一般攻擊扣血前後的掛點（玩家＋傭兵），以及連射箭數／每箭傷害可由武器指定
+function patchRelicFx() {
+  const MARK = '/* 🔌 加掛版補丁:遺物強化特效 */';
+  const edits = [
+    ['js/04-combat-attack.js', "        target.curHp -= result.dmg;\n",
+     "        if (window.__afkRelicDmg) result.dmg = window.__afkRelicDmg(player, target, result.dmg, wpn);   " + MARK + "\n        target.curHp -= result.dmg;\n        if (window.__afkRelicHit) window.__afkRelicHit(player, target, result.dmg, wpn);   " + MARK + "\n"],
+    ['js/06-status-allies.js', "        t.curHp -= dmg; t.justHit = getWpnEle(ally.eq ? ally.eq.wpn : null, wpn, ally);",
+     "        if (window.__afkRelicDmg) dmg = window.__afkRelicDmg(ally, t, dmg, wpn);   " + MARK + "\n        t.curHp -= dmg; if (window.__afkRelicHit) window.__afkRelicHit(ally, t, dmg, wpn); t.justHit = getWpnEle(ally.eq ? ally.eq.wpn : null, wpn, ally);"],
+    ['js/03-combat-core.js', "    let _rfN = wpn.rapidMax ? _rfMax : roll(1, _rfMax);",
+     "    let _rfN = wpn.rapidCount ? (wpn.rapidFixed ? wpn.rapidCount : roll(1, Math.max(_rfMax, wpn.rapidCount))) : (wpn.rapidMax ? _rfMax : roll(1, _rfMax));   " + MARK],
+    ['js/03-combat-core.js', "        let _rfMult = player._setGale5 ? (hasMastery('e_rapid') ? 1.00 : 0.80) : (hasMastery('e_rapid') ? 0.50 : 0.30);",
+     "        let _rfMult = player._setGale5 ? (hasMastery('e_rapid') ? 1.00 : 0.80) : (hasMastery('e_rapid') ? 0.50 : 0.30);\n        if (wpn.rapidArrowPct) _rfMult = Math.max(_rfMult, wpn.rapidArrowPct / 100);   " + MARK],
+    ['js/06-status-allies.js', "    let n = (wpn && wpn.rapidMax) ? _allyRfMax : roll(1, _allyRfMax);",
+     "    let n = (wpn && wpn.rapidCount) ? (wpn.rapidFixed ? wpn.rapidCount : roll(1, Math.max(_allyRfMax, wpn.rapidCount))) : ((wpn && wpn.rapidMax) ? _allyRfMax : roll(1, _allyRfMax));   " + MARK],
+    ['js/06-status-allies.js', "    let _rfMult = ally._setGale5 ? (_allyRapid ? 1.00 : 0.80) : (_allyRapid ? 0.50 : 0.30);",
+     "    let _rfMult = ally._setGale5 ? (_allyRapid ? 1.00 : 0.80) : (_allyRapid ? 0.50 : 0.30);\n    if (wpn && wpn.rapidArrowPct) _rfMult = Math.max(_rfMult, wpn.rapidArrowPct / 100);   " + MARK],
+  ];
+  let any = false;
+  const files = {};
+  for (const [FILE, A, B] of edits) {
+    let s = files[FILE] != null ? files[FILE] : readFileSync(FILE, 'utf8');
+    if (s.includes(B)) { files[FILE] = s; continue; }
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 遺物強化特效錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 60)}`);
+    s = s.replace(A, B); files[FILE] = s; any = true;
+  }
+  if (any) { if (!CHECK) for (const f in files) writeFileSync(f, files[f]); changed++; console.log('[patch] 遺物強化特效'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun, patchSetLate, patchRelicFx];
 
 try {
   for (const p of PATCHES) p();

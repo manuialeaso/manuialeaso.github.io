@@ -144,7 +144,9 @@ function playerAttack() {
         if (wpn && wpn.slowScaleDmg) result.dmg += Math.max(0, Math.floor((((player.d && player.d.aspd) || 0) - 0.10) / 0.05));   // 🏺 v3.6.44 大地碎裂劍：攻速極限 0.10 秒為基準·攻擊間隔每慢 0.05 秒近傷 +1
         var _dmgBeforeMainMult = result.dmg;   // 🏺 v3.6.44 艾爾摩尖頭槍：穿透波及傷害以「主目標加成前」為基準
         if (wpn && wpn.pierceMainMult) result.dmg = Math.max(1, Math.floor(result.dmg * wpn.pierceMainMult));   // 🏺 v3.6.44 艾爾摩尖頭槍：一般攻擊主目標傷害 ×1.3
+        if (window.__afkRelicDmg) result.dmg = window.__afkRelicDmg(player, target, result.dmg, wpn);   /* 🔌 加掛版補丁:遺物強化特效 */
         target.curHp -= result.dmg;
+        if (window.__afkRelicHit) window.__afkRelicHit(player, target, result.dmg, wpn);   /* 🔌 加掛版補丁:遺物強化特效 */
         if (wpn && wpn.bonespike && (target._bonespike || 0) > 0 && target.curHp > 0) { let _bs = target._bonespike * 20; target._bonespike = 0; target.curHp -= _bs; target._spellHurt = true; mobWake(target); logCombat(`<span class="font-bold" style="color:#e5e7eb;text-shadow:0 0 6px #6b7280;">【骨刺爆裂】</span>引爆目標身上的骨刺，額外造成 ${_bs} 點固定傷害。`, 'player-special'); }   // 🏺 骸骨意志之弓：一般攻擊引爆所有骨刺（每層 20 固定傷害）
         reflectWallOnDamage(target, result.dmg, result.ranged ? 'ranged' : 'melee', null);   // 🌑 血壁空間（吉爾塔斯）：反彈同等傷害給攻擊方
         if (player.dead) { player._flameSlashFire = false; return; }   // ⚡ v3.5.89 早退前先消耗一次性旗標：燃燒擊砍在扣血前就設起，若直接 return 會殘留到復活後的下一擊（憑空再噴一次火屬性）

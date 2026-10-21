@@ -2632,7 +2632,7 @@ function rapidfireProc(arrowData, forceProc, classicOk) {
     if (!wpn || !wpn.rapidfire) return;
     if (!forceProc && roll(1, 100) > wpn.rapidfire) return;
     let _rfMax = hasMastery('e_rapid') ? 5 : 3;
-    let _rfN = wpn.rapidMax ? _rfMax : roll(1, _rfMax);   // 🏅 連射精通：額外箭數 1~3 → 隨機 1~5；🏺 復仇者的十字弩弓 rapidMax：必定觸發最大箭數
+    let _rfN = wpn.rapidCount ? (wpn.rapidFixed ? wpn.rapidCount : roll(1, Math.max(_rfMax, wpn.rapidCount))) : (wpn.rapidMax ? _rfMax : roll(1, _rfMax));   /* 🔌 加掛版補丁:遺物強化特效 */   // 🏅 連射精通：額外箭數 1~3 → 隨機 1~5；🏺 復仇者的十字弩弓 rapidMax：必定觸發最大箭數
     for (let _r = 0; _r < _rfN; _r++) {
         let _alive = [];
         mapState.mobs.forEach((m, i) => { if (m && m.curHp > 0) _alive.push(i); });
@@ -2649,7 +2649,8 @@ function rapidfireProc(arrowData, forceProc, classicOk) {
             logCombat(`【連射】箭矢射向 <span class="${getMobColor(_t.lv)}">${_t.n}</span> 但未命中。`, 'miss');
             continue;
         }
-        let _rfMult = player._setGale5 ? (hasMastery('e_rapid') ? 1.00 : 0.80) : (hasMastery('e_rapid') ? 0.50 : 0.30);   // 30%；🏅連射精通50%；🔮疾風5/5 80%；兩者兼具100%
+        let _rfMult = player._setGale5 ? (hasMastery('e_rapid') ? 1.00 : 0.80) : (hasMastery('e_rapid') ? 0.50 : 0.30);
+        if (wpn.rapidArrowPct) _rfMult = Math.max(_rfMult, wpn.rapidArrowPct / 100);   /* 🔌 加掛版補丁:遺物強化特效 */   // 30%；🏅連射精通50%；🔮疾風5/5 80%；兩者兼具100%
         let _rfDmg = Math.max(1, Math.floor(_res.dmg * _rfMult));
         _t.curHp -= _rfDmg;
         if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(_t, _rfDmg, 'ranged');   // 🌅 巨大骷髏：連射視為遠距離
