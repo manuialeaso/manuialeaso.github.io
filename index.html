@@ -153,7 +153,7 @@
             img.src=base+frame+'.png';
             lastAt=now;
           }
-          requestAnimationFrame(animateLogin);
+          (window.__afkIdleRaf || requestAnimationFrame)(animateLogin);   /* 🔌 加掛版補丁:進遊戲後動畫迴圈降頻 */
         }
         requestAnimationFrame(animateLogin);
       })();
@@ -564,7 +564,7 @@
     <script src="js/10-ui-tabs.js?v=5b4f0e4985.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=4aec7f82ff.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=c0155e520d.8.34-merc-trial-class-loot"></script>
-<script src="js/13-shop-save.js?v=100b60436a.8.18-desktop-save-isolation"></script>
+<script src="js/13-shop-save.js?v=37ed118f50.8.18-desktop-save-isolation"></script>
 <script src="js/14-craft-pandora.js?v=3335e41014.8.17-item-stack-source"></script>
 <script src="js/15-cards.js?v=9a420e48e7.7.66"></script>
 <script src="js/16-equip-book.js?v=b65ee3ef7a.8.15-legacy-import-smooth"></script>
@@ -590,7 +590,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=34e2f5a8b9"></script>
+    <script src="afk-toggles.js?v=ab5e08e0e0"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
     <script src="afk-banner.js?v=29fa2d5746"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
@@ -598,7 +598,7 @@
     <!-- 存檔解壓快取：必須排在所有會讀 localStorage 的外掛之前（核心每殺一隻怪都重解壓一次血盟狀態） -->
     <script src="afk-lzcache.js?v=1b86b3d102"></script>
     <!-- afk-perf：卡頓修正（日誌批次寫入／背包分頁按需重建）。必須排在 afk-toast（包 logSys）與 afk-itemsearch（包 renderTabs）之前 -->
-    <script src="afk-perf.js?v=325012c29a"></script>
+    <script src="afk-perf.js?v=142fc5b65f"></script>
     <!-- afk-mapsync：地圖下拉自我校正（回城／出發後地區/地圖下拉與所在地不符時自動校正） -->
     <script src="afk-mapsync.js?v=f0c11680ea"></script>
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->

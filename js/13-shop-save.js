@@ -1025,7 +1025,7 @@ function loadDeleteSelected(){
             }
             _loadAnimState.lastAt = now;
         }
-        requestAnimationFrame(tick);
+        (window.__afkIdleRaf || requestAnimationFrame)(tick);   /* 🔌 加掛版補丁:進遊戲後動畫迴圈降頻 */
     }
     requestAnimationFrame(tick);
 })();
@@ -1124,7 +1124,7 @@ function setCreationClassAnimation(c){
             if(creationClassAnim.frame === creationClassAnim.first && typeof playCreationFrameSfx === 'function') playCreationFrameSfx(creationClassAnim.key, creationClassAnim.frame);
             creationClassAnim.lastAt = now;
         }
-        requestAnimationFrame(tick);
+        (window.__afkIdleRaf || requestAnimationFrame)(tick);   /* 🔌 加掛版補丁:進遊戲後動畫迴圈降頻 */
     }
     requestAnimationFrame(tick);
 })();

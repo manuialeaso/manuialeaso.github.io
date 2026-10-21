@@ -58,7 +58,9 @@
       if (scheduled) return;
       scheduled = true;
       // 前景：下一幀寫入。背景分頁 rAF 會停 → 退回 timer（瀏覽器會節流到約每秒一次，佇列有上限不怕堆）
+      // ⑦ perf-render：前景改成每 0.2 秒寫一次（原本每一幀）→ 日誌區的排版／重繪次數少約 12 倍，看起來一樣即時
       if (document.hidden) setTimeout(flushAll, 250);
+      else if (on('perf-render')) setTimeout(function () { requestAnimationFrame(flushAll); }, 200);
       else requestAnimationFrame(flushAll);
     };
     var enqueue = function (id, html, locked, max) {
@@ -493,5 +495,43 @@
     };
   }
 
-  console.log('[AFK-perf] 已啟用：' + [on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : '', on('perf-dom') ? '同值不重寫' : '', on('perf-mem') ? '動畫快取記憶體上限' : '', on('perf-vfx') ? '特效讀位置合併' : '', on('perf-pot') ? '治癒藥水不重算' : ''].filter(Boolean).join('、'));
+  // ───────────────────────────────────────────────────
+  // ⑦ 畫面重繪減量（perf-render，2026-10-21）
+  //    ‧遊戲畫面上每張圖都套了 filter: contrast(1.06) saturate(1.05)（肉眼幾乎看不出來），
+  //      但角色、怪物每換一格動畫就要重新算一次濾鏡 → 拿掉
+  //    ‧日誌裡的彩色名字（席琳綠光等）是無限循環的文字發光動畫，每一幀都要重繪整個日誌區 → 日誌裡改成靜態發光
+  //    ‧日誌、世界頻道區塊加 contain，插入新訊息只重排版自己那一塊，不牽動整頁
+  //    ‧命中濺血：場上同時最多 40 顆血滴（8 人打群怪時一次會噴上百顆小動畫）
+  // ───────────────────────────────────────────────────
+  if (on('perf-render')) {
+    try {
+      var st = document.createElement('style'); st.id = 'afk-perf-render';
+      st.textContent = [
+        '#game-screen img, #creation-screen img, #battle-view img { filter: none; }',
+        '.log-entry [class*="c-"], .log-entry .grace-glow { animation: none !important; }',
+        '.log-entry .c-sherine { text-shadow: 0 0 5px rgba(74,222,128,.7), 0 0 12px rgba(74,222,128,.35); }',
+        '#combat-log, #sys-log, #world-log { contain: content; }'
+      ].join('\n');
+      document.head.appendChild(st);
+    } catch (e) {}
+    // 登入／讀檔／創角畫面的動畫迴圈（核心補丁 28）：進遊戲後改成每 0.5 秒看一次，不再每一幀空轉
+    var gameScreen = null;
+    window.__afkIdleRaf = function (fn) {
+      if (!gameScreen) gameScreen = document.getElementById('game-screen');
+      if (gameScreen && !gameScreen.classList.contains('hidden')) setTimeout(function () { requestAnimationFrame(fn); }, 500);
+      else requestAnimationFrame(fn);
+    };
+    if (typeof window._vfxBlood === 'function') {
+      var oBlood = window._vfxBlood, bloodLive = null;
+      window._vfxBlood = function () {
+        try {
+          if (!bloodLive) bloodLive = document.getElementsByClassName('vfx-blood');
+          if (bloodLive.length >= 40) return;
+        } catch (e) {}
+        return oBlood.apply(this, arguments);
+      };
+    }
+  }
+
+  console.log('[AFK-perf] 已啟用：' + [on('perf-render') ? '畫面重繪減量' : '', on('perf-log') ? '日誌批次寫入' : '', on('perf-tabs') ? '背包分頁按需重建' : '', on('perf-dom') ? '同值不重寫' : '', on('perf-mem') ? '動畫快取記憶體上限' : '', on('perf-vfx') ? '特效讀位置合併' : '', on('perf-pot') ? '治癒藥水不重算' : ''].filter(Boolean).join('、'));
 })();

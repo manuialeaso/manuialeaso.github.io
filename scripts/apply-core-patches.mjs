@@ -768,7 +768,27 @@ function patchCastleWar() {
   if (any) { changed++; console.log('[patch] 血盟城堡擴張'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar];
+// 28. 登入／讀檔／創角畫面的逐幀動畫迴圈：進遊戲後不再每一幀空轉（afk-perf ⑦ 提供 __afkIdleRaf）
+function patchIdleRaf() {
+  const MARK = '/* 🔌 加掛版補丁:進遊戲後動畫迴圈降頻 */';
+  const edits = [
+    ['js/13-shop-save.js', "        requestAnimationFrame(tick);\n    }\n    requestAnimationFrame(tick);\n})();",
+      "        (window.__afkIdleRaf || requestAnimationFrame)(tick);   " + MARK + "\n    }\n    requestAnimationFrame(tick);\n})();", 2],
+    ['index.html', "          requestAnimationFrame(animateLogin);\n        }",
+      "          (window.__afkIdleRaf || requestAnimationFrame)(animateLogin);   " + MARK + "\n        }", 1],
+  ];
+  let any = false;
+  for (const [FILE, A, B, N] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.split(MARK).length - 1 >= N) continue;
+    const n = s.split(A).length - 1;
+    if (n !== N) throw new Error(`[${FILE}] 動畫迴圈錨點應出現 ${N} 次，實際 ${n} 次`);
+    s = s.split(A).join(B); if (!CHECK) writeFileSync(FILE, s); any = true;
+  }
+  if (any) { changed++; console.log('[patch] 進遊戲後動畫迴圈降頻'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf];
 
 try {
   for (const p of PATCHES) p();

@@ -120,6 +120,7 @@
         { id: 'perf-tabs', name: '背包分頁按需重建', desc: '撿物時只重建正在看的分頁；其他分頁切過去時才更新（大背包差最多）', group: '系統與其他', parent: 'perf' },
         { id: 'perf-vfx', name: '特效讀位置合併', desc: '傷害數字／未命中／法術起點的位置量測合併到下一幀、寵物圖層快取戰場大小（原版每次重建怪物格都強制重新排版）', group: '系統與其他', parent: 'perf' },
         { id: 'perf-pot', name: '治癒藥水不重算', desc: '喝治癒藥水只補 HP，不再整套重算能力值（離線補跑最多省約兩成時間）', group: '系統與其他', parent: 'perf' },
+        { id: 'perf-render', name: '畫面重繪減量', desc: '拿掉角色／怪物圖上看不出來的濾鏡、日誌裡的發光動畫改靜態、日誌每 0.2 秒更新一次、濺血同時最多 40 顆；降低 CPU／顯示卡負擔', group: '系統與其他', parent: 'perf' },
         { id: 'reissueid', name: '換發身分證', desc: '⚠️ 把複製出來的角色換成各自獨立的身分；會改寫全部存檔且無法復原', group: '存檔工具', parent: 'storage' },
         { id: 'pwa', name: '安裝成 App / 離線快取', desc: '把遊戲裝成手機／電腦上的 App，圖片存在本機不用每次重抓', group: '系統與其他' },
         { id: 'storage', name: '設定選單', desc: '首頁的 ⚙ 設定選單，可檢查存檔大小', group: '系統與其他' },
