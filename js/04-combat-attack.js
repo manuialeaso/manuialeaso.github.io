@@ -1608,7 +1608,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
             if (_ctm && typeof allyProcFreeMagicSkill === 'function') allyProcFreeMagicSkill(ally, _ctm, 'sk_tornado', 0, false, _ctd);
         }
     }
-    if (totalDmg > 0 && !ally._stunCycle) { ally._atkCd = (ally._atkCd || 0) + ((ally.d && ally.d.hitstun) || 0); ally._stunCycle = true; }   // ⚔️ 天堂職業硬直（傭兵·物理）：延遲下次攻擊·每週期一次
+    if (totalDmg > 0 && !ally._stunCycle) { ally._atkCd = (ally._atkCd || 0) + (window.__afkHitstunFor ? window.__afkHitstunFor(ally) : ((ally.d && ally.d.hitstun) || 0)); ally._stunCycle = true; }   /* 🔌 加掛版補丁:傭兵硬直上限 */   // ⚔️ 天堂職業硬直（傭兵·物理）：延遲下次攻擊·每週期一次
     logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 攻擊 <span class="text-sky-300 font-bold">協力·${ally._allyName}</span>，造成 ${totalDmg} 點傷害。`, 'enemy', 'enemy');
     allyReflectOnHit(ally, mob, totalDmg, false);   // 🆕 v2.6.14 #5c：受物理反射（疼痛歡愉/致命身軀/泰坦岩石）
     if ((d.thornsDmg || 0) > 0 && mob.curHp > 0 && totalDmg > 0) {   // 🦔 v3.1.76 犰狳尖刺頭盔（傭兵）：受擊固定反傷（鏡像玩家 js/04:875）
@@ -1998,7 +1998,7 @@ function _applyMobMagicToAllyInner(mob, sk, ally) {
         dmg = allyDollDamageReduced(ally, dmg);   // 🆕 v2.6.10 #3：魔法娃娃機率減免（受魔法傷害）
         dmg = shieldDmgReduceProc(ally, dmg);   // 🌑 v3.3.33 反叛者的盾牌（傭兵鏡像·魔法）
         ally.curHp -= dmg;
-        if (dmg > 0 && !ally._stunCycle) { ally._atkCd = (ally._atkCd || 0) + ((ally.d && ally.d.hitstun) || 0); ally._stunCycle = true; }   // ⚔️ 天堂職業硬直（傭兵·魔法）：延遲下次攻擊·每週期一次
+        if (dmg > 0 && !ally._stunCycle) { ally._atkCd = (ally._atkCd || 0) + (window.__afkHitstunFor ? window.__afkHitstunFor(ally) : ((ally.d && ally.d.hitstun) || 0)); ally._stunCycle = true; }   /* 🔌 加掛版補丁:傭兵硬直上限 */   // ⚔️ 天堂職業硬直（傭兵·魔法）：延遲下次攻擊·每週期一次
         logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 施放${sk.skn || '魔法'}，對 ${nm} 造成 ${dmg} 點魔法傷害。`, 'enemy');
         if (sk.vamp || sk.vampFull) { let heal = sk.vampFull ? dmg : roll(sk.vamp[0], sk.vamp[1]); mob.curHp = Math.min(mob.hp, mob.curHp + heal); }
         if (sk.sec) {   // 二次狀態（比照玩家：blind/freeze/stun/sleep/paralyze/burn/scald/bleed/poison）；傷害照樣結算，只擋附帶狀態

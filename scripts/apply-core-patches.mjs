@@ -880,7 +880,21 @@ function patchAllyDrCap() {
   changed++; console.log('[patch] 傭兵減傷上限');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap];
+// 33. 傭兵受擊硬直：延後量改由 afk-hitstun 決定（最多行動間隔的 40%）；插件沒載入時照原本 d.hitstun
+function patchAllyHitstun() {
+  const FILE = 'js/04-combat-attack.js', MARK = '/* 🔌 加掛版補丁:傭兵硬直上限 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const A = "ally._atkCd = (ally._atkCd || 0) + ((ally.d && ally.d.hitstun) || 0); ally._stunCycle = true; }";
+  const B = "ally._atkCd = (ally._atkCd || 0) + (window.__afkHitstunFor ? window.__afkHitstunFor(ally) : ((ally.d && ally.d.hitstun) || 0)); ally._stunCycle = true; }   " + MARK;
+  const n = s.split(A).length - 1;
+  if (n !== 2) throw new Error(`[${FILE}] 傭兵硬直錨點應出現 2 次，實際 ${n} 次`);
+  s = s.split(A).join(B);
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 傭兵硬直上限');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun];
 
 try {
   for (const p of PATCHES) p();
