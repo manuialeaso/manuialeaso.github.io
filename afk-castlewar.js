@@ -15,7 +15,8 @@
  *   ‧敵人越殺越強（累計擊殺數）：100 全身 +3、500 一次 2 人、1000 全身遺物 +0、1500 一次 3 人、2000 遺物 +5、
  *     3000 +10、4000 +15、5000 減傷 10%、6000 20%、7000 30%、8000 昇華支配 +0、9000 昇華支配 +5（＝跟你 1:1 的影子）
  *     做法：敵人的 HP、攻擊、防禦、命中、攻速按你本人的數值乘上強度比例（9000 以後 1:1），減傷用 HP 換算
- *   ‧統一伺服器：累計擊殺 1 萬名敵對 NPC → 全體血盟投降、宣戰結束；統一期間敵對 NPC 不掉任何東西，
+ *   ‧擊殺數是「連續」的：你死亡就歸零（強度階段與投降進度一起重算）
+ *   ‧統一伺服器：連續擊殺 1 萬名敵對 NPC → 全體血盟投降、宣戰結束；統一期間敵對 NPC 不掉任何東西，
  *     夢艷地獄中則照常有機會掉遺物
  * 需要核心補丁 27（新城走舊制攻城、宣戰強制敵對 NPC 的掛點）。
  * ========================================================================== */
@@ -328,6 +329,21 @@
       return r;
     };
   }
+  // 死亡：連續擊殺歸零（強度階段與投降進度都從頭算）
+  if (typeof window.killPlayer === 'function') {
+    var oKP = window.killPlayer;
+    window.killPlayer = function () {
+      var p = P(), was = !!(p && p.dead);
+      var r = oKP.apply(this, arguments);
+      try {
+        if (p && p.dead && !was) {
+          var d = data();
+          if (d.kills > 0 && !d.surrendered) { var k = d.kills; d.kills = 0; save(d); sys('<span class="text-red-400">💀 你倒下了——連續擊殺敵對血盟 ' + k.toLocaleString() + ' 名的紀錄歸零。</span>'); }
+        }
+      } catch (e) {}
+      return r;
+    };
+  }
   var noDrop = function (mob) { return unified() && isWarMob(mob); };
   if (typeof window.pledgeBonusDrop === 'function') {
     var oPB = window.pledgeBonusDrop;
@@ -379,7 +395,7 @@
       '<div>' + (h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、') || '尚未持有') + '</div>' +
       '<div class="mt-1">收成：' + inc + '</div>' +
       '<div>宣戰：' + war + '</div>' +
-      '<div>已擊殺敵對血盟 ' + d.kills.toLocaleString() + ' 名（目前強度：' + (t ? t[3] : '一般') + '；一次 ' + groupSize(d.kills) + ' 人）' + (n >= 7 && !d.surrendered ? '・擊殺 10,000 名後全體投降' : '') + '</div></div>';
+      '<div>已擊殺敵對血盟 ' + d.kills.toLocaleString() + ' 名（目前強度：' + (t ? t[3] : '一般') + '；一次 ' + groupSize(d.kills) + ' 人）' + (n >= 7 && !d.surrendered ? '・連續擊殺 10,000 名後全體投降（死亡歸零）' : '') + '</div></div>';
   };
   if (typeof window.openSiegeSelect === 'function') {
     var oSel = window.openSiegeSelect;
