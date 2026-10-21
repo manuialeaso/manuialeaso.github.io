@@ -33,7 +33,7 @@
 
   var MAX = 15;
   var REG_KEY = 'afk_relicplus_ids';
-  var ID_RE = /relic_[a-z0-9_]+~r\d{1,2}(?:~relic_[a-z0-9_]+)?(?:~a\d)?/g;
+  var ID_RE = /relic_[a-z0-9_]+~r\d{1,2}(?:~relic_[a-z0-9_]+)?(?:~a\d)?(?:~e\d)?/g;
   var WHITE = ['hit', 'dmgBonus', 'bowHit', 'bowDmg', 'magicHit', 'mdmg', 'extraDmg', 'str', 'dex', 'con', 'int', 'wis', 'cha', 'mr', 'dr', 'extraMp'];   // 武器每 +3 各 +1（HP/MP 恢復另有規則）
   var RATE_TOP = /^(comboRate|pierceChance|procRateBase|dblStrikeRate|missGrazeRate|heavyRatePct|windSpellProcRate|procFireSkillRate|procPoisonRate)$/;
   // +10 繼承特效時「不算特效」的欄位（基本數值、武器型態、說明文字…）
@@ -51,22 +51,25 @@
 
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
   var parseId = function (id) {
-    var m = /^(relic_[a-z0-9_]+)~r(\d{1,2})(?:~(relic_[a-z0-9_]+))?(?:~a(\d))?$/.exec(String(id || ''));
+    var m = /^(relic_[a-z0-9_]+)~r(\d{1,2})(?:~(relic_[a-z0-9_]+))?(?:~a(\d))?(?:~e(\d))?$/.exec(String(id || ''));
     if (!m) return null;
-    return { base: m[1], n: Math.min(MAX, parseInt(m[2], 10)), fx: m[3] || null, asc: m[4] != null ? Math.min(5, parseInt(m[4], 10)) : null };
+    return { base: m[1], n: Math.min(MAX, parseInt(m[2], 10)), fx: m[3] || null, asc: m[4] != null ? Math.min(5, parseInt(m[4], 10)) : null, evo: m[5] != null ? parseInt(m[5], 10) : null };
   };
   var baseOf = function (id) { var p = parseId(id); return p ? p.base : id; };
   var levelOf = function (id) { var p = parseId(id); return p ? p.n : 0; };
   var fxOf = function (id) { var p = parseId(id); return p ? p.fx : null; };
   var ascOf = function (id) { var p = parseId(id); return p ? p.asc : null; };
-  var makeId = function (base, n, fx, asc) { return n <= 0 ? base : base + '~r' + n + (fx ? '~' + fx : '') + (asc != null ? '~a' + asc : ''); };
+  var evoOf = function (id) { var p = parseId(id); return p ? p.evo : null; };
+  var makeId = function (base, n, fx, asc, evo) { return n <= 0 ? base : base + '~r' + n + (fx ? '~' + fx : '') + (asc != null ? '~a' + asc : '') + (evo != null && asc === 5 ? '~e' + evo : ''); };
+  // 至高的支配（昇華支配 +5 進化）：8 種特效，9＝司祭苦行套裝（全部 8 種）
+  var EVO = [null, '克特套裝', '死亡騎士套裝', '惡魔套裝', '四大軍王套裝', '真．冥皇套裝', '全能力 +30', '面板能力 +50', '四屬性抗性 +100', '全部八種特效'];
   var catOf = function (id) { try { return equipCatKey(id, DB.items[id]); } catch (e) { return null; } };
 
   // ── 衍生物品定義 ──
-  function buildDef(base, n, fx, asc) {
+  function buildDef(base, n, fx, asc, evo) {
     var b = DB.items[base];
     var d = clone(b);
-    d.relicBase = base; d.relicPlus = n; d.relicFx = fx || null; d.relicAsc = (asc != null) ? asc : null;
+    d.relicBase = base; d.relicPlus = n; d.relicFx = fx || null; d.relicAsc = (asc != null) ? asc : null; d.relicEvo = (evo != null && asc === 5) ? evo : null;
     d.gachaWeight = 0;
     try { d.img = getIconUrl(b); } catch (e) {}
     var r = Math.floor(n / 5) * 5, k3 = Math.floor(n / 3), k5 = Math.floor(n / 5);
@@ -129,7 +132,7 @@
         RES4.forEach(function (f) { d[f] = (Number(d[f]) || 0) + 10 * A; });
       }
     }
-    d.d = (b.d || '') + ' 〔遺物合成 +' + n + '〕' + (asc != null ? '〔昇華支配 +' + asc + '〕' : '') + (fxName ? (d.relicFxRes ? '〔第二詞綴：抽到「' + fxName + '」（無特效）→ 四屬性抗性 +10〕' : '〔第二詞綴：繼承「' + fxName + '」的特效〕') : '') + (asc != null && asc >= 5 ? '〔可升級：材料未知〕' : '');
+    d.d = (b.d || '') + ' 〔遺物合成 +' + n + '〕' + (asc != null ? '〔昇華支配 +' + asc + '〕' : '') + (fxName ? (d.relicFxRes ? '〔第二詞綴：抽到「' + fxName + '」（無特效）→ 四屬性抗性 +10〕' : '〔第二詞綴：繼承「' + fxName + '」的特效〕') : '') + (asc != null && asc >= 5 ? (d.relicEvo != null ? '〔至高的支配：' + EVO[d.relicEvo] + '〕' : '〔可進化：至高的支配〕') : '');
     return d;
   }
   function ensure(id) {
@@ -137,8 +140,9 @@
     var p = parseId(id);
     if (!p || !KIND_OK(DB.items[p.base]) || p.n > maxOf(p.base)) return false;
     if (p.asc != null && p.n !== maxOf(p.base)) return false;
+    if (p.evo != null && (p.asc !== 5 || p.evo < 1 || p.evo > 9)) return false;
     if (p.fx && !DB.items[p.fx]) p.fx = null;
-    var def = buildDef(p.base, p.n, p.fx, p.asc);
+    var def = buildDef(p.base, p.n, p.fx, p.asc, p.evo);
     Object.defineProperty(DB.items, id, { value: def, writable: true, configurable: true, enumerable: false });
     try {
       if (typeof WEAPON_TAGS !== 'undefined' && WEAPON_TAGS[p.base] && !WEAPON_TAGS[id])
@@ -180,7 +184,8 @@
         if (d && d.relicPlus) {
           var i = s.lastIndexOf('>' + d.n);
           if (i >= 0) {
-            if (d.relicAsc != null) s = s.slice(0, i + 1) + '+' + d.relicAsc + ' ' + d.n + '昇華支配' + s.slice(i + 1 + d.n.length);   // +15 → 「+0 XXX昇華支配」…最高「+5 XXX昇華支配」
+            if (d.relicEvo != null) s = s.slice(0, i + 1) + d.n + '至高的支配【' + EVO[d.relicEvo] + '】' + s.slice(i + 1 + d.n.length);
+            else if (d.relicAsc != null) s = s.slice(0, i + 1) + '+' + d.relicAsc + ' ' + d.n + '昇華支配' + s.slice(i + 1 + d.n.length);   // +15 → 「+0 XXX昇華支配」…最高「+5 XXX昇華支配」
             else s = s.slice(0, i + 1) + '+' + d.relicPlus + ' ' + s.slice(i + 1);
           }
         }
@@ -231,8 +236,8 @@
       if (!it || it.lock || !it.id) return;
       var base = baseOf(it.id), d = DB.items[base];
       if (!KIND_OK(d)) return;
-      var n = levelOf(it.id), asc = ascOf(it.id), key = base + '|' + n + '|' + (fxOf(it.id) || '') + '|' + (asc != null ? asc : '');
-      var g = map[key] || (map[key] = { key: key, base: base, n: n, fx: fxOf(it.id), asc: asc, cnt: 0, stacks: [] });
+      var n = levelOf(it.id), asc = ascOf(it.id), evo = evoOf(it.id), key = base + '|' + n + '|' + (fxOf(it.id) || '') + '|' + (asc != null ? asc : '') + '|' + (evo != null ? evo : '');
+      var g = map[key] || (map[key] = { key: key, base: base, n: n, fx: fxOf(it.id), asc: asc, evo: evo, cnt: 0, stacks: [] });
       g.cnt += Math.max(1, Math.floor(Number(it.cnt) || 1)); g.stacks.push(it);
     });
     return Object.keys(map).map(function (k) { return map[k]; })
@@ -437,6 +442,106 @@
   }
 
 
+  // ── 至高的支配：昇華支配 +5 進化（材料＝六種時空材料各 1，100% 成功）──
+  var TS_MATS = ['afk_ts_contempt_earth', 'afk_ts_contempt_water', 'afk_ts_contempt_wind', 'afk_ts_contempt_fire', 'afk_ts_dark_stardust', 'afk_ts_dream_dust'];
+  var EVO_MAX_EQUIP = 6;
+  var equippedEvo = function (who) {
+    var out = []; var eq = (who || P() || {}).eq || {};
+    Object.keys(eq).forEach(function (k) { var e = eq[k]; var d = e && DB.items[e.id]; if (d && d.relicEvo != null) out.push(d.relicEvo); });
+    return out;
+  };
+  function evolve(key) {
+    var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
+    if (typeof state !== 'undefined' && state && state.ff) return { ok: false, msg: '補跑中，請稍候再試。' };
+    var g = groups().filter(function (x) { return x.key === key; })[0];
+    if (!g) return { ok: false, msg: '找不到這個遺物。' };
+    if (g.asc !== 5 || g.evo != null) return { ok: false, msg: '只有「+5 昇華支配」才能進化。' };
+    var miss = TS_MATS.filter(function (id) { return invCnt(id) < 1; });
+    if (miss.length) return { ok: false, msg: '材料不足：' + miss.map(function (id) { return (DB.items[id] || {}).n || id; }).join('、') };
+    var bd = DB.items[g.base], evo;
+    if (bd && bd.set === 'priest') evo = 9;   // 司祭苦行套裝：直接擁有全部八種
+    else {
+      var have = {}; equippedEvo(p).forEach(function (e) { have[e] = 1; });
+      (p.inv || []).forEach(function (it) { var d = it && DB.items[it.id]; if (d && d.relicEvo != null) have[d.relicEvo] = 1; });
+      var pool = [1, 2, 3, 4, 5, 6, 7, 8].filter(function (e) { return !have[e]; });
+      if (!pool.length) pool = [1, 2, 3, 4, 5, 6, 7, 8];
+      evo = pool[Math.floor(Math.random() * pool.length)];
+    }
+    var newId = makeId(g.base, g.n, g.fx, 5, evo);
+    if (!ensure(newId)) return { ok: false, msg: '無法建立至高的支配資料。' };
+    var undo = snapInv();
+    if (!TS_MATS.every(function (id) { return takeId(id, 1); })) { undo(); return { ok: false, msg: '背包資料變動，什麼都沒有改變。' }; }
+    var tk = take(g, 1);
+    if (tk.got.length < 1) { undo(); return { ok: false, msg: '背包資料變動，什麼都沒有改變。' }; }
+    pushResult(newId, tk.got[0]); remember(newId);
+    if (!saveOk()) { undo(); try { saveGame(); } catch (e) {} return { ok: false, msg: '存檔失敗，什麼都沒有改變。' }; }
+    try { if (typeof renderTabs === 'function') renderTabs(true); updateUI(); } catch (e) {}
+    var msg = '🌟 進化成功：' + bd.n + '至高的支配【' + EVO[evo] + '】！';
+    try { logSys('<span class="text-yellow-300 font-bold">' + msg + '</span>'); } catch (e) {}
+    return { ok: true, id: newId, evo: evo, msg: msg };
+  }
+  // 特效套用（核心補丁 24 的兩個掛點＋重算後）
+  var evoSet = function (p) {
+    var s2 = {}; equippedEvo(p).forEach(function (e) { if (e === 9) [1, 2, 3, 4, 5, 6, 7, 8].forEach(function (x) { s2[x] = 1; }); else s2[e] = 1; });
+    return s2;
+  };
+  window.__afkSetBoost = function (p, setCheck) {
+    var e = evoSet(p);
+    if (e[1]) setCheck.kurt = Math.max(setCheck.kurt || 0, 4);
+    if (e[2]) setCheck.dk = Math.max(setCheck.dk || 0, 4);
+    if (e[3]) setCheck.demon = Math.max(setCheck.demon || 0, 4);
+    if (e[4]) setCheck.kinglord = Math.max(setCheck.kinglord || 0, 4);
+    if (e[5]) setCheck.emperor = Math.max(setCheck.emperor || 0, 5);
+  };
+  window.__afkAttrBoost = function (p, d) {
+    if (!evoSet(p)[6]) return;
+    ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(function (f) { d[f] = (Number(d[f]) || 0) + 30; });
+  };
+  if (typeof window.recomputeStats === 'function') {
+    var oRecomp = window.recomputeStats;
+    window.recomputeStats = function () {
+      var r = oRecomp.apply(this, arguments);
+      try {
+        var p = P(), e = p && evoSet(p);
+        if (e && p.d) {
+          if (e[7]) { ['meleeDmg', 'meleeHit', 'rangedDmg', 'rangedHit', 'magicDmg', 'magicHit', 'extraMp', 'resFire', 'resWater', 'resWind', 'resEarth', 'mr', 'er'].forEach(function (k) { p.d[k] = (Number(p.d[k]) || 0) + 50; }); p.d.ac = (Number(p.d.ac) || 0) - 50; }
+          if (e[8]) RES4.forEach(function (k) { p.d[k] = (Number(p.d[k]) || 0) + 100; });
+        }
+      } catch (e2) {}
+      return r;
+    };
+  }
+  // 最多同時裝備 6 件至高的支配
+  if (typeof window.equipItem === 'function') {
+    var oEquip = window.equipItem;
+    window.equipItem = function (item) {
+      var d = item && DB.items[item.id];
+      if (d && d.relicEvo != null && equippedEvo().length >= EVO_MAX_EQUIP) {
+        try { logSys('<span class="text-amber-300">至高的支配最多同時裝備 ' + EVO_MAX_EQUIP + ' 件，請先卸下一件。</span>'); } catch (e) {}
+        return;
+      }
+      return oEquip.apply(this, arguments);
+    };
+  }
+  // 至暗支配：裝滿 6 件 → 席琳的永生（免疫死亡一次，冷卻 30 秒）
+  var immortalAt = 0;
+  if (typeof window.killPlayer === 'function') {
+    var oKillP = window.killPlayer;
+    window.killPlayer = function () {
+      try {
+        var t = (typeof state !== 'undefined' && state) ? state.ticks : 0;
+        if (equippedEvo().length >= EVO_MAX_EQUIP && t >= immortalAt && !player.dead) {
+          immortalAt = t + 300;
+          player.hp = Math.max(1, player.hp > 0 ? player.hp : 1);
+          try { logCombat('<span class="text-yellow-300 font-bold">【至暗支配・席琳的永生】</span>席琳的力量讓你免於死亡！（30 秒後可再次觸發）', 'heal'); } catch (e) {}
+          try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
+          return;
+        }
+      } catch (e) {}
+      return oKillP.apply(this, arguments);
+    };
+  }
+
   // 滅魔蔑視水晶碎片 100 → 指定屬性水晶 1；昇華支配碎片 100 → 自選強化石 1；相消術卷軸 10 龍鑽 1 張
   function exchange(kind, arg, times) {
     var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
@@ -581,7 +686,8 @@
     document.getElementById('rp-x').onclick = close;
     document.getElementById('rp-list').addEventListener('click', function (e) {
       var b = e.target.closest('.rp-go'); if (!b || b.disabled) return;
-      if (b.classList.contains('rp-asc')) askAsc(b.getAttribute('data-k')); else ask(b.getAttribute('data-k'));
+      if (b.classList.contains('rp-evo')) askEvo(b.getAttribute('data-k'));
+      else if (b.classList.contains('rp-asc')) askAsc(b.getAttribute('data-k')); else ask(b.getAttribute('data-k'));
     });
     document.getElementById('rp-tools').addEventListener('click', function (e) {
       var ab = e.target.closest('[data-attr]');
@@ -623,7 +729,13 @@
       var mx = maxOf(g.base), t = g.n + 1, c = t <= mx ? costOf(t, g.base) : null, btn, ascTxt = '';
       if (!c) {
         var A = g.asc == null ? 0 : g.asc + 1;
-        if (A > 5) btn = '<button class="rp-go" disabled>可升級<br><span style="font-weight:600;font-size:11px">材料未知</span></button>';
+        if (A > 5 && g.evo != null) btn = '<button class="rp-go" disabled>至高的支配<br><span style="font-weight:600;font-size:11px">' + esc(EVO[g.evo]) + '</span></button>';
+        else if (A > 5) {
+          var evMiss = TS_MATS.filter(function (id) { return invCnt(id) < 1; });
+          btn = '<button class="rp-go rp-evo" type="button" data-k="' + esc(g.key) + '"' + (evMiss.length ? ' disabled' : '') + '>進化<br><span style="font-weight:600;font-size:11px">至高的支配 100%</span></button>';
+          ascTxt = '<div class="rp-sub" style="color:#fde047">進化：隨機獲得一種至高的支配特效（克特／死亡騎士／惡魔／四大軍王／真．冥皇套裝、全能力 +30、面板能力 +50、四屬性抗性 +100，不跟你已有的重複）' + (bd.set === 'priest' ? '；司祭苦行套裝直接擁有全部八種' : '') + '</div>'
+            + '<div class="rp-sub">需要：' + TS_MATS.map(function (id) { var h = invCnt(id); return '<span class="' + (h ? '' : 'rp-miss') + '">' + esc((DB.items[id] || {}).n || id) + ' ' + h + '/1</span>'; }).join('、') + '</div>';
+        }
         else {
           var ac = ascCost(A), rate = Math.min(1, ac.rate + 0.1 * dustUse);
           if (stoneUse && A >= 1 && stoneOf(g.base)) { ac = { dia: 0, items: {}, equip: [], rate: 1 }; ac.items[stoneOf(g.base)] = 1; rate = 1; }
@@ -671,6 +783,14 @@
       html += '<button type="button" data-attr="' + e + '"' + (cnt(sc.id) ? '' : ' disabled') + '>' + esc(sc.n.replace('武器強化卷軸', '')) + ' ' + cnt(sc.id) + '</button>';
     });
     return html;
+  }
+  function askEvo(key) {
+    var g = groups().filter(function (x) { return x.key === key; })[0]; if (!g) return render();
+    var nm = DB.items[g.base].n;
+    var msg = '把「+5 ' + nm + '昇華支配」進化為「' + nm + '至高的支配」，成功率 100%。\n消耗六種時空材料各 1 個，隨機獲得一種至高的支配特效。\n裝滿 6 件至高的支配：發動「至暗支配・席琳的永生」（免疫死亡一次，冷卻 30 秒）。';
+    var go = function () { var r = evolve(key); render(); if (!r.ok) { try { logSys('<span class="text-red-400">' + esc(r.msg) + '</span>'); } catch (e) {} } };
+    if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '至高的支配', message: msg, okText: '進化', cancelText: '取消', onOk: go });
+    else if (confirm(msg)) go();
   }
   function askAsc(key) {
     var g = groups().filter(function (x) { return x.key === key; })[0]; if (!g) return render();
@@ -765,6 +885,6 @@
     } catch (e) { return 1; }
   };
 
-  window.__afkRelicPlus = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
+  window.__afkRelicPlus = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, evolve: evolve, equippedEvo: equippedEvo, EVO: EVO, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
   console.log('[AFK-relicplus] 已啟用：遺物合成（武器 +1～+15）');
 })();

@@ -394,7 +394,7 @@ function _spiritSpec(skId, ele, king) {   // 實體規格（依技能/屬性/是
     const e = (base.ele && (base.ele[ele] || base.ele.water)) || {};
     return { lv: base.lv, mrPenBase: base.mrPenBase, hitLvOff: base.hitLvOff, dmgMult: base.dmgMult, aoe: king ? SPIRIT_KING.aoe : null, hp: e.hp || 400, aspd: e.aspd || 16, dice: e.dice || [1, 40], scale: e.scale || 20 };
 }
-function _spiritIsKing(skId) { return skId === 'sk_elf_summon2' && player && player.mastery === 'e_spirit'; }
+function _spiritIsKing(skId) { return skId === 'sk_elf_summon2' && player && (typeof _afkM === 'function' ? _afkM(player, 'e_spirit') : player.mastery === 'e_spirit'); }
 function _spiritFormName(skId, ele) {
     if (_spiritIsKing(skId)) return (SPIRIT_ELE_ZH[ele] || '') + '之精靈王';   // 🏷️ v3.2.27 更名：〈屬〉之精靈系（圖檔資料夾仍為 X屬性精靈·由 formGfx 對應）
     return (SPIRIT_DEF[skId].strong ? '強力' : '') + (SPIRIT_ELE_ZH[ele] || '') + '之精靈';

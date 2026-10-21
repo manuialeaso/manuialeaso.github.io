@@ -1332,7 +1332,7 @@ function chooseMastery(id) {
     if (!md || !md.list[id] || player.mastery === id) return;
     // 🔧 詛咒鎖定優先於精通切換：若離開劍術精通會使「被詛咒的騎士武器」失去裝備資格，
     //    但詛咒裝備無法卸下，故直接擋下切換（避免繞過詛咒鎖定強制卸裝）。
-    if (player.mastery === 'e_sword' && id !== 'e_sword' && player.eq.wpn && isEquipCursed('wpn')) {
+    if ((typeof _afkM === 'function' ? _afkM(player, 'e_sword') : player.mastery === 'e_sword') && id !== 'e_sword' && player.eq.wpn && isEquipCursed('wpn')) {
         let wd = DB.items[player.eq.wpn.id];
         let stillOk = reqAllowsClass(wd, player.cls) || loadUpAllows(player.eq.wpn.id);
         if (!stillOk) { logSys('<span class="text-red-400 font-bold">手中被詛咒的騎士武器無法卸下，無法切換精通！</span><span class="text-red-300">請先至象牙塔『碧恩』處解除詛咒。</span>'); return; }

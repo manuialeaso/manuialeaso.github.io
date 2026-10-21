@@ -485,7 +485,7 @@ function onSummonToggle(sid) {
 // 🐉 覺醒互斥（無覺醒精通）：勾選一種覺醒 → 自動取消另外兩種，並重繪（重繪會把未勾選的兩種設為 disabled 鎖定）；有覺醒精通(k_awaken)則三種可並存、不鎖
 function onAwakenToggle(sid) {
     let c = document.getElementById('auto-sk-' + sid);
-    if (c && c.checked && player.mastery !== 'k_awaken') {
+    if (c && c.checked && !(typeof _afkM === 'function' ? _afkM(player, 'k_awaken') : player.mastery === 'k_awaken')) {
         ['sk_dragon_awaken_antares','sk_dragon_awaken_falion','sk_dragon_awaken_baraka'].forEach(id => {
             if (id !== sid) { let o = document.getElementById('auto-sk-' + id); if (o) o.checked = false; }
         });
@@ -569,7 +569,7 @@ function renderSkillSelects() {
             let __cancelOn = player.skills.includes('sk_cancel') && document.getElementById('auto-sk-sk_cancel')?.checked;
             let __locked = (sid === 'sk_antidote' || sid === 'sk_holy_light') && __cancelOn;
             // 🐉 覺醒互斥（無覺醒精通）：已勾選一種覺醒時，鎖定另外兩種「未勾選」的覺醒；已勾選那一個維持可點以便取消
-            let __awakenLocked = sk.awaken && player.mastery !== 'k_awaken' && !document.getElementById('auto-sk-'+sid)?.checked && ['sk_dragon_awaken_antares','sk_dragon_awaken_falion','sk_dragon_awaken_baraka'].some(a => document.getElementById('auto-sk-'+a)?.checked);
+            let __awakenLocked = sk.awaken && !(typeof _afkM === 'function' ? _afkM(player, 'k_awaken') : player.mastery === 'k_awaken') && !document.getElementById('auto-sk-'+sid)?.checked && ['sk_dragon_awaken_antares','sk_dragon_awaken_falion','sk_dragon_awaken_baraka'].some(a => document.getElementById('auto-sk-'+a)?.checked);
             let __awakenAttr = sk.awaken ? ` onchange="onAwakenToggle('${sid}')"` : '';
             let __dis = (!isAvail || __locked || __awakenLocked) ? 'disabled' : '';
             let __purAttr = (sid === 'sk_cancel') ? ` onchange="renderSkillSelects()"` : '';

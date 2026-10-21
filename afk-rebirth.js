@@ -4,6 +4,7 @@
  * 條件：Lv100、集齊六種時空材料；每個角色可轉生一次。入口＝時空裂痕入口的「時空裂痕-冥王域」（afk-dreamstar.js），
  *   進入時提醒「輪迴開始」，轉生後傳送回說話之島。
  * 轉生後：
+ *   ‧自動擁有該職業全部四種精通
  *   ‧所有屬性（基礎、配點、萬能藥）保留；屬性上限提升到 200
  *     （配點上限 60 → 200；屬性效果上限 100 → 200，100 以上的效果依 80→100 那段的成長幅度往上延伸）
  *   ‧等級回到 1（遊戲最低等級是 1）、經驗歸零；技能、裝備、背包都保留
@@ -48,6 +49,15 @@
     } catch (e) {}
     return r;
   };
+
+  // 轉生：自動擁有該職業全部四種精通（核心補丁 25 把 p.mastery === 'x' 的比較改走 _afkM）
+  window._afkM = function (p, id) {
+    if (!p) return false;
+    if (p.mastery === id) return true;
+    try { return !!(p.rebirth > 0 && typeof MASTERY_DATA !== 'undefined' && MASTERY_DATA[p.cls] && MASTERY_DATA[p.cls].list[id]); } catch (e) { return false; }
+  };
+  if (typeof window.hasMastery === 'function') window.hasMastery = function (id) { return window._afkM(player, id); };
+  if (typeof window.allyHasMastery === 'function') window.allyHasMastery = function (ally, id) { return window._afkM(ally, id); };
 
   // 雙持：任何武器
   if (typeof window.warriorDualWieldWpnOk === 'function') {

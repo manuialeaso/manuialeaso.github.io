@@ -12,7 +12,8 @@
  *   ‧王的效果：場上有頭目時，每 20 秒對全隊施放三種治療減益之一，持續 10 秒：
  *       死亡藥水（喝治癒藥水變成扣血）、死亡治療（治癒魔法變成扣血）、減少治療（治癒效果減半）
  *
- * 掉落：比照安塔瑞斯（最終龍：一般掉落表去掉安塔瑞斯專屬材料，另加該龍的六階魔法娃娃 1%）。
+ * 掉落：比照安塔瑞斯；最終龍的安塔瑞斯材料換成該龍自己的八種龍專屬材料（同掉率），另加該龍的六階魔法娃娃 1%。
+ *   四座最終龍（含安塔瑞斯）另外：隨機一隻怪的白金卡 0.001%（×隊伍人數、吃兔腳）、鑽白金幻化 0.01%。
  * 境滅亡域鑰匙：四座侵蝕龍副本都會掉（afk-dreamhell 的地圖清單由本檔補上）。
  * 外觀：借用遊戲現有的龍與元素怪動畫，畫面上加暗紫色「侵蝕」光暈；背景圖由 scratchpad mkbg.py 產生。
  * ========================================================================== */
@@ -41,6 +42,19 @@
   };
   var ELE_RES = { water: 'resWater', fire: 'resFire', wind: 'resWind', earth: 'resEarth' };
   var ELE_N = { water: '水', fire: '火', wind: '風', earth: '地' };
+
+  // ── 龍專屬材料（三龍各八種，比照安塔瑞斯）──
+  var MAT = { scale: '鱗', bone: '骨', claw: '爪', blood: '血', flesh: '肉', fang: '牙', eye: '眼', heart: '心' };
+  Object.keys(DRAGONS).forEach(function (key) {
+    var C = DRAGONS[key];
+    Object.keys(MAT).forEach(function (part) {
+      var id = 'mat_' + key + '_' + part; if (DB.items[id]) return;
+      var a = DB.items['mat_antharas_' + part] || {};
+      DB.items[id] = { n: C.dragon + '之' + MAT[part], type: 'etc', p: a.p || 1000, c: 'text-amber-300', noUse: true, gachaWeight: 0,
+        img: 'assets/icons/items/' + C.dragon + '之' + MAT[part] + '.png',
+        d: '從被侵蝕的' + C.dragon + '身上取得的龍之素材（' + MAT[part] + '）。之後可用來製作' + C.dragon + '的特殊裝備。' };
+    });
+  });
 
   // ── 怪物 ──
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
@@ -96,7 +110,10 @@
       var src = function (n) { return (MOB_DROPS[n] || []).map(function (x) { return x.slice(); }); };
       MOB_DROPS[C.minions[0][0]] = src('喀瑪南'); MOB_DROPS[C.minions[1][0]] = src('喀瑪焰'); MOB_DROPS[C.minions[2][0]] = src('大地荒龍');
       MOB_DROPS[C.bosses[0][0]] = src('喀瑪焰王'); MOB_DROPS[C.bosses[1][0]] = src('喀瑪南王'); MOB_DROPS[C.bosses[2][0]] = src('喀瑪王');
-      var fin = src('被侵蝕的瘋狂安塔瑞斯').filter(function (x) { return !/^mat_antharas_|^item_sealed_earth_eye$/.test(x[0]); });
+      // 龍專屬材料：比照安塔瑞斯八種（鱗／骨／爪／血／肉／牙／眼／心），同樣掉率；之後做該龍的特殊裝備
+      var fin = src('被侵蝕的瘋狂安塔瑞斯').filter(function (x) { return x[0] !== 'item_sealed_earth_eye'; }).map(function (x) {
+        var m = /^mat_antharas_(\w+)$/.exec(x[0]); return m ? ['mat_' + key + '_' + m[1], x[1]] : x;
+      });
       if (DB.items[C.doll]) fin.push([C.doll, 1]);
       MOB_DROPS[n3] = fin;
     }
@@ -195,7 +212,23 @@
         return;
       }
     }
-    return oKill.apply(this, arguments);
+    var r = oKill.apply(this, arguments);
+    try { if (m && m._dead && !m._afkCrCard && FINAL_ALL.indexOf(m.n) >= 0) { m._afkCrCard = true; finalBonus(m); } } catch (e) {}
+    return r;
+  };
+  // 四座侵蝕龍副本最終王（含安塔瑞斯）：隨機一隻怪的白金卡 0.001%（×隊伍人數、吃幸運爆走兔腳）、鑽白金幻化 0.01%
+  var FINAL_ALL = ['被侵蝕的瘋狂安塔瑞斯'].concat(Object.keys(finals).map(function (k) { return finals[k]; }));
+  var finalBonus = function (m) {
+    var rx = (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : 1;
+    var rate = (typeof partyDropRate === 'function') ? partyDropRate(0.00001 * rx) : 0.00001 * rx;
+    if (typeof CARD_MOB_INFO !== 'undefined' && Math.random() < rate) {
+      var names = Object.keys(CARD_MOB_INFO), nm = names[Math.floor(Math.random() * names.length)];
+      if (typeof acquireCard === 'function') acquireCard(nm, 4, 1);
+    }
+    if (DB.items.afk_card_pick && Math.random() < 0.0001) {
+      gainItem('afk_card_pick', 1);
+      try { logSys('<span class="c-card-diamond font-bold">💎 ' + m.n + ' 掉落了鑽白金幻化！</span>'); } catch (e) {}
+    }
   };
   // 棲息地：中央＝最終龍、其餘＝第三種小怪（同安塔瑞斯棲息地）
   var oSpawn = window.spawnMob;

@@ -683,7 +683,38 @@ function patchNoOfflineMaps() {
   changed++; console.log('[patch] 外掛副本禁止離線掛機');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps];
+function patchEvoHooks() {
+  const FILE = 'js/02-stats-recompute.js';
+  const edits = [
+    ["    p._setPoly = null;   // 套裝變身僅在穿著時生效",
+     "    if (typeof window.__afkSetBoost === 'function') { try { window.__afkSetBoost(p, setCheck); } catch (e) {} }   /* 🔌 加掛版補丁:至高的支配套裝特效 */\n    p._setPoly = null;   // 套裝變身僅在穿著時生效"],
+    ["    { let _ATTR_CAP = ",
+     "    if (typeof window.__afkAttrBoost === 'function') { try { window.__afkAttrBoost(p, d); } catch (e) {} }   /* 🔌 加掛版補丁:至高的支配全能力 */\n    { let _ATTR_CAP = "],
+  ];
+  let s = readFileSync(FILE, 'utf8'), any = false;
+  for (const [A, B] of edits) {
+    if (s.includes(B)) continue;
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 至高的支配錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 40)}`);
+    s = s.replace(A, B); any = true;
+  }
+  if (any) { if (!CHECK) writeFileSync(FILE, s); changed++; console.log('[patch] 至高的支配套裝／全能力掛點'); } else already++;
+}
+
+function patchRebirthMastery() {
+  // 轉生角色同時擁有該職業全部四種精通：把「p.mastery === 'x'」比較改成可被外掛覆寫的判斷（外掛沒載入時行為與原版相同）
+  const FILES = ['js/02-stats-recompute.js', 'js/03-combat-core.js', 'js/04-combat-attack.js', 'js/07-skills-cast.js', 'js/10-ui-tabs.js', 'js/11-world-map.js', 'js/23-summons.js', 'js/01-drops-config.js'];
+  const RE = /(?<!typeof )(?<!: )\b(p|player)\.mastery (===|!==) '([a-z][a-z0-9_]*)'/g;
+  let any = false;
+  for (const FILE of FILES) {
+    let s = readFileSync(FILE, 'utf8');
+    const out = s.replace(RE, (m0, who, op, id) => (op === '===' ? '' : '!') + `(typeof _afkM === 'function' ? _afkM(${who}, '${id}') : ${who}.mastery === '${id}')`);
+    if (out !== s) { any = true; if (!CHECK) writeFileSync(FILE, out); }
+  }
+  if (any) { changed++; console.log('[patch] 轉生四精通判斷'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery];
 
 try {
   for (const p of PATCHES) p();

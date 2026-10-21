@@ -1281,11 +1281,11 @@ function skillReqLv(sk, skId) {
         if (sk.reqRoy !== undefined) return sk.reqRoy;
         if (sk.reqM !== undefined && sk.tier === 1) return 10;
         if (sk.reqM !== undefined && sk.tier === 2) return 20;
-        if (player.mastery === 'k_royal_magic' && sk.reqM !== undefined && (sk.tier === 3 || sk.tier === 4 || sk.tier === 5)) return sk.reqM;   // 🏅 魔法精通：可學法師三~五階魔法
+        if ((typeof _afkM === 'function' ? _afkM(player, 'k_royal_magic') : player.mastery === 'k_royal_magic') && sk.reqM !== undefined && (sk.tier === 3 || sk.tier === 4 || sk.tier === 5)) return sk.reqM;   // 🏅 魔法精通：可學法師三~五階魔法
         return undefined;
     }
     let lv = player.cls === 'mage' ? sk.reqM : (player.cls === 'knight' ? sk.reqK : sk.reqE);
-    if (lv === undefined && player.cls === 'elf' && player.mastery === 'e_magic' && skId && MAGIC_MASTERY_SKILLS.includes(skId)) lv = sk.reqM;
+    if (lv === undefined && player.cls === 'elf' && (typeof _afkM === 'function' ? _afkM(player, 'e_magic') : player.mastery === 'e_magic') && skId && MAGIC_MASTERY_SKILLS.includes(skId)) lv = sk.reqM;
     return lv;
 }
 let _echoFree = false;        // 🏅 迴響精通：免費連發旗標（連發那次不耗MP、不再連鎖）
