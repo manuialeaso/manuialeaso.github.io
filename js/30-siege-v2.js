@@ -707,7 +707,7 @@
     global.openSiegeSelect = openV2SiegeSelect;
     global.startSiege = function (faction, city) {
         city = city || 'kent';
-        if (LEGACY_CASTLES.has(city)) return old.startSiege ? old.startSiege(faction, city) : undefined;
+        if (LEGACY_CASTLES.has(city) || (global.__afkLegacyCastles && global.__afkLegacyCastles.has(city))) return old.startSiege ? old.startSiege(faction, city) : undefined;   /* 🔌 加掛版補丁:新城走舊制攻城 */
         return openPreparation(city);
     };
     global.endSiege = function (result) { if (isV2(player.siege)) finish(result === 'win' ? 'win' : 'lose'); else if (old.endSiege) old.endSiege(result); };

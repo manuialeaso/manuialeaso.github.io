@@ -2113,6 +2113,7 @@ function spawnMob(idx) {
         && Math.random() < 0.01) {
         mobId = 'lindvior';
     }
+    if (typeof window.__afkForceTroll === 'function' && !_antharasDungeon) { try { let _ft = window.__afkForceTroll(idx, mobId); if (_ft && _ft.spawn && DB.mobs[_ft.mobId] && DB.mobs[_ft.mobId].trollPlayer) { mobId = _ft.mobId; mapState._trollSpawn = _ft.spawn; } } catch (e) {} }   /* 🔌 加掛版補丁:宣戰強制敵對 NPC */
     let _actualPlayerEncounter = mapState._trollSpawn && DB.mobs[mobId] && DB.mobs[mobId].trollPlayer;
     if (!npcClanBattle && !wcMassTauntBattle && _actualPlayerEncounter && typeof wcMassTauntMaybeStartGroupBattle === 'function' &&
         wcMassTauntMaybeStartGroupBattle(mapState._trollSpawn)) wcMassTauntBattle = true;

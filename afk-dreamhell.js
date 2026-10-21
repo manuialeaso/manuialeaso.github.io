@@ -136,13 +136,14 @@
   var siege = function () { try { return typeof isSiegeArea === 'function' && isSiegeArea(mapState.current); } catch (e) { return false; } };
   if (typeof window.backSlotsActive === 'function') {
     var oBack = window.backSlotsActive;
-    window.backSlotsActive = function () { if (dreamOn() && !siege()) return false; return oBack.apply(this, arguments); };
+    window.backSlotsActive = function () { if (dreamOn() && !siege() && !(typeof window.__afkHostileCall === 'function' && window.__afkHostileCall())) return false; return oBack.apply(this, arguments); };   // 敵對血盟呼朋引伴時開滿 5 格（afk-castlewar）
   }
   if (typeof window.spawnMob === 'function') {
     var oSpawn = window.spawnMob;
     var live = function (m) { return m && !m._dead && m.curHp > 0; };
     window.spawnMob = function (idx) {
       if (!dreamOn() || siege()) return oSpawn.apply(this, arguments);
+      if (typeof window.__afkWantHostile === 'function' && window.__afkWantHostile(idx)) return oSpawn.apply(this, arguments);   // 宣戰：王在場也會出敵對血盟 NPC（afk-castlewar）
       var ms = mapState.mobs;
       if (ms.some(function (m, j) { return j !== idx && live(m) && m.boss; })) return;   // 王在場：不再出怪
       if (ms.filter(function (m, j) { return j !== idx && live(m); }).length >= 3) return;
@@ -150,7 +151,7 @@
       var nm = ms[idx];
       if (nm && nm.boss) {
         var gone = 0;
-        for (var j = 0; j < ms.length; j++) if (j !== idx && live(ms[j]) && !ms[j].boss) { ms[j] = null; gone++; }
+        for (var j = 0; j < ms.length; j++) if (j !== idx && live(ms[j]) && !ms[j].boss && !ms[j].trollPlayer) { ms[j] = null; gone++; }
         if (gone) {
           if (mapState.targetIdx >= 0 && !ms[mapState.targetIdx]) mapState.targetIdx = idx;
           try { logSys('<span class="text-fuchsia-300">🌙 ' + nm.n + ' 降臨，周圍的怪物四散逃離……（夢艷地獄：有王時場上只有王）</span>'); } catch (e) {}

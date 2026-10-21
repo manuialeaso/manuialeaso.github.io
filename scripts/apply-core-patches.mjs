@@ -748,7 +748,27 @@ function patchLevelCap() {
   if (any) { changed++; console.log('[patch] 轉生等級上限 150'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap];
+// 27. 血盟城堡擴張（afk-castlewar.js）：①四座新城走舊制攻城流程 ②宣戰時強制在場上出敵對血盟 NPC
+function patchCastleWar() {
+  const edits = [
+    ['js/30-siege-v2.js', "        if (LEGACY_CASTLES.has(city)) return old.startSiege ? old.startSiege(faction, city) : undefined;",
+      "        if (LEGACY_CASTLES.has(city) || (global.__afkLegacyCastles && global.__afkLegacyCastles.has(city))) return old.startSiege ? old.startSiege(faction, city) : undefined;   /* 🔌 加掛版補丁:新城走舊制攻城 */"],
+    ['js/03-combat-core.js', "    let _actualPlayerEncounter = mapState._trollSpawn && DB.mobs[mobId] && DB.mobs[mobId].trollPlayer;",
+      "    if (typeof window.__afkForceTroll === 'function' && !_antharasDungeon) { try { let _ft = window.__afkForceTroll(idx, mobId); if (_ft && _ft.spawn && DB.mobs[_ft.mobId] && DB.mobs[_ft.mobId].trollPlayer) { mobId = _ft.mobId; mapState._trollSpawn = _ft.spawn; } } catch (e) {} }   /* 🔌 加掛版補丁:宣戰強制敵對 NPC */\n    let _actualPlayerEncounter = mapState._trollSpawn && DB.mobs[mobId] && DB.mobs[mobId].trollPlayer;"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes('/* 🔌 加掛版補丁:新城走舊制攻城 */') && FILE.includes('30-')) continue;
+    if (s.includes('/* 🔌 加掛版補丁:宣戰強制敵對 NPC */') && FILE.includes('03-')) continue;
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 城堡擴張錨點應出現 1 次，實際 ${n} 次`);
+    s = s.replace(A, B); if (!CHECK) writeFileSync(FILE, s); any = true;
+  }
+  if (any) { changed++; console.log('[patch] 血盟城堡擴張'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar];
 
 try {
   for (const p of PATCHES) p();

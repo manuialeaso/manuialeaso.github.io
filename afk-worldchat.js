@@ -65,6 +65,8 @@
 
   // ── 一則「事件」：單句／一來一往／小故事／歪歌 ──
   var postEvent = function () {
+    // 三成改成 afk-wcroster 的連貫對話（常駐玩家一來一往，用遊戲裡真的地圖／怪物／掉落）
+    try { if (typeof window.__afkWcThread === 'function' && Math.random() < 0.3 && window.__afkWcThread()) return; } catch (e) {}
     var b = blocks[R.block()] || blocks[0];
     var r = Math.random();
     if (r < 0.58 && b.lines.length) {
