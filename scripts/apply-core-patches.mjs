@@ -894,7 +894,20 @@ function patchAllyHitstun() {
   changed++; console.log('[patch] 傭兵硬直上限');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun];
+// 34. 新套裝（afk-sets）：在「套裝變身清除」之後呼叫 window.__afkSetLate(p, setCheck, d)，讓新套裝能給防禦／HP 等效果與套裝變身
+function patchSetLate() {
+  const FILE = 'js/02-stats-recompute.js', MARK = '/* 🔌 加掛版補丁:新套裝效果 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const A = "    p._setPoly = null;   // 套裝變身僅在穿著時生效；每次重算先清除，卸下套裝即消失\n";
+  const n = s.split(A).length - 1;
+  if (n !== 1) throw new Error(`[${FILE}] 新套裝錨點應出現 1 次，實際 ${n} 次`);
+  s = s.replace(A, A + "    if (typeof window.__afkSetLate === 'function') { try { window.__afkSetLate(p, setCheck, d); } catch (e) {} }   " + MARK + "\n");
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 新套裝效果');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun, patchSetLate];
 
 try {
   for (const p of PATCHES) p();

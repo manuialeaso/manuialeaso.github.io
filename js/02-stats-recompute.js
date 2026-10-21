@@ -466,6 +466,7 @@ d.mr += (baseMr + bonusMr);
     // ⚠️ 套裝效果唯一真相在此；DB.sets(js/00) 僅供 initSetTags 反向標記、不承載數值
     if (typeof window.__afkSetBoost === 'function') { try { window.__afkSetBoost(p, setCheck); } catch (e) {} }   /* 🔌 加掛版補丁:至高的支配套裝特效 */
     p._setPoly = null;   // 套裝變身僅在穿著時生效；每次重算先清除，卸下套裝即消失
+    if (typeof window.__afkSetLate === 'function') { try { window.__afkSetLate(p, setCheck, d); } catch (e) {} }   /* 🔌 加掛版補丁:新套裝效果 */
     if(setCheck['leather'] >= 4) { d.ac -= 3; }   // 皮套裝（原作未實作，依 DB.sets 補上）
     if(setCheck['bone'] >= 3) { d.ac -= 2; p.mhp += 10; }
     if(setCheck['dk'] >= 4) { d.ac -= 4; p._setPoly = Object.assign({}, SET_POLY_FORMS.dk); }   // 🔧 死亡騎士套裝：變身升級為 真‧死亡騎士
