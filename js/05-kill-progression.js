@@ -1365,7 +1365,7 @@ function renderRiftEntrance(container) {
 
 function checkLvUp() {
     let up = false;
-    while(player.lv < 100 && player.exp >= getExpReq(player.lv)) {
+    while(player.lv < (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(player) : 100) && player.exp >= getExpReq(player.lv)) {   /* 🔌 加掛版補丁:轉生等級上限 150 */
         player.exp -= getExpReq(player.lv);   // 達到「升下一等所需經驗」即扣除該需求並升一級（非累積）
         player.lv++;
         if(player.lv >= 50) player.bonus++;

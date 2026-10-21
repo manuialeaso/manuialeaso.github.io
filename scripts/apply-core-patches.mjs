@@ -714,7 +714,27 @@ function patchRebirthMastery() {
   if (any) { changed++; console.log('[patch] 轉生四精通判斷'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery];
+function patchLevelCap() {
+  const edits = [
+    ['js/02-stats-recompute.js', "p.lv = Math.max(1, Math.min(100, Math.floor(p.lv) || 1));",
+      "p.lv = Math.max(1, Math.min((typeof window.__afkLvCap === 'function' ? window.__afkLvCap(p) : 100), Math.floor(p.lv) || 1));   /* 🔌 加掛版補丁:轉生等級上限 150 */"],
+    ['js/05-kill-progression.js', "    while(player.lv < 100 && player.exp >= getExpReq(player.lv)) {",
+      "    while(player.lv < (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(player) : 100) && player.exp >= getExpReq(player.lv)) {   /* 🔌 加掛版補丁:轉生等級上限 150 */"],
+    ['js/08-items-equip.js', "let pct = player.lv >= 100 ? 100 :",
+      "let pct = player.lv >= (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(player) : 100) ? 100 :   /* 🔌 加掛版補丁 */"],
+  ];
+  let any = false;
+  for (const [FILE, A, B] of edits) {
+    let s = readFileSync(FILE, 'utf8');
+    if (s.includes(B)) continue;
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 等級上限錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 50)}`);
+    s = s.replace(A, B); if (!CHECK) writeFileSync(FILE, s); any = true;
+  }
+  if (any) { changed++; console.log('[patch] 轉生等級上限 150'); } else already++;
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap];
 
 try {
   for (const p of PATCHES) p();
