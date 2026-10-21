@@ -860,7 +860,27 @@ function patchEleRes() {
   changed++; console.log('[patch] 抗性新制');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes];
+// 32. 傭兵受一般攻擊：百分比減傷特效（鐵衛／化身／聖結界等／重擊減傷／祭祀陶罐）合計上限 75%（afk-resist 載入時才生效）
+function patchAllyDrCap() {
+  const FILE = 'js/04-combat-attack.js', MARK = '/* 🔌 加掛版補丁:傭兵減傷上限 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const edits = [
+    ["    if (ally._setIron3) totalDmg = Math.floor(totalDmg * 0.8);",
+     "    const __afkDr0 = totalDmg;   " + MARK + "\n    if (ally._setIron3) totalDmg = Math.floor(totalDmg * 0.8);"],
+    ["ally._physDrCd = state.ticks + 30; }",
+     "ally._physDrCd = state.ticks + 30; }\n    if (window.__afkNoneRes && __afkDr0 > 0) totalDmg = Math.max(totalDmg, Math.floor(__afkDr0 * 0.25));   " + MARK],
+  ];
+  for (const [A, B] of edits) {
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 傭兵減傷上限錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 60)}`);
+    s = s.replace(A, B);
+  }
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 傭兵減傷上限');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap];
 
 try {
   for (const p of PATCHES) p();

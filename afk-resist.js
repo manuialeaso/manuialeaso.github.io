@@ -1,7 +1,7 @@
 /* ==========================================================================
  * afk-resist.js — 抗性新制（玩家 2026-10-21 指定；需要核心補丁 31）
  *
- * 火／水／風／地屬性抗性（你和傭兵受到屬性傷害時）——中間依兩端點等比例內插：
+ * 火／水／風／地屬性抗性（你、傭兵、怪物受到屬性傷害時都一樣）——中間依兩端點等比例內插：
  *   抗性    0 → 受到的屬性傷害 +50%      抗性  50 → 正常
  *   抗性  100 → 減傷 20%   150 → 30%   200 → 40%   250 → 50%   300 → 60%   400 → 70%   500 → 80%
  *   抗性上限 500；超出的部分面板顯示成「500(+X)」：
@@ -13,6 +13,7 @@
  *   100 → 1%   200 → 3%   300 → 5%   400 → 7%   500 → 10%
  *   500(+100) → 15%   500(+200) → 20%   500(+300) → 25%   500(+400) → 30%   500(+500) → 減 20% 再減 20%（共 36%）
  *   無屬性魔法照舊吃原本的無屬性抗性折減。
+ *   百分比減傷特效（你和傭兵）合計上限 75%（核心補丁 31、32）。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -52,6 +53,27 @@
     var out = Math.floor(dmg * nonePctMult(v)) - Math.min(CAP, Math.floor(v));
     return Math.max(1, out);
   };
+
+  // 怪物也套同一張表（你和傭兵、召喚、寵物打怪物的屬性魔法）：抗性 0 的怪物受到屬性魔法 +50%
+  //   核心 magicAttrDefense 回傳「減免比例」（0～1）→ 改回傳 1−倍率（可以是負的＝受傷增加）；
+  //   magicDamageCoef 原本把它夾在 0～1，負的部分在外面補回去
+  if (typeof window.magicAttrDefense === 'function') {
+    var oMAD = window.magicAttrDefense;
+    window.magicAttrDefense = function (target, ele) {
+      var key = ELE_KEY[ele]; if (!key || !target) return oMAD.apply(this, arguments);
+      var d = target.d || target, v = Number(d[key]) || 0;
+      var f = v >= IMMUNE ? nonePctMult(d.resNone) : eleFactor(v);
+      return 1 - f;
+    };
+  }
+  if (typeof window.magicDamageCoef === 'function') {
+    var oMDC = window.magicDamageCoef;
+    window.magicDamageCoef = function (dStats, attrDefense, spellTier) {
+      var r = oMDC.apply(this, arguments), a = Number(attrDefense) || 0;
+      if (a < 0) r += (-a) * (spellTier == null ? 1 : (typeof magicTierMult === 'function' ? magicTierMult(spellTier) : 1));
+      return r;
+    };
+  }
 
   // 能力面板：超過 500 顯示「500(+X)」
   if (typeof window._updateUIImpl === 'function') {

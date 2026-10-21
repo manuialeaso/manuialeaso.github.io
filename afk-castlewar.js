@@ -421,7 +421,7 @@
   // ── 統一天下的稱號：還沒全部投降＝「統一天下 肅清反賊中」，全部投降＝「統一天下」──
   var unifyTitle = function () { if (!unified()) return ''; return data().surrendered ? '統一天下' : '統一天下 肅清反賊中'; };
 
-  // ── 血盟等級上限 20（Lv.11 起每級 +1 全屬性、+5 四屬性抗性），血盟 Buff 乘上持有城堡數 ──
+  // ── 血盟等級上限 20（每級 +1 全屬性、+5 四屬性抗性，從 Lv.1 算起），血盟 Buff 乘上持有城堡數 ──
   var CLAN_MAX = 20;
   try {
     var EXTRA_COST = [1500000, 4500000, 7500000, 10500000, 13500000, 16500000, 19500000, 22500000, 25500000, 28500000];   // Lv10→11 要 150 萬，之後每級 +300 萬
@@ -445,7 +445,7 @@
   var BUFF_KEYS = ['hp', 'mp', 'extraDmg', 'extraHit', 'mr', 'magicDmg', 'hpR', 'mpR', 'ac'];
   var scaleBuff = function (b) {
     if (!b) return b;
-    var c = fresh(), o = Object.assign({}, b), n = Math.max(0, c.lv - 10);
+    var c = fresh(), o = Object.assign({}, b), n = Math.max(1, c.lv);   // 從 Lv.1 起每級 +1 全屬性、+5 四屬性抗性
     BUFF_KEYS.forEach(function (key) { if (typeof o[key] === 'number') o[key] *= c.k; });
     o.allStat = n; o.res4 = n * 5; o.castleMult = c.k;
     return o;
