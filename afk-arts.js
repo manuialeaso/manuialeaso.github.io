@@ -27,9 +27,9 @@
     r_sword:     { cls: 'royal',    n: '魔劍技藝',   d: '勇猛意志發動率提升到 50%（傷害 ×1.5 不變），發動時同時施放吸血鬼之吻（效果 ×2）；一般攻擊吸取 30% 傷害轉為 HP。' },
     r_rally:     { cls: 'royal',    n: '呼喊夥伴',   d: '你每次一般攻擊，寵物與召喚物各追加一次攻擊。全隊（玩家、傭兵、寵物、召喚物、護衛）受到的物理傷害 −50%（可與聖結界疊加，合計上限 75%，屬性傷害不算）。持有者本人在所有減傷算完後再 −50%。' },
     w_fate:      { cls: 'warrior',  n: '命運迴響',   d: '所有回復 +100%、HP 自然恢復 ×3、HP +5000；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
-    w_arms:      { cls: 'warrior',  n: '百般武藝',   d: '切菜：無視目標硬皮。龍的一擊：一般攻擊 15% 機率追加一擊（本次傷害 ×3）。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
-    m_shilen:    { cls: 'mage',     n: '席林眷屬',   d: '召喚術數量上限 20；寵物與召喚物每次攻擊追加 (WIS+INT)×1.2 傷害、每次受擊減免同量，且不會死亡（HP 最低 1）。召滿 20 隻時融合成一隻融合魔獸（傷害 ×20），每 3 秒隨機施放雷霆風暴／龍捲風／極光雷電／燃燒的火球（法師公式）。' },
-    m_atheist:   { cls: 'mage',     n: '無神論者',   d: '狀態中：無法一般攻擊、魔法傷害與命中 +100，每 3 秒自動施放一輪四屬性五階五星魔法（威力 ×3，不耗 MP）。進入戰鬥 1 分鐘時，所有敵人扣最大 HP 20%，之後陷入虛弱（回到一般狀態、可以攻擊），5 分鐘後再次進入無神狀態。' },
+    w_arms:      { cls: 'warrior',  n: '百般武藝',   d: '切菜：無視目標硬皮。龍的一擊（屠龍劍特效）：一般攻擊 12% 機率對全場敵人造成 3D(力量)+30 必中固定傷害。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
+    m_shilen:    { cls: 'mage',     n: '席林眷屬',   d: '召喚術數量上限 20；寵物與召喚物命中、魔防、每次攻擊的傷害、每次受擊的減免都 +(WIS+INT)×1.2，且不會死亡（HP 最低 1）。召滿 20 隻時融合成一隻融合魔獸（傷害 ×20），每 3 秒隨機施放雷霆風暴／龍捲風／極光雷電／燃燒的火球（法師公式）。' },
+    m_atheist:   { cls: 'mage',     n: '無神論者',   d: '狀態中：無法一般攻擊、魔法傷害與命中 +100，每 5 秒自動施放一次屬性魔法武器效果（四屬性輪流，威力 ×3，不耗 MP；傭兵 10 秒一次、效果減半）。進入戰鬥 1 分鐘時，所有敵人扣最大 HP 20%，之後陷入虛弱（回到一般狀態、可以攻擊），5 分鐘後再次進入無神狀態。' },
     e_einhasad:  { cls: 'elf',      n: '殷海薩眷屬', d: '同席林眷屬（攻擊與減傷追加、不死），且屬性精靈化為元素神：傷害與 HP ×5。' },
     e_ruler:     { cls: 'elf',      n: '主宰者',     d: '自動學會四種屬性的精靈魔法；「融合」：全部精靈魔法增益加總 ×3 常駐。HP<50% 觸發不屈命運（HP 全滿）。面板能力 +50、近／遠／魔法爆擊 +15%；每次一般攻擊以近戰＋遠攻＋魔法三種一起計算（傷害 ×3）。' },
     d_time:      { cls: 'dark',     n: '沐時者',     d: '會心一擊不消耗 HP／MP；一般攻擊多算一次必定爆擊的傷害。爆擊傷害 +50%、近距離爆擊率 +50%。HP<30% 觸發絕望身軀（HP 全滿）。' },
@@ -37,8 +37,8 @@
     i_sorc:      { cls: 'illusion', n: '妖術師',     d: '所有傷害 ×2（幻術精通效果加倍）；攻擊速度提升到每秒 2 次。' },
     i_life:      { cls: 'illusion', n: '命術者',     d: '受到傷害的 50% 轉為治療（等於只受一半傷害）；治療減益效果減半，汙濁之水完全無效。' },
     k_dark:      { cls: 'dragon',   n: '闇龍追隨者', d: '所有傷害 ×3，對四大龍再 +50%。代價：每秒損失 100 HP（真實傷害，不會因此死亡）、受到的治療 −50%、四屬性抗性 −50。' },
-    k_doom:      { cls: 'dragon',   n: '命定絕望者', d: '不能裝備武器。攻擊速度上限（面板 0.1 秒，實際 0.5 秒一擊、傷害 ×5）；每次攻擊附加四屬性真實傷害各 100（對四大龍 1000）。吸血 100%、受到的治療 +500%、HP −1000。HP<50% 不屈命運：屬性傷害變 200；HP<30% 絕望身軀：變 500。暗夢星迴（單人）中效果 ×2、減傷 50%，不屈命運時四屬性抗性 +100、絕望身軀時 +200；但戰鬥 5 分鐘後死亡（玩家改為 HP 鎖 1、不能攻擊），離開才恢復。' },
-    n_fafurion:  { cls: 'knight',   n: '破滅法利昂', d: '對法利昂：攻擊速度上限（0.5 秒一擊、傷害 ×5）、追加 5 次攻擊；吸血 30% 治療全隊（5 秒一次）；受到法利昂的傷害 −90%。' },
+    k_doom:      { cls: 'dragon',   n: '命定絕望者', d: '不能裝備武器。攻擊速度 0.1 秒（實際 1 秒一擊、傷害 ×10）；每次攻擊附加四屬性真實傷害各 100（對四大龍 1000）。吸血 100%、受到的治療 +500%、HP −1000。HP<50% 不屈命運：屬性傷害變 200；HP<30% 絕望身軀：變 500。暗夢星迴（單人）中效果 ×2、減傷 50%，不屈命運時四屬性抗性 +100、絕望身軀時 +200；但戰鬥 5 分鐘後死亡（玩家改為 HP 鎖 1、不能攻擊），離開才恢復。' },
+    n_fafurion:  { cls: 'knight',   n: '破滅法利昂', d: '對法利昂：攻擊速度 0.1 秒（實際 1 秒一擊、傷害 ×10）、追加 5 次攻擊；吸血 30% 治療全隊（5 秒一次）；受到法利昂的傷害 −90%。' },
     n_heine:     { cls: 'knight',   n: '海音守護者', d: '在海音地區：一般攻擊 50% 機率即死（頭目也算）、傷害 +100%、追加 1 次攻擊；HP 自然恢復 ×5、AC −1000、MR +1000。敵人優先攻擊你，你額外減傷 10%。' }
   };
   var SAVES = { w_fate: { fate: 1, desp: 1 }, e_ruler: { fate: 1 }, d_time: { desp: 1 }, k_doom: { fate: 1, desp: 1 } };
@@ -332,11 +332,11 @@
   };
   var hurtMob = function (m, v) { if (!(v > 0) || !m || m._dead) return; m.curHp -= Math.floor(v); m.justHit = 'magic'; try { if (typeof mobWake === 'function') mobWake(m); } catch (e) {} };
   var quiet = function (fn) { outDepth++; try { fn(); } catch (e) {} finally { outDepth--; } };
-  // 攻速上限：0.5 秒一擊、傷害 ×5（面板顯示 0.1 秒）
+  // 攻速提到 0.1 秒（面板顯示）：實際 1 秒一擊、傷害 ×10
   var fast = function (p, t) {
     var a = art(p);
-    if (a === 'k_doom') return { t: 5, mult: 5, show: 1 };
-    if (a === 'n_fafurion' && isFaf(t || (typeof getTarget === 'function' ? getTarget() : null))) return { t: 5, mult: 5, show: 1 };
+    if (a === 'k_doom') return { t: 10, mult: 10, show: 1 };
+    if (a === 'n_fafurion' && isFaf(t || (typeof getTarget === 'function' ? getTarget() : null))) return { t: 10, mult: 10, show: 1 };
     if (a === 'i_sorc') return { t: 5, mult: 1, show: 5, min: true };
     return null;
   };
@@ -362,18 +362,18 @@
           if (fs && fs.mult > 1) mult *= 1 + (fs.mult - 1) * f;
           if (a === 'e_ruler' || a === 'd_time') mult *= 1 + 2 * f;
           if (a === 'n_fafurion' && isFaf(m)) mult *= 1 + 5 * f;
-          if (a === 'w_arms' && m === prim && Math.random() < 0.15 * f) { extra += lost * 3; log(tag('龍的一擊', '#fb923c') + nm(actor) + '的一擊如巨龍撼地！'); }
           if (braved && m === prim) mult *= 1.5;
         }
-        if (a === 'd_magic' && kind === 'mag') extra += Math.floor(((Number(actor.d.wis) || 0) + (Number(actor.d.int) || 0)) * 1.5 * f);
+        if (a === 'd_magic' && kind === 'mag') extra += Math.floor(((Number(actor.d.wis) || 0) + (Number(actor.d.int) || 0)) * 1.5 * f * (isAllyObj(actor) ? 0.5 : 1));
       }
       if (normal && (m._afkWound || 0) > tk()) mult *= 1.2;   // 致命創傷（任何隊員的物理攻擊）
       var plus = Math.floor(lost * (mult - 1) + extra);
       if (plus > 0) { hurtMob(m, plus); total += plus; }
       total += lost;
     });
+    if (normal && fs && actor !== p) actor._afkFastAt = tk();
     if (normal && prim) {
-      if (a === 'w_arms') prim._afkWound = tk() + 50;
+      if (a === 'w_arms') { prim._afkWound = tk() + 50; if (Math.random() * 100 < 12 * f) dragonStrike(actor); }
       if (a === 'k_doom' && !prim._dead) {
         var s = st(actor), per = s.desp ? 500 : (s.fate ? 200 : 100);
         if (isDragon(prim)) per *= 10;
@@ -395,6 +395,13 @@
       if (a === 'r_rally') rallyMinions();
     }
     reap();
+  };
+  // 龍的一擊（屠龍劍特效）：全場敵人 3D(力量)+30 必中固定傷害
+  var dragonStrike = function (actor) {
+    var ms = MS(); if (!ms) return;
+    var str = Math.max(1, Math.floor((actor.d && actor.d.str) || 1)), r3 = function () { return 1 + Math.floor(Math.random() * str); };
+    log(tag('龍的一擊', '#fca5a5') + nm(actor) + '的劍中龍魂咆哮，衝擊貫穿了所有敵人！');
+    ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (r3() + r3() + r3() + 30) * (typeof fragileMult === 'function' ? fragileMult(m) : 1)); });
   };
   var rallyMinions = function () {
     var p = P(), t = (typeof getTarget === 'function') ? getTarget() : null; if (!t || t.curHp <= 0) return;
@@ -519,14 +526,36 @@
     };
   }
 
-  // 四屬性五階五星魔法（無神論者、浴魔者）：玩家走正式施法；傭兵用簡化公式
-  var castAttr5 = function (actor, mult) {
+  // 席林／殷海薩眷屬：寵物與召喚物命中、魔防 +(WIS+INT)×1.2
+  ['_sumDeriveAny', 'petDerive'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function () {
+      var r = o.apply(this, arguments);
+      try { if (r && typeof r === 'object' && minionGuard()) { var b = minionBonus(); r = Object.assign({}, r, { hit: (Number(r.hit) || 0) + b, mr: (Number(r.mr) || 0) + b }); } } catch (e) {}
+      return r;
+    };
+  });
+  // 傭兵自然回血：有回血能力的技藝或精通 → 每次回血算兩次
+  var REGEN_ARTS = { w_fate: 1, n_heine: 1, k_doom: 1, i_life: 1 }, REGEN_MAS = ['k_tough', 'k_dragonblood'];
+  var allyRegenTwice = function (a) {
+    if (!a || a._downed || (a.curHp || 0) <= 0 || (a.curHp || 0) >= (a.mhp || 0)) return;
+    var ok = REGEN_ARTS[art(a)] || REGEN_MAS.some(function (m) { return typeof _afkM === 'function' ? _afkM(a, m) : a.mastery === m; });
+    if (!ok) return;
+    var iv = (a.buffs && (a.buffs.sk_heal_energy_storm || 0) > 0) ? 30 : 160;
+    if (tk() % iv !== 0) return;
+    var mx = (a.d && a.d.hpRegenMax) || 0, v = Math.max(1, (mx > 0 ? 1 + Math.floor(Math.random() * mx) : 0) + ((a.d && a.d.hpR) || 0));
+    heal(a, v * healMult(a, true));
+  };
+
+  // 屬性魔法武器效果（昇華支配的五階五星：每種屬性 3 次）。無神論者、浴魔者用；玩家走正式施法，傭兵用簡化公式、效果減半
+  var ELE_ORDER = [0, 1, 2, 3];
+  var castAttr5 = function (actor, mult, eles) {
     var ms = MS(); if (!ms) return;
-    if (actor === P()) {
+    if (actor === P() && !recompAlly()) {
       quiet(function () {
-        var pv = window.__afkSpellMult; window.__afkSpellMult = mult;
+        var pv = window.__afkSpellMult; window.__afkSpellMult = 1.5 * mult;
         try {
-          ATTR5.forEach(function (grp) { grp.forEach(function (skId) {
+          eles.forEach(function (ei) { for (var k = 0; k < 3; k++) ATTR5[ei].forEach(function (skId) {
             var sk = DB.skills[skId]; if (!sk) return;
             var alive = ms.mobs.filter(function (m) { return m && m.curHp > 0 && !m._dead; }); if (!alive.length) return;
             if (sk.target === 'all') procFreeMagicSkill(alive[0], skId, 0, false, null);
@@ -535,8 +564,8 @@
         } finally { window.__afkSpellMult = pv; }
       });
     } else {
-      var d = actor.d || {}, base = ((Number(d.int) || 0) + (Number(d.wis) || 0) + (Number(d.magicDmg) || 0)) * 8 * mult * F(actor);
-      ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, base * 4 * (typeof mrMult === 'function' ? mrMult(m.mr || 0) : 1)); });
+      var d = actor.d || {}, base = ((Number(d.int) || 0) + (Number(d.wis) || 0) + (Number(d.magicDmg) || 0)) * 8 * 1.5 * mult * 0.5 * F(actor);
+      ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, base * 3 * eles.length * (typeof mrMult === 'function' ? mrMult(m.mr || 0) : 1)); });
     }
     reap();
   };
@@ -570,7 +599,7 @@
     if (a === 'm_atheist' && inBattle()) {
       if (athActive(p)) {
         if (s.athSince == null || s.athSince < B.start) s.athSince = Math.max(B.start, s.athOff);
-        if (t % 30 === 0) castAttr5(p, 3);
+        if (t % (isLeader ? 50 : 100) === 0) { s.athEle = ((s.athEle || 0) + 1) % 4; castAttr5(p, 3, [s.athEle]); }
         if (!s.athFired && t - s.athSince >= 600) {
           s.athFired = true;
           var ms = MS();
@@ -581,9 +610,9 @@
       }
     }
     // 浴魔者：HP<30% 自動施放一輪四屬性五階五星魔法（每場一次）
-    if (a === 'd_magic' && !s.lowCast && inBattle() && (hpOf(p) || 0) < (p.mhp || 1) * 0.3) { s.lowCast = true; log(tag('浴魔者', '#818cf8') + nm(p) + '在瀕死中釋放了四屬性魔法！'); castAttr5(p, 1); }
+    if (a === 'd_magic' && !s.lowCast && inBattle() && (hpOf(p) || 0) < (p.mhp || 1) * 0.3) { s.lowCast = true; log(tag('浴魔者', '#818cf8') + nm(p) + '在瀕死中釋放了四屬性魔法！'); castAttr5(p, 1, ELE_ORDER); }
     // 傭兵攻速上限
-    if (!isLeader) { var fs = fast(p); if (fs && (p._atkCd || 0) > fs.t) p._atkCd = fs.t; }
+    if (!isLeader) { var fs = fast(p); if (fs) { var gone = p._afkFastAt == null ? fs.t : t - p._afkFastAt; p._atkCd = Math.max(1, fs.t - gone); } }
   };
   var oTick = window.tick;
   window.tick = function () {
@@ -596,6 +625,7 @@
           if (p) {
             partyN = 1 + ((p.allies || []).length);
             active = !!(art(p) || kings() > 0 || (p.allies || []).some(function (a) { return a && art(a); }));
+            (p.allies || []).forEach(allyRegenTwice);
             if (active) {
               battleTick();
               actorTick(p, true);
@@ -633,13 +663,22 @@
       '#afk-arts-modal .card.on{border-color:#facc15;box-shadow:0 0 8px #a16207}' +
       '#afk-arts-modal .card b{color:#fde68a;font-size:15px}#afk-arts-modal .card p{font-size:13px;line-height:1.6;margin:6px 0}' +
       '#afk-arts-modal button{padding:6px 14px;border-radius:6px;background:#6d28d9;color:#fff;border:1px solid #a78bfa}' +
-      '#afk-arts-modal button[disabled]{opacity:.5}#afk-arts-modal .note{font-size:12px;color:#c4b5fd}';
+      '#afk-arts-modal button[disabled]{opacity:.5}#afk-arts-modal .note{font-size:12px;color:#c4b5fd}' +
+      '.afk-arts-embed{color:#e2e8f0;font-size:14px;line-height:1.7}.afk-arts-embed p{margin:6px 0}' +
+      '.afk-arts-embed .note{color:#cbd5e1;font-size:14px}' +
+      '.afk-arts-embed .card{border:1px solid #334155;border-radius:8px;padding:10px 12px;margin:10px 0;background:rgba(15,23,42,.6)}' +
+      '.afk-arts-embed .card.on{border-color:#facc15;box-shadow:0 0 8px rgba(161,98,7,.6)}' +
+      '.afk-arts-embed .card b{color:#fde68a;font-size:15px}' +
+      '.afk-arts-embed button{padding:6px 14px;border-radius:6px;background:#6d28d9;color:#fff;border:1px solid #a78bfa;font-size:14px;font-weight:bold}' +
+      '.afk-arts-embed button[disabled]{opacity:.5}';
     document.head.appendChild(s);
   };
   var layer = null;
-  var render = function () {
-    var box = document.querySelector('#afk-arts-modal .box'); if (!box) return;
-    var p = P(), h = '<h3>✨ 奧拉奇里亞・轉生技藝</h3>';
+  var render = function () { renderInto(document.querySelector('#afk-arts-modal .box')); };
+  var renderInto = function (box) {
+    if (!box) return;
+    var embedded = !!box.closest('.afk-arts-embed');
+    var p = P(), h = embedded ? '' : '<h3>✨ 奧拉奇里亞・轉生技藝</h3>';
     if (!p || !(p.rebirth > 0)) h += '<p>「你還沒走過冥王域。等你輪迴轉生之後，再來找我吧。」</p>';
     else {
       h += '<p class="note">每個職業兩門技藝，只能修習其中一門（不收費，可以回來改選）。</p>';
@@ -652,7 +691,9 @@
       var k = kings();
       h += '<p class="note">四大天王：目前上場 ' + partyN + ' 人，全隊一般攻擊追加 ' + k + ' 次（每 4 人 +1，16 人＝5 次）。' + (partyN >= 16 ? '16 人上場：傭兵的技藝效果減半。' : '') + '</p>';
     }
-    h += '<div style="text-align:right"><button type="button" data-close="1">關閉</button></div>';
+    h += '<div class="card"><b>🧪 開發測試</b><p>把帳號裡所有角色（每個存檔位）一次變成：已轉生（保留 Lv100 的 HP／MP）、Lv150、六項屬性 200（面板 +50 是轉生效果）。會直接改寫存檔，建議先匯出備份。</p>' +
+      '<button type="button" data-dev="1">全部角色轉生滿等</button></div>';
+    if (!embedded) h += '<div style="text-align:right"><button type="button" data-close="1">關閉</button></div>';
     box.innerHTML = h;
   };
   var learn = function (id) {
@@ -665,6 +706,65 @@
     active = true;
     return { ok: true };
   };
+  // 放進遊戲本身的 NPC 對話框（標題、關閉鈕、字體與其他 NPC 一致）
+  var embed = function (div) {
+    if (!div) return; css();
+    div.innerHTML = '<div id="afk-arts-embed" class="afk-arts-embed"><div class="box"></div></div>';
+    var host = div.querySelector('#afk-arts-embed');
+    host.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      if (b.dataset.close) { if (typeof closeNpcInteraction === 'function') closeNpcInteraction(); return; }
+      if (b.dataset.art) { learn(b.dataset.art); renderInto(host.querySelector('.box')); }
+      if (b.dataset.dev) {
+        var go = function () { var r = window.afkDevRebirthAll(); renderInto(host.querySelector('.box')); if (r && r.ok) logSys('已處理：' + r.slots.join('、')); };
+        var msg = '會把帳號裡所有角色改成轉生、Lv150、屬性 200，直接寫進存檔（無法復原）。確定嗎？';
+        if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '開發測試', message: msg, okText: '執行', cancelText: '取消', danger: true, onOk: go });
+        else if (confirm(msg)) go();
+      }
+    });
+    renderInto(host.querySelector('.box'));
+  };
+  // ── 開發測試：帳號裡所有角色一鍵轉生滿等（玩家 2026-10-21 要求，用來測試技藝）──
+  //   轉生（保留 Lv100 的 HP／MP）、Lv150、六項屬性（基礎＋配點＋萬能藥）都到 200；面板 +50 是轉生本身的效果。
+  var ATTRS = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+  var maxOut = function (p) {
+    p.base = p.base || {}; p.alloc = p.alloc || {}; p.panacea = p.panacea || {};
+    ATTRS.forEach(function (k) { var other = (Number(p.alloc[k]) || 0) + (Number(p.panacea[k]) || 0); p.base[k] = Math.max(0, 200 - other); });
+  };
+  var keepOf = function (p) {   // 同一身裝備在 Lv100 與 Lv1 的 HP／MP 差
+    var lv = p.lv, k = { hp: 0, mp: 0 };
+    p.rebirthHpKeep = 0; p.rebirthMpKeep = 0;
+    p.lv = 100; recomputeStats(); var h100 = p.mhp, m100 = p.mmp;
+    p.lv = 1; recomputeStats(); k.hp = Math.max(0, Math.round(h100 - p.mhp)); k.mp = Math.max(0, Math.round(m100 - p.mmp));
+    p.lv = lv; return k;
+  };
+  var devOne = function (p) {
+    if (!(p.rebirth > 0)) { var k = keepOf(p); p.rebirth = 1; p.rebirthHpKeep = k.hp; p.rebirthMpKeep = k.mp; }
+    maxOut(p); p.lv = 150; p.exp = 0;
+    recomputeStats(); p.hp = p.mhp; p.mp = p.mmp;
+  };
+  window.afkDevRebirthAll = function () {
+    var me = P(); if (!me) return { ok: false, msg: '請先進入遊戲。' };
+    var done = [], max = (typeof SAVE_SLOT_MAX !== 'undefined') ? SAVE_SLOT_MAX : 16;
+    for (var n = 1; n <= max; n++) {
+      if (String(n) === String(currentSlot)) continue;
+      var key = 'lineage_idle_save_' + n, raw = _lzGet(key); if (!raw) continue;
+      var u = _saveUnwrap(raw); if (!u || !u.payload) continue;
+      var data; try { data = JSON.parse(u.payload); } catch (e) { continue; }
+      var p = data && data.p; if (!p || !p.cls) continue;
+      p.cardDex = me.cardDex; p.equipDex = me.equipDex; p.miscDex = me.miscDex;
+      var save = player; player = p; _recomputingAlly = true;
+      try { devOne(p); } catch (e) { console.warn('[AFK-arts] 轉生失敗 slot ' + n, e); }
+      finally { _recomputingAlly = false; player = save; delete p.cardDex; delete p.equipDex; delete p.miscDex; delete p.relicDex; }
+      _lzSet(key, _saveWrap(JSON.stringify(data)));
+      done.push(n + ':' + (p.name || p.cls));
+    }
+    devOne(me); try { calcStats(); me.hp = me.mhp; me.mp = me.mmp; updateUI(); renderTabs(true); saveGame(); } catch (e) {}
+    done.push(currentSlot + ':' + (me.name || me.cls));
+    try { logSys('<span class="text-fuchsia-300 font-bold">🧪 測試：' + done.length + ' 個角色已轉生、Lv150、六項屬性 200。</span>'); } catch (e) {}
+    return { ok: true, slots: done };
+  };
+
   var doClose = function () { layer = null; var m = document.getElementById('afk-arts-modal'); if (m) m.style.display = 'none'; };
   var open = function () {
     css();
@@ -681,7 +781,11 @@
   };
   if (typeof window.interactNPC === 'function') {
     var oNpc = window.interactNPC;
-    window.interactNPC = function (npcId) { if (npcId === NPC_ID) { open(); return; } return oNpc.apply(this, arguments); };
+    window.interactNPC = function (npcId) {
+      var r = oNpc.apply(this, arguments);
+      if (npcId === NPC_ID) { try { embed(document.getElementById('interaction-content')); } catch (e) {} }
+      return r;
+    };
   }
 
   window.__afkArts = { ARTS: ARTS, art: art, learn: learn, open: open, st: st, kings: kings, trySaves: trySaves, healMult: healMult, takenMult: takenMult,

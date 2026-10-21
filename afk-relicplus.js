@@ -666,7 +666,15 @@
       '.rp-tools button,.rp-tools select{font:inherit;padding:4px 10px;border-radius:7px;border:1px solid #6d28d9;background:#2e1065;color:#ede9fe;cursor:pointer}',
       '.rp-tools button[disabled]{opacity:.45;cursor:not-allowed}',
       '.rp-asc{border-color:#a21caf!important;background:#4a044e!important;color:#fae8ff!important}',
-      '.rp-miss{color:#fca5a5}'
+      '.rp-miss{color:#fca5a5}',
+      '#rp-modal.rp-embed{position:static;inset:auto;background:none;padding:0;z-index:auto;display:block}',
+      '.rp-embed .rp-box{width:100%;max-height:none;border:0;border-radius:0;box-shadow:none;background:transparent;font-size:14px}',
+      '.rp-embed .rp-head{background:transparent;border-bottom:1px solid #334155;padding:4px 2px 8px;font-size:15px}',
+      '.rp-embed .rp-x{display:none}',
+      '.rp-embed .rp-rule{font-size:14px;color:#cbd5e1;padding:8px 2px}',
+      '.rp-embed .rp-tools{font-size:14px;padding:8px 2px}',
+      '.rp-embed .rp-sub{font-size:13px}.rp-embed .rp-nm{font-size:15px}',
+      '.rp-embed .rp-list{overflow:visible;padding:8px 0}'
     ].join('\n');
     document.head.appendChild(st);
   }
@@ -806,11 +814,25 @@
   function open() {
     if (!P()) return;
     if (!document.getElementById('rp-modal')) build();
-    document.getElementById('rp-modal').style.display = 'flex';
+    var mm = document.getElementById('rp-modal');
+    if (mm.classList.contains('rp-embed')) { mm.classList.remove('rp-embed'); document.body.appendChild(mm); }
+    mm.style.display = 'flex';
     render();
     layer = (window.AFK_UI && AFK_UI.openLayer) ? AFK_UI.openLayer(doClose) : null;
   }
-  function close() { if (layer && window.AFK_UI) AFK_UI.closeLayer(layer); else doClose(); }
+  function close() {
+    var mm = document.getElementById('rp-modal');
+    if (mm && mm.classList.contains('rp-embed')) { if (typeof closeNpcInteraction === 'function') closeNpcInteraction(); return; }
+    if (layer && window.AFK_UI) AFK_UI.closeLayer(layer); else doClose();
+  }
+  // 從燃柳村 NPC 進來：放進遊戲本身的 NPC 對話框（標題、關閉鈕、字體與其他 NPC 一致）
+  function embed(div) {
+    if (!P() || !div) return;
+    if (!document.getElementById('rp-modal')) build();
+    var mm = document.getElementById('rp-modal');
+    mm.classList.add('rp-embed'); div.innerHTML = ''; div.appendChild(mm); mm.style.display = 'block';
+    render();
+  }
   function doClose() { layer = null; var m = document.getElementById('rp-modal'); if (m) m.style.display = 'none'; }
 
   // 入口：遺物收集冊頁首（放在「整理重複遺物」旁）＋自動化分頁的外掛列
@@ -840,7 +862,11 @@
   } catch (e) {}
   if (typeof window.interactNPC === 'function') {
     var oNpc = window.interactNPC;
-    window.interactNPC = function (npcId) { if (npcId === 'npc_hama') { open(); return; } return oNpc.apply(this, arguments); };
+    window.interactNPC = function (npcId) {
+      var r = oNpc.apply(this, arguments);
+      if (npcId === 'npc_hama') { try { embed(document.getElementById('interaction-content')); } catch (e) {} }
+      return r;
+    };
   }
 
   var navTimer = setInterval(function () {
@@ -885,6 +911,6 @@
     } catch (e) { return 1; }
   };
 
-  window.__afkRelicPlus = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, evolve: evolve, equippedEvo: equippedEvo, EVO: EVO, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
+  window.__afkRelicPlus = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, embed: embed, evolve: evolve, equippedEvo: equippedEvo, EVO: EVO, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
   console.log('[AFK-relicplus] 已啟用：遺物合成（武器 +1～+15）');
 })();

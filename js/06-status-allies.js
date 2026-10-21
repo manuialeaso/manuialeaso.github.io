@@ -3533,12 +3533,12 @@ function _settleAllyExpDirect(ally, reason) {
             _withAllyEquipmentContext(ctx.source, () => {
                 if (banked > 0) {
                     ctx.source.exp = Math.max(0, Math.floor(Number(ctx.source.exp) || 0)) + banked;
-                    while ((ctx.source.lv || 1) < 100 && ctx.source.exp >= getExpReq(ctx.source.lv)) {
+                    while ((ctx.source.lv || 1) < (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(ctx.source) : 100) && ctx.source.exp >= getExpReq(ctx.source.lv)) {   /* 🔌 加掛版補丁 */
                         ctx.source.exp -= getExpReq(ctx.source.lv);
                         ctx.source.lv++;
                         if (ctx.source.lv >= 50) ctx.source.bonus = (ctx.source.bonus || 0) + 1;
                     }
-                    if ((ctx.source.lv || 1) >= 100) ctx.source.exp = 0;
+                    if ((ctx.source.lv || 1) >= (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(ctx.source) : 100)) ctx.source.exp = 0;   /* 🔌 加掛版補丁 */
                 }
                 if (alignmentDelta) {
                     let value = (Number(ctx.source.alignmentValue) || 0) + alignmentDelta;
@@ -3594,8 +3594,8 @@ function mercExpClaimPending(_retry) {
         let before = player.lv || 1;
         if (total > 0) {
             player.exp = (player.exp || 0) + total;
-            while ((player.lv || 1) < 100 && player.exp >= getExpReq(player.lv)) { player.exp -= getExpReq(player.lv); player.lv++; if (player.lv >= 50) player.bonus = (player.bonus || 0) + 1; }   // 比照 checkLvUp 升級曲線
-            if ((player.lv || 1) >= 100) player.exp = 0;   // 滿等不留溢出經驗
+            while ((player.lv || 1) < (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(player) : 100) && player.exp >= getExpReq(player.lv)) { player.exp -= getExpReq(player.lv); player.lv++;   /* 🔌 加掛版補丁 */ if (player.lv >= 50) player.bonus = (player.bonus || 0) + 1; }   // 比照 checkLvUp 升級曲線
+            if ((player.lv || 1) >= (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(player) : 100)) player.exp = 0;   // 滿等不留溢出經驗   /* 🔌 加掛版補丁 */
         }
         if (alignmentDelta) player.alignmentValue = (typeof pvpClampAlignment === 'function') ? pvpClampAlignment((Number(player.alignmentValue) || 0) + alignmentDelta) : Math.max(-32767, Math.min(32767, Math.round((Number(player.alignmentValue) || 0) + alignmentDelta)));
         Object.keys(questLoot).forEach(id => gainItem(id, questLoot[id], true, true, false, true));

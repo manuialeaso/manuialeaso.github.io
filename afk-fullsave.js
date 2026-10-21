@@ -190,7 +190,7 @@
   //    作者哪天改名,所有合法備份檔都會被拒收,而且是在玩家換裝置時才炸。
   function validate(text) {
     var d;
-    try { d = JSON.parse(text); } catch (e) { d = null; }
+    try { d = JSON.parse(String(text || "").replace(/^\ufeff/, "")); } catch (e) { d = null; }   // 容許 UTF-8 BOM
     // 空檔也走這條(Android 下載到「下載」資料夾有變成 0 byte 的情形)→ 訊息要涵蓋,不然玩家只會以為自己選錯檔
     if (!d || typeof d !== 'object' || d.format !== FORMAT) return { ok: false, err: '這不是備份檔，或檔案是空的。請選你用「📤 匯出備份」存出來的檔案。' };
     if (!(d.schema <= SCHEMA)) return { ok: false, err: '這個備份檔是比較新的版本存的，請先更新遊戲再還原。' };

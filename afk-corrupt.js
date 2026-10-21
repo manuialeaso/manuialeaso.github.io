@@ -1,5 +1,6 @@
 /* ============================================================================
- * afk-corrupt.js — 三座侵蝕的龍副本：法利昂（水）、巴拉卡斯（火）、林德拜爾（風）（玩家 2026-10-21 指定）
+ * afk-corrupt.js — 三座龍副本：破滅法利昂（水）、深淵巴拉卡斯（火）、災厄林德拜爾（風）（玩家 2026-10-21 指定；
+ *   四大龍副本＝侵蝕安塔瑞斯、破滅法利昂、災厄林德拜爾、深淵巴拉卡斯）
  *
  * 照「侵蝕的安塔瑞斯巢穴」複製：同樣在威頓村 NPC 多魯嘉貝爾進入、同樣 4 區推進（入口→通道→深處→棲息地）、
  * 擊敗各區頭目自動深入、最終龍三段變身、通關回威頓村。入場限制完全相同：
@@ -14,7 +15,7 @@
  *
  * 掉落：比照安塔瑞斯；最終龍的安塔瑞斯材料換成該龍自己的八種龍專屬材料（同掉率），另加該龍的六階魔法娃娃 1%。
  *   四座最終龍（含安塔瑞斯）另外：隨機一隻怪的白金卡 0.001%（×隊伍人數、吃兔腳）、鑽白金幻化 0.01%。
- * 境滅亡域鑰匙：四座侵蝕龍副本都會掉（afk-dreamhell 的地圖清單由本檔補上）。
+ * 境滅亡域鑰匙：四大龍副本都會掉（afk-dreamhell 的地圖清單由本檔補上）。
  * 外觀：借用遊戲現有的龍與元素怪動畫，畫面上加暗紫色「侵蝕」光暈；背景圖由 scratchpad mkbg.py 產生。
  * ========================================================================== */
 (function () {
@@ -27,17 +28,17 @@
 
   var PARTS = ['巢穴入口', '巢穴通道', '巢穴深處', '棲息地'];
   var DRAGONS = {
-    fafurion: { dragon: '法利昂', ele: 'water', res: 'resWater', doll: 'doll_法利昂', color: '#38bdf8',
-      minions: [['侵蝕的深淵水靈', '深淵水靈'], ['侵蝕的鯊魚', '鯊魚'], ['侵蝕的水元素守護者', '水元素守護者']],
-      bosses: [['侵蝕的水精靈王', '水精靈王'], ['侵蝕的水靈之主', '水靈之主'], ['侵蝕的卡普', '冥法軍王海露拜']],
+    fafurion: { pre: '破滅', dragon: '法利昂', ele: 'water', res: 'resWater', doll: 'doll_法利昂', color: '#38bdf8',
+      minions: [['破滅的深淵水靈', '深淵水靈'], ['破滅的鯊魚', '鯊魚'], ['破滅的水元素守護者', '水元素守護者']],
+      bosses: [['破滅的水精靈王', '水精靈王'], ['破滅的水靈之主', '水靈之主'], ['破滅的卡普', '冥法軍王海露拜']],
       skills: { breath: '寒冰噴吐', crack: '水龍漩渦', quake: '冰河衝擊' } },
-    valakas: { dragon: '巴拉卡斯', ele: 'fire', res: 'resFire', doll: 'doll_巴拉卡斯', color: '#f97316',
-      minions: [['侵蝕的火焰戰士', '暗黑火焰戰士'], ['侵蝕的火焰弓箭手', '暗黑火焰弓箭手'], ['侵蝕的熔岩高崙', '熔岩高崙']],
-      bosses: [['侵蝕的阿西塔基奧', '火焰阿西塔基奧'], ['侵蝕的伊弗利特', '恐怖的伊弗利特'], ['侵蝕的火靈之主', '火靈之主']],
+    valakas: { pre: '深淵', dragon: '巴拉卡斯', ele: 'fire', res: 'resFire', doll: 'doll_巴拉卡斯', color: '#f97316',
+      minions: [['深淵的火焰戰士', '暗黑火焰戰士'], ['深淵的火焰弓箭手', '暗黑火焰弓箭手'], ['深淵的熔岩高崙', '熔岩高崙']],
+      bosses: [['深淵的阿西塔基奧', '火焰阿西塔基奧'], ['深淵的伊弗利特', '恐怖的伊弗利特'], ['深淵的火靈之主', '火靈之主']],
       skills: { breath: '烈焰噴吐', crack: '熔岩爆裂', quake: '火山震擊' } },
-    lindvior: { dragon: '林德拜爾', ele: 'wind', res: 'resWind', doll: 'doll_林德拜爾', color: '#4ade80',
-      minions: [['侵蝕的深淵風靈', '深淵風靈'], ['侵蝕的飛龍', '飛龍'], ['侵蝕的翼龍', '翼龍']],
-      bosses: [['侵蝕的風精靈王', '風精靈王'], ['侵蝕的風靈之主', '風靈之主'], ['侵蝕的風之牙', '風之牙']],
+    lindvior: { pre: '災厄', dragon: '林德拜爾', ele: 'wind', res: 'resWind', doll: 'doll_林德拜爾', color: '#4ade80',
+      minions: [['災厄的深淵風靈', '深淵風靈'], ['災厄的飛龍', '飛龍'], ['災厄的翼龍', '翼龍']],
+      bosses: [['災厄的風精靈王', '風精靈王'], ['災厄的風靈之主', '風靈之主'], ['災厄的風之牙', '風之牙']],
       skills: { breath: '颶風噴吐', crack: '真空裂刃', quake: '龍捲衝擊' } }
   };
   var ELE_RES = { water: 'resWater', fire: 'resFire', wind: 'resWind', earth: 'resEarth' };
@@ -52,7 +53,7 @@
       var a = DB.items['mat_antharas_' + part] || {};
       DB.items[id] = { n: C.dragon + '之' + MAT[part], type: 'etc', p: a.p || 1000, c: 'text-amber-300', noUse: true, gachaWeight: 0,
         img: 'assets/icons/items/' + C.dragon + '之' + MAT[part] + '.png',
-        d: '從被侵蝕的' + C.dragon + '身上取得的龍之素材（' + MAT[part] + '）。之後可用來製作' + C.dragon + '的特殊裝備。' };
+        d: '從' + C.pre + '的' + C.dragon + '身上取得的龍之素材（' + MAT[part] + '）。之後可用來製作' + C.dragon + '的特殊裝備。' };
     });
   });
 
@@ -88,7 +89,7 @@
     mk(p + 'b1', 'ant_kama_flame_king', C.bosses[0][0], C.bosses[0][1]);
     mk(p + 'b2', 'ant_kama_nan_king', C.bosses[1][0], C.bosses[1][1]);
     mk(p + 'b3', 'ant_kama_king', C.bosses[2][0], C.bosses[2][1]);
-    var n1 = '被侵蝕的' + C.dragon, n2 = '被侵蝕的狂怒' + C.dragon, n3 = '被侵蝕的瘋狂' + C.dragon;
+    var n1 = C.pre + '的' + C.dragon, n2 = C.pre + '的狂怒' + C.dragon, n3 = C.pre + '的瘋狂' + C.dragon;
     mk(p + 'd3', 'ant_antharas_mad', n3, C.dragon);
     mk(p + 'd2', 'ant_antharas_fury', n2, C.dragon, { transformTo: p + 'd3', transformFxText: n2 + '陷入瘋狂', transformLogText: '陷入瘋狂，完全失去理智' });
     mk(p + 'd1', 'ant_antharas_eroded', n1, C.dragon, { transformTo: p + 'd2', transformFxText: n1 + '陷入狂怒', transformLogText: '受到黑龍之力更深的侵蝕而狂暴' });
@@ -98,7 +99,7 @@
     areasOf[key] = maps;
     maps.forEach(function (mp, i) {
       allMaps.push(mp); keyOfMap[mp] = key;
-      var nm = '侵蝕的' + C.dragon + PARTS[i];
+      var nm = C.pre + '的' + C.dragon + PARTS[i];
       ANTHARAS_AREA_NAMES[mp] = nm;
       ANTHARAS_AREA_BOSS[mp] = [p + 'b1', p + 'b2', p + 'b3', p + 'd1'][i];
       DB.maps[mp] = i < 2 ? [p + 'm1', p + 'm2'] : (i === 2 ? [p + 'm1', p + 'm2', p + 'm3'] : [p + 'm3']);
@@ -118,6 +119,39 @@
       MOB_DROPS[n3] = fin;
     }
   });
+  // ── 卡片：小怪與王比照侵蝕安塔瑞斯（各副本自成一個收集地區；龍的三段變身只有第一段有卡，打倒最終段掉第一段的卡）──
+  try {
+    if (typeof CARD_REGIONS !== 'undefined' && typeof CARD_MOB_INFO !== 'undefined') {
+      var RSTAT = { fafurion: 'resWater', valakas: 'resFire', lindvior: 'resWind' };
+      Object.keys(DRAGONS).forEach(function (key) {
+        var C = DRAGONS[key], rk = 'cr_' + key, maps = areasOf[key];
+        if (!CARD_REGIONS.some(function (r) { return r.key === rk; })) CARD_REGIONS.push({ key: rk, name: C.pre + C.dragon + '巢穴', stat: RSTAT[key], vals: [1, 2, 3, 4, 5], maps: maps });
+        var names = [];
+        var reg = function (id, mk) {
+          var mob = DB.mobs[id]; if (!mob) return; var n = mob.n;
+          if (names.indexOf(n) < 0) names.push(n);
+          if (!CARD_MOB_INFO[n]) CARD_MOB_INFO[n] = { id: id, mob: mob };
+          (CARD_MOB_REGIONS[n] = CARD_MOB_REGIONS[n] || []); if (CARD_MOB_REGIONS[n].indexOf(rk) < 0) CARD_MOB_REGIONS[n].push(rk);
+          (CARD_MOB_MAPS[n] = CARD_MOB_MAPS[n] || []); if (CARD_MOB_MAPS[n].indexOf(mk) < 0) CARD_MOB_MAPS[n].push(mk);
+        };
+        var p = 'cr_' + key + '_';
+        reg(p + 'm1', maps[0]); reg(p + 'm2', maps[0]); reg(p + 'm3', maps[2]);
+        reg(p + 'b1', maps[0]); reg(p + 'b2', maps[1]); reg(p + 'b3', maps[2]); reg(p + 'd1', maps[3]);
+        try { if (typeof _CARD_MAP_NAMES !== 'undefined') maps.forEach(function (mk) { _CARD_MAP_NAMES[mk] = ANTHARAS_AREA_NAMES[mk]; }); } catch (e) {}
+        names.sort(function (a, b) { return (CARD_MOB_INFO[a].mob.lv || 0) - (CARD_MOB_INFO[b].mob.lv || 0); });
+        CARD_REGION_MOBS[rk] = names;
+        if (typeof CARD_DROP_ALIAS !== 'undefined') CARD_DROP_ALIAS[finals[key]] = DB.mobs[p + 'd1'].n;
+        names.forEach(function (n) {
+          CARD_TIERS.forEach(function (ct) {
+            var id = cardId(n, ct.t); if (DB.items[id]) return;
+            DB.items[id] = { n: n + ' 的' + ct.sfx, type: 'misc', eff: 'card', cardTier: ct.t, cardMob: n, c: ct.col, img: ct.img, p: ct.price, gachaWeight: ct.weight,
+              d: '怪物卡片。使用以在卡片收集冊中登錄「' + n + '」（' + ct.sfx + '效果）。' };
+          });
+        });
+      });
+    }
+  } catch (e) { console.warn('[AFK-corrupt] 卡片', e); }
+
   // 動畫：借用現有怪物資料夾（共用 alias，並複製該資料夾在各動畫設定集合中的身分）
   try {
     var SETS = ['MOB_ANIM_NAMES', 'MOB_ANIM_BAKED_SHADOW', 'MOB_SHADOW_TINT', 'MOB_ANIM_BIG', 'MOB_ANIM_SMALL', 'MOB_ANIM_SPRITE_SHADOW', 'MOB_ANIM_WEAPON_FX', 'MOB_ANIM_WEAPON_FX2', 'MOB_ANIM_8DIR'];
@@ -166,15 +200,15 @@
   // ── 入場 ──
   window.afkCorruptEnter = function (key) {
     var C = DRAGONS[key]; if (!C) return;
-    if (S().antharas) { logSys('你已身在侵蝕的龍之巢穴之中。'); return; }
+    if (S().antharas) { logSys('你已身在龍之巢穴之中。'); return; }
     if (typeof mercenaryRoleBattleBlocked === 'function' && mercenaryRoleBattleBlocked(areasOf[key][0])) return;
     if (player.statuses && (player.statuses.stone > 0 || player.statuses.paralyze > 0 || player.statuses.freeze > 0 || player.statuses.stun > 0 || player.statuses.sleep > 0)) {
       logSys('你目前無法行動（石化／麻痺／冰凍／暈眩），無法進入。'); return;
     }
     var used = withCtx(key, function () { return antharasPartyUsedToday(); });
-    if (used.length) { logSys('<span class="text-amber-300">隊伍中的 ' + used.map(function (r) { return r.name; }).join('、') + ' 今日已通關侵蝕的' + C.dragon + '巢穴；請更換或解散已使用次數的傭兵後再進入（UTC+8 凌晨 12 點重置）。</span>'); return; }
+    if (used.length) { logSys('<span class="text-amber-300">隊伍中的 ' + used.map(function (r) { return r.name; }).join('、') + ' 今日已通關' + C.pre + '的' + C.dragon + '巢穴；請更換或解散已使用次數的傭兵後再進入（UTC+8 凌晨 12 點重置）。</span>'); return; }
     var s = S(); s.antharas = 1; s._antAdvance = false; s._afkDragon = key;
-    logSys('<span class="font-bold" style="color:' + C.color + '">🐉 你踏入了侵蝕的' + C.dragon + '巢穴……</span><span class="text-amber-200"> 區內無法選擇地圖，也無法使用傳送術與瞬間移動卷軸；擊敗各區頭目將自動深入。巢穴裡瀰漫著' + ELE_N[C.ele] + '屬性的侵蝕之力（每秒受到屬性傷害）。</span>');
+    logSys('<span class="font-bold" style="color:' + C.color + '">🐉 你踏入了' + C.pre + '的' + C.dragon + '巢穴……</span><span class="text-amber-200"> 區內無法選擇地圖，也無法使用傳送術與瞬間移動卷軸；擊敗各區頭目將自動深入。巢穴裡瀰漫著' + ELE_N[C.ele] + '屬性的侵蝕之力（每秒受到屬性傷害）。</span>');
     enterOblivionMap(areasOf[key][0]);
     try { if (!document.getElementById('item-modal').classList.contains('hidden')) closeModal(); } catch (e) {}
     try { updateUI(); saveGame(); } catch (e) {}
@@ -214,9 +248,11 @@
     }
     var r = oKill.apply(this, arguments);
     try { if (m && m._dead && !m._afkCrCard && FINAL_ALL.indexOf(m.n) >= 0) { m._afkCrCard = true; finalBonus(m); } } catch (e) {}
+    // 滅魔蔑視水晶：各龍最終王必掉對應屬性（侵蝕安塔瑞斯＝地，由 afk-dreamhell 處理）
+    try { if (m && m._dead && !m._afkCrCry) { var fk = Object.keys(finals).find(function (k) { return finals[k] === m.n; }); if (fk) { m._afkCrCry = true; var cid = 'afk_contempt_' + DRAGONS[fk].ele; if (DB.items[cid]) gainItem(cid, 1); } } } catch (e) {}
     return r;
   };
-  // 四座侵蝕龍副本最終王（含安塔瑞斯）：隨機一隻怪的白金卡 0.001%（×隊伍人數、吃幸運爆走兔腳）、鑽白金幻化 0.01%
+  // 四大龍副本最終王（含安塔瑞斯）：隨機一隻怪的白金卡 0.001%（×隊伍人數、吃幸運爆走兔腳）、鑽白金幻化 0.01%
   var FINAL_ALL = ['被侵蝕的瘋狂安塔瑞斯'].concat(Object.keys(finals).map(function (k) { return finals[k]; }));
   var finalBonus = function (m) {
     var rx = (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : 1;
@@ -308,7 +344,7 @@
       lastDeb = t;
       var pick = DEB[Math.floor(Math.random() * DEB.length)];
       team().forEach(function (x) { var d = debuff.get(x) || {}; d[pick[0]] = t + 100; debuff.set(x, d); });
-      try { if (!s.ff) logCombat('<span class="font-bold" style="color:' + C.color + '">【' + pick[1] + '】</span>侵蝕之龍的詛咒籠罩全隊：' + pick[2] + '（10 秒）！', 'enemy'); } catch (e) {}
+      try { if (!s.ff) logCombat('<span class="font-bold" style="color:' + C.color + '">【' + pick[1] + '】</span>' + C.pre + '之龍的詛咒籠罩全隊：' + pick[2] + '（10 秒）！', 'enemy'); } catch (e) {}
     }
     if (!boss) lastDeb = t - 100;   // 王一出現 10 秒後施放第一次
   };
@@ -321,7 +357,7 @@
     var oR = window._renderMobsImpl;
     window._renderMobsImpl = function () {
       var r = oR.apply(this, arguments);
-      try { (mapState.mobs || []).forEach(function (m) { if (!m || !(m.afkCorrupt || /^被?侵蝕的/.test(m.n || ''))) return; var el = document.querySelector('.mob-target[data-uid="' + m.uid + '"]'); if (el) el.setAttribute('data-afk-corrupt', '1'); }); } catch (e) {}
+      try { (mapState.mobs || []).forEach(function (m) { if (!m || !(m.afkCorrupt || /^(被?侵蝕|破滅|深淵|災厄)的/.test(m.n || ''))) return; var el = document.querySelector('.mob-target[data-uid="' + m.uid + '"]'); if (el) el.setAttribute('data-afk-corrupt', '1'); }); } catch (e) {}
       return r;
     };
   }
@@ -332,12 +368,12 @@
     window.renderDorugaBell = function (div) {
       var r = oNpc.apply(this, arguments);
       try {
-        var html = '<div class="border-t border-slate-700 pt-2 mt-2 space-y-2"><div class="font-bold text-fuchsia-300">其他被侵蝕的龍之巢穴</div>'
+        var html = '<div class="border-t border-slate-700 pt-2 mt-2 space-y-2"><div class="font-bold text-fuchsia-300">其他龍之巢穴</div>'
           + '<div class="text-xs text-slate-400">入場規則同安塔瑞斯（每座副本每日各一次）。巢穴內每秒受到該龍屬性傷害 100（吃屬性抗性）；頭目每 20 秒施放死亡藥水／死亡治療／減少治療其中之一。</div>';
         Object.keys(DRAGONS).forEach(function (key) {
           var C = DRAGONS[key], used = withCtx(key, function () { return antharasPartyUsedToday(); });
           html += '<button onclick="afkCorruptEnter(\'' + key + '\')" ' + (used.length ? 'disabled ' : '') + 'class="btn w-full font-bold py-2 rounded ' + (used.length ? 'bg-slate-700 border-slate-600 opacity-60 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700 border-slate-500') + '" style="color:' + C.color + '">'
-            + (used.length ? '今日已通關：侵蝕的' + C.dragon + '巢穴（' + used.map(function (x) { return x.name; }).join('、') + '）' : '🐉 進入侵蝕的' + C.dragon + '巢穴（' + ELE_N[C.ele] + '屬性）') + '</button>';
+            + (used.length ? '今日已通關：' + C.pre + '的' + C.dragon + '巢穴（' + used.map(function (x) { return x.name; }).join('、') + '）' : '🐉 進入' + C.pre + '的' + C.dragon + '巢穴（' + ELE_N[C.ele] + '屬性）') + '</button>';
         });
         html += '</div>';
         var box = div.querySelector('.text-sm.space-y-3') || div;
@@ -348,5 +384,5 @@
   }
 
   window.__afkCorrupt = { DRAGONS: DRAGONS, areasOf: areasOf, finals: finals, cur: cur, debuff: function (t) { return debuff.get(t); }, pulse: pulse, withCtx: withCtx };
-  console.log('[AFK-corrupt] 已啟用：侵蝕的法利昂／巴拉卡斯／林德拜爾巢穴');
+  console.log('[AFK-corrupt] 已啟用：破滅法利昂／深淵巴拉卡斯／災厄林德拜爾巢穴');
 })();

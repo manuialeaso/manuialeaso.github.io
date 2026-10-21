@@ -388,8 +388,8 @@ function killMob(idx) {
             a.exp = (a.exp || 0) + _gain;
             a._expGained = (a._expGained || 0) + _gain;
             let _up = 0;
-            while ((a.lv || 1) < 100 && a.exp >= getExpReq(a.lv)) { a.exp -= getExpReq(a.lv); a.lv++; if (a.lv >= 50) a.bonus = (a.bonus || 0) + 1; _up++; }   // 比照 checkLvUp 升級曲線
-            if ((a.lv || 1) >= 100) a.exp = 0;
+            while ((a.lv || 1) < (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(a) : 100) && a.exp >= getExpReq(a.lv)) {   /* 🔌 加掛版補丁 */ a.exp -= getExpReq(a.lv); a.lv++; if (a.lv >= 50) a.bonus = (a.bonus || 0) + 1; _up++; }   // 比照 checkLvUp 升級曲線
+            if ((a.lv || 1) >= (typeof window.__afkLvCap === 'function' ? window.__afkLvCap(a) : 100)) a.exp = 0;   /* 🔌 加掛版補丁 */
             if (_up > 0) { try { if (typeof _allyLevelRecompute === 'function') _allyLevelRecompute(a); } catch (e) {} logCombat(`<span class="text-yellow-300 font-bold">協力傭兵 ${a._allyName} 升級了！目前 Lv.${a.lv}</span>`, 'mercenary'); try { renderSquadPanel(); } catch (e) {} }
         });
     }

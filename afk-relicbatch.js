@@ -42,7 +42,8 @@
 (function () {
   'use strict';
 
-  var DIA_PER_RELIC = 3;   // 每件遺物回收給幾顆龍鑽(依據見檔頭;要改先讀那段)
+  var DIA_PER_RELIC = 3;   // 舊定價；afk-relicsell 載入時改用商人收購價（+0＝500、每 +1 多 100，最高 +15）
+  var diaOf = function (id) { try { return window.__afkRelicSell ? window.__afkRelicSell.price(id) : DIA_PER_RELIC; } catch (e) { return DIA_PER_RELIC; } };
   var KEEP_PER_ID = 1;     // 每個遺物 id 至少留幾件(寫死,不做選項;原因見檔頭)
 
   if (window.AFK_TOGGLES) {
@@ -196,13 +197,13 @@
     return g.variants.filter(function (v) { return v.avail > 0; });
   }
   function selTotals() {
-    var n = 0, gold = 0;
+    var n = 0, gold = 0, dia = 0;
     groups.forEach(function (g) {
       g.variants.forEach(function (v) {
-        if (v.avail > 0 && sel[rowKey(g.id, v.key)]) { n += v.avail; gold += v.avail * v.gold; }
+        if (v.avail > 0 && sel[rowKey(g.id, v.key)]) { n += v.avail; gold += v.avail * v.gold; dia += v.avail * diaOf(v.sample && v.sample.id); }
       });
     });
-    return { n: n, gold: gold, dia: n * DIA_PER_RELIC };
+    return { n: n, gold: gold, dia: dia };
   }
 
   // ── 版面 ──────────────────────────────────────────────────
@@ -360,7 +361,7 @@
         // 整列都被保留(avail 0)就不印價格——那是「拿不到的錢」,寫出來只會誤導
         (v.avail > 0
           ? '<span class="rb-v-price"><i class="rb-gold">💰 ' + (v.gold * v.avail).toLocaleString() + '</i>' +
-            (diaReady() ? '<i class="rb-dia">🔷 ' + (v.avail * DIA_PER_RELIC) + '</i>' : '') + '</span>'
+            (diaReady() ? '<i class="rb-dia">🔷 ' + (v.avail * diaOf(v.sample && v.sample.id)) + '</i>' : '') + '</span>'
           : '<span class="rb-v-price"></span>') +
       '</div>';
     }).join('');

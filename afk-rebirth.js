@@ -68,13 +68,14 @@
   if (typeof window.getExpReq === 'function') {
     var oReq = window.getExpReq;
     window.getExpReq = function (lv) {
-      if (lv >= 100 && reborn() && lv < 150) { var b = oReq(99); return isFinite(b) ? Math.floor(b * (1 + 0.1 * (lv - 99))) : b; }
+      if (lv >= 100 && lv < 150) {   // 只有轉生角色到得了 100 以上（傭兵升級也走這裡）
+        var b = oReq(99); return isFinite(b) ? Math.floor(b * (1 + 0.1 * (lv - 99))) : b; }
       return oReq.apply(this, arguments);
     };
   }
   if (typeof window.getExpGainMult === 'function') {
     var oGain = window.getExpGainMult;
-    window.getExpGainMult = function (lv) { if (reborn() && lv >= 100 && lv < 150 && lv === player.lv) return 1; return oGain.apply(this, arguments); };
+    window.getExpGainMult = function (lv) { if (lv >= 100 && lv < 150) return 1; return oGain.apply(this, arguments); };   // 只有轉生角色到得了 100 以上
   }
   // 傭兵：任何職業都能帶 7 名；轉生後 15 名（連自己 16 人上場）
   if (typeof window.allyActiveCap === 'function') window.allyActiveCap = function () { return reborn() ? 15 : 7; };

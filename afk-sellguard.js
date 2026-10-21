@@ -102,7 +102,9 @@
         if (!it || !worthAsking(it)) return _sellItem.apply(this, arguments);   // 找不到就放行,由核心自己判(它本來就會 return)
         var n = Math.min(Number(count) || 1, it.cnt || 1);
         var got = n * (Number(unitPrice) || 0);
-        var msg = '賣掉' + (n > 1 ? ' ' + n + ' 個' : '') + '「' + plainName(it) + '」換 ' + got.toLocaleString() + ' 金幣？賣掉就拿不回來。';
+        var unit = ' 金幣';
+        try { var dd = DB.items[it.id]; if (dd && dd.relic && window.__afkRelicSell) { got = n * window.__afkRelicSell.price(it.id); unit = ' 龍之鑽石'; } } catch (e) {}   // 遺物改收龍鑽（afk-relicsell）
+        var msg = '賣掉' + (n > 1 ? ' ' + n + ' 個' : '') + '「' + plainName(it) + '」換 ' + got.toLocaleString() + unit + '？賣掉就拿不回來。';
         if (!confirm(msg)) return;
         return _sellItem.apply(this, arguments);
     };
