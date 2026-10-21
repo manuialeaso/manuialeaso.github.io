@@ -127,6 +127,8 @@
   var add = function (d, k, v) { d[k] = (Number(d[k]) || 0) + v; };
   var oRe = window.recomputeStats;
   window.recomputeStats = function () {
+    // 核心重算最後會把 HP／MP 夾到「還沒加上技藝加的 HP／MP」的上限 → 先記下，加完再夾回真正的上限
+    var p0 = (typeof player !== 'undefined') ? player : null, hp0 = p0 ? p0.hp : null, mp0 = p0 ? p0.mp : null;
     var r = oRe.apply(this, arguments);
     try {
       var p = P(), a = art(p); if (!a || !p.d) return r;
@@ -149,6 +151,7 @@
       }
       else if (a === 'n_heine' && inHeine()) { add(d, 'ac', -1000 * f); add(d, 'mr', 1000 * f); }
     } catch (e) {}
+    try { if (p0 && p0 === player && typeof hp0 === 'number') { p0.hp = Math.min(hp0, p0.mhp); if (typeof mp0 === 'number') p0.mp = Math.min(mp0, p0.mmp); } } catch (e) {}
     return r;
   };
   // 狀態改變（命運階段、無神狀態、進出海音、暗夢星迴、16 人）→ 重算

@@ -39,6 +39,8 @@
   // 面板 +50
   var oRe = window.recomputeStats;
   window.recomputeStats = function () {
+    // 核心重算最後會把 HP／MP 夾到「還沒加上轉生保留的 Lv100 HP／MP」的上限 → 先記下，加完再夾回真正的上限
+    var p0 = (typeof player !== 'undefined') ? player : null, hp0 = p0 ? p0.hp : null, mp0 = p0 ? p0.mp : null;
     var r = oRe.apply(this, arguments);
     try {
       if (reborn() && player.d) {
@@ -51,6 +53,7 @@
         if (player.rebirthMpKeep) player.mmp = (Number(player.mmp) || 0) + player.rebirthMpKeep;
       }
     } catch (e) {}
+    try { if (p0 && p0 === player && typeof hp0 === 'number') { p0.hp = Math.min(hp0, p0.mhp); if (typeof mp0 === 'number') p0.mp = Math.min(mp0, p0.mmp); } } catch (e) {}
     return r;
   };
 
