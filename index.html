@@ -556,7 +556,7 @@
 <script src="js/02-stats-recompute.js?v=5a2b761803.8.26-flywing-relics"></script>
     <script src="js/03-combat-core.js?v=76514d232d.8.26-flywing-relics"></script>
     <script src="js/04-combat-attack.js?v=20d72451ae.8.26-flywing-relics"></script>
-<script src="js/05-kill-progression.js?v=eb5b62ca2b.8.34-merc-trial-class-loot"></script>
+<script src="js/05-kill-progression.js?v=4bd7aa3fff.8.34-merc-trial-class-loot"></script>
     <script src="js/06-status-allies.js?v=cb4d0ea076.8.34-merc-trial-class-loot"></script>
     <script src="js/07-skills-cast.js?v=462a22aa0a.8.26-flywing-relics"></script>
 <script src="js/08-items-equip.js?v=cb30782084.8.16-wis-regen-interval"></script>
@@ -590,7 +590,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=ab5e08e0e0"></script>
+    <script src="afk-toggles.js?v=91b69e85e1"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
     <script src="afk-banner.js?v=29fa2d5746"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
@@ -604,7 +604,7 @@
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->
     <script src="afk-autoreload.js?v=e421ce7024"></script>
     <!-- afk-dreamhell：瘋狂席琳夢艷地獄模式（需核心補丁 18）；排在 afk-droplog／afk-dropcount 之前，讓它們看得到新掉落 -->
-    <script src="afk-dreamhell.js?v=d44e4a3d59"></script>
+    <script src="afk-dreamhell.js?v=59d931cc15"></script>
     <!-- afk-cardplus：白金／鑽石卡、圖鑑全滿夢艷 ×3、鑽白金幻化（需核心補丁 20）；排在 afk-dropcount 之前，讓掉落統計數得到白金／鑽石卡 -->
     <script src="afk-cardplus.js?v=75aaec4969"></script>
     <!-- afk-droplog：短暫卡頓補跑中的擊殺／掉落照常顯示（原版 <3 秒補跑完全不印） -->
@@ -686,19 +686,19 @@
     <!-- afk-relicplus：遺物合成（武器 +1～+15，需核心補丁 15 的出血加成）；排在 afk-relicbatch 之後 -->
     <script src="afk-relicplus.js?v=eb96bd3e96"></script>
     <!-- afk-dreamstar：暗夢星迴（單機版）；需 afk-dreamhell、afk-relicplus，排在 afk-relicplus 之後 -->
-    <script src="afk-dreamstar.js?v=3fa1cf0395"></script>
+    <script src="afk-dreamstar.js?v=1669636c4c"></script>
     <!-- afk-corrupt：侵蝕的法利昂／巴拉卡斯／林德拜爾巢穴（複製安塔瑞斯副本；需核心補丁 23） -->
-    <script src="afk-corrupt.js?v=1b894e45ff"></script>
+    <script src="afk-corrupt.js?v=ed093d9b13"></script>
     <!-- afk-relicsell：夢艷地獄遺物詞條、商人收遺物（龍鑽）、昇華支配分解；排在 afk-relicaffix／relicplus／dreamhell 之後 -->
     <script src="afk-relicsell.js?v=58731caa84"></script>
     <!-- afk-rebirth：輪迴轉生（需核心補丁 20；裝備不限職業沿用 afk-anyclass） -->
-    <script src="afk-rebirth.js?v=0c5ba2fe5a"></script>
+    <script src="afk-rebirth.js?v=24597a51a1"></script>
     <!-- afk-arts：轉生技藝（奧拉奇里亞；需 afk-rebirth，排在它之後） -->
     <script src="afk-arts.js?v=ce1b24e789"></script>
     <!-- afk-uifix：切換地區優先飛到村莊 -->
     <script src="afk-uifix.js?v=4af6b2c419"></script>
     <!-- afk-castlewar：七城攻城、城堡收成、宣戰與統一伺服器（需核心補丁 27；排在 afk-dreamhell／afk-arts 之後） -->
-    <script src="afk-castlewar.js?v=486e81b239"></script>
+    <script src="afk-castlewar.js?v=2d8644457a"></script>
     <script src="afk-bmprice.js?v=ec643849be"></script>
     <!-- 只迴避指定頭目：把上游「迴避頭目(瞬移卷軸)」的範圍從「全部的王」縮小到玩家挑的那幾隻（每張地圖各自一份） -->
     <script src="afk-bossavoid.js?v=57b4e8083e"></script>
@@ -757,6 +757,8 @@
     <script src="afk-syncinfo.js?v=598e4b40ae"></script>
     <script src="afk-analytics.js?v=25e209371f"></script>
     <script src="afk-skin.js?v=a066812f39"></script>
+    <!-- afk-stun：鈍擊＝暈眩（頭目有抗性）、連暈 10 秒→完全停擺 15 秒；包 tick 必須在最外層，所以排最後 -->
+    <script src="afk-stun.js?v=a0c343d17e"></script>
     <!-- ═══════════ 加掛版外掛層 END ═══════════ -->
 </body>
 </html>

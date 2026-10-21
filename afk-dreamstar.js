@@ -4,7 +4,7 @@
  * 進入：時空裂痕入口多一組「🌌 暗夢星迴」按鈕。
  *   ‧單人模式：消耗 1000 顆龜裂之核
  *   ‧多人模式：消耗 1 把境滅亡域鑰匙（連線功能尚未製作，按鈕先標示製作中）
- *   ‧只出頭目，一次一隻（中央格），打倒後才出下一隻；名字上方標示「裂縫夢境者投影」，外觀與名稱沿用抽到的那隻頭目
+ *   ‧只出一隻頭目（中央格），打倒就結束、回到時空裂痕入口（同四龍副本）；名字上方標示「裂縫夢境者投影」，外觀與名稱沿用抽到的那隻頭目
  *   ‧頭目套用瘋狂席琳夢艷地獄的頭目狀態（不需要另外開夢艷地獄）；單機版不吃夢艷地獄的掉落倍率
  *   ‧不記時空裂痕排名、不給裂痕停留獎勵
  *
@@ -276,6 +276,13 @@
         if (Math.random() < 0.0001 && DB.items.afk_card_pick) { gainItem('afk_card_pick', 1); got.push(DB.items.afk_card_pick.n); }
         sys('<span class="font-bold" style="color:#c084fc;">🌌 ' + NAME + ' 消散了。</span>' + (got.length ? '<span class="text-fuchsia-200">獲得：' + got.join('、') + '</span>' : '<span class="text-slate-400">這次什麼也沒留下。</span>'));
       } finally { try { _lootMobInfo = info; } catch (e) {} }
+      // 跟四龍副本一樣：打倒一隻頭目就結束，回到時空裂痕入口（擊殺流程跑完再走，避免在怪物迴圈中途換圖）
+      setTimeout(function () {
+        try {
+          if (!S().dreamStar || !S().riftRun) return;
+          riftEndRun(); setMapSelectors('town_rift'); changeMap(true); saveGame();
+        } catch (e) { console.warn('[AFK-dreamstar] 離開', e); }
+      }, 300);
     }
     return r;
   };

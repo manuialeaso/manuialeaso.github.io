@@ -71,6 +71,25 @@
     });
   };
   var aliasPairs = [], allMaps = [], finals = {}, areasOf = {}, keyOfMap = {};
+  // 龍的變身：基本 → 狂怒 → 發瘋 → 癲狂 → 墮落 → 滅塵 → 時空（玩家 2026-10-21 指定；新加的階段每階 HP +10%、傷害 +1%）
+  var STAGES = ['狂怒', '發瘋', '癲狂', '墮落', '滅塵', '時空'];
+  var grow = function (m) {
+    m.hp = Math.round((m.hp || 1) * 1.1); m.lv = (m.lv || 95) + 1;
+    if (m.db != null) m.db = Math.round(m.db * 1.01);
+    if (Array.isArray(m.dmg)) m.dmg = [m.dmg[0], Math.max(1, Math.round(m.dmg[1] * 1.01))];
+    Object.keys(m).forEach(function (f) { if (/^mag\d*$/.test(f) && m[f] && typeof m[f] === 'object' && m[f].db != null) m[f].db = Math.round(m[f].db * 1.01); });
+  };
+  var chainUp = function (ids, names) {   // ids[0..6]：把七階串成變身鏈
+    ids.forEach(function (id, i) {
+      var m = DB.mobs[id]; if (!m) return;
+      m.n = names[i]; m._afkDragonStage = i + 1;
+      if (i < ids.length - 1) { m.transformTo = ids[i + 1]; m.transformHpPct = 0.01; m.transformFxText = names[i] + '陷入' + STAGES[i]; m.transformLogText = '的力量再度暴走，化為「' + STAGES[i] + '」型態'; }
+      else { delete m.transformTo; delete m.transformHpPct; delete m.transformFxText; delete m.transformLogText; }
+    });
+  };
+  var extend = function (ids, names, fromIdx) {   // 從第 fromIdx 階往後複製並成長
+    for (var i = fromIdx; i < 7; i++) { if (DB.mobs[ids[i]]) continue; var m = clone(DB.mobs[ids[i - 1]]); m.n = names[i]; grow(m); DB.mobs[ids[i]] = m; }
+  };
   Object.keys(DRAGONS).forEach(function (key) {
     var C = DRAGONS[key], ids = {};
     var mk = function (id, tpl, n, anim, extra) {
@@ -89,10 +108,15 @@
     mk(p + 'b1', 'ant_kama_flame_king', C.bosses[0][0], C.bosses[0][1]);
     mk(p + 'b2', 'ant_kama_nan_king', C.bosses[1][0], C.bosses[1][1]);
     mk(p + 'b3', 'ant_kama_king', C.bosses[2][0], C.bosses[2][1]);
-    var n1 = C.pre + '的' + C.dragon, n2 = C.pre + '的狂怒' + C.dragon, n3 = C.pre + '的瘋狂' + C.dragon;
-    mk(p + 'd3', 'ant_antharas_mad', n3, C.dragon);
-    mk(p + 'd2', 'ant_antharas_fury', n2, C.dragon, { transformTo: p + 'd3', transformFxText: n2 + '陷入瘋狂', transformLogText: '陷入瘋狂，完全失去理智' });
-    mk(p + 'd1', 'ant_antharas_eroded', n1, C.dragon, { transformTo: p + 'd2', transformFxText: n1 + '陷入狂怒', transformLogText: '受到黑龍之力更深的侵蝕而狂暴' });
+    var dn = [C.pre + '的' + C.dragon].concat(STAGES.map(function (st) { return C.pre + '的' + st + C.dragon; }));
+    var di = [1, 2, 3, 4, 5, 6, 7].map(function (i) { return p + 'd' + i; });
+    mk(di[0], 'ant_antharas_eroded', dn[0], C.dragon);
+    mk(di[1], 'ant_antharas_fury', dn[1], C.dragon);
+    mk(di[2], 'ant_antharas_mad', dn[2], C.dragon);
+    extend(di, dn, 3);
+    dn.slice(3).forEach(function (n) { aliasPairs.push([n, C.dragon]); });
+    chainUp(di, dn);
+    var n3 = dn[6];
     finals[key] = n3;
     // 地圖
     var maps = PARTS.map(function (part, i) { return 'cr_' + key + (i < 3 ? '_nest_' + (i + 1) : '_lair'); });
@@ -119,6 +143,22 @@
       MOB_DROPS[n3] = fin;
     }
   });
+  // ── 侵蝕安塔瑞斯也改成七階（核心補丁 30 讓通關判定認新的最終階名字）──
+  try {
+    var AOLD = '被侵蝕的瘋狂安塔瑞斯';
+    var an = ['被侵蝕的安塔瑞斯'].concat(STAGES.map(function (st) { return '被侵蝕的' + st + '安塔瑞斯'; }));
+    var ai = ['ant_antharas_eroded', 'ant_antharas_fury', 'ant_antharas_mad', 'ant_antharas_s4', 'ant_antharas_s5', 'ant_antharas_s6', 'ant_antharas_s7'];
+    if (DB.mobs.ant_antharas_mad) {
+      DB.mobs.ant_antharas_mad.n = an[2];
+      extend(ai, an, 3);
+      chainUp(ai, an);
+      window.__afkAntFinal = an[6];
+      if (typeof MOB_DROPS !== 'undefined' && MOB_DROPS[AOLD]) { MOB_DROPS[an[6]] = MOB_DROPS[AOLD]; delete MOB_DROPS[AOLD]; }
+      an.slice(2).forEach(function (n) { aliasPairs.push([n, AOLD]); });
+      try { if (typeof CARD_DROP_ALIAS !== 'undefined') { delete CARD_DROP_ALIAS[AOLD]; CARD_DROP_ALIAS[an[6]] = an[0]; } } catch (e) {}
+    }
+  } catch (e) { console.warn('[AFK-corrupt] 安塔瑞斯七階', e); }
+
   // ── 卡片：小怪與王比照侵蝕安塔瑞斯（各副本自成一個收集地區；龍的三段變身只有第一段有卡，打倒最終段掉第一段的卡）──
   try {
     if (typeof CARD_REGIONS !== 'undefined' && typeof CARD_MOB_INFO !== 'undefined') {
@@ -155,7 +195,7 @@
   // 動畫：借用現有怪物資料夾（共用 alias，並複製該資料夾在各動畫設定集合中的身分）
   try {
     var SETS = ['MOB_ANIM_NAMES', 'MOB_ANIM_BAKED_SHADOW', 'MOB_SHADOW_TINT', 'MOB_ANIM_BIG', 'MOB_ANIM_SMALL', 'MOB_ANIM_SPRITE_SHADOW', 'MOB_ANIM_WEAPON_FX', 'MOB_ANIM_WEAPON_FX2', 'MOB_ANIM_8DIR'];
-    var OBJS = ['MOB_ANIM_SKILL_FX', 'MOB_YLIFT', 'MOB_ANIM_DEATH_FX', 'BOSS_ENTRANCE_FX'];
+    var OBJS = ['MOB_ANIM_SKILL_FX', 'MOB_YLIFT', 'MOB_ANIM_DEATH_FX', 'BOSS_ENTRANCE_FX', 'MOB_HURT_SFX', 'MOB_KILL_SFX', 'MOB_ATTACK_SFX'];
     var get = function (n) { try { return (0, eval)(n); } catch (e) { return null; } };   // 全域 const 需用間接 eval 取得
     var setObjs = SETS.map(get), objObjs = OBJS.map(get), names = get('MOB_ANIM_NAMES');
     aliasPairs.forEach(function (pr) {
@@ -253,7 +293,7 @@
     return r;
   };
   // 四大龍副本最終王（含安塔瑞斯）：隨機一隻怪的白金卡 0.001%（×隊伍人數、吃幸運爆走兔腳）、鑽白金幻化 0.01%
-  var FINAL_ALL = ['被侵蝕的瘋狂安塔瑞斯'].concat(Object.keys(finals).map(function (k) { return finals[k]; }));
+  var FINAL_ALL = [window.__afkAntFinal || '被侵蝕的瘋狂安塔瑞斯'].concat(Object.keys(finals).map(function (k) { return finals[k]; }));
   var finalBonus = function (m) {
     var rx = (typeof window.__afkRelicDropMult === 'function') ? window.__afkRelicDropMult() : 1;
     var rate = (typeof partyDropRate === 'function') ? partyDropRate(0.00001 * rx) : 0.00001 * rx;
@@ -331,15 +371,76 @@
   // ── 每秒：房間屬性傷害；每 20 秒：王施放治療減益 ──
   var effRes = function (t, ele) { var d = t.d || {}, v = d[ELE_RES[ele]] || 0, pct = (typeof effResistPct === 'function') ? effResistPct(v) : v; return Math.max(0, Math.min(1, 1 - pct / 100)); };
   var lastDeb = 0;
+  // ── 四大龍副本（含侵蝕安塔瑞斯）共通：房間傷害、龍的反射／回血／鎖血／吸取（玩家 2026-10-21 指定）──
+  var inAny = function () { try { return !!(S().antharas && typeof ANTHARAS_AREA_BOSS !== 'undefined' && ANTHARAS_AREA_BOSS[mapState.current]); } catch (e) { return false; } };
+  var dragonEle = function () { var k = cur(); return k ? DRAGONS[k].ele : 'earth'; };
+  var dlog = function (h) { try { if (!S().ff) logCombat(h, 'enemy'); } catch (e) {} };
+  var drain = function (m) {
+    team().forEach(function (x) {
+      if (x === player) { player.hp = Math.max(1, player.hp - Math.floor((player.mhp || 0) * 0.2)); player.mp = Math.max(0, player.mp - Math.floor((player.mmp || 0) * 0.8)); }
+      else { x.curHp = Math.max(1, (x.curHp || 0) - Math.floor((x.mhp || 0) * 0.2)); x.mp = Math.max(0, (x.mp || 0) - Math.floor((x.mmp || 0) * 0.8)); }
+    });
+    dlog('<span class="font-bold" style="color:#c084fc">【龍魂吸取】</span>' + m.n + ' 倒下前吸走了全隊 20% 的 HP 與 80% 的 MP！');
+  };
+  var startLock = function (m) {
+    if (m._afkLockUntil) return;
+    m._afkLockUntil = (S().ticks || 0) + 100; m.curHp = 1;
+    dlog('<span class="font-bold" style="color:#f87171">【不滅龍心】</span>' + m.n + ' 承受了致命一擊，以 1 點 HP 硬撐 10 秒！');
+  };
+  var dragonTick = function () {
+    var t = S().ticks || 0;
+    (mapState.mobs || []).forEach(function (m, idx) {
+      if (!m || m._dead || !m._afkDragonStage) return;
+      if (m._afkBornT == null) { m._afkBornT = t; m._afkRefAt = t; }
+      if (m._afkLockUntil) {
+        if (t < m._afkLockUntil) { if (!(m.curHp >= 1)) m.curHp = 1; return; }
+        if (!m._afkLockDone) {
+          m._afkLockDone = true; drain(m);
+          if (m.transformTo && DB.mobs[m.transformTo]) doMobTransform(idx);
+          else { m.curHp = 0; killMob(idx); }
+        }
+        return;
+      }
+      if (window.__afkHalted && window.__afkHalted(m)) { m._afkRefAt = t; m._afkBornT++; return; }   // 連暈停擺：不回血、不反射、不放定時技（60 秒計時也暫停）
+      if (!m._afkHealed && t - m._afkBornT >= 600 && m.curHp > 0 && m.curHp < m.hp) {
+        m._afkHealed = true; m.curHp = m.hp;
+        dlog('<span class="font-bold" style="color:#4ade80">【龍之再生】</span>60 秒內沒能擊倒 ' + m.n + '，牠的 HP 回滿了！');
+      }
+      if (t - m._afkRefAt >= 50) {
+        m._afkRefAt = t;
+        var kind = Math.random() < 0.5 ? 'phys' : 'magic';
+        m._reflectWall = { kind: kind, until: t + 20 };
+        dlog('<span class="font-bold" style="color:#fb7185">【龍鱗反射】</span>' + m.n + ' 張開了' + (kind === 'phys' ? '物理' : '魔法') + '反射（2 秒）！');
+      }
+    });
+  };
+  if (typeof window.doMobTransform === 'function') {
+    var oTrans = window.doMobTransform;
+    window.doMobTransform = function (idx) {
+      var m = mapState.mobs[idx];
+      if (m && m._afkDragonStage && !m._afkLockDone && inAny()) { startLock(m); return; }
+      return oTrans.apply(this, arguments);
+    };
+  }
+  var oKillD = window.killMob;
+  window.killMob = function (idx) {
+    var m = mapState.mobs[idx];
+    if (m && !m._dead && m._afkDragonStage && !m._afkLockDone && inAny()) { if (m.transformTo) { startLock(m); m.curHp = 1; return; } startLock(m); m.curHp = 1; return; }
+    return oKillD.apply(this, arguments);
+  };
   var pulse = function () {
+    if (inAny() && !player.dead) {
+      var t0 = S().ticks || 0;
+      try { dragonTick(); } catch (e) {}
+      if (t0 % 10 === 0) {
+        var ele = dragonEle(), died0 = false;
+        team().forEach(function (x) { if (!died0) died0 = hurt(x, 500 + 500 * effRes(x, ele)); });   // 500 真實傷害＋500 屬性傷害（吃屬性抗性）
+        if (died0) return;
+      }
+    }
     if (!inMap() || player.dead) return;
     var s = S(), t = s.ticks || 0, key = cur(), C = DRAGONS[key];
-    if (t % 10 === 0) {
-      var died = false;
-      team().forEach(function (x) { if (!died) { var dm = 100 * effRes(x, C.ele); if (dm >= 1) died = hurt(x, dm); } });
-      if (died) return;
-    }
-    var boss = mapState.mobs.some(function (m) { return m && m.boss && !m._dead && m.curHp > 0; });
+    var boss = mapState.mobs.some(function (m) { return m && m.boss && !m._dead && m.curHp > 0 && !(window.__afkHalted && window.__afkHalted(m)); });
     if (boss && t - lastDeb >= 200) {
       lastDeb = t;
       var pick = DEB[Math.floor(Math.random() * DEB.length)];
@@ -378,6 +479,83 @@
         html += '</div>';
         var box = div.querySelector('.text-sm.space-y-3') || div;
         box.insertAdjacentHTML('beforeend', html);
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  // ── 萊利的輔佐官：四龍材料都能換積分；積分抽遺物／換昇華支配強化石／抽昇華支配遺物；夢艷地獄中傳家之寶必帶遠古系詞條 ──
+  try {
+    if (typeof ANT_POINT_VALUES !== 'undefined') {
+      Object.keys(ANT_POINT_VALUES).slice().forEach(function (id) {
+        var m = /^mat_antharas_(\w+)$/.exec(id); if (!m) return;
+        Object.keys(DRAGONS).forEach(function (key) { var nid = 'mat_' + key + '_' + m[1]; if (DB.items[nid] && !ANT_POINT_VALUES[nid]) ANT_POINT_VALUES[nid] = ANT_POINT_VALUES[id]; });
+      });
+    }
+  } catch (e) {}
+  var ptsSet = function (v) { _lzSet(_antPointsKey(), String(Math.max(0, Math.floor(v)))); };
+  var rileyRefresh = function () { try { saveGame(); updateUI(); renderTabs(true); } catch (e) {} var c = document.getElementById('interaction-content'); if (c && typeof renderRileyAide === 'function') renderRileyAide(c); };
+  var dreamOnR = function () { return !!(player && player.sherineDream && player.sherineMad); };
+  var ANC = [true, 'eternal', 'immortal', 'primordial'];
+  var withAnc = function (fn) {   // 夢艷地獄：這次拿到的裝備強制帶遠古系詞條
+    if (!dreamOnR()) return fn();
+    var before = {}; player.inv.forEach(function (i) { before[i.uid] = i.cnt || 1; });
+    var r = fn();
+    try {
+      player.inv.slice().forEach(function (it) {
+        var d = DB.items[it.id]; if (!d || (d.type !== 'wpn' && d.type !== 'arm' && d.type !== 'acc') || d.isArrow) return;
+        var was = before[it.uid] || 0, now = it.cnt || 1; if (now <= was || it.anc) return;
+        var anc = ANC[Math.floor(Math.random() * ANC.length)];
+        if (was === 0 && now === 1) { it.anc = anc; return; }
+        it.cnt = was; var nu = Object.assign({}, it, { uid: uid(), cnt: now - was, anc: anc }); player.inv.push(nu);
+      });
+    } catch (e) {}
+    return r;
+  };
+  if (typeof window.antHeirloomOpen === 'function') {
+    var oHeir = window.antHeirloomOpen;
+    window.antHeirloomOpen = function () { var self = this, args = arguments; return withAnc(function () { return oHeir.apply(self, args); }); };
+  }
+  window.afkRileyBuy = function (kind, arg) {
+    var pts = antPointsGet();
+    var cost = { relic: 1000, stone: 500, asc: 5000 }[kind];
+    if (!cost) return;
+    if (pts < cost) { logSys('<span class="text-red-400">積分不足（需要 ' + cost + ' 分）。</span>'); return; }
+    var got = null;
+    withAnc(function () {
+      if (kind === 'relic') {
+        var pool = (typeof allRelicIds === 'function') ? allRelicIds() : []; if (!pool.length) return;
+        got = pool[Math.floor(Math.random() * pool.length)]; gainItem(got, 1, true);
+      } else if (kind === 'stone') {
+        got = { wpn: 'afk_asc_stone_wpn', arm: 'afk_asc_stone_arm', acc: 'afk_asc_stone_acc' }[arg]; if (!got || !DB.items[got]) { got = null; return; } gainItem(got, 1, true, true);
+      } else if (kind === 'asc') {
+        got = (window.__afkDreamStar && window.__afkDreamStar.randomAscRelic) ? window.__afkDreamStar.randomAscRelic() : null;
+        if (got) gainItem(got, 1, true, true);
+      }
+    });
+    if (!got) { logSys('<span class="text-red-400">兌換失敗，積分沒有扣除。</span>'); return; }
+    ptsSet(pts - cost);
+    logSys('<span class="text-yellow-300 font-bold">📦 萊利的輔佐官：</span>花費 ' + cost + ' 積分，獲得 <span class="text-amber-200">' + ((DB.items[got] || {}).n || got) + '</span>！');
+    rileyRefresh();
+  };
+  if (typeof window.renderRileyAide === 'function') {
+    var oRiley = window.renderRileyAide;
+    window.renderRileyAide = function (div) {
+      var r = oRiley.apply(this, arguments);
+      try {
+        var pts = antPointsGet();
+        var b = function (on, label, js) { return '<button onclick="' + js + '" ' + (on ? '' : 'disabled') + ' class="btn font-bold py-2 rounded ' + (on ? 'bg-amber-800 hover:bg-amber-700 border-amber-500' : 'bg-slate-700 border-slate-600 opacity-60') + '">' + label + '</button>'; };
+        var box = document.createElement('div');
+        box.className = 'text-sm space-y-2 mt-3 border-t border-slate-700 pt-3';
+        box.innerHTML = '<div class="text-amber-300 font-bold">積分兌換</div>'
+          + '<div class="grid grid-cols-1 gap-2">'
+          + b(pts >= 1000, '🏺 1,000 積分：抽一件遺物', "afkRileyBuy('relic')")
+          + '<div class="grid grid-cols-3 gap-2">' + b(pts >= 500, '500：強化石(武器)', "afkRileyBuy('stone','wpn')") + b(pts >= 500, '500：強化石(防具)', "afkRileyBuy('stone','arm')") + b(pts >= 500, '500：強化石(飾品)', "afkRileyBuy('stone','acc')") + '</div>'
+          + b(pts >= 5000, '👑 5,000 積分：抽一件昇華支配遺物', "afkRileyBuy('asc')")
+          + '</div>'
+          + '<div class="text-xs text-slate-400">四大龍副本的龍材料（安塔瑞斯、法利昂、巴拉卡斯、林德拜爾）都能換積分，分數相同。'
+          + (dreamOnR() ? '<span class="text-fuchsia-300">夢艷地獄中：傳家之寶與這裡換到的裝備一定帶遠古系詞條。</span>' : '在夢艷地獄中換到的裝備一定帶遠古系詞條。') + '</div>';
+        (div.firstElementChild || div).appendChild(box);
       } catch (e) {}
       return r;
     };

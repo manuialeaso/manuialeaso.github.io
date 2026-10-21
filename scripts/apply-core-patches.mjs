@@ -801,7 +801,27 @@ function patchMaxAdd() {
   changed++; console.log('[patch] 上限加成在夾 HP 之前');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd];
+// 30. 侵蝕安塔瑞斯改七階（afk-corrupt）：通關判定改認 window.__afkAntFinal（新的最終階名字）
+function patchAntFinal() {
+  const FILE = 'js/05-kill-progression.js', MARK = '/* 🔌 加掛版補丁:安塔瑞斯最終階 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const F = "(window.__afkAntFinal || '被侵蝕的瘋狂安塔瑞斯')";
+  const edits = [
+    ["mob.n === '被侵蝕的瘋狂安塔瑞斯' &&", "mob.n === " + F + " &&   " + MARK + "\n       "],
+    ["    if (bossName === '被侵蝕的瘋狂安塔瑞斯') {", "    if (bossName === " + F + ") {   " + MARK],
+    ["🏆 你擊敗了被侵蝕的瘋狂安塔瑞斯，淨化了巢穴！", "🏆 你擊敗了' + " + F + " + '，淨化了巢穴！"],
+  ];
+  for (const [A, B] of edits) {
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 安塔瑞斯最終階錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 40)}`);
+    s = s.replace(A, B);
+  }
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 安塔瑞斯最終階');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal];
 
 try {
   for (const p of PATCHES) p();

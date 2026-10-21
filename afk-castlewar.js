@@ -136,7 +136,7 @@
   }
 
   // 城堡（安全區）放進所屬地區的地圖清單：持有的每一座都看得到
-  var REGION_OF = { kent: 'kent', windwood: 'windwood', heine: 'heine', giran: 'giran', aden: 'aden', orc_fortress: 'oren', dwarf_castle: 'dragonvalley' };
+  var REGION_OF = { kent: 'kent', windwood: 'windwood', heine: 'heine', giran: 'giran', aden: 'aden', orc_fortress: 'burningwillow', dwarf_castle: 'witon' }   // 妖魔堡在燃柳地區、侏儒城在威頓地區;
   if (typeof window.mapRegionOf === 'function') {
     var oRegion = window.mapRegionOf;
     window.mapRegionOf = function (v) { var r = oRegion.apply(this, arguments); return (r === 'orc_fortress' || r === 'dwarf_castle') ? REGION_OF[r] : r; };
@@ -391,7 +391,7 @@
     var inc = n >= 7 ? '每小時 100 龍鑽＋1,000 萬天幣＋100 席琳結晶' : (n >= 5 ? '每小時 500 萬天幣＋100 龍鑽' : (n >= 3 ? '每小時 500 萬天幣' : '3 座以上才有收成'));
     var war = d.surrendered ? '全伺服器已投降，宣戰結束' : (d.warIds.length ? d.warIds.length + ' 個血盟對你宣戰' : (n <= 1 ? '只有 1 座城，沒人對你宣戰' : '—'));
     return '<div class="bg-slate-900/70 border border-amber-700/60 rounded p-3 text-sm text-slate-200 leading-relaxed">' +
-      '<div class="font-bold text-amber-200 mb-1">🏰 持有城堡 ' + n + '／7' + (n >= 7 ? '（統一伺服器）' : '') + '</div>' +
+      '<div class="font-bold text-amber-200 mb-1">🏰 持有城堡 ' + n + '／7' + (n >= 7 ? '（' + unifyTitle() + '）' : '') + '</div>' +
       '<div>' + (h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、') || '尚未持有') + '</div>' +
       '<div class="mt-1">收成：' + inc + '</div>' +
       '<div>宣戰：' + war + '</div>' +
@@ -418,7 +418,88 @@
     };
   }
 
-  window.__afkCastleWar = { held: held, data: data, save: save, syncWar: syncWar, tierOf: tierOf, groupSize: groupSize, payIncome: payIncome, shadowScale: shadowScale, NEW: NEW, need: need, unified: unified,
+  // ── 統一天下的稱號：還沒全部投降＝「統一天下 肅清反賊中」，全部投降＝「統一天下」──
+  var unifyTitle = function () { if (!unified()) return ''; return data().surrendered ? '統一天下' : '統一天下 肅清反賊中'; };
+
+  // ── 血盟等級上限 20（Lv.11 起每級 +1 全屬性、+5 四屬性抗性），血盟 Buff 乘上持有城堡數 ──
+  var CLAN_MAX = 20;
+  try {
+    var EXTRA_COST = [300000, 350000, 400000, 450000, 500000, 600000, 700000, 800000, 900000, 1000000];
+    while (CLAN_LEVEL_COSTS.length < CLAN_MAX - 1) CLAN_LEVEL_COSTS.push(EXTRA_COST[CLAN_LEVEL_COSTS.length - 9] || 1000000);
+    while (CLAN_BUFF_BY_LEVEL.length <= CLAN_MAX) CLAN_BUFF_BY_LEVEL.push(Object.assign({}, CLAN_BUFF_BY_LEVEL[10]));
+  } catch (e) {}
+  window.clanLevelInfo = function (xp) {
+    xp = Math.max(0, Math.floor(Number(xp) || 0));
+    var level = 1, spent = 0;
+    for (var i = 0; i < CLAN_MAX - 1; i++) { if (xp - spent < CLAN_LEVEL_COSTS[i]) break; spent += CLAN_LEVEL_COSTS[i]; level++; }
+    return { level: level, current: Math.max(0, xp - spent), next: level >= CLAN_MAX ? 0 : CLAN_LEVEL_COSTS[level - 1], total: xp };
+  };
+  var cache = { at: -1e9, lv: 1, k: 1 };
+  var fresh = function () {   // 重算很頻繁：一秒內只讀一次存檔
+    var now = Date.now(); if (now - cache.at < 1000) return cache;
+    cache.at = now;
+    try { var st = _clanReadState(); cache.lv = st ? window.clanLevelInfo(st.xp).level : 1; } catch (e) { cache.lv = 1; }
+    try { cache.k = Math.max(1, held().length); } catch (e) { cache.k = 1; }
+    return cache;
+  };
+  var BUFF_KEYS = ['hp', 'mp', 'extraDmg', 'extraHit', 'mr', 'magicDmg', 'hpR', 'mpR', 'ac'];
+  var scaleBuff = function (b) {
+    if (!b) return b;
+    var c = fresh(), o = Object.assign({}, b), n = Math.max(0, c.lv - 10);
+    BUFF_KEYS.forEach(function (key) { if (typeof o[key] === 'number') o[key] *= c.k; });
+    o.allStat = n; o.res4 = n * 5; o.castleMult = c.k;
+    return o;
+  };
+  if (typeof window.getClanBuffStats === 'function') {
+    var oCB = window.getClanBuffStats;
+    window.getClanBuffStats = function (p) { var b = oCB.apply(this, arguments); return b ? scaleBuff(b) : b; };
+  }
+  // 全屬性要在「屬性換算戰鬥數值」之前加進去：掛在 __afkAttrBoost（核心夾上限前呼叫）
+  var oBoost = window.__afkAttrBoost;
+  window.__afkAttrBoost = function (p, d) {
+    try {
+      var b = (typeof window.getClanBuffStats === 'function') ? window.getClanBuffStats(p) : null;
+      if (b && (b.allStat || b.res4)) {
+        var s = b.allStat || 0; d.str += s; d.dex += s; d.con += s; d.int += s; d.wis += s; d.cha += s;
+        var r = b.res4 || 0; d.resFire += r; d.resWater += r; d.resEarth += r; d.resWind += r;
+      }
+    } catch (e) {}
+    if (typeof oBoost === 'function') return oBoost.apply(this, arguments);
+  };
+  if (typeof window._clanBuffText === 'function') {
+    var oBT = window._clanBuffText;
+    window._clanBuffText = function (buff) {
+      if (!buff) return oBT.apply(this, arguments);
+      var b = buff.castleMult ? buff : scaleBuff(buff), t = oBT.call(this, b);
+      if (b.allStat) t += '、全屬性 +' + b.allStat + '、火水風地抗性 +' + b.res4;
+      if (b.castleMult > 1) t += '<div class="text-xs text-amber-300 mt-1">🏰 持有 ' + b.castleMult + ' 座城堡：Buff 數值 ×' + b.castleMult + '</div>';
+      return t;
+    };
+  }
+  if (typeof window.renderClanTab === 'function') {
+    var oCT = window.renderClanTab;
+    window.renderClanTab = function () {
+      var r = oCT.apply(this, arguments);
+      try {
+        var div = document.getElementById('tab-clan'); if (!div) return r;
+        var st = _clanReadState(), li = st ? window.clanLevelInfo(st.xp) : null;
+        if (li) div.querySelectorAll('.text-cyan-200.font-bold').forEach(function (el) {
+          if (!/^血盟 Lv\./.test(el.textContent)) return;
+          el.textContent = '血盟 Lv.' + li.level + '／' + CLAN_MAX;
+          var x = el.nextElementSibling; if (x) x.textContent = '經驗 ' + (li.level >= CLAN_MAX ? st.xp.toLocaleString() + '（最高等級）' : li.current.toLocaleString() + ' / ' + li.next.toLocaleString());
+        });
+        var title = unifyTitle(), h = held();
+        div.querySelectorAll('.text-sm.text-slate-400.mt-1').forEach(function (el) {
+          if (el.textContent.indexOf('城堡：') < 0) return;
+          var txt = title ? '<span class="text-yellow-300 font-bold">' + title + '</span>（' + h.length + ' 城）' : (h.length ? h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、') : '');
+          if (txt) el.innerHTML = el.innerHTML.replace(/城堡：[\s\S]*$/, '城堡：' + txt);
+        });
+      } catch (e) {}
+      return r;
+    };
+  }
+
+  window.__afkCastleWar = { unifyTitle: unifyTitle, held: held, data: data, save: save, syncWar: syncWar, tierOf: tierOf, groupSize: groupSize, payIncome: payIncome, shadowScale: shadowScale, NEW: NEW, need: need, unified: unified,
     _setCall: function (c) { call = c; }, fillCall: fillCall };
   console.log('[AFK-castlewar] 已啟用：七城攻城、城堡收成、宣戰與統一伺服器');
 })();

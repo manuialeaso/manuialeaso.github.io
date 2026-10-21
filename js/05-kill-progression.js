@@ -331,7 +331,8 @@ function killMob(idx) {
     if (!mob || mob._dead) return;        // 冪等保護：同一隻怪只結算一次獎勵
     if (mob._justTransformedTick != null && state.ticks - mob._justTransformedTick <= 5 && mob.curHp > 0) return;   // 🌅 審查修：同一擊內的過時二次 killMob（on-hit 特效先殺→主判定又用舊 target.curHp 呼叫同槽位）→剛變身的滿血新階段不吃這種幽靈擊殺（真死亡 curHp<=0 不受影響）
     if (mob.transformTo && DB.mobs[mob.transformTo]) { doMobTransform(idx); return; }   // 🌅 三段變身：即使 HP=0 也不會死亡而是強制變身（先於 _dead/特效/獎勵）
-    if (state.antharas && mapState.current === 'antharas_lair' && mob.n === '被侵蝕的瘋狂安塔瑞斯' &&
+    if (state.antharas && mapState.current === 'antharas_lair' && mob.n === (window.__afkAntFinal || '被侵蝕的瘋狂安塔瑞斯') &&   /* 🔌 加掛版補丁:安塔瑞斯最終階 */
+       
         typeof antharasClaimDailyClear === 'function') {
         let _antClaim = antharasClaimDailyClear();
         if (!_antClaim.ok) {
@@ -926,9 +927,9 @@ function antharasEnter() {   // NPC 多魯嘉貝爾「進入副本」：守衛�
 }
 function antharasOnBossKill(bossName) {   // 清算時呼叫：最終階＝通關回村；其餘＝推進下一區
     if (!state.antharas) return;
-    if (bossName === '被侵蝕的瘋狂安塔瑞斯') {
+    if (bossName === (window.__afkAntFinal || '被侵蝕的瘋狂安塔瑞斯')) {   /* 🔌 加掛版補丁:安塔瑞斯最終階 */
         state.antharas = 0; state._antAdvance = false;
-        logSys('<span class="text-amber-300 font-bold">🏆 你擊敗了被侵蝕的瘋狂安塔瑞斯，淨化了巢穴！</span>主戰角色與本次出戰傭兵的今日通關次數均已消耗，自動返回威頓村。');
+        logSys('<span class="text-amber-300 font-bold">🏆 你擊敗了' + (window.__afkAntFinal || '被侵蝕的瘋狂安塔瑞斯') + '，淨化了巢穴！</span>主戰角色與本次出戰傭兵的今日通關次數均已消耗，自動返回威頓村。');
         setMapSelectors('town_witon'); changeMap(true);
         if (!state.ff) saveGame();
         return;

@@ -36,6 +36,34 @@
     };
   }
 
+  // 超過屬性上限的部分（裝備、Buff、血盟等其他來源）仍算進「攻擊」與「魔法」公式：
+  // 核心在夾上限前呼叫 __afkAttrBoost → 這裡記下夾之前的值；近戰／遠程／魔法的傷害、命中、爆擊、額外魔法點數改用夾之前的值查表
+  var oBoostR = window.__afkAttrBoost;
+  window.__afkAttrBoost = function (p, d) {
+    var r; if (typeof oBoostR === 'function') r = oBoostR.apply(this, arguments);
+    try { d._raw = { str: d.str, dex: d.dex, int: d.int }; } catch (e) {}
+    return r;
+  };
+  var useRaw = function (fn, key) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function (v) {
+      try { var d = player && player.d, raw = d && d._raw && d._raw[key]; if (raw > v && v === d[key] && v >= window.__afkAttrCap()) return o.call(this, raw); } catch (e) {}
+      return o.apply(this, arguments);
+    };
+  };
+  [['getStrMeleeDmg', 'str'], ['getStrMeleeHit', 'str'], ['getStrMeleeCrit', 'str'], ['getDexRangedDmg', 'dex'], ['getDexRangedHit', 'dex'], ['getDexRangedCrit', 'dex'],
+   ['getIntMagicDmg', 'int'], ['getIntMagicHit', 'int'], ['getIntMagicCrit', 'int'], ['getIntExtraMp', 'int']].forEach(function (a) { useRaw(a[0], a[1]); });
+
+  // 四屬性抗性：上限 500＝減傷 99%（100 以下照原本：50 以下 1 點 1%、50→100 每 5 點 1%＝60%；100→500 平均拉到 99%）
+  if (typeof window.effResistPct === 'function') {
+    var oRes = window.effResistPct;
+    window.effResistPct = function (v) {
+      v = Math.min(500, v || 0);
+      if (v <= 100) return oRes(v);
+      return Math.min(99, 60 + Math.floor((v - 100) * 39 / 400));
+    };
+  }
+
   // 面板 +50
   var oRe = window.recomputeStats;
   window.recomputeStats = function () {
@@ -125,6 +153,38 @@
     else if (confirm(msg)) go();
     return { ok: true, pending: true };
   };
+  // 轉生後的治癒魔法：額外強制回復最大 HP 的 20%（全體治癒類 10%）
+  var HEAL_SK = ['sk_heal1', 'sk_heal_mid', 'sk_heal2', 'sk_full_heal', 'sk_regen', 'sk_elf_lifespring', 'sk_elf_lifebless'];
+  if (typeof window.rollHealingSpell === 'function') {
+    var oRoll = window.rollHealingSpell;
+    window.rollHealingSpell = function (sk, dS, caster, target) {
+      var v = oRoll.apply(this, arguments);
+      try {
+        if (v > 0 && caster && caster.rebirth > 0 && sk && HEAL_SK.some(function (id) { return DB.skills[id] === sk; })) {
+          var mx = (typeof healingSpellTargetMhp === 'function') ? healingSpellTargetMhp(target) : (target && target.mhp) || 0;
+          v += Math.floor((Number(mx) || 0) * (sk.groupHeal ? 0.10 : 0.20));
+        }
+      } catch (e) {}
+      return v;
+    };
+  }
+  // 精通之道（漢）：轉生後顯示「刻苦修行完全精通」（四種精通全部生效，不必再選）
+  if (typeof window.renderHanNPC === 'function') {
+    var oHan = window.renderHanNPC;
+    window.renderHanNPC = function (div) {
+      if (!reborn() || !div || typeof MASTERY_DATA === 'undefined' || !MASTERY_DATA[player.cls]) return oHan.apply(this, arguments);
+      var md = MASTERY_DATA[player.cls];
+      var cards = Object.keys(md.list).map(function (k) {
+        var m = md.list[k];
+        return '<div class="bg-slate-800/70 border-2 border-yellow-500/70 rounded p-3 text-left"><div class="font-bold text-yellow-300">★ ' + m.n + '</div><div class="text-xs text-slate-300 mt-1 leading-relaxed">' + (m.d || m.msg || '') + '</div></div>';
+      }).join('');
+      div.innerHTML = '<div class="flex flex-col gap-3 p-2 items-center">'
+        + '<div class="text-amber-200 font-bold text-lg tracking-widest">—— 精 通 之 道 ——</div>'
+        + '<div class="text-sm text-slate-300">目前精通：<span class="text-yellow-300 font-bold">刻苦修行完全精通</span></div>'
+        + '<div class="text-slate-400 text-xs">漢：走過輪迴的人，已經把四條路都走完了。四種精通同時生效，不必再選。</div>'
+        + '<div class="grid gap-2 w-full max-w-[560px]" style="grid-template-columns:1fr 1fr;">' + cards + '</div></div>';
+    };
+  }
   window.__afkRebirth = { reborn: reborn };
   console.log('[AFK-rebirth] 已啟用：輪迴轉生');
 })();

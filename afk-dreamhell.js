@@ -207,7 +207,7 @@
     try {
       if (m && m._dead && !m._afkDreamPaid) {
         m._afkDreamPaid = true;
-        if (m.n === '被侵蝕的瘋狂安塔瑞斯') gainItem('afk_contempt_earth', 1);
+        if (m.n === (window.__afkAntFinal || '被侵蝕的瘋狂安塔瑞斯')) gainItem('afk_contempt_earth', 1);
         // 境滅亡域鑰匙：四大龍副本——瘋狂席琳 0.01%、夢艷地獄 1%（固定，不吃倍率）
         if (CORRUPT_MAPS.indexOf(mapState.current) >= 0 && m._sherineMad && Math.random() < (dream ? 0.01 : 0.0001)) {
           var keepInfo = (typeof _lootMobInfo !== 'undefined') ? _lootMobInfo : null;
