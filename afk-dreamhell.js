@@ -15,6 +15,7 @@
  *   ‧一般怪出生時隨機免疫「物理」或「魔法」傷害 10 秒（血壁空間型免疫；持續傷害、寵物、召喚不受影響）
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
+ *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
  * 報酬
  *   ‧經驗 0、金幣 0；每殺一隻 0.1% 機率掉龍之鑽石（掉的時候一半是 1～499 隨機、一半是 500）
  *   ‧掉落機率 ×50（恩賜 ×10 × 5）；裝備掉落 100% 祝福；席琳結晶掉率 ×5
@@ -131,6 +132,35 @@
     window.applySherineGrace = function () { if (dreamOn()) return; return oGrace.apply(this, arguments); };
   }
 
+  // ── 場上怪物上限：最多 3 隻；有王的時候場上只有王（玩家 2026-10-21 指定）──
+  var siege = function () { try { return typeof isSiegeArea === 'function' && isSiegeArea(mapState.current); } catch (e) { return false; } };
+  if (typeof window.backSlotsActive === 'function') {
+    var oBack = window.backSlotsActive;
+    window.backSlotsActive = function () { if (dreamOn() && !siege()) return false; return oBack.apply(this, arguments); };
+  }
+  if (typeof window.spawnMob === 'function') {
+    var oSpawn = window.spawnMob;
+    var live = function (m) { return m && !m._dead && m.curHp > 0; };
+    window.spawnMob = function (idx) {
+      if (!dreamOn() || siege()) return oSpawn.apply(this, arguments);
+      var ms = mapState.mobs;
+      if (ms.some(function (m, j) { return j !== idx && live(m) && m.boss; })) return;   // 王在場：不再出怪
+      if (ms.filter(function (m, j) { return j !== idx && live(m); }).length >= 3) return;
+      var r = oSpawn.apply(this, arguments);
+      var nm = ms[idx];
+      if (nm && nm.boss) {
+        var gone = 0;
+        for (var j = 0; j < ms.length; j++) if (j !== idx && live(ms[j]) && !ms[j].boss) { ms[j] = null; gone++; }
+        if (gone) {
+          if (mapState.targetIdx >= 0 && !ms[mapState.targetIdx]) mapState.targetIdx = idx;
+          try { logSys('<span class="text-fuchsia-300">🌙 ' + nm.n + ' 降臨，周圍的怪物四散逃離……（夢艷地獄：有王時場上只有王）</span>'); } catch (e) {}
+          if (!state.ff) { try { renderMobs(); } catch (e) {} }
+        }
+      }
+      return r;
+    };
+  }
+
   // ── 出怪等待 −3 秒 ──
   window.__afkSpawnDelayAdj = function (delay) {
     if (!dreamOn()) return delay;
@@ -145,8 +175,11 @@
       try { return oTick.apply(this, arguments); }
       finally { regen(); }
     };
+    var lastRegen = -1;
     var regen = function () {
       try {
+        if (state.ticks === lastRegen) return;   // tick 提早返回（例如玩家倒地）時 ticks 不會前進 → 同一個 tick 只回一次血
+        lastRegen = state.ticks;
         if (state.ticks % 10 === 0 && mapState && mapState.mobs) {
           for (var i = 0; i < mapState.mobs.length; i++) {
             var m = mapState.mobs[i];

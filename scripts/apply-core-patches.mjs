@@ -657,7 +657,33 @@ function patchPetHostRect() {
   changed++; console.log('[patch] 寵物圖層戰場大小快取');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect];
+function patchBarrierCdSkip() {
+  const FILE = 'js/07-skills-cast.js';
+  const A = "        if (document.getElementById(cfg.id).checked && (player.buffs[cfg.b] || 0) <= 0) {";
+  const B = "        if (document.getElementById(cfg.id).checked && (player.buffs[cfg.b] || 0) <= 0 && !(cfg.b === 'sk_magic_shield' && (player.magicShieldCd || 0) > 0)) {   /* 🔌 加掛版補丁:屏障冷卻中不每 tick 掃背包 */";
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(B)) { already++; return; }
+  const n = s.split(A).length - 1;
+  if (n !== 1) throw new Error(`[${FILE}] 自動 buff 迴圈錨點應出現 1 次，實際 ${n} 次`);
+  s = s.replace(A, B);
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 魔法屏障冷卻中跳過自動使用');
+}
+
+function patchNoOfflineMaps() {
+  const FILE = 'js/27-offline-rewards.js';
+  const A = "        if (/^antharas_(?:nest_[123]|lair)$/.test(String(map))) return false;";
+  const B = "        if (/^antharas_(?:nest_[123]|lair)$/.test(String(map))) return false;\n        if (typeof window !== 'undefined' && Array.isArray(window.__afkNoOfflineMaps) && window.__afkNoOfflineMaps.indexOf(String(map)) >= 0) return false;   /* 🔌 加掛版補丁:外掛副本禁止離線掛機 */";
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(B)) { already++; return; }
+  const n = s.split(A).length - 1;
+  if (n !== 1) throw new Error(`[${FILE}] 離線地圖錨點應出現 1 次，實際 ${n} 次`);
+  s = s.replace(A, B);
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 外掛副本禁止離線掛機');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps];
 
 try {
   for (const p of PATCHES) p();

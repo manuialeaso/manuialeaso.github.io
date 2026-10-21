@@ -224,8 +224,9 @@
   };
   var oTick = window.tick;
   window.tick = function () {
+    var t0 = S().ticks;
     try { return oTick.apply(this, arguments); }
-    finally { try { timeline(); } catch (e) { console.warn('[AFK-dreamstar] timeline', e); } }
+    finally { if (S().ticks !== t0) { try { timeline(); } catch (e) { console.warn('[AFK-dreamstar] timeline', e); } } }   // tick 提早返回（暫停／倒地）時不跑時間軸
   };
 
   // ── 擊殺：只給固定掉落 ──

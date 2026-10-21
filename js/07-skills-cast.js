@@ -1022,7 +1022,7 @@ function autoActions() {
     ];
     buffs.forEach(cfg => {
         if (cfg.b === 'haste' && player._equipHaste) return;   // 裝備常駐加速（伊娃之盾）：不重複喝加速藥水
-        if (document.getElementById(cfg.id).checked && (player.buffs[cfg.b] || 0) <= 0) {
+        if (document.getElementById(cfg.id).checked && (player.buffs[cfg.b] || 0) <= 0 && !(cfg.b === 'sk_magic_shield' && (player.magicShieldCd || 0) > 0)) {   /* 🔌 加掛版補丁:屏障冷卻中不每 tick 掃背包 */
             if(cfg.req && !cfg.req.split(',').includes(player.cls)) return;   // 🎮 支援逗號多職業（勇敢藥水 knight,dragon）
             let item = player.inv.find(i => i.id === cfg.pot);
             if(item) {

@@ -16,6 +16,8 @@
  *   ‧卡片：全部怪物都到白金卡 → 卡片地區加成 ×3
  *   ‧白金卡全滿另外解鎖夢艷地獄的昇華支配強化石／碎片掉落（在 afk-dreamhell.js）
  *
+ * 變身怪：每次變身／進入下一型態時，用變身前那一階的名字擲一次卡片（原本中間階完全不掉卡）。
+ *
  * 鑽白金幻化（暗夢星迴 0.01%）：使用後自選任一隻怪，獲得牠的鑽石卡。
  * 核心掛點：補丁 20（卡片冊顯示五階）；其餘包 rollCardDrops／acquireCard／useCardItem／cardDexTier／cardRegionTier／各圖鑑加成函式／useItem。
  * ========================================================================== */
@@ -127,6 +129,22 @@
     } catch (e) {}
     return r;
   };
+
+  // ── 變身／進入第二型態時也擲一次卡片（玩家 2026-10-21：沒被秒殺進入型態的話，中間階永遠打不到卡）──
+  if (typeof window.doMobTransform === 'function') {
+    var oTrans = window.doMobTransform;
+    window.doMobTransform = function (idx) {
+      var before = mapState.mobs[idx];
+      var r = oTrans.apply(this, arguments);
+      try {
+        if (before && mapState.mobs[idx] !== before && CARD_MOB_INFO[before.n]) {
+          var stage = Object.assign({}, before); delete stage.transformTo;
+          rollCardDrops(stage);
+        }
+      } catch (e) {}
+      return r;
+    };
+  }
 
   // ── 圖鑑全滿：夢艷地獄 ×3 ──
   var dreamOn = function () { return !!(window.__afkDreamHell && window.__afkDreamHell.on()); };

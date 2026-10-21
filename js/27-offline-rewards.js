@@ -353,7 +353,8 @@
 
     function _offlineValidHuntMap(map) {
         if (!map || String(map).indexOf('town_') === 0) return false;
-        if (/^antharas_(?:nest_[123]|lair)$/.test(String(map))) return false;   // 🐉 v3.7.61 安塔瑞斯副本禁止離線掛機
+        if (/^antharas_(?:nest_[123]|lair)$/.test(String(map))) return false;
+        if (typeof window !== 'undefined' && Array.isArray(window.__afkNoOfflineMaps) && window.__afkNoOfflineMaps.indexOf(String(map)) >= 0) return false;   /* 🔌 加掛版補丁:外掛副本禁止離線掛機 */   // 🐉 v3.7.61 安塔瑞斯副本禁止離線掛機
         // 🏰 v3.7.91 城戰 V2 戰場禁止離線掛機（用戶指示：攻城區一律不可離線）。
         //   ⚠️ 這兩行不是多餘的：`siege_v2_*` 目前沒註冊進 DB.maps，先前是「靠下面那道 DB.maps 檢查
         //   間接擋住」——哪天有人把戰場登記進 DB.maps（例如補出怪池），這道閘就會無聲打開。
