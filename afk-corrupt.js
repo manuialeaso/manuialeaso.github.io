@@ -369,7 +369,7 @@
   }
 
   // ── 每秒：房間屬性傷害；每 20 秒：王施放治療減益 ──
-  var effRes = function (t, ele) { var d = t.d || {}, v = d[ELE_RES[ele]] || 0, pct = (typeof effResistPct === 'function') ? effResistPct(v) : v; return Math.max(0, Math.min(1, 1 - pct / 100)); };
+  var effRes = function (t, ele) { if (window.__afkEleMult) return window.__afkEleMult(t.d || {}, ele, false); var d = t.d || {}, v = d[ELE_RES[ele]] || 0, pct = (typeof effResistPct === 'function') ? effResistPct(v) : v; return Math.max(0, Math.min(1, 1 - pct / 100)); };
   var lastDeb = 0;
   // ── 四大龍副本（含侵蝕安塔瑞斯）共通：房間傷害、龍的反射／回血／鎖血／吸取（玩家 2026-10-21 指定）──
   var inAny = function () { try { return !!(S().antharas && typeof ANTHARAS_AREA_BOSS !== 'undefined' && ANTHARAS_AREA_BOSS[mapState.current]); } catch (e) { return false; } };

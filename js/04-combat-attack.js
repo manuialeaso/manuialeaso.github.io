@@ -1183,6 +1183,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
         if(mob.e === 'wind' && player.d.resWind) resFactor -= effResistPct(player.d.resWind)/100;
 
         resFactor = Math.max(0, Math.min(1, resFactor));
+        if (window.__afkEleMult && mob.e && mob.e !== 'none') resFactor = window.__afkEleMult(player.d, mob.e, true);   /* 🔌 加掛版補丁:抗性新制 */
         totalDmg = Math.floor(totalDmg * resFactor);
         if (player.d.wearerEle && mob.e && mob.e !== 'none') totalDmg = Math.max(1, Math.floor(totalDmg * elementCounterMult(mob.e, player.d.wearerEle)));   // 🏺 遺物 火焰/寒冷化身：裝備者化屬性→受剋屬性一般攻擊傷害↑(×1.4)、受剋制屬性傷害↓(×0.6)
 
@@ -1220,6 +1221,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
           _drMult *= avatarSelfDmgReduceMult(player);                    // 🔮 v3.4.45 化身（單體）：自身持有→受傷 -3%
           if (heavy && player.d.crushDr > 0) _drMult *= (1 - Math.min(80, player.d.crushDr) / 100);   // 🏺 遺物 妖魔的兜襠布：受到重擊(敵人骰20)時傷害 -crushDr%（上限 80%）
           if (player.d.physDrGated > 0 && state.ticks >= (player._physDrCd || 0)) { _drMult *= (1 - Math.min(90, player.d.physDrGated) / 100); player._physDrCd = state.ticks + 30; }   // 🐍 祭祀儀式陶罐：受一般攻擊傷害 -physDrGated%，每 3 秒(30 ticks)最多觸發 1 次
+          if (window.__afkNoneRes) _drMult = Math.max(0.25, _drMult);   /* 🔌 加掛版補丁:抗性新制 */
           totalDmg = Math.max(0, Math.floor(totalDmg * _drMult)); }
 
         // 常駐被動：看破（敵人版）— 命中時依機率造成兩倍傷害（5 + 等級/10 %）
@@ -1274,6 +1276,7 @@ function _enemyPhysicalAttackInner(mob, idx, stunChance = 0, atkDmg = null, atkD
             updateUI();
             return;
         }
+        if (window.__afkNoneRes) totalDmg = window.__afkNoneRes(player.d, totalDmg);   /* 🔌 加掛版補丁:抗性新制 */
         player.hp -= totalDmg;
         if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, player);
         // 🏺 v3.7.20 長老的黑曜水晶球（crushTornado）：被重擊時 → 對敵方全體施放龍捲風（procFreeMagicSkill target:'all' 自動掃全場·免費施放）
@@ -1551,7 +1554,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
     if (mob.e === 'water' && d.resWater) resFactor -= effResistPct(d.resWater) / 100;
     if (mob.e === 'earth' && d.resEarth) resFactor -= effResistPct(d.resEarth) / 100;
     if (mob.e === 'wind' && d.resWind) resFactor -= effResistPct(d.resWind) / 100;
-    totalDmg = Math.floor(totalDmg * Math.max(0, Math.min(1, resFactor)));
+    totalDmg = Math.floor(totalDmg * ((window.__afkEleMult && mob.e && mob.e !== 'none') ? window.__afkEleMult(d, mob.e, true) : Math.max(0, Math.min(1, resFactor))));   /* 🔌 加掛版補丁:抗性新制 */
     if (d.wearerEle && mob.e && mob.e !== 'none') totalDmg = Math.max(1, Math.floor(totalDmg * elementCounterMult(mob.e, d.wearerEle)));   // 🏺 v3.1.76 火焰/寒冷化身（傭兵）：化屬性→受剋屬性一般攻擊×1.4、受剋制屬性×0.6（鏡像玩家 js/04:779）
     let acGap = Math.max(0, 10 - ((d.ac || 0) - teamAcBonus(ally)));   // 🌿 大地的祝福：全隊 AC-7（隨機減傷上限亦提高）
     let rndDrMax = (ally.cls === 'knight') ? Math.floor(acGap / 2) : ((ally.cls === 'elf' || ally.cls === 'dark' || ally.cls === 'dragon' || ally.cls === 'warrior') ? Math.floor(acGap / 3) : (ally.cls === 'illusion' ? Math.floor(acGap / 4) : Math.floor(acGap / 5)));
@@ -1582,6 +1585,7 @@ function _enemyAttackAllyInner(mob, ally, isBasicAttack = false) {
         if (mob.curHp <= 0) { let _mi = mapState.mobs.findIndex(m => m && m.uid === mob.uid); if (_mi !== -1) killMob(_mi); }
         return;
     }
+    if (window.__afkNoneRes) totalDmg = window.__afkNoneRes(d, totalDmg);   /* 🔌 加掛版補丁:抗性新制 */
     ally.curHp -= totalDmg;
     if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, ally);
     // 🏺 v3.7.52 高崙的生命印記（傭兵）：受到重擊時 MR-100·3 秒（js/02 通用消費·js/03 到期重算）
@@ -1972,6 +1976,7 @@ function _applyMobMagicToAllyInner(mob, sk, ally) {
         if (sk.ele === 'wind' && d.resWind) resF -= effResistPct(d.resWind) / 100;
         if ((!sk.ele || sk.ele === 'none') && d.resNone) resF -= effResistPct(d.resNone) / 100;   // 🛡️ v3.3.29 無屬性抗性（傭兵鏡像·只對魔法）
         resF = Math.max(0, Math.min(1, resF));
+        if (window.__afkEleMult && sk.ele && sk.ele !== 'none') resF = window.__afkEleMult(d, sk.ele, false);   /* 🔌 加掛版補丁:抗性新制 */
         // 🏺 v3.2.40 稽核修 火熱愛意（傭兵鏡像·魔法）：免疫火屬性法術·與物理路徑共用每傭兵 10 秒節流（鏡像玩家 js/04:1523）
         if (sk.ele === 'fire' && d.fireNullify && state.ticks >= (ally._fireNullCd || 0)) {
             ally._fireNullCd = state.ticks + (d.fireNullifyTicks || 100);
@@ -2381,8 +2386,10 @@ function _applyMobMagicInner(mob, sk) {
         if(sk.ele === 'water' && player.d.resWater) resFactor -= effResistPct(player.d.resWater)/100;
         if(sk.ele === 'earth' && player.d.resEarth) resFactor -= effResistPct(player.d.resEarth)/100;
         if(sk.ele === 'wind' && player.d.resWind) resFactor -= effResistPct(player.d.resWind)/100;
-        if((!sk.ele || sk.ele === 'none') && player.d.resNone) resFactor -= effResistPct(player.d.resNone)/100;   // 🛡️ v3.3.29 無屬性抗性：無屬性魔法比照屬性抗性折減（取代舊 magicDrNonEle 乘法減免·只對魔法）
+        if((!sk.ele || sk.ele === 'none') && player.d.resNone) resFactor -= effResistPct(player.d.resNone)/100;
+        const __afkEleM = (window.__afkEleMult && sk.ele && sk.ele !== 'none') ? window.__afkEleMult(player.d, sk.ele, false) : null;   /* 🔌 加掛版補丁:抗性新制 */   // 🛡️ v3.3.29 無屬性抗性：無屬性魔法比照屬性抗性折減（取代舊 magicDrNonEle 乘法減免·只對魔法）
         resFactor = Math.max(0, Math.min(1, resFactor));
+        if (__afkEleM != null) resFactor = __afkEleM;   /* 🔌 加掛版補丁:抗性新制 */
         // 🏺 遺物 火熱愛意：免疫受到的火屬性傷害（每 10 秒最多觸發 1 次·player._fireNullCd 節流）
         if (sk.ele === 'fire' && player.d.fireNullify && state.ticks >= (player._fireNullCd || 0)) {
             player._fireNullCd = state.ticks + (player.d.fireNullifyTicks || 100);   // 10 秒（100 ticks）節流

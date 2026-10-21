@@ -821,7 +821,46 @@ function patchAntFinal() {
   changed++; console.log('[patch] 安塔瑞斯最終階');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal];
+// 31. 抗性新制（afk-resist）：屬性抗性改查表（0＝受傷 +50%、500＝-80%，溢出到 +500 免疫）、百分比減傷上限 75%、無屬性抗性減物理傷害
+//     插件沒載入時 window.__afkEleMult／__afkNoneRes 不存在，行為與原版完全相同
+function patchEleRes() {
+  const FILE = 'js/04-combat-attack.js', MARK = '/* 🔌 加掛版補丁:抗性新制 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const edits = [
+    // 玩家受一般攻擊（帶屬性的怪）
+    ["        if(mob.e === 'wind' && player.d.resWind) resFactor -= effResistPct(player.d.resWind)/100;\n\n        resFactor = Math.max(0, Math.min(1, resFactor));\n",
+     "        if(mob.e === 'wind' && player.d.resWind) resFactor -= effResistPct(player.d.resWind)/100;\n\n        resFactor = Math.max(0, Math.min(1, resFactor));\n        if (window.__afkEleMult && mob.e && mob.e !== 'none') resFactor = window.__afkEleMult(player.d, mob.e, true);   " + MARK + "\n"],
+    // 玩家：百分比減傷上限 75%
+    ["          totalDmg = Math.max(0, Math.floor(totalDmg * _drMult)); }",
+     "          if (window.__afkNoneRes) _drMult = Math.max(0.25, _drMult);   " + MARK + "\n          totalDmg = Math.max(0, Math.floor(totalDmg * _drMult)); }"],
+    // 玩家：最後扣無屬性抗性
+    ["        player.hp -= totalDmg;\n        if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, player);",
+     "        if (window.__afkNoneRes) totalDmg = window.__afkNoneRes(player.d, totalDmg);   " + MARK + "\n        player.hp -= totalDmg;\n        if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, player);"],
+    // 傭兵受一般攻擊
+    ["    totalDmg = Math.floor(totalDmg * Math.max(0, Math.min(1, resFactor)));\n",
+     "    totalDmg = Math.floor(totalDmg * ((window.__afkEleMult && mob.e && mob.e !== 'none') ? window.__afkEleMult(d, mob.e, true) : Math.max(0, Math.min(1, resFactor))));   " + MARK + "\n"],
+    ["    ally.curHp -= totalDmg;\n    if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, ally);",
+     "    if (window.__afkNoneRes) totalDmg = window.__afkNoneRes(d, totalDmg);   " + MARK + "\n    ally.curHp -= totalDmg;\n    if (isBasicAttack && totalDmg > 0) corrosiveJellySkinOnBasicHit(mob, ally);"],
+    // 傭兵受魔法
+    ["        resF = Math.max(0, Math.min(1, resF));\n",
+     "        resF = Math.max(0, Math.min(1, resF));\n        if (window.__afkEleMult && sk.ele && sk.ele !== 'none') resF = window.__afkEleMult(d, sk.ele, false);   " + MARK + "\n"],
+    // 玩家受魔法
+    ["        if((!sk.ele || sk.ele === 'none') && player.d.resNone) resFactor -= effResistPct(player.d.resNone)/100;",
+     "        if((!sk.ele || sk.ele === 'none') && player.d.resNone) resFactor -= effResistPct(player.d.resNone)/100;\n        const __afkEleM = (window.__afkEleMult && sk.ele && sk.ele !== 'none') ? window.__afkEleMult(player.d, sk.ele, false) : null;   " + MARK],
+    ["        resFactor = Math.max(0, Math.min(1, resFactor));\n        // 🏺 遺物 火熱愛意：免疫受到的火屬性傷害",
+     "        resFactor = Math.max(0, Math.min(1, resFactor));\n        if (__afkEleM != null) resFactor = __afkEleM;   " + MARK + "\n        // 🏺 遺物 火熱愛意：免疫受到的火屬性傷害"],
+  ];
+  for (const [A, B] of edits) {
+    const n = s.split(A).length - 1;
+    if (n !== 1) throw new Error(`[${FILE}] 抗性新制錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 60)}`);
+    s = s.replace(A, B);
+  }
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 抗性新制');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes];
 
 try {
   for (const p of PATCHES) p();

@@ -41,7 +41,7 @@
   var oBoostR = window.__afkAttrBoost;
   window.__afkAttrBoost = function (p, d) {
     var r; if (typeof oBoostR === 'function') r = oBoostR.apply(this, arguments);
-    try { d._raw = { str: d.str, dex: d.dex, int: d.int }; } catch (e) {}
+    try { d._raw = { str: d.str, dex: d.dex, int: d.int, con: d.con, wis: d.wis, cha: d.cha }; } catch (e) {}
     return r;
   };
   var useRaw = function (fn, key) {
@@ -54,13 +54,20 @@
   [['getStrMeleeDmg', 'str'], ['getStrMeleeHit', 'str'], ['getStrMeleeCrit', 'str'], ['getDexRangedDmg', 'dex'], ['getDexRangedHit', 'dex'], ['getDexRangedCrit', 'dex'],
    ['getIntMagicDmg', 'int'], ['getIntMagicHit', 'int'], ['getIntMagicCrit', 'int'], ['getIntExtraMp', 'int']].forEach(function (a) { useRaw(a[0], a[1]); });
 
-  // 四屬性抗性：上限 500＝減傷 99%（100 以下照原本：50 以下 1 點 1%、50→100 每 5 點 1%＝60%；100→500 平均拉到 99%）
-  if (typeof window.effResistPct === 'function') {
-    var oRes = window.effResistPct;
-    window.effResistPct = function (v) {
-      v = Math.min(500, v || 0);
-      if (v <= 100) return oRes(v);
-      return Math.min(99, 60 + Math.floor((v - 100) * 39 / 400));
+  // 能力面板：屬性超過上限時顯示「200(+XXX)」（超出的部分仍算進攻擊與魔法公式）
+  if (typeof window._updateUIImpl === 'function') {
+    var oUI = window._updateUIImpl;
+    window._updateUIImpl = function () {
+      var r = oUI.apply(this, arguments);
+      try {
+        var d = player && player.d, raw = d && d._raw, cap = window.__afkAttrCap();
+        if (raw && reborn() && !(typeof _respec !== 'undefined' && _respec)) ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(function (k) {
+          var el = document.getElementById('dt-' + k); if (!el) return;
+          var over = (raw[k] || 0) - cap;
+          if (over > 0 && d[k] >= cap) { var t = cap + '(+' + over + ')'; if (el.textContent !== t) el.textContent = t; }
+        });
+      } catch (e) {}
+      return r;
     };
   }
 

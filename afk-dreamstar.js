@@ -113,6 +113,7 @@
   };
 
   var effRes = function (t, ele) {
+    if (window.__afkEleMult) return window.__afkEleMult(t.d || {}, ele, false);   // 抗性新制（afk-resist）
     var d = t.d || {}, v = { fire: d.resFire, water: d.resWater, wind: d.resWind, earth: d.resEarth }[ele] || 0;
     var pct = (typeof effResistPct === 'function') ? effResistPct(v) : v;
     return Math.max(0, Math.min(1, 1 - pct / 100));

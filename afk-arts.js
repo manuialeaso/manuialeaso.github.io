@@ -448,20 +448,36 @@
   wrapOut('spiritAttackOnce', 'sum', function (s, t, owner) { return (!owner || owner === P()) ? P() : null; });
   wrapOut('petAttackOnce', 'sum', me);
 
+  // 沐時者：會心一擊不耗 HP／MP（HP 不到一半也能放）；浴魔者：黑暗妖精魔法不耗 MP
+  var freeCost = function (p, a, skId, self, args) {
+    var sk = DB.skills[skId] || {}, hp0 = p.hp, mp0 = p.mp, dc = a === 'd_time' && sk.darkCrit, r;
+    if (dc && p.mp > 0 && p.hp <= p.mhp * 0.5) p.hp = p.mhp;   // 核心要求 HP>50% 才放（因為要扣一半）；不扣血就不需要這個門檻
+    try { r = oCast.apply(self, args); }
+    finally {
+      try {
+        if (dc && !p.dead) { p.hp = hp0; if (p.mp < mp0) p.mp = mp0; }
+        if (a === 'd_magic' && sk.reqD && p.mp < mp0) p.mp = mp0;
+      } catch (e) {}
+    }
+    return r;
+  };
+  if (typeof window.allyDarkCrit === 'function') {   // 傭兵版會心一擊：只扣 MP → 沐時者不扣
+    var oADC = window.allyDarkCrit;
+    window.allyDarkCrit = function (ally) { var mp0 = ally && ally.mp, r = oADC.apply(this, arguments); try { if (ally && art(ally) === 'd_time' && ally.mp < mp0) ally.mp = mp0; } catch (e) {} return r; };
+  }
   // castSkill：浴魔者自動再施放＋黑暗妖精魔法不耗 MP；沐時者會心一擊不耗 HP/MP
   if (typeof window.castSkill === 'function') {
     var oCast = window.castSkill;
     window.castSkill = function (skId) {
       var p = P(), a = art(p);
+      if (p && outDepth > 0 && (a === 'd_time' || a === 'd_magic')) return freeCost(p, a, skId, this, arguments);   // 巢狀呼叫（例如自動施法在其他效果裡）也要不耗 HP／MP
       if (!p || !a || outDepth > 0) return oCast.apply(this, arguments);
-      var sk = DB.skills[skId] || {}, hp0 = p.hp, mp0 = p.mp, snap = mobSnap(), r;
+      var sk = DB.skills[skId] || {}, snap = mobSnap(), r;
       outDepth++; CTX = { actor: p, kind: 'mag' };
-      try { r = oCast.apply(this, arguments); }
+      try { r = freeCost(p, a, skId, this, arguments); }
       finally {
         outDepth--; CTX = null;
         try {
-          if (a === 'd_time' && skId === 'sk_dark_crit') { if (p.hp < hp0) p.hp = hp0; if (p.mp < mp0) p.mp = mp0; }
-          if (a === 'd_magic' && sk.reqD && p.mp < mp0) p.mp = mp0;
           afterOut(p, 'mag', snap);
           if (a === 'd_magic' && sk.type === 'atk' && sk.dmgType === 'magic' && typeof procFreeMagicSkill === 'function') {
             var t = (typeof getTarget === 'function') ? getTarget() : null;

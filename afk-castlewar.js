@@ -424,7 +424,7 @@
   // ── 血盟等級上限 20（Lv.11 起每級 +1 全屬性、+5 四屬性抗性），血盟 Buff 乘上持有城堡數 ──
   var CLAN_MAX = 20;
   try {
-    var EXTRA_COST = [300000, 350000, 400000, 450000, 500000, 600000, 700000, 800000, 900000, 1000000];
+    var EXTRA_COST = [1500000, 4500000, 7500000, 10500000, 13500000, 16500000, 19500000, 22500000, 25500000, 28500000];   // Lv10→11 要 150 萬，之後每級 +300 萬
     while (CLAN_LEVEL_COSTS.length < CLAN_MAX - 1) CLAN_LEVEL_COSTS.push(EXTRA_COST[CLAN_LEVEL_COSTS.length - 9] || 1000000);
     while (CLAN_BUFF_BY_LEVEL.length <= CLAN_MAX) CLAN_BUFF_BY_LEVEL.push(Object.assign({}, CLAN_BUFF_BY_LEVEL[10]));
   } catch (e) {}
