@@ -39,8 +39,6 @@
   // 面板 +50
   var oRe = window.recomputeStats;
   window.recomputeStats = function () {
-    // 核心重算最後會把 HP／MP 夾到「還沒加上轉生保留的 Lv100 HP／MP」的上限 → 先記下，加完再夾回真正的上限
-    var p0 = (typeof player !== 'undefined') ? player : null, hp0 = p0 ? p0.hp : null, mp0 = p0 ? p0.mp : null;
     var r = oRe.apply(this, arguments);
     try {
       if (reborn() && player.d) {
@@ -48,14 +46,21 @@
         ['meleeDmg', 'meleeHit', 'rangedDmg', 'rangedHit', 'magicDmg', 'magicHit', 'extraMp', 'resFire', 'resWater', 'resWind', 'resEarth', 'mr', 'er']
           .forEach(function (k) { d[k] = (Number(d[k]) || 0) + 50; });
         d.ac = (Number(d.ac) || 0) - 50;
-        // 轉生時保留 Lv100 的等級 HP／MP（之後升級再往上加）
-        if (player.rebirthHpKeep) player.mhp = (Number(player.mhp) || 0) + player.rebirthHpKeep;
-        if (player.rebirthMpKeep) player.mmp = (Number(player.mmp) || 0) + player.rebirthMpKeep;
       }
     } catch (e) {}
-    try { if (p0 && p0 === player && typeof hp0 === 'number') { p0.hp = Math.min(hp0, p0.mhp); if (typeof mp0 === 'number') p0.mp = Math.min(mp0, p0.mmp); } } catch (e) {}
     return r;
   };
+
+  // 轉生時保留 Lv100 的等級 HP／MP（之後升級再往上加）：核心補丁 29 在重算裡「夾 HP 之前」呼叫，
+  //   直接加進上限，HP／MP 不會被夾到比較低的上限
+  var maxAdds = [];
+  window.__afkMaxAdd = function (p) { for (var i = 0; i < maxAdds.length; i++) maxAdds[i](p); };
+  window.__afkMaxAdd.add = function (fn) { maxAdds.push(fn); };
+  window.__afkMaxAdd.add(function (p) {
+    if (!p || !(p.rebirth > 0)) return;
+    if (p.rebirthHpKeep) p.mhp = (Number(p.mhp) || 0) + p.rebirthHpKeep;
+    if (p.rebirthMpKeep) p.mmp = (Number(p.mmp) || 0) + p.rebirthMpKeep;
+  });
 
   // 轉生：自動擁有該職業全部四種精通（核心補丁 25 把 p.mastery === 'x' 的比較改走 _afkM）
   window._afkM = function (p, id) {

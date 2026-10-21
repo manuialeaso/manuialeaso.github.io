@@ -788,7 +788,20 @@ function patchIdleRaf() {
   if (any) { changed++; console.log('[patch] 進遊戲後動畫迴圈降頻'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf];
+// 29. 轉生保留 HP／MP、技藝加的 HP／MP：直接在核心重算裡、夾 HP 之前加進上限（afk-rebirth／afk-arts 提供 __afkMaxAdd）
+function patchMaxAdd() {
+  const FILE = 'js/02-stats-recompute.js', MARK = '/* 🔌 加掛版補丁:上限加成在夾 HP 之前 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const A = "    p.hp = Math.min(p.hp, p.mhp);\n    p.mp = Math.min(p.mp, p.mmp);\n}";
+  const n = s.split(A).length - 1;
+  if (n !== 1) throw new Error(`[${FILE}] 上限加成錨點應出現 1 次，實際 ${n} 次`);
+  s = s.replace(A, "    if (typeof window.__afkMaxAdd === 'function') { try { window.__afkMaxAdd(p); } catch (e) {} }   " + MARK + "\n" + A);
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 上限加成在夾 HP 之前');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd];
 
 try {
   for (const p of PATCHES) p();

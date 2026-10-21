@@ -781,6 +781,7 @@ d.mr += (baseMr + bonusMr);
         let _mApm = atkSpdApm(p), _oApm = atkSpdApm(p, p.eq.offwpn.id);
         if (_mApm > 0 && _oApm > 0) d.aspdOff = d.aspd * (_mApm / _oApm);
     }
+    if (typeof window.__afkMaxAdd === 'function') { try { window.__afkMaxAdd(p); } catch (e) {} }   /* 🔌 加掛版補丁:上限加成在夾 HP 之前 */
     p.hp = Math.min(p.hp, p.mhp);
     p.mp = Math.min(p.mp, p.mmp);
 }

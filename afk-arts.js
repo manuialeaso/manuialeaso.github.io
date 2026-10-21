@@ -26,8 +26,8 @@
   var ARTS = {
     r_sword:     { cls: 'royal',    n: '魔劍技藝',   d: '勇猛意志發動率提升到 50%（傷害 ×1.5 不變），發動時同時施放吸血鬼之吻（效果 ×2）；一般攻擊吸取 30% 傷害轉為 HP。' },
     r_rally:     { cls: 'royal',    n: '呼喊夥伴',   d: '你每次一般攻擊，寵物與召喚物各追加一次攻擊。全隊（玩家、傭兵、寵物、召喚物、護衛）受到的物理傷害 −50%（可與聖結界疊加，合計上限 75%，屬性傷害不算）。持有者本人在所有減傷算完後再 −50%。' },
-    w_fate:      { cls: 'warrior',  n: '命運迴響',   d: '所有回復 +100%、HP 自然恢復 ×3、HP +5000；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
-    w_arms:      { cls: 'warrior',  n: '百般武藝',   d: '切菜：無視目標硬皮。龍的一擊（屠龍劍特效）：一般攻擊 12% 機率對全場敵人造成 3D(力量)+30 必中固定傷害。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
+    w_fate:      { cls: 'knight',   n: '命運迴響',   d: '所有回復 +100%、HP 自然恢復 ×3、HP +5000；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
+    w_arms:      { cls: 'knight',   n: '百般武藝',   d: '切菜：無視目標硬皮。龍的一擊（屠龍劍特效）：一般攻擊 12% 機率對全場敵人造成 3D(力量)+30 必中固定傷害。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
     m_shilen:    { cls: 'mage',     n: '席林眷屬',   d: '召喚術數量上限 20；寵物與召喚物命中、魔防、每次攻擊的傷害、每次受擊的減免都 +(WIS+INT)×1.2，且不會死亡（HP 最低 1）。召滿 20 隻時融合成一隻融合魔獸（傷害 ×20），每 3 秒隨機施放雷霆風暴／龍捲風／極光雷電／燃燒的火球（法師公式）。' },
     m_atheist:   { cls: 'mage',     n: '無神論者',   d: '狀態中：無法一般攻擊、魔法傷害與命中 +100，每 5 秒自動施放一次屬性魔法武器效果（四屬性輪流，威力 ×3，不耗 MP；傭兵 10 秒一次、效果減半）。進入戰鬥 1 分鐘時，所有敵人扣最大 HP 20%，之後陷入虛弱（回到一般狀態、可以攻擊），5 分鐘後再次進入無神狀態。' },
     e_einhasad:  { cls: 'elf',      n: '殷海薩眷屬', d: '同席林眷屬（攻擊與減傷追加、不死），且屬性精靈化為元素神：傷害與 HP ×5。' },
@@ -38,8 +38,8 @@
     i_life:      { cls: 'illusion', n: '命術者',     d: '受到傷害的 50% 轉為治療（等於只受一半傷害）；治療減益效果減半，汙濁之水完全無效。' },
     k_dark:      { cls: 'dragon',   n: '闇龍追隨者', d: '所有傷害 ×3，對四大龍再 +50%。代價：每秒損失 100 HP（真實傷害，不會因此死亡）、受到的治療 −50%、四屬性抗性 −50。' },
     k_doom:      { cls: 'dragon',   n: '命定絕望者', d: '不能裝備武器。攻擊速度 0.1 秒（實際 1 秒一擊、傷害 ×10）；每次攻擊附加四屬性真實傷害各 100（對四大龍 1000）。吸血 100%、受到的治療 +500%、HP −1000。HP<50% 不屈命運：屬性傷害變 200；HP<30% 絕望身軀：變 500。暗夢星迴（單人）中效果 ×2、減傷 50%，不屈命運時四屬性抗性 +100、絕望身軀時 +200；但戰鬥 5 分鐘後死亡（玩家改為 HP 鎖 1、不能攻擊），離開才恢復。' },
-    n_fafurion:  { cls: 'knight',   n: '破滅法利昂', d: '對法利昂：攻擊速度 0.1 秒（實際 1 秒一擊、傷害 ×10）、追加 5 次攻擊；吸血 30% 治療全隊（5 秒一次）；受到法利昂的傷害 −90%。' },
-    n_heine:     { cls: 'knight',   n: '海音守護者', d: '在海音地區：一般攻擊 50% 機率即死（頭目也算）、傷害 +100%、追加 1 次攻擊；HP 自然恢復 ×5、AC −1000、MR +1000。敵人優先攻擊你，你額外減傷 10%。' }
+    n_fafurion:  { cls: 'warrior',   n: '破滅法利昂', d: '對法利昂：攻擊速度 0.1 秒（實際 1 秒一擊、傷害 ×10）、追加 5 次攻擊；吸血 30% 治療全隊（5 秒一次）；受到法利昂的傷害 −90%。' },
+    n_heine:     { cls: 'warrior',   n: '海音守護者', d: '在海音地區：一般攻擊 50% 機率即死（頭目也算）、傷害 +100%、追加 1 次攻擊；HP 自然恢復 ×5、AC −1000、MR +1000。敵人優先攻擊你，你額外減傷 10%。' }
   };
   var SAVES = { w_fate: { fate: 1, desp: 1 }, e_ruler: { fate: 1 }, d_time: { desp: 1 }, k_doom: { fate: 1, desp: 1 } };
   var ATTR5 = [['sk_meteor'], ['sk_fire_storm', 'sk_blizzard'], ['sk_thunder_storm', 'sk_tornado'], ['sk_earthquake', 'sk_blaze']];
@@ -127,14 +127,11 @@
   var add = function (d, k, v) { d[k] = (Number(d[k]) || 0) + v; };
   var oRe = window.recomputeStats;
   window.recomputeStats = function () {
-    // 核心重算最後會把 HP／MP 夾到「還沒加上技藝加的 HP／MP」的上限 → 先記下，加完再夾回真正的上限
-    var p0 = (typeof player !== 'undefined') ? player : null, hp0 = p0 ? p0.hp : null, mp0 = p0 ? p0.mp : null;
     var r = oRe.apply(this, arguments);
     try {
       var p = P(), a = art(p); if (!a || !p.d) return r;
       var d = p.d, f = F(p), s = st(p);
-      if (a === 'w_fate') p.mhp = (p.mhp || 0) + Math.round(5000 * s.mode * f);
-      else if (a === 'w_arms') add(d, 'meleeHit', 50 * f);
+      if (a === 'w_arms') add(d, 'meleeHit', 50 * f);
       else if (a === 'm_atheist' && athActive(p)) { add(d, 'magicDmg', 100 * f); add(d, 'magicHit', 100 * f); }
       else if (a === 'e_ruler') {
         scanSkills(); grant(p, elfEleSkills);
@@ -143,17 +140,23 @@
         for (var k in elfFuse) add(d, k, Math.round(elfFuse[k] * f));
       }
       else if (a === 'd_time') { add(d, 'meleeCrit', 50 * f); add(d, 'meleeCritDmg', 50 * f); add(d, 'rangedCritDmg', 50 * f); }
-      else if (a === 'd_magic') { scanSkills(); grant(p, mage10); add(d, 'mpR', 50 * f); p.mmp = (p.mmp || 0) + Math.round(500 * f); }
+      else if (a === 'd_magic') { scanSkills(); grant(p, mage10); add(d, 'mpR', 50 * f); }
       else if (a === 'k_dark') RES4.forEach(function (k) { add(d, k, -50 * f); });
       else if (a === 'k_doom') {
-        p.mhp = Math.max(1, (p.mhp || 0) - 1000);
         if (dreamOn()) { var rb = (s.fate ? 100 : 0) + (s.desp ? 200 : 0); if (rb) RES4.forEach(function (k) { add(d, k, rb * f); }); }
       }
       else if (a === 'n_heine' && inHeine()) { add(d, 'ac', -1000 * f); add(d, 'mr', 1000 * f); }
     } catch (e) {}
-    try { if (p0 && p0 === player && typeof hp0 === 'number') { p0.hp = Math.min(hp0, p0.mhp); if (typeof mp0 === 'number') p0.mp = Math.min(mp0, p0.mmp); } } catch (e) {}
     return r;
   };
+  // HP／MP 上限加成：走核心補丁 29（夾 HP 之前加進上限）
+  if (window.__afkMaxAdd && window.__afkMaxAdd.add) window.__afkMaxAdd.add(function (p) {
+    var a = art(p); if (!a) return;
+    var f = F(p), s = st(p);
+    if (a === 'w_fate') p.mhp = (p.mhp || 0) + Math.round(5000 * s.mode * f);
+    else if (a === 'd_magic') p.mmp = (p.mmp || 0) + Math.round(500 * f);
+    else if (a === 'k_doom') p.mhp = Math.max(1, (p.mhp || 0) - 1000);
+  });
   // 狀態改變（命運階段、無神狀態、進出海音、暗夢星迴、16 人）→ 重算
   var sigOf = function (p) { var s = st(p); return [s.mode, s.fate, s.desp, athActive(p), inHeine(), dreamOn(), partyN >= 16].join(); };
 
