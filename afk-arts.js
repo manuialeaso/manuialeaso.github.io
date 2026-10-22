@@ -26,8 +26,8 @@
   var ARTS = {
     r_sword:     { cls: 'royal',    n: '魔劍技藝',   d: '勇猛意志發動率提升到 50%（傷害 ×1.5 不變），發動時同時施放吸血鬼之吻（效果 ×2）；一般攻擊吸取 30% 傷害轉為 HP。' },
     r_rally:     { cls: 'royal',    n: '呼喊夥伴',   d: '你每次一般攻擊，寵物與召喚物各追加一次攻擊。全隊（玩家、傭兵、寵物、召喚物、護衛）受到的物理傷害 −50%（可與聖結界疊加，合計上限 75%，屬性傷害不算）。持有者本人在所有減傷算完後再 −50%。' },
-    w_fate:      { cls: 'knight',   n: '命運迴響',   d: '所有回復 +100%、HP 自然恢復 ×3、HP +5000；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
-    w_arms:      { cls: 'knight',   n: '百般武藝',   d: '切菜：無視目標硬皮。龍的一擊（屠龍劍特效）：一般攻擊 12% 機率對全場敵人造成 3D(力量)+30 必中固定傷害。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
+    w_fate:      { cls: 'knight',   n: '命運迴響',   d: '造成的傷害 ×2。所有回復 +100%、HP 自然恢復 ×3、HP +5000；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
+    w_arms:      { cls: 'knight',   n: '百般武藝',   d: '造成的傷害 ×2。切菜：無視目標硬皮。龍的一擊（屠龍劍特效）：一般攻擊 80% 機率對全場敵人造成 3D(力量)+30 必中固定傷害。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
     m_shilen:    { cls: 'mage',     n: '席林眷屬',   d: '召喚術數量上限 20；寵物與召喚物命中、魔防、每次攻擊的傷害、每次受擊的減免都 +(WIS+INT)×1.2，且不會死亡（HP 最低 1）。召滿 20 隻時融合成一隻融合魔獸（傷害 ×20），每 3 秒隨機施放雷霆風暴／龍捲風／極光雷電／燃燒的火球（法師公式）。' },
     m_atheist:   { cls: 'mage',     n: '無神論者',   d: '狀態中：無法一般攻擊、魔法傷害與命中 +100，每 5 秒自動施放一次屬性魔法武器效果（四屬性輪流，威力 ×3，不耗 MP；傭兵 10 秒一次、效果減半）。進入戰鬥 1 分鐘時，所有敵人扣最大 HP 20%，之後陷入虛弱（回到一般狀態、可以攻擊），5 分鐘後再次進入無神狀態。' },
     e_einhasad:  { cls: 'elf',      n: '殷海薩眷屬', d: '同席林眷屬（攻擊與減傷追加、不死），且屬性精靈化為元素神：傷害與 HP ×5。' },
@@ -357,12 +357,14 @@
     if (normal && a === 'r_sword' && actor.buffs && actor.buffs.sk_royal_bravewill > 0 && Math.random() < 0.375 * f) braved = true;
     hits.forEach(function (h) {
       var m = h[0], lost = h[1], mult = 1, extra = 0;
+      if (normal && actor.cls === 'knight') mult *= 2;   // 騎士一般攻擊傷害 ×2（玩家 2026-10-22）
       if (kind === 'sum') {
         var g = minionGuard();
         if (g) { extra += minionBonus(); if (g === 'e_einhasad' && ent && (ent.skId === 'sk_elf_summon' || ent.skId === 'sk_elf_summon2')) mult *= 5; if (ent && ent._afkFuse) mult *= ent._afkFuse; }
       } else if (a) {
         if (a === 'k_dark') { mult *= 1 + 2 * f; if (isDragon(m)) mult *= 1 + 0.5 * f; }
         if (a === 'i_sorc') mult *= 1 + f;
+        if (a === 'w_arms' || a === 'w_fate') mult *= 1 + f;   // 百般武藝、命運迴響：傷害 ×2（玩家 2026-10-22）
         if (a === 'n_heine' && inHeine()) mult *= (1 + f) * (normal ? 1 + f : 1);
         if (normal) {
           if (fs && fs.mult > 1) mult *= 1 + (fs.mult - 1) * f;
@@ -379,7 +381,7 @@
     });
     if (normal && fs && actor !== p) actor._afkFastAt = tk();
     if (normal && prim) {
-      if (a === 'w_arms') { prim._afkWound = tk() + 50; if (Math.random() * 100 < 12 * f) dragonStrike(actor); }
+      if (a === 'w_arms') { prim._afkWound = tk() + 50; if (Math.random() * 100 < 80 * f) dragonStrike(actor); }
       if (a === 'k_doom' && !prim._dead) {
         var s = st(actor), per = s.desp ? 500 : (s.fate ? 200 : 100);
         if (isDragon(prim)) per *= 10;
@@ -407,7 +409,7 @@
     var ms = MS(); if (!ms) return;
     var str = Math.max(1, Math.floor((actor.d && actor.d.str) || 1)), r3 = function () { return 1 + Math.floor(Math.random() * str); };
     log(tag('龍的一擊', '#fca5a5') + nm(actor) + '的劍中龍魂咆哮，衝擊貫穿了所有敵人！');
-    ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (r3() + r3() + r3() + 30) * (typeof fragileMult === 'function' ? fragileMult(m) : 1)); });
+    ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (r3() + r3() + r3() + 30) * (1 + F(actor)) * (typeof fragileMult === 'function' ? fragileMult(m) : 1)); });   // 百般武藝傷害 ×2
   };
   var rallyMinions = function () {
     var p = P(), t = (typeof getTarget === 'function') ? getTarget() : null; if (!t || t.curHp <= 0) return;
@@ -425,7 +427,7 @@
     window[name] = function () {
       if (outDepth > 0 || !active) return o.apply(this, arguments);
       var actor = actorOf.apply(null, arguments); if (!actor) return o.apply(this, arguments);
-      if (kind !== 'sum' && !art(actor) && !(kind === 'atk' && kings() > 0) && !(kind === 'atk' && anyArt('w_arms'))) return o.apply(this, arguments);
+      if (kind !== 'sum' && !art(actor) && !(kind === 'atk' && kings() > 0) && !(kind === 'atk' && anyArt('w_arms')) && !(kind === 'atk' && actor.cls === 'knight')) return o.apply(this, arguments);
       if (kind === 'sum' && !minionGuard()) return o.apply(this, arguments);
       var snap = mobSnap(), r, prev = CTX; outDepth++; CTX = { actor: actor, kind: kind };
       try { r = o.apply(this, arguments); }
@@ -812,5 +814,7 @@
 
   window.__afkArts = { ARTS: ARTS, art: art, learn: learn, open: open, st: st, kings: kings, trySaves: trySaves, healMult: healMult, takenMult: takenMult,
     battle: function () { return B; }, partyN: function () { return partyN; }, _setParty: function (n) { partyN = n; }, _setActive: function (v) { active = v; }, isActive: function () { return active; } };
+  // 衝擊之暈：命中時額外 500 真實傷害（玩家 2026-10-22；原本 +10，加在傷害計算之後＝不吃防禦）
+  try { var ss = DB.skills.sk_shock_stun; if (ss && !ss._afk500) { ss.skillAddDmg = (ss.skillAddDmg || 0) + 500; ss._afk500 = true; } } catch (e) {}
   console.log('[AFK-arts] 已啟用：轉生技藝（奧拉奇里亞）');
 })();
