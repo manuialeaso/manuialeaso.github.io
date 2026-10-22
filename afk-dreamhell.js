@@ -13,6 +13,7 @@
  *   ‧一般攻擊與技能傷害：一般怪 再 ×2、頭目 再 ×5（瘋狂席琳的 ×3 之外）；怪物施加的持續傷害 再 ×5
  *   ‧全部隨時處於狂暴狀態（同吉爾塔斯：命中與傷害 ×1.2）
  *   ‧一般怪出生時隨機免疫「物理」或「魔法」傷害 10 秒（血壁空間型免疫；持續傷害、寵物、召喚不受影響）
+ *     60 級以上的一般怪同時反射另一類傷害（魔法免疫＋物理反射／物理免疫＋魔法反射），時間相同
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
@@ -122,6 +123,8 @@
     if (!boss) {
       var kind = Math.random() < 0.5 ? 'phys' : 'magic';
       m._reflectWall = { kind: kind, until: ((typeof state !== 'undefined' && state.ticks) || 0) + 100, block: true };
+      // 60 級以上：同時反射另一類傷害（魔法免疫→物理反射；物理免疫→魔法反射），時間相同（玩家 2026-10-22）
+      if ((m.lv || 0) >= 60) m._afkDreamReflect = { kind: kind === 'phys' ? 'magic' : 'phys', until: m._reflectWall.until };
     }
     m._dreamRegen = boss ? 0 : (m.regenHp ? 100 : 500);
   }
@@ -283,6 +286,33 @@
         if (ring) cloneBoss(nm, idx);
       }
       if (reborn()) scanBossEntry();
+      return r;
+    };
+  }
+
+  // ── 60 級以上一般怪的反射（與免疫同時存在；照血壁空間：反彈同等傷害給攻擊者）──
+  if (typeof window.reflectWallOnDamage === 'function') {
+    var oRW = window.reflectWallOnDamage;
+    window.reflectWallOnDamage = function (mob, dmg, kind, ally) {
+      var r = oRW.apply(this, arguments);
+      try {
+        var rf = mob && mob._afkDreamReflect;
+        if (!rf || !(dmg > 0)) return r;
+        if (state.ticks > rf.until) { mob._afkDreamReflect = null; return r; }
+        if (rf.kind !== kind && !(rf.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))) return r;
+        if (mob._dead || !(mob.curHp > 0)) return r;
+        var k = rf.kind === 'phys' ? '物理' : '魔法', mn = '<span class="' + getMobColor(mob.lv) + '">' + mob.n + '</span>';
+        if (ally) {
+          if (ally._downed) return r;
+          ally.curHp -= dmg;
+          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 反彈了' + k + '傷害，協力·' + (ally._allyName || '傭兵') + ' 受到 ' + dmg + ' 點傷害！', 'enemy');
+          if (ally.curHp <= 0) { ally.curHp = 0; ally._downed = true; ally._reviveCd = 150; }
+        } else {
+          player.hp -= dmg;
+          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 反彈了' + k + '傷害，你受到 ' + dmg + ' 點傷害！', 'enemy');
+          if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer();
+        }
+      } catch (e) {}
       return r;
     };
   }
