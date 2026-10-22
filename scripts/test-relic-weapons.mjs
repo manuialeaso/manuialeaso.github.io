@@ -53,7 +53,7 @@ function arena(id,stage=4){
  const q=arena(44);q.run('hit');q.run('hit');q.run('hit',{target:q.targets[1]});q.run('hit');const extra=q.events.filter(e=>e.kind==='damage');assert.equal(extra.length,2);assert.ok(extra.every(e=>e.amount===200&&e.opts.type==='true'));
 }
 // The toy hammer is a terminal tier and the ambiguous Mandrake tier grants no invented proc.
-{const d=def(29,3);assert.equal(d.noAscUp,true);assert.equal(d.dmgS,1);assert.equal(d.dmgL,1);const m=def(33,4);assert.equal(m.procInstakill.p,.01);assert.equal(m.magicCrit,undefined);assert.equal(m.relicMainTrue,true);}
+{const d=def(29,3);assert.equal(d.noAscUp,true);assert.equal(d.dmgS,1);assert.equal(d.dmgL,1);const m=def(33,4);assert.equal(m.procInstakill.p,.15);assert.equal(m.magicCrit,5);assert.equal(m.relicMainTrue,true);}
 // The blood-payment substitute cannot kill its owner and is only used for configured autocast.
 {
  const q=arena(124);q.actor.hp=20;let c=q.run('beforeCastCost',{origin:'auto',mpCost:50,skillId:'sk_fireball'});assert.equal(c.blocked,true);q.actor.hp=21;c=q.run('beforeCastCost',{origin:'auto',mpCost:50,skillId:'sk_fireball'});assert.equal(c.hpCost,20);assert.equal(c.mpCost,0);c=q.run('beforeCastCost',{origin:'proc',mpCost:50,skillId:'sk_fireball'});assert.equal(c.hpCost,undefined);
