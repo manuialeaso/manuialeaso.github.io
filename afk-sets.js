@@ -220,10 +220,10 @@
   spawnAt('dark_magic_lab', 'afk_boss_mutant');
   // 動畫：借用既有素材（反王肯恩＝王子、賽尼斯＝女法師、變異實驗體＝象牙塔奇美拉）
   try {
-    var ALIAS = { '反王肯恩': '玩家王子', '賽尼斯(首領)': '玩家女法師', '變異實驗體': '象牙塔奇美拉' };
+    var ALIAS = { '反王肯恩': '特羅斯王子', '賽尼斯(首領)': '賽尼斯', '變異實驗體': '象牙塔奇美拉' };   // 借用既有動畫怪（它們再指向 玩家王子／玩家女法師 資料夾）
     Object.keys(ALIAS).forEach(function (n) {
       var t = ALIAS[n];
-      MOB_ANIM_ALIAS[n] = t;
+      MOB_ANIM_ALIAS[n] = (MOB_ANIM_ALIAS && MOB_ANIM_ALIAS[t]) || t;
       [MOB_ANIM_NAMES, MOB_ANIM_BAKED_SHADOW, MOB_SHADOW_TINT, MOB_ANIM_BIG, MOB_ANIM_SMALL, MOB_ANIM_SPRITE_SHADOW, MOB_ANIM_WEAPON_FX, MOB_ANIM_WEAPON_FX2, MOB_ANIM_8DIR].forEach(function (S) { try { if (S && S.has(t)) S.add(n); } catch (e) {} });
       [MOB_YLIFT, MOB_ANIM_DEATH_FX].forEach(function (O) { try { if (O && O[t] != null && O[n] == null) O[n] = O[t]; } catch (e) {} });
     });
