@@ -9,11 +9,11 @@
  *   ‧所有技能的 MP／HP 消耗 ×2（你與傭兵都一樣）
  *   ‧復活與召喚的代價（返生術 MP、召喚術／造屍術／召喚屬性精靈 MP、復活卷軸張數）再 ×2，
  *     例：召喚術 80 MP → 技能 ×2 → 復活 ×2 ＝ 320 MP；復活卷軸 1 張 → 2 張
- *     對象：你自己、傭兵、寵物、召喚物（城堡護衛是時間到自動復活，不用道具或法術，不受影響）
- *   ‧這場戰鬥（進入這張地圖後）累積死亡次數（你、傭兵、寵物、召喚物、城堡護衛倒下都算）：
+ *     對象：傭兵、寵物、召喚物（你自己的原地復活不算）（城堡護衛是時間到自動復活，不用道具或法術，不受影響）
+ *   ‧這場戰鬥（進入這張地圖後）累積死亡次數（傭兵、寵物、召喚物、城堡護衛倒下都算）：
  *       20 次 → 復活代價再 ×2；50、60、80、100 次各再 ×2（卷軸 2→4→8→16→32→64 張）
- *       100 次起：每次復活後 10 秒內不能再復活（寵物不受此冷卻）
- *     換地圖或離開夢艷地獄就重新計算
+ *       100 次起：每次復活後 10 秒內不能再復活（寵物不受此冷卻）；冷卻結束時死亡次數歸零重算
+ *     換地圖、離開夢艷地獄、或你自己倒下（＝這場戰鬥結束）都歸零；你自己的原地復活照原本規則，不受倍率影響
  *   ‧用復活卷軸復活（你與傭兵）：HP 100% 復活，但吸走當前 MP 10%（寵物照原本規則）
  *
  * 三、寵物 MP 自然恢復：改吃你自己的面板「MP 恢復」（比寵物原本的高就用你的，寵物裝備加成照加；任何地區都有效）
@@ -104,7 +104,7 @@
 
   if (typeof window.killPlayer === 'function') {
     var oKP = window.killPlayer;
-    window.killPlayer = function () { var was = !player.dead; var r = oKP.apply(this, arguments); if (was && player.dead) countDeath('你'); return r; };
+    window.killPlayer = function () { var was = !player.dead; var r = oKP.apply(this, arguments); if (was && player.dead && active() && deaths) { deaths = 0; cdUntil = 0; applyCost(); } return r; };   // 你倒下＝這場戰鬥結束，次數歸零
   }
   // 傭兵、寵物、召喚物、城堡護衛倒下：每 tick 比對
   var seen = typeof WeakSet === 'function' ? new WeakSet() : null;
@@ -139,9 +139,15 @@
   if (typeof window.tick === 'function') {
     var oTick = window.tick;
     window.tick = function () {
-      var r = oTick.apply(this, arguments);
-      try { resetIfMoved(); if (active()) scanDowns(); applyCost(); } catch (e) {}
-      return r;
+      try { return oTick.apply(this, arguments); } finally { try {
+        resetIfMoved();
+        if (active()) scanDowns();
+        if (cdUntil && (S().ticks || 0) >= cdUntil) {   // 10 秒復活冷卻結束 → 死亡次數歸零重算
+          cdUntil = 0; deaths = 0;
+          clog('<span class="text-emerald-300">夢艷地獄：復活冷卻結束，累積死亡次數歸零重新計算。</span>', 'system');
+        }
+        applyCost();
+      } catch (e) {} }
     };
   }
 
@@ -172,7 +178,6 @@
       return r;
     };
   };
-  if (typeof window.reviveInPlace === 'function') window.reviveInPlace = withScrolls(window.reviveInPlace, { cd: true, say: true });
   if (typeof window.reviveMercenary === 'function') window.reviveMercenary = withScrolls(window.reviveMercenary, { cd: true, say: true });
   if (typeof window.tryAutoReviveMercScroll === 'function') window.tryAutoReviveMercScroll = withScrolls(window.tryAutoReviveMercScroll, { cd: true });
   if (typeof window.petRevive === 'function') window.petRevive = withScrolls(window.petRevive);
@@ -194,7 +199,10 @@
     var oRIP = window.reviveInPlace;
     window.reviveInPlace = function () {
       var wasDead = player.dead, sc0 = scrollCount(), mp0 = player.mp;
-      var r = oRIP.apply(this, arguments);
+      // 你自己的返生術：只吃技能 ×2，不吃復活倍率
+      var rk = DB.skills.sk_resurrection, keep = rk && rk.mp, r;
+      if (rk && applied && base && base.sk_resurrection) rk.mp = base.sk_resurrection.mp * 2;
+      try { r = oRIP.apply(this, arguments); } finally { if (rk && keep != null) rk.mp = keep; }
       try {
         if (active() && wasDead && !player.dead && scrollCount() < sc0) {
           player.hp = player.mhp; var d = Math.floor((player.mp || 0) * 0.1); player.mp -= d;
