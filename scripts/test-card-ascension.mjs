@@ -126,21 +126,22 @@ try {
       const pity=await page.evaluate(tier=>{
         const A=AFK_CARD_ASCENSION,rate={mythic:.5,celestial:.3,spacetime:.1}[tier];
         __fillDiamond();__fullPredecessor(tier);
-        player.enSeed=__findCardSeed(tier,draw=>Array.from({length:10},(_,i)=>i+1).every(n=>draw(n)>=rate));
+        /* 時空失敗累加 +5%（最高 50%） */
+        player.enSeed=__findCardSeed(tier,draw=>Array.from({length:10},(_,i)=>i+1).every(n=>draw(n)>=(tier==='spacetime'?Math.min(.5,rate+.05*(n-1)):rate)));
         const other=['mythic','celestial','spacetime'].filter(t=>t!==tier);
         other.forEach((t,i)=>player.cardAscension.failures[t]=i+2);
         /* 各階材料（玩家 2026-10-23）：神話＝變身金卡、天上＝怪物白金卡、時空＝怪物鑽石卡 */
         if(tier==='mythic')gainItem(AFK_POLY_CODEX.itemId(AFK_POLY_CODEX.forms[0].n,3),55,true,true);else gainItem(cardId(AFK_CARD_FORMS.monsterNames()[0],tier==='celestial'?4:5),55,true,true);gainItem('potion_red',9,true,true);
         const dex=JSON.stringify(player.cardDex),results=[];
         for(let n=0;n<11;n++)results.push(A.synthesize(tier));
-        return {tier,results,diamonds:__allDiamondCount(),ordinary:__cardCount('potion_red'),fragments:__cardCount(A.items.fragment),choices:__cardCount(A.items.diamondChoice),dexUnchanged:dex===JSON.stringify(player.cardDex),counters:player.cardAscension.failures,attempts:player.cardAscension.attempts,other};
+        return {tier,results,diamonds:__allDiamondCount(),ordinary:__cardCount('potion_red'),fragments:__cardCount(A.items.fragment),dshards:__cardCount(A.items.diamondShard),stshards:__cardCount(A.items.spacetimeShard),bonus:(player.cardAscension.bonus||{}).spacetime||0,choices:__cardCount(A.items.diamondChoice),dexUnchanged:dex===JSON.stringify(player.cardDex),counters:player.cardAscension.failures,attempts:player.cardAscension.attempts,other};
       },tier);
       assert.ok(pity.results.every(r=>r.ok),JSON.stringify(pity));assert.ok(pity.results.slice(0,10).every(r=>!r.success&&!r.guaranteed));
       assert.equal(pity.results[10].success,true);assert.equal(pity.results[10].guaranteed,true);assert.equal(pity.results[10].reward.kind,'unlock');
       assert.equal(pity.attempts[tier],11);assert.equal(pity.counters[tier],0);
       pity.other.forEach((t,i)=>assert.equal(pity.counters[t],i+2));
-      /* 失敗補償：神話沒有；天上 1 張隨機鑽石卡；時空 1 張未收藏鑽石卡（全收藏時改給隨機鑽石卡） */
-      assert.equal(pity.diamonds,tier==='mythic'?0:10);assert.equal(pity.ordinary,9);assert.equal(pity.dexUnchanged,true);
+      /* 失敗補償（玩家 2026-10-23）：神話沒有；天上 1 枚鑽石卡碎片；時空 +5% 成功率、1 枚時空變身碎片與 1 張未收藏鑽石卡（全收藏時改給隨機鑽石卡）；成功後加成歸零 */
+      assert.equal(pity.diamonds,tier==='spacetime'?10:0);assert.equal(pity.dshards,tier==='celestial'?10:0);assert.equal(pity.stshards,tier==='spacetime'?10:0);assert.equal(pity.bonus,0);assert.equal(pity.ordinary,9);assert.equal(pity.dexUnchanged,true);
       assert.equal(pity.fragments,0);assert.equal(pity.choices,0);
       reports.push({case:'independent pity and conserved refunds',...pity});
     }
@@ -296,7 +297,7 @@ try {
       openCardBook();
       return {tiers:root.querySelectorAll('[data-ascend-tier]').length,words:root.textContent,collection:!!document.getElementById('afk-card-ascension-open')};
     });
-    assert.equal(nativeUI.tiers,3);assert.equal(nativeUI.collection,true);assert.match(nativeUI.words,/第 11 次必定成功/);assert.match(nativeUI.words,/尚未收藏鑽石卡/);
+    assert.equal(nativeUI.tiers,4);assert.equal(nativeUI.collection,true);assert.match(nativeUI.words,/第 11 次必定成功/);assert.match(nativeUI.words,/尚未收藏鑽石卡/);
     reports.push({case:'native synthesis and card-book entry points',tiers:nativeUI.tiers,collection:nativeUI.collection});
 
     // Save a real card form, then disable its parent without rewriting that

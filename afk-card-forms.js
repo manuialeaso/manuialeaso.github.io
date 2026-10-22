@@ -55,9 +55,25 @@
   var tiers = {
     mythic:{name:'神話',stat:20,resist:100,mult:5,crit:0,critDamage:0,color:'#f6c766',className:'afk-card-mythic',lore:'金焰守住不滅的輪廓，古老傳說在第一擊甦醒。'},
     celestial:{name:'天上',stat:30,resist:150,mult:10,crit:10,critDamage:0,color:'#fff0b8',className:'afk-card-celestial',lore:'羽光展開，星冠垂落；一擊如晨曦穿透長夜。'},
-    spacetime:{name:'時空',stat:50,resist:200,mult:15,crit:15,critDamage:50,color:'#9ceaff',className:'afk-card-spacetime',lore:'星環逆轉，裂隙無聲；萬象在同一瞬間迎來終局。'}
+    spacetime:{name:'時空',stat:50,resist:200,mult:15,crit:15,critDamage:50,color:'#9ceaff',className:'afk-card-spacetime',lore:'星環逆轉，裂隙無聲；萬象在同一瞬間迎來終局。'},
+    samsara:{name:'輪迴',stat:100,resist:500,mult:15,crit:15,critDamage:50,color:'#fcd34d',className:'afk-card-samsara',lore:'黃金聖衣覆身，十二宮的星光在此輪迴。'}
   };
-  var catalog = {mythic:[],celestial:[],spacetime:[]};
+  var catalog = {mythic:[],celestial:[],spacetime:[],samsara:[]};
+  // 輪迴變身：十二星座聖衣（玩家 2026-10-23）。時空變身收集滿才開放；第一次取得是封印型態，第二次取得解除封印。副本內無效果。
+  var ZODIAC = [
+    { key:'aries', z:'白羊座', base:'真夏納', sp:'星屑護壁：受到攻擊時 15% 機率完全抵銷該次傷害', bonus:{mr:50} },
+    { key:'taurus', z:'金牛座', base:'黃金死亡騎士', sp:'巨角衝擊：近距離傷害 +30、傷害減免 +30', bonus:{meleeDmg:30,dr:30} },
+    { key:'gemini', z:'雙子座', base:'闇黑死亡騎士', sp:'異次元：對每隻怪物的首次傷害改為 ×30', bonus:{} },
+    { key:'cancer', z:'巨蟹座', base:'特羅斯', sp:'冥界之息：造成傷害的 3% 轉為自己的 HP', bonus:{} },
+    { key:'leo', z:'獅子座', base:'雷霆死亡騎士', sp:'光速連擊：每次造成傷害 10% 機率變成 3 倍', bonus:{} },
+    { key:'virgo', z:'處女座', base:'伊詩蒂', sp:'天舞：魔法傷害 +30、MP 自然恢復 +30、魔法防禦 +50', bonus:{magicDmg:30,mpR:30,mr:50} },
+    { key:'libra', z:'天秤座', base:'喬', sp:'十二武器：近距離、遠距離、魔法傷害與命中各 +15', bonus:{meleeDmg:15,rangedDmg:15,magicDmg:15,meleeHit:15,rangedHit:15,magicHit:15} },
+    { key:'scorpio', z:'天蠍座', base:'忍者', sp:'赤針：對同一隻怪物每第 15 次命中，傷害 ×15', bonus:{} },
+    { key:'sagittarius', z:'射手座', base:'莉絲安', sp:'黃金之箭：遠距離傷害 +30、遠距離爆擊率 +20%', bonus:{rangedDmg:30,rangedCrit:20} },
+    { key:'capricorn', z:'摩羯座', base:'格利特', sp:'聖劍：近距離爆擊率 +20%、近距離爆擊傷害 +100%', bonus:{meleeCrit:20,meleeCritDmg:100} },
+    { key:'aquarius', z:'寶瓶座', base:'陰陽師', sp:'絕對零度：直接擊殺 HP 低於 20% 的非首領怪物', bonus:{} },
+    { key:'pisces', z:'雙魚座', base:'絲莉安', sp:'玫瑰之癒：每秒恢復 2% 最大 HP', bonus:{} }
+  ];
   function description(tier) {
     var t=tiers[tier],s='對每隻怪物的首次傷害 ×'+t.mult+'；六項能力各 +'+t.stat+'，火、水、風、地、無屬性抗性各 +'+t.resist+'。';
     if(tier==='spacetime')s='對每隻怪物的首次傷害 ×15，角色共用冷卻 30 秒；六項能力各 +50，五屬性抗性各 +200。';
@@ -97,6 +113,16 @@
       if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS[p.name]||p.name;
     });
   });
+  ZODIAC.forEach(function (z) {
+    var found=nativeFind(z.base);
+    if(!found){console.warn('[AFK-card-forms] 找不到聖衣外型：'+z.base);return;}
+    var t=tiers.samsara,id='samsara_'+z.key,n='輪迴・'+z.z+'聖衣',form=copy(found.form);
+    form.n=n;form.c=t.className;form.cardAscensionId=id;form.cardAscensionTier='samsara';form.cardVisualBase=z.base;form.cardNativeLevel=found.form.lv;
+    delete form.controlOnly;
+    catalog.samsara.push({id:id,n:n,tier:'samsara',form:form,prototype:z.base,role:'星座聖衣',lore:t.lore,zodiac:z.key,special:z.sp,specialBonus:copy(z.bonus),
+      desc:'封印型態：效果同時空變身，另有最終減傷 +100。解除封印（第二次取得）：六項能力各 +100、五屬性抗性各 +500、最終減傷 +500，並得到特殊能力「'+z.sp+'」。副本內沒有效果。'});
+    if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS[z.base]||z.base;
+  });
   function monsterForm(name) {
     var info=CARD_MOB_INFO[name],mob=info&&DB.mobs[info.id]||info&&info.mob;
     if(!mob||!(Number(mob.atkSpd)>0))return null;
@@ -110,7 +136,7 @@
     return copy(cache[name].form);
   }
   var F=W.AFK_CARD_FORMS={
-    catalog:catalog,tiers:tiers,description:description,monsterForm:monsterForm,highForms:highForms,
+    catalog:catalog,tiers:tiers,zodiac:ZODIAC,description:description,monsterForm:monsterForm,highForms:highForms,
     monsterNames:function(){return Object.keys(CARD_MOB_INFO);},
     isMonsterName:function(name){return Object.prototype.hasOwnProperty.call(CARD_MOB_INFO,name);},
     references:[
@@ -161,6 +187,8 @@
 .afk-card-mythic{color:#f6c766;text-shadow:0 0 8px #9a651c}
 .afk-card-celestial{color:#fff0b8;text-shadow:0 0 9px #c6a85d}
 .afk-card-spacetime{color:#9ceaff;text-shadow:0 0 10px #6856d5}
+.afk-card-samsara{color:#fcd34d;text-shadow:0 0 10px #f59e0b}
+[data-card-aura="samsara"]{--ca-gold:#fcd34d;--ca-light:#fffbeb;--ca-shadow:#f59e0b90}
 [data-card-aura]{--ca-gold:#f6c766;--ca-light:#ffedb4;--ca-shadow:#d07a2570}
 [data-card-aura="diamond"]{--ca-gold:#67e8f9;--ca-light:#e0fcff;--ca-shadow:#0891b250}
 [data-card-aura="celestial"]{--ca-gold:#fff0b8;--ca-light:#ffffff;--ca-shadow:#f0c56a60}

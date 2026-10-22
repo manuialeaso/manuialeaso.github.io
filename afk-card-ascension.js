@@ -14,14 +14,17 @@
   if (typeof CARD_MOB_INFO === 'undefined' || !window.useItem || !window.findPolyForm) {
     console.warn('[AFK-card-ascension] Card or polymorph system missing.'); return;
   }
-  var TIERS = ['mythic','celestial','spacetime'];
+  var TIERS = ['mythic','celestial','spacetime','samsara'];
   var RULES = {
     mythic:{n:'神話',rate:.5,color:'#fb923c',mat:'變身金卡',fail:'材料：5 張變身金卡。失敗什麼都沒有。'},
-    celestial:{n:'天上',rate:.3,color:'#fde68a',mat:'怪物白金卡',fail:'材料：5 張怪物白金卡。失敗返還 1 張隨機鑽石卡。'},
-    spacetime:{n:'時空',rate:.1,color:'#c4b5fd',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗得到 1 張隨機的尚未收藏鑽石卡。'}
+    celestial:{n:'天上',rate:.3,color:'#fde68a',mat:'怪物白金卡',fail:'材料：5 張怪物白金卡。失敗得到 1 枚鑽石卡碎片（5 枚換 1 張尚未收藏的鑽石卡）。'},
+    spacetime:{n:'時空',rate:.1,color:'#c4b5fd',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗：下次時空合成成功率 +5%（最高 50%），再得到 1 枚時空變身碎片與 1 張隨機的尚未收藏鑽石卡。'},
+    samsara:{n:'輪迴',rate:.05,color:'#fcd34d',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗得到 1 枚時空變身碎片。第一次取得是封印聖衣，再取得同一件解除封印。'}
   };
+  // 玩家 2026-10-23：天上失敗給鑽石卡碎片；時空失敗累加成功率、給時空變身碎片與鑽石卡；碎片 30 枚指定時空變身（封印型態），10 枚解除封印
+  var DSHARD = 'afk_card_diamond_shard', STSHARD = 'afk_card_spacetime_shard', ST_BONUS = .05, ST_CAP = .5, DSHARD_COST = 5, ST_PICK = 30, ST_UNSEAL = 10;
   var CHOICE = 'afk_card_celestial_choice', FRAGMENT = 'afk_card_celestial_fragment', DIAMOND_CHOICE = 'afk_card_diamond_missing_choice';
-  var catalog = {mythic:[],celestial:[],spacetime:[]}, byId = Object.create(null), byName = Object.create(null);
+  var catalog = {mythic:[],celestial:[],spacetime:[],samsara:[]}, byId = Object.create(null), byName = Object.create(null);
   var busy = false, modalLayer = null;
   var clone = function (x) { return x == null ? x : JSON.parse(JSON.stringify(x)); };
   var integer = function (x) { return Math.max(0,Math.floor(Number(x)||0)); };
@@ -40,7 +43,7 @@
       if (create && actor) actor.cardAscension = s;
     }
     if (create) {
-      ['owned','failures','attempts','unlocked'].forEach(function (k) { if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {}; });
+      ['owned','failures','attempts','unlocked','sealed','bonus'].forEach(function (k) { if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {}; });
       s.v = 1;
     }
     return s;
@@ -59,6 +62,8 @@
     return Number(dex[name]) >= 10000;
   }
   function owned(id, actor) { return !!(byId[id] && (data(actor).owned || {})[id]); }
+  function sealed(id, actor) { return owned(id, actor) && !!(data(actor).sealed || {})[id]; }
+  function rateOf(tier, actor) { var b = tier === 'spacetime' ? Math.max(0, Number((data(actor).bonus || {}).spacetime) || 0) : 0; return Math.min(tier === 'spacetime' ? ST_CAP : 1, RULES[tier].rate + b); }
   function listOwned(actor) { return TIERS.reduce(function (out,t) { return out.concat(catalog[t].filter(function (r) { return owned(r.id,actor); })); },[]); }
   function diamondFull(actor) { var ns=monsterNames(); return !!ns.length && ns.every(function (n) { return diamondOwned(n,actor); }); }
   function completedRegions(actor) {
@@ -69,6 +74,7 @@
     if ((s.unlocked||{})[tier]) return true;
     // 玩家 2026-10-23：任一地區怪物圖鑑全白金 → 開放神話；神話收集一半 → 同時開放天上、時空
     if (tier==='mythic') return platinumRegion(actor);
+    if (tier==='samsara') return catalog.spacetime.length>0 && catalog.spacetime.every(function (r) { return !!o[r.id]; });   // 時空變身收集滿（封印的也算）
     var half=Math.ceil(catalog.mythic.length/2);
     return catalog.mythic.length>0 && catalog.mythic.filter(function (r) { return !!o[r.id]; }).length>=half;
   }
@@ -92,7 +98,7 @@
   // 各階材料：神話＝變身金卡（afk-poly-codex）；天上＝已登錄白金的怪物白金卡；時空＝已登錄鑽石的怪物鑽石卡
   function matCards(tier, actor) {
     actor=actor||player;
-    if (tier==='spacetime') return excessCards(actor);
+    if (tier==='spacetime'||tier==='samsara') return excessCards(actor);
     return (actor && actor.inv || []).filter(function (it) {
       var d=it&&DB.items[it.id]; if (!d || it.lock || count(it)<=0) return false;
       if (tier==='mythic') return d.eff==='afk_pcard' && d.pcardTier===3;
@@ -194,6 +200,9 @@
   }
   function grant(row) {
     var s=data(player,true);if(!s.copies||typeof s.copies!=='object')s.copies={};
+    if((s.owned||{})[row.id]&&s.sealed[row.id]){delete s.sealed[row.id];if(row.tier==='samsara')s.copies[row.id]=2;return {kind:'unseal',id:row.id,n:row.n};}
+    if(!(s.owned||{})[row.id]&&row.tier==='samsara'){s.owned[row.id]=true;s.copies[row.id]=1;s.sealed[row.id]=true;return {kind:'sealed',id:row.id,n:row.n};}
+    if((s.owned||{})[row.id]&&row.tier==='samsara'){var dup=randomDiamond(row.tier,'duplicate');dup.kind='duplicate';dup.cardId=row.id;return dup;}
     if((s.owned||{})[row.id]) {
       var c=copiesOf(row.id,player);
       if(c<MAX_COPIES){s.copies[row.id]=c+1;return {kind:'star',id:row.id,n:row.n,stars:c};}
@@ -205,31 +214,45 @@
   function rewardText(r,tierName){
     if(!r)return '';
     if(r.kind==='star')return '「'+r.n+'」在卡冊升到 '+r.stars+' 星'+(r.stars>=7?'（滿星）':'')+'。';
-    if(r.kind==='duplicate')return '「'+(byId[r.cardId]?byId[r.cardId].n:'這張卡')+'」已滿 7 星，返還「'+r.n+'」。';
+    if(r.kind==='duplicate')return '「'+(byId[r.cardId]?byId[r.cardId].n:'這張卡')+'」已'+(byId[r.cardId]&&byId[r.cardId].tier==='samsara'?'解除封印':'滿 7 星')+'，返還「'+r.n+'」。';
     if(r.kind==='unlock')return '點亮卡冊「'+r.n+'」，已永久解鎖變身。';
+    if(r.kind==='sealed')return '取得封印型態的「'+r.n+'」（效果減半／封印聖衣），再取得一次即可解除封印。';
+    if(r.kind==='unseal')return '「'+r.n+'」解除封印，發揮完整力量！';
+    if(r.kind==='multi')return r.list.map(function(x){return '「'+x.n+'」';}).join('、');
     return '取得「'+r.n+'」。';
   }
   function status(actor) {
     actor=actor||player;var s=data(actor),ns=monsterNames();
-    return {diamonds:ns.filter(function(n){return diamondOwned(n,actor);}).length,total:ns.length,completedRegions:completedRegions(actor),excess:excessCount(actor),fragments:itemCount(FRAGMENT,actor),tiers:TIERS.map(function(t){var fail=Math.min(10,integer((s.failures||{})[t]));return {tier:t,n:RULES[t].n,rate:RULES[t].rate,unlocked:unlocked(t,actor),failures:fail,guaranteed:fail>=10,attempts:integer((s.attempts||{})[t]),mat:matCount(t,actor),owned:catalog[t].filter(function(r){return owned(r.id,actor);}).length,total:catalog[t].length};})};
+    return {diamonds:ns.filter(function(n){return diamondOwned(n,actor);}).length,total:ns.length,completedRegions:completedRegions(actor),excess:excessCount(actor),fragments:itemCount(FRAGMENT,actor),diamondShards:itemCount(DSHARD,actor),spacetimeShards:itemCount(STSHARD,actor),tiers:TIERS.map(function(t){var fail=Math.min(10,integer((s.failures||{})[t]));return {tier:t,n:RULES[t].n,rate:rateOf(t,actor),unlocked:unlocked(t,actor),failures:fail,guaranteed:fail>=10,attempts:integer((s.attempts||{})[t]),mat:matCount(t,actor),owned:catalog[t].filter(function(r){return owned(r.id,actor);}).length,total:catalog[t].length};})};
   }
   function synthesize(tier) {
     var result=transaction(function(){
       if(TIERS.indexOf(tier)<0 || !catalog[tier].length)return {ok:false,msg:'此階卡片尚未開放。'};
-      if(!unlocked(tier,player))return {ok:false,msg:tier==='mythic'?'請先讓任一地區的怪物圖鑑全部達到白金卡。':'請先收集一半的神話變身（'+Math.ceil(catalog.mythic.length/2)+' 種）。'};
+      if(!unlocked(tier,player))return {ok:false,msg:tier==='mythic'?'請先讓任一地區的怪物圖鑑全部達到白金卡。':tier==='samsara'?'請先收集全部 '+catalog.spacetime.length+' 種時空變身。':'請先收集一半的神話變身（'+Math.ceil(catalog.mythic.length/2)+' 種）。'};
       if(matCount(tier,player)<5)return {ok:false,msg:'需要 5 張未鎖定的'+RULES[tier].mat+'。'};
       var s=data(player,true),seq=integer(s.attempts[tier])+1,pity=integer(s.failures[tier])>=10;
-      var success=pity || rng(player,tier,seq,'success')<RULES[tier].rate;
+      var success=pity || rng(player,tier,seq,'success')<rateOf(tier,player);
       if(!take(matCards(tier,player),5))return {ok:false,msg:'材料數量已改變，請重試。'};
       s.attempts[tier]=seq;s.failures[tier]=success?0:Math.min(10,integer(s.failures[tier])+1);
       var reward=null;
-      if(success){var rows=catalog[tier];reward=grant(rows[Math.floor(rng(player,tier,seq,'card')*rows.length)]);}
+      if(success){
+        var rows=catalog[tier];
+        // 輪迴：優先抽還沒解除封印的聖衣，避免浪費
+        if(tier==='samsara'){var open=rows.filter(function(r){return !owned(r.id,player)||sealed(r.id,player);});if(open.length)rows=open;}
+        reward=grant(rows[Math.floor(rng(player,tier,seq,'card')*rows.length)]);
+        if(tier==='spacetime')s.bonus.spacetime=0;
+      }
       else if(tier==='mythic'){reward=null;}
-      else if(tier==='celestial'){reward=randomDiamond(tier,'failure');}
-      else if(tier==='spacetime'){reward=randomMissingDiamond(tier,'failure');}
+      else if(tier==='celestial'){gainItem(DSHARD,1,true,true);reward={kind:'item',id:DSHARD,n:'鑽石卡碎片'};}
+      else if(tier==='spacetime'){
+        s.bonus.spacetime=Math.min(ST_CAP-RULES.spacetime.rate,(Number(s.bonus.spacetime)||0)+ST_BONUS);
+        gainItem(STSHARD,1,true,true);var dm=randomMissingDiamond(tier,'failure');
+        reward={kind:'multi',list:[{n:'時空變身碎片'},dm],n:'時空變身碎片」與「'+dm.n};
+      }
+      else if(tier==='samsara'){gainItem(STSHARD,1,true,true);reward={kind:'item',id:STSHARD,n:'時空變身碎片'};}
       return {ok:true,tier:tier,success:success,guaranteed:pity,spent:5,failures:s.failures[tier],reward:reward};
     });
-    if(result.ok){say(result.success?rewardText(result.reward):'合成失敗'+(result.reward?'，取得「'+result.reward.n+'」。':'，消耗 5 張'+RULES[tier].mat+'。'));}
+    if(result.ok){say(result.success?rewardText(result.reward):'合成失敗'+(result.reward?'，取得「'+result.reward.n+'」。':'，消耗 5 張'+RULES[tier].mat+'。')+(tier==='spacetime'?'下次時空合成成功率 '+Math.round(rateOf('spacetime',player)*100)+'%。':''));}
     else if(result.msg)say(result.msg);
     return result;
   }
@@ -243,6 +266,35 @@
       gainItem(CHOICE,1,true,true);return {ok:true,spent:10,reward:{id:CHOICE,n:'天上卡自選'}};
     });
     say(result.ok?'已用 10 枚碎片換取 1 張天上卡自選。':result.msg);return result;
+  }
+  function exchangeDiamondShards() {
+    var result=transaction(function(){
+      var pool=player.inv.filter(function(it){return it.id===DSHARD&&!it.lock;});
+      if(!take(pool,DSHARD_COST))return {ok:false,msg:'需要 '+DSHARD_COST+' 枚未鎖定的鑽石卡碎片。'};
+      return {ok:true,spent:DSHARD_COST,reward:randomMissingDiamond('celestial','shard')};
+    });
+    say(result.ok?'鑽石卡碎片合成「'+result.reward.n+'」。':result.msg);return result;
+  }
+  function chooseSpacetime(id) {
+    var result=transaction(function(){
+      var row=byId[id];if(!row||row.tier!=='spacetime')return {ok:false,msg:'請選擇一種時空變身。'};
+      if(sealed(id,player))return {ok:false,msg:'這個變身還在封印中，請改用 '+ST_UNSEAL+' 枚碎片解除封印。'};
+      var pool=player.inv.filter(function(it){return it.id===STSHARD&&!it.lock;});
+      if(!take(pool,ST_PICK))return {ok:false,msg:'需要 '+ST_PICK+' 枚未鎖定的時空變身碎片。'};
+      var s=data(player,true);
+      if(!owned(id,player)){s.owned[id]=true;if(!s.copies)s.copies={};s.copies[id]=1;s.sealed[id]=true;return {ok:true,reward:{kind:'sealed',id:id,n:row.n}};}
+      return {ok:true,reward:grant(row)};
+    });
+    say(result.ok?rewardText(result.reward):result.msg);if(result.ok&&document.getElementById('afk-card-ascension-modal'))openSpacetimePick();return result;
+  }
+  function unsealSpacetime(id) {
+    var result=transaction(function(){
+      var row=byId[id];if(!row||row.tier!=='spacetime'||!sealed(id,player))return {ok:false,msg:'這個時空變身沒有封印。'};
+      var pool=player.inv.filter(function(it){return it.id===STSHARD&&!it.lock;});
+      if(!take(pool,ST_UNSEAL))return {ok:false,msg:'需要 '+ST_UNSEAL+' 枚未鎖定的時空變身碎片。'};
+      delete data(player,true).sealed[id];return {ok:true,reward:{kind:'unseal',id:id,n:row.n}};
+    });
+    say(result.ok?rewardText(result.reward):result.msg);if(result.ok&&document.getElementById('afk-card-ascension-modal'))openSpacetimePick();return result;
   }
   function chooseReward(uid,id) {
     var result=transaction(function(){
@@ -314,7 +366,9 @@
   DB.items[CHOICE]={n:'天上卡自選',type:'misc',eff:'afk_asc_choice',p:0,gachaWeight:0,c:'text-yellow-300',img:'assets/icons/items/鑽石卡.png',d:'自選一張天上卡並永久解鎖變身；重複時返還 1 張隨機一般鑽石卡。'};
   DB.items[FRAGMENT]={n:'天上自選碎片',type:'misc',eff:'afk_asc_fragment',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/鑽石卡.png',d:'時空卡合成失敗時取得；集滿 10 枚後使用，換取 1 張天上卡自選。'};
   DB.items[DIAMOND_CHOICE]={n:'鑽石卡自選（未收藏）',type:'misc',eff:'afk_asc_diamond_choice',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/鑽石卡.png',d:'自選一隻尚未登錄鑽石卡的怪物，已登錄普卡至白金卡仍可選；若鑽石卡已全數登錄，保留此券等待新增可選卡片。'};
-  [CHOICE,FRAGMENT,DIAMOND_CHOICE].forEach(function(id){
+  DB.items[DSHARD]={n:'鑽石卡碎片',type:'misc',eff:'afk_asc_dshard',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/鑽石卡.png',d:'天上卡合成失敗時取得；集滿 5 枚使用，合成 1 張隨機的尚未收藏鑽石卡。'};
+  DB.items[STSHARD]={n:'時空變身碎片',type:'misc',eff:'afk_asc_stshard',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/鑽石卡.png',d:'時空／輪迴卡合成失敗時取得。30 枚可指定 1 種時空變身（封印型態，效果減半）；10 枚可解除 1 種時空變身的封印。'};
+  [CHOICE,FRAGMENT,DIAMOND_CHOICE,DSHARD,STSHARD].forEach(function(id){
     if(typeof miscCatKey!=='function'||typeof MISC_CAT_ITEMS==='undefined')return;
     var k=miscCatKey(id,DB.items[id]);if(k&&MISC_CAT_ITEMS[k]&&!MISC_ITEM_CAT[id]){MISC_CAT_ITEMS[k].push(id);MISC_ITEM_CAT[id]=k;if(typeof OBTAINABLE_MISC!=='undefined')OBTAINABLE_MISC[id]=true;}
   });
@@ -428,12 +482,14 @@
   window.useItem=function(uid,silent){
     var it=player&&player.inv&&player.inv.find(function(x){return x.uid===uid;}),d=it&&DB.items[it.id];if(!d)return oldUse.apply(this,arguments);
     if(!enabled()){
-      if(d.eff==='afk_asc_card'||d.eff==='afk_asc_choice'||d.eff==='afk_asc_fragment'||d.eff==='afk_asc_diamond_choice'){if(!silent)say('鑽石變身與高階卡合成功能目前停用，道具已保留。');return false;}
+      if(/^afk_asc_/.test(d.eff)){if(!silent)say('鑽石變身與高階卡合成功能目前停用，道具已保留。');return false;}
       return oldUse.apply(this,arguments);
     }
-    if(d.eff==='afk_asc_card'||d.eff==='afk_asc_choice'||d.eff==='afk_asc_fragment'||d.eff==='afk_asc_diamond_choice'){
+    if(/^afk_asc_/.test(d.eff)){
       if(silent)return;var error=ready();if(error){say(error);return;}
       if(it.lock){say('請先解除這件道具的鎖定。');return;}
+      if(d.eff==='afk_asc_dshard'){exchangeDiamondShards();return;}
+      if(d.eff==='afk_asc_stshard'){openSpacetimePick();return;}
       if(d.eff==='afk_asc_diamond_choice'){openDiamondChoice(uid);return;}
       if(d.eff==='afk_asc_choice'){openChoice(uid);return;}
       if(d.eff==='afk_asc_fragment'){exchangeFragments();return;}
@@ -467,14 +523,17 @@
     var s=status(player),box=document.createElement('section');box.id='afk-card-ascension-synth';box.className='afk-ca-panel';
     box.innerHTML='<h3>高階變身卡合成</h3><p>每次消耗 5 張背包內的材料卡，圖鑑已登錄的收藏保留。三階各自累計連敗；連敗 10 次後，第 11 次必定成功。</p><div>可用材料：'+s.tiers.map(function(t){return RULES[t.tier].mat+' <b>'+t.mat+'</b>';}).join('　')+'</div>';
     s.tiers.forEach(function(t){var line=document.createElement('div');line.className='afk-ca-tier';
-      line.innerHTML='<strong style="color:'+RULES[t.tier].color+'">'+t.n+'卡</strong><span>成功率 '+Math.round(t.rate*100)+'% · '+(t.guaranteed?'本次必定成功':'連敗 '+t.failures+'/10')+'</span><small>'+escape(RULES[t.tier].fail)+'</small>';
+      line.innerHTML='<strong style="color:'+RULES[t.tier].color+'">'+t.n+'卡</strong><span>成功率 '+Math.round(t.rate*100)+'%'+(t.tier==='spacetime'&&t.rate>RULES.spacetime.rate?'（失敗累加，最高 50%）':'')+' · '+(t.guaranteed?'本次必定成功':'連敗 '+t.failures+'/10')+'</span><small>'+escape(RULES[t.tier].fail)+'</small>';
       var b=document.createElement('button');b.type='button';b.className='btn';b.dataset.ascendTier=t.tier;b.disabled=!t.unlocked||t.mat<5||!t.total;
-      b.textContent=!t.unlocked?(t.tier==='mythic'?'任一地區圖鑑全白金後開放':'神話收集 '+Math.ceil(catalog.mythic.length/2)+' 種後開放'):'合成'+t.n+'卡（'+t.owned+'/'+t.total+'）';
+      b.textContent=!t.unlocked?(t.tier==='mythic'?'任一地區圖鑑全白金後開放':t.tier==='samsara'?'時空變身收集滿 '+catalog.spacetime.length+' 種後開放':'神話收集 '+Math.ceil(catalog.mythic.length/2)+' 種後開放'):'合成'+t.n+'卡（'+t.owned+'/'+t.total+'）';
       b.onclick=function(){synthesize(t.tier);};line.appendChild(b);box.appendChild(line);
     });
     var bottom=document.createElement('div');bottom.className='afk-ca-actions';
     var open=document.createElement('button');open.type='button';open.className='btn';open.textContent='查看變身收藏';open.onclick=openCollection;bottom.appendChild(open);
-    var ex=document.createElement('button');ex.type='button';ex.className='btn';ex.textContent='碎片 '+s.fragments+'/10 · 兌換天上自選';ex.disabled=s.fragments<10;ex.onclick=exchangeFragments;bottom.appendChild(ex);box.appendChild(bottom);div.appendChild(box);
+    var ex=document.createElement('button');ex.type='button';ex.className='btn';ex.textContent='碎片 '+s.fragments+'/10 · 兌換天上自選';ex.disabled=s.fragments<10;ex.onclick=exchangeFragments;if(s.fragments>0)bottom.appendChild(ex);
+    var ds=document.createElement('button');ds.type='button';ds.className='btn';ds.textContent='鑽石卡碎片 '+s.diamondShards+'/'+DSHARD_COST+' · 合成未收藏鑽石卡';ds.disabled=s.diamondShards<DSHARD_COST;ds.onclick=exchangeDiamondShards;bottom.appendChild(ds);
+    var st=document.createElement('button');st.type='button';st.className='btn';st.textContent='時空變身碎片 '+s.spacetimeShards+' · 指定（'+ST_PICK+'）／解除封印（'+ST_UNSEAL+'）';st.onclick=openSpacetimePick;bottom.appendChild(st);
+    box.appendChild(bottom);div.appendChild(box);
   }
   if(typeof window.renderCardSynth==='function'){
     /* 高階變身卡合成改由燃柳村 NPC「至幻者」負責（afk-card-codex，玩家 2026-10-23）；這裡不再掛到卡片合成分頁 */
@@ -493,7 +552,7 @@
   function drawCollection(){
     var host=document.getElementById('afk-card-ascension-collection');if(!host)return;host.innerHTML='';
     TIERS.forEach(function(t){var h=document.createElement('h3');h.textContent=RULES[t].n+'卡';h.style.color=RULES[t].color;host.appendChild(h);
-      catalog[t].forEach(function(row){var el=document.createElement('div');el.className='afk-ca-tier';el.innerHTML='<strong>'+escape(row.n)+' · '+(owned(row.id,player)?'★'+starsOf(row.id,player)+'/7':'未點亮')+'</strong><small>'+escape(row.desc)+'</small>';host.appendChild(el);});
+      catalog[t].forEach(function(row){var el=document.createElement('div');el.className='afk-ca-tier';el.innerHTML='<strong>'+escape(row.n)+' · '+(!owned(row.id,player)?'未點亮':sealed(row.id,player)?'封印中':t==='samsara'?'已解除封印':'★'+starsOf(row.id,player)+'/7')+'</strong><small>'+escape(row.desc)+'</small>';host.appendChild(el);});
     });
   }
   function openCollection(){
@@ -505,6 +564,19 @@
   function openChoice(uid){
     var host=createModal('天上卡自選');host.innerHTML='<p>選一張天上卡：沒有的會點亮卡冊，已有的升 1 星（最多 7 星）。</p>';
     catalog.celestial.forEach(function(row){var b=document.createElement('button');b.type='button';b.className='btn afk-ca-form';b.dataset.choiceCard=row.id;b.innerHTML='<strong>'+escape(row.n)+(owned(row.id,player)?' · '+(starsOf(row.id,player)>=7?'已滿 7 星':starsOf(row.id,player)+' 星'):' · 未點亮')+'</strong><span>'+escape(row.desc)+'</span>';b.onclick=function(){chooseReward(uid,row.id);};host.appendChild(b);});
+  }
+  function openSpacetimePick(){
+    if(!enabled()||!player||!player.cls)return;
+    var n=itemCount(STSHARD,player),host=createModal('時空變身碎片（持有 '+n+' 枚）');
+    host.innerHTML='<p>'+ST_PICK+' 枚碎片：指定 1 種時空變身。還沒有的會以「封印型態」取得（六項能力、抗性、爆擊、首擊倍率與專屬效果都減半）；已解除封印的升 1 星。'+ST_UNSEAL+' 枚碎片：解除 1 種時空變身的封印。</p>';
+    catalog.spacetime.forEach(function(row){
+      var el=document.createElement('div');el.className='afk-ca-tier';var o=owned(row.id,player),se=sealed(row.id,player);
+      el.innerHTML='<strong style="color:#c4b5fd">'+escape(row.n)+'</strong><span>'+(!o?'未取得':se?'封印中':'★'+starsOf(row.id,player)+'/7')+'</span><small>'+escape(row.desc)+'</small>';
+      var b=document.createElement('button');b.type='button';b.className='btn';
+      if(se){b.textContent='解除封印（'+ST_UNSEAL+'）';b.dataset.unseal=row.id;b.disabled=n<ST_UNSEAL;b.onclick=function(){unsealSpacetime(row.id);};}
+      else{b.textContent=(o?'升星':'指定')+'（'+ST_PICK+'）';b.dataset.stPick=row.id;b.disabled=n<ST_PICK||(o&&starsOf(row.id,player)>=7);b.onclick=function(){chooseSpacetime(row.id);};}
+      el.appendChild(b);host.appendChild(el);
+    });
   }
   function openDiamondChoice(uid){
     var ns=monsterNames().filter(function(n){return !diamondOwned(n,player);});
@@ -519,6 +591,6 @@
   }
   var style=document.createElement('style');style.textContent='.afk-ca-panel{padding:14px;border-top:1px solid #334155;color:#e2e8f0}.afk-ca-panel h3,.afk-ca-dialog h3{font-weight:700;margin:8px 0}.afk-ca-panel p,.afk-ca-dialog p{font-size:12px;color:#94a3b8;margin:8px 0}.afk-ca-tier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #334155;background:#0f172a;padding:10px;border-radius:8px;margin:8px 0}.afk-ca-tier small{flex-basis:100%;color:#94a3b8;font-size:12px}.afk-ca-tier .btn{margin-left:auto}.afk-ca-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.afk-ca-overlay{position:fixed;inset:0;z-index:10001;background:#020617cf;display:flex;align-items:center;justify-content:center;padding:14px 12px 12px;box-sizing:border-box}.afk-ca-dialog{width:min(620px,100%);max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #64748b;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px}#afk-card-ascension-body{min-height:0;overflow:auto;overscroll-behavior:contain}.afk-ca-dialog header{flex-shrink:0;padding-bottom:8px}.afk-ca-dialog header{display:flex;justify-content:space-between;align-items:center;gap:12px}.afk-ca-dialog header button{padding:6px 10px;color:#cbd5e1}.afk-ca-form{display:flex;flex-direction:column;text-align:left;padding:10px!important;white-space:normal;margin:3px 0;width:100%}.afk-ca-form span{font-size:11px;color:#94a3b8;margin-top:4px}.afk-ca-search{background:#020617;color:#e2e8f0;border:1px solid #475569;padding:8px;margin:0 0 10px;border-radius:6px}.afk-ca-panel button:disabled{opacity:.45;cursor:not-allowed}';document.head.appendChild(style);
   var publicRules={};TIERS.forEach(function(t){publicRules[t]=Object.freeze(Object.assign({},RULES[t]));});Object.freeze(publicRules);
-  window.AFK_CARD_ASCENSION={matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE}};
+  window.AFK_CARD_ASCENSION={matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,exchangeDiamondShards:exchangeDiamondShards,chooseSpacetime:chooseSpacetime,unsealSpacetime:unsealSpacetime,openSpacetimePick:openSpacetimePick,sealed:sealed,rateOf:rateOf,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE,diamondShard:DSHARD,spacetimeShard:STSHARD}};
   if(forms()&&forms().catalog)registerCatalog(forms().catalog);
 })();

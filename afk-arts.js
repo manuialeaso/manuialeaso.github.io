@@ -26,7 +26,7 @@
   var ARTS = {
     r_sword:     { cls: 'royal',    n: '魔劍技藝',   d: '勇猛意志發動率提升到 50%（傷害 ×1.5 不變），發動時同時施放吸血鬼之吻（效果 ×2）；一般攻擊吸取 30% 傷害轉為 HP。' },
     r_rally:     { cls: 'royal',    n: '呼喊夥伴',   d: '你每次一般攻擊，寵物與召喚物各追加一次攻擊。全隊（玩家、傭兵、寵物、召喚物、護衛）受到的物理傷害 −50%（可與聖結界疊加，合計上限 75%，屬性傷害不算）。持有者本人在所有減傷算完後再 −50%。' },
-    w_fate:      { cls: 'knight',   n: '命運迴響',   d: '造成的傷害 ×2。所有回復 +100%、HP 自然恢復 ×10 且每 4 秒一次、HP +5000、傷害減免 +50、五種屬性抗性 +200；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
+    w_fate:      { cls: 'knight',   n: '命運迴響',   d: '造成的傷害 ×2。所有回復 +100%、HP 自然恢復 ×10 且每 4 秒一次、HP +5000、傷害減免 +50、五種屬性抗性 +200；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%，之後再扣 500 點最終減傷（真實減傷）。' },
     w_arms:      { cls: 'knight',   n: '百般武藝',   d: '造成的傷害 ×2。切菜：無視目標硬皮。龍的一擊（屠龍劍特效）：一般攻擊 80% 機率對全場敵人造成 3D(力量)+30 必中固定傷害。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
     m_shilen:    { cls: 'mage',     n: '席林眷屬',   d: '召喚術數量上限 20；寵物與召喚物命中、魔防、每次攻擊的傷害、每次受擊的減免都 +(WIS+INT)×1.2，且不會死亡（HP 最低 1）。召滿 20 隻時融合成一隻融合魔獸（傷害 ×20），每 3 秒隨機施放雷霆風暴／龍捲風／極光雷電／燃燒的火球（法師公式）。' },
     m_atheist:   { cls: 'mage',     n: '無神論者',   d: '狀態中：無法一般攻擊、魔法傷害與命中 +100，每 5 秒自動施放一次屬性魔法武器效果（四屬性輪流，威力 ×3，不耗 MP；傭兵 10 秒一次、效果減半）。進入戰鬥 1 分鐘時，所有敵人扣最大 HP 20%，之後陷入虛弱（回到一般狀態、可以攻擊），5 分鐘後再次進入無神狀態。' },
@@ -260,13 +260,26 @@
     if (a === 'k_doom' && dreamOn()) m *= 1 - 0.5 * f;
     return m;
   };
+  // 最終減傷（玩家 2026-10-23）：公式減傷、聖結界、傷害減免、技藝減傷都算完，最後被打的數值再扣（真實減傷）
+  //   來源：輪迴聖衣（afk-card-combat）、命運迴響精通 500
+  var finalDR = function (ent, et) {
+    if (et !== 'player' && et !== 'ally') return 0;
+    var v = 0, C = window.AFK_CARD_COMBAT;
+    try { if (C && C.finalDR) v += C.finalDR(ent) || 0; } catch (e) {}
+    if (art(ent) === 'w_fate') v += Math.round(500 * F(ent));
+    return v;
+  };
+  var finalOn = function () { var p = P(); if (!p) return false; if (finalDR(p, 'player') > 0) return true; return (p.allies || []).some(function (a) { return a && finalDR(a, 'ally') > 0; }); };
   var afterTaken = function (snap, mob, kind) {
     var p = P(), g = minionGuard(), gb = g ? minionBonus() : 0;
     snap.forEach(function (row) {
       var e = row[0], h0 = row[1], et = row[2];
       var hNow = et === 'player' ? e.hp : (et === 'ally' ? e.curHp : e.hp);
       var lost = (h0 || 0) - (hNow || 0); if (!(lost > 0)) return;
-      var mult = takenMult(e, et, mob, kind), back = Math.floor(lost * (1 - mult));
+      var mult = active ? takenMult(e, et, mob, kind) : 1, back = Math.floor(lost * (1 - mult));
+      var C = window.AFK_CARD_COMBAT;
+      if (C && C.finalBlock && (et === 'player' || et === 'ally') && C.finalBlock(e)) back = lost;   // 白羊座：完全抵銷
+      else { var fdr = finalDR(e, et); if (fdr > 0) back += Math.min(lost - back, fdr); }
       if ((et === 'pet' || et === 'summon') && g) back += Math.min(lost - back, gb);
       if (back > 0) {
         if (et === 'player') e.hp += back;
@@ -286,7 +299,7 @@
   var wrapTaken = function (name, kind) {
     var o = window[name]; if (typeof o !== 'function') return;
     window[name] = function (mob) {
-      if (dmgDepth > 0 || !active || !P()) return o.apply(this, arguments);
+      if (dmgDepth > 0 || !P() || !(active || finalOn())) return o.apply(this, arguments);
       var snap = partySnap(), r; dmgDepth++; pendingKill = false;
       try { r = o.apply(this, arguments); }
       finally { dmgDepth--; try { afterTaken(snap, mob, kind); } catch (e) { if (pendingKill) { pendingKill = false; window.killPlayer(); } } }
@@ -303,7 +316,7 @@
       try {
         var p = P();
         if (p && !p.dead) {
-          if (dmgDepth > 0 && active) { pendingKill = true; return; }   // 等減傷補算完再決定
+          if (dmgDepth > 0 && (active || finalOn())) { pendingKill = true; return; }   // 等減傷補算完再決定
           if (art(p)) {
             if (doomDead(p)) { p.hp = 1; return; }                       // 命定絕望者：暗夢星迴 5 分鐘後鎖 1 HP
             if (trySaves(p, true) && p.hp > 0) return;
@@ -816,7 +829,7 @@
     };
   }
 
-  window.__afkArts = { ARTS: ARTS, art: art, learn: learn, open: open, st: st, kings: kings, trySaves: trySaves, healMult: healMult, takenMult: takenMult,
+  window.__afkArts = { ARTS: ARTS, art: art, learn: learn, open: open, st: st, kings: kings, trySaves: trySaves, healMult: healMult, takenMult: takenMult, finalDR: finalDR,
     battle: function () { return B; }, partyN: function () { return partyN; }, _setParty: function (n) { partyN = n; }, _setActive: function (v) { active = v; }, isActive: function () { return active; } };
   // 衝擊之暈：命中時額外 500 真實傷害（玩家 2026-10-22；原本 +10，加在傷害計算之後＝不吃防禦）
   try { var ss = DB.skills.sk_shock_stun; if (ss && !ss._afk500) { ss.skillAddDmg = (ss.skillAddDmg || 0) + 500; ss._afk500 = true; } } catch (e) {}

@@ -70,10 +70,21 @@
     TIERS.forEach(function (t) {
       h += '<h3 style="color:' + COLOR[t] + '">' + RULE_TXT[t] + '卡</h3>';
       (a.catalog[t] || []).forEach(function (row) {
-        var on = a.owned(row.id, p), s = on ? Math.min(7, a.starsOf(row.id, p)) : 0;
-        h += '<div class="afk-ca-tier" style="opacity:' + (on ? 1 : .55) + '"><strong>' + esc(row.n) + '</strong><span style="color:' + (on ? '#fde047' : '#64748b') + '">' + (on ? starStr(s) : '未點亮') + '</span><small>' + (on ? (s >= 7 ? '已滿星（+45）' : '再取得 ' + (7 - s) + ' 次滿星；目前 +' + (s * 5)) : esc(row.desc || '')) + '</small></div>';
+        var on = a.owned(row.id, p), s = on ? Math.min(7, a.starsOf(row.id, p)) : 0, se = on && a.sealed && a.sealed(row.id, p);
+        h += '<div class="afk-ca-tier" style="opacity:' + (on ? 1 : .55) + '"><strong>' + esc(row.n) + (se ? ' <span style="color:#f87171">［封印中·效果減半］</span>' : '') + '</strong><span style="color:' + (on ? '#fde047' : '#64748b') + '">' + (on ? starStr(s) : '未點亮') + '</span><small>' + (on ? (s >= 7 ? '已滿星（+45）' : '再取得 ' + (7 - s) + ' 次滿星；目前 +' + (s * 5)) : esc(row.desc || '')) + '</small></div>';
       });
     });
+    // 輪迴變身（十二星座聖衣）：時空變身收集滿開放
+    var zs = a.catalog.samsara || [];
+    if (zs.length) {
+      var st = a.status(p).tiers.filter(function (x) { return x.tier === 'samsara'; })[0];
+      h += '<h3 style="color:#fcd34d">輪迴變身（星座聖衣）</h3>';
+      if (!st || !st.unlocked) h += '<p>收集全部時空變身後開放（封印的也算）。</p>';
+      else zs.forEach(function (row) {
+        var on = a.owned(row.id, p), se = on && a.sealed(row.id, p);
+        h += '<div class="afk-ca-tier" style="opacity:' + (on ? 1 : .55) + '"><strong>' + esc(row.n) + '</strong><span style="color:' + (on ? (se ? '#fca5a5' : '#fde047') : '#64748b') + '">' + (!on ? '未取得' : se ? '封印聖衣' : '已解除封印') + '</span><small>特殊能力：' + esc(row.special || '') + '（解除封印後生效；副本內無效果）</small></div>';
+      });
+    }
     box.innerHTML = h; host.appendChild(box);
   }
 
