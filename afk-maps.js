@@ -13,6 +13,9 @@
  *   ‧沒有的怪物用「外型相近的既有怪物」當樣板：借用它的動畫與掉落，數值依等級比例換算
  *   ‧透視鏡的等級是重製版的；每張地圖用一個係數換成本作的等級帶（例如死亡廢墟、說話之島北邊維持原作低等級區）
  *   ‧首領：透視鏡標為首領的，數值另外加強
+ * 支配者傲慢之塔（2026-10-22）：透視鏡新版傲慢之塔 1~10 樓＋頂樓（11 張），在地圖選單獨立一組、卡片也獨立一區；
+ *   怪物全部新做（不沿用舊 100 樓傲慢之塔的怪），名稱跟既有怪物撞名的加「(支配)」。
+ * 卡片：新地圖的怪併進原本所屬地區（歐瑞、亞丁、奇岩…）。
  * 透視鏡上沒有列怪物的地點（魔法師研究所、伊娃神殿、奇怪的村落、妖魔內城、隱藏之港、天空之園、屍魂塔等）沒有加。
  * ========================================================================== */
 (function () {
@@ -55,6 +58,20 @@
     '船舶之墓殭屍(男)': '人形殭屍', '船舶之墓殭屍(女)': '人形殭屍', '惡靈': '象牙塔惡靈', '隱藏的半魚人': '人魚',
     '地底蟹人': '蟹人', '地底巨王蟲': '巨蟻', '地底蜥蜴人': '蜥蜴人', '地底蛇蠍': '毒蠍', '地底魔蠍': '毒蠍', '地底多眼怪': '多眼怪', '地底巨王龜': '龍龜', '地底伊萊克頓': '伊萊克頓', '騎士哈達': '魂騎士', '須曼': '深淵之主'
   };
+  // 支配者傲慢之塔（新版傲慢之塔 1~10 樓＋頂樓）：一律做成新怪，與舊傲慢之塔（100 樓）分開；名稱撞到既有怪物時加「(支配)」
+  var TPL_DOM = {
+    '鐮刀死神的監視者': '死神', '歪曲的亞力安': '亞力安', '歪曲的楊果里恩': '變種楊果里恩', '歪曲的奇美拉': '奇美拉', '歪曲的梅杜莎': '梅杜莎', '歪曲的蛇女': '變種蛇女', '歪曲的吉安尼': '奇美拉', '歪曲的潔尼斯女王': '扭曲的潔尼斯女王',
+    '不幸的密密': '邪惡密密', '不幸的魔狼': '魔狼', '不幸的多眼怪': '邪惡多眼怪', '不幸的死亡之劍': '死亡之劍', '不幸的思克巴': '思克巴', '不幸的史塔伯洛': '小幻象眼魔', '不幸的幻象眼魔': '不幸的幻象眼魔',
+    '恐怖的火炎蛋': '火炎蛋', '恐怖的地獄犬': '恐怖的地獄犬', '恐怖的夢魘': '恐怖夢魘', '恐怖的小惡魔': '小惡魔', '恐怖的伊弗利特': '恐怖的伊弗利特', '恐怖的阿卡林': '伊弗利特', '恐怖的阿葛妮': '恐怖的伊弗利特', '恐怖的吸血鬼': '恐怖的吸血鬼',
+    '死亡的人形殭屍': '人形殭屍', '死亡的魯肯': '殘暴的史巴托', '死亡的史巴托': '殘暴的史巴托', '死亡的骷髏斧手': '骷髏斧手', '死亡的骷髏神射手': '殘暴的骷髏神射手', '死亡的骷髏近衛兵': '骷髏斧手', '死亡的殭屍王': '死亡的殭屍王',
+    '地獄的靈魂': '火焰之靈魂(紅)', '地獄的靈魂(大型)': '火焰之靈魂(藍)', '地獄的巴博亞': '骨龍', '地獄的魔法師': '火焰之魔法師', '地獄的鋼鐵高崙': '恐怖的鋼鐵高崙', '地獄的幼龍': '幼龍', '地獄的骨龍': '骨龍', '地獄的黑豹': '地獄的黑豹',
+    '不死的食屍鬼': '殘暴的食屍鬼', '不死的艾爾摩兵士': '受詛咒的艾爾摩將軍', '不死的艾爾摩魔法師': '受詛咒的艾爾摩將軍', '不死的凱伊瑟': '受詛咒的艾爾摩將軍', '不死的艾爾摩將軍': '受詛咒的艾爾摩將軍', '不死的木乃伊王': '不死的木乃伊王',
+    '殘忍的萊肯': '暗黑萊肯', '殘忍的冰原老虎': '冷酷冰原老虎', '殘忍的烈炎獸': '火焰烈炎獸', '殘忍的康恩德': '冷酷冰原老虎', '殘忍的阿西塔基奧': '火焰阿西塔基奧', '殘忍的艾莉絲': '冷酷的艾莉絲',
+    '黑暗的火焰弓箭手': '暗黑火焰弓箭手', '黑暗的火焰戰士': '暗黑火焰戰士', '黑暗的黑騎士': '暗黑黑騎士', '黑暗的思克巴女皇': '暗黑思克巴女皇', '黑暗的潔西': '暗黑思克巴女皇', '黑暗的騎士范德': '闇黑的騎士范德',
+    '不滅的骷髏弓箭手': '殘暴的骷髏神射手', '不滅的骷髏戰士': '骷髏斧手', '不滅的骷髏近衛兵': '骷髏斧手', '不滅的拉庫卡': '殘暴的史巴托', '不滅的骷髏騎士': '暗黑黑騎士', '不滅的巫妖': '不滅的巫妖',
+    '傲慢的阿西塔基奧': '火焰阿西塔基奧', '傲慢的思克巴女皇': '暗黑思克巴女皇', '傲慢的利維坦': '骨龍', '傲慢的奧馬爾': '闇黑的騎士范德', '傲慢的烏格奴斯': '不滅的巫妖', '傲慢的阿斯摩太': '暗黑思克巴女皇',
+    '潔尼斯女王': '扭曲的潔尼斯女王', '幻象眼魔': '不幸的幻象眼魔', '吸血鬼': '恐怖的吸血鬼', '殭屍王': '死亡的殭屍王', '黑豹': '地獄的黑豹', '木乃伊王': '不死的木乃伊王', '艾莉絲': '冷酷的艾莉絲', '騎士范德': '闇黑的騎士范德', '巫妖': '不滅的巫妖', '烏格奴斯': '不滅的巫妖', '邪惡的鐮刀死神': '邪惡的鐮刀死神'
+  };
   var byName = {};   // 名稱 → 第一個非攻城／血盟的 DB id
   Object.keys(DB.mobs).forEach(function (id) { var m = DB.mobs[id]; if (!m || m.siegeEnemy || m.pledgeEnemy) return; if (!byName[m.n]) byName[m.n] = id; });
   var round = function (x) { return Math.max(1, Math.round(x)); };
@@ -68,8 +85,8 @@
     } catch (e) {}
   };
   var scaleMag = function (g, f) { if (!g) return g; var o = JSON.parse(JSON.stringify(g)); if (o.db != null) o.db = round(o.db * f); return o; };
-  var newMob = function (name, lv, boss) {
-    var tName = TPL[name], tid = tName && byName[tName], t = tid && DB.mobs[tid];
+  var newMob = function (name, lv, boss, tplName) {
+    var tName = tplName || TPL[name], tid = tName && byName[tName], t = tid && DB.mobs[tid];
     if (!t) { missingTpl.push(name); return null; }
     var f = lv / Math.max(1, t.lv || 1), g = Math.pow(f, 1.6);
     var m = JSON.parse(JSON.stringify(t));
@@ -90,14 +107,26 @@
     return id;
   };
 
+  // 地圖選單：支配者傲慢之塔獨立一組，排在傲慢之塔後面
+  if (!MAP_REGIONS.some(function (r) { return r.key === 'domtower'; })) {
+    var ti = MAP_REGIONS.findIndex(function (r) { return r.key === 'tower'; });
+    MAP_REGIONS.splice(ti >= 0 ? ti + 1 : MAP_REGIONS.length, 0, { key: 'domtower', label: '支配者傲慢之塔', maps: [] });
+  }
   var REG = {}; MAP_REGIONS.forEach(function (r) { REG[r.key] = r; });
+  var domIds = {};   // 支配者傲慢之塔：透視鏡名稱 → 新怪 id（跨樓層共用，例如鐮刀死神的監視者）
   var addedMaps = [];
   Object.keys(DATA).forEach(function (mapId) {
     if (mapId[0] === '_' || DB.maps[mapId]) return;
     var info = DATA[mapId], k = info.k || 1, ids = [];
     info.mobs.forEach(function (row) {
-      var name = row[0], boss = !!row[2], id = byName[name];
-      if (!id) id = newMob(name, round(row[1] * k), boss);
+      var name = row[0], boss = !!row[2], id;
+      if (info.dom) {
+        id = domIds[name];
+        if (!id) { var shown = byName[name] ? name + '(支配)' : name; id = newMob(shown, round(row[1] * k), boss, TPL_DOM[name]); if (id) { domIds[name] = id; DB.mobs[id].afkDomTower = true; } }
+      } else {
+        id = byName[name];
+        if (!id) id = newMob(name, round(row[1] * k), boss);
+      }
       if (id && ids.indexOf(id) < 0) ids.push(id);
     });
     if (!ids.length) return;
@@ -113,43 +142,50 @@
   // 火焰之影（暗影神殿 3 樓首領）掉火焰之影素材
   try { [['afk_mat_yh_head', 20], ['afk_mat_yh_tail', 20], ['afk_mat_yh_spine', 30], ['afk_mat_yh_wing', 50], ['afk_mat_yh_nail', 50]].forEach(function (r) { if (!DB.items[r[0]]) return; var a = MOB_DROPS['火焰之影'] = MOB_DROPS['火焰之影'] || []; if (!a.some(function (x) { return x[0] === r[0]; })) a.push(r); }); } catch (e) {}
 
-  // ── 卡片收集：新地圖依所在地區各成一個收集地區「XX（新地圖）」，不影響原本地區的完成度 ──
+  // ── 卡片收集（玩家 2026-10-22 改）──
+  //   ‧新地圖的怪併進原本所屬地區（歐瑞、亞丁、奇岩…），不另開一組
+  //   ‧反王肯恩、賽尼斯(首領) 併進傲慢之塔
+  //   ‧支配者傲慢之塔獨立一個收集地區
   var cardRegions = [];
   try {
     if (typeof CARD_REGIONS !== 'undefined' && typeof CARD_MOB_INFO !== 'undefined' && typeof cardId === 'function') {
       var byRegion = {};
       Object.keys(DATA).forEach(function (mapId) { if (mapId[0] === '_' || !DB.maps[mapId] || !DATA[mapId].region) return; (byRegion[DATA[mapId].region] = byRegion[DATA[mapId].region] || []).push(mapId); });
-      // 套裝首領（afk-sets）：反王肯恩、賽尼斯(首領) 在傲慢之塔 41~60 樓
       var extra = { tower: ['afk_boss_kenrauhel', 'afk_boss_cerenis'] };
-      var label = {}; MAP_REGIONS.forEach(function (r) { label[r.key] = r.label; });
-      var baseStat = {}, baseReg = {}; CARD_REGIONS.forEach(function (r) { baseStat[r.key] = r.stat; baseReg[r.key] = r; });
+      var regByKey = {}; CARD_REGIONS.forEach(function (r) { regByKey[r.key] = r; });
+      // 支配者傲慢之塔：自己一個收集地區（加成：額外傷害，數值與傲慢之塔同一組）
+      if (byRegion.domtower && !regByKey.domtower) {
+        var dr = { key: 'domtower', name: '支配者傲慢之塔', stat: 'extraDmg', maps: byRegion.domtower.slice() };
+        (function (b) { Object.defineProperty(dr, 'vals', { enumerable: true, get: function () { return (b && b.vals) || [1, 2, 3, 4, 5]; } }); })(regByKey.tower);
+        var ti2 = CARD_REGIONS.findIndex(function (r) { return r.key === 'tower'; });
+        CARD_REGIONS.splice(ti2 >= 0 ? ti2 + 1 : CARD_REGIONS.length, 0, dr); regByKey.domtower = dr;
+        CARD_REGION_MOBS.domtower = [];
+      }
+      var lvOf = function (n) { var x = CARD_MOB_INFO[n]; return (x && x.mob && x.mob.lv) || 0; };
       Object.keys(byRegion).concat(Object.keys(extra)).forEach(function (rk) {
-        var key = 'ttmi_' + rk; if (CARD_REGIONS.some(function (r) { return r.key === key; })) return;
-        var maps = byRegion[rk] || [], names = [];
+        var reg0 = regByKey[rk]; if (!reg0) return;
+        var maps = byRegion[rk] || [], list = CARD_REGION_MOBS[rk] = CARD_REGION_MOBS[rk] || [], added = 0;
+        var mapFor = rk === 'tower' ? 'pride_41_50' : null;
         var reg = function (id, mk) {
           var mob = DB.mobs[id]; if (!mob || !mob.n || mob.race === '血盟' || mob.race === '建築') return; var n = mob.n;
-          if (names.indexOf(n) < 0) names.push(n);
           if (!CARD_MOB_INFO[n]) CARD_MOB_INFO[n] = { id: id, mob: mob };
-          (CARD_MOB_REGIONS[n] = CARD_MOB_REGIONS[n] || []); if (CARD_MOB_REGIONS[n].indexOf(key) < 0) CARD_MOB_REGIONS[n].push(key);
+          if (list.indexOf(n) < 0) { list.push(n); added++; }
+          (CARD_MOB_REGIONS[n] = CARD_MOB_REGIONS[n] || []); if (CARD_MOB_REGIONS[n].indexOf(rk) < 0) CARD_MOB_REGIONS[n].push(rk);
           (CARD_MOB_MAPS[n] = CARD_MOB_MAPS[n] || []); if (CARD_MOB_MAPS[n].indexOf(mk) < 0) CARD_MOB_MAPS[n].push(mk);
-        };
-        maps.forEach(function (mk) { (DB.maps[mk] || []).forEach(function (id) { reg(id, mk); }); try { _CARD_MAP_NAMES[mk] = DATA[mk].t; } catch (e) {} });
-        (extra[rk] || []).forEach(function (id) { if (DB.mobs[id]) reg(id, 'pride_41_50'); });
-        if (!names.length) return;
-        var nr = { key: key, name: (label[rk] || rk) + '（新地圖）', stat: baseStat[rk] || 'mhp', maps: maps.length ? maps : ['pride_41_50', 'pride_51_60'] };
-        // 加成數值跟原地區同一組（含其他模組追加的白金／鑽石階），隨時讀原地區最新值
-        (function (b) { Object.defineProperty(nr, 'vals', { enumerable: true, get: function () { return (b && b.vals) || [3, 5, 10, 15, 20]; } }); })(baseReg[rk]);
-        CARD_REGIONS.push(nr);
-        names.sort(function (a, b) { return (CARD_MOB_INFO[a].mob.lv || 0) - (CARD_MOB_INFO[b].mob.lv || 0); });
-        CARD_REGION_MOBS[key] = names;
-        names.forEach(function (n) {
           CARD_TIERS.forEach(function (ct) {
-            var id = cardId(n, ct.t); if (DB.items[id]) return;
-            DB.items[id] = { n: n + ' 的' + ct.sfx, type: 'misc', eff: 'card', cardTier: ct.t, cardMob: n, c: ct.col, img: ct.img, p: ct.price, gachaWeight: ct.weight,
+            var cid = cardId(n, ct.t); if (DB.items[cid]) return;
+            DB.items[cid] = { n: n + ' 的' + ct.sfx, type: 'misc', eff: 'card', cardTier: ct.t, cardMob: n, c: ct.col, img: ct.img, p: ct.price, gachaWeight: ct.weight,
               d: '怪物卡片。使用以在卡片收集冊中登錄「' + n + '」（' + ct.sfx + '效果）。' };
           });
+        };
+        maps.forEach(function (mk) {
+          (DB.maps[mk] || []).forEach(function (id) { reg(id, mk); });
+          try { _CARD_MAP_NAMES[mk] = DATA[mk].t; } catch (e) {}
+          if (Array.isArray(reg0.maps) && reg0.maps.indexOf(mk) < 0) reg0.maps.push(mk);
         });
-        cardRegions.push(key + ':' + names.length);
+        (extra[rk] || []).forEach(function (id) { if (DB.mobs[id]) reg(id, mapFor); });
+        list.sort(function (a, b) { return lvOf(a) - lvOf(b); });
+        cardRegions.push(rk + ':+' + added);
       });
     }
   } catch (e) { console.warn('[AFK-maps] 卡片', e); }
