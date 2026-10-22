@@ -230,7 +230,7 @@
   });
   if (typeof window.loadWarehouse === 'function') {
     var oWh = window.loadWarehouse;
-    window.loadWarehouse = function () { var w = oWh.apply(this, arguments); try { migrateEn(w && w.items); ensureItems(w && w.items); } catch (e) {} return w; };
+    window.loadWarehouse = function () { var w = oWh.apply(this, arguments); try { var mig = migrateEn(w && w.items); ensureItems(w && w.items); if (mig > 0 && typeof player !== 'undefined' && player && player.cls && typeof window.saveWarehouse === 'function') window.saveWarehouse(w); } catch (e) {} return w; };   // 倉庫轉換後立刻存回，第二詞綴不會每次重抽
   }
   if (typeof window.purgeOrphanItems === 'function') {
     var oPurge = window.purgeOrphanItems;
