@@ -16,6 +16,8 @@
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
+ *     2026-10-22：場上的王保持 1 隻；用傳送控制戒指找來的王一次出 3 隻同名王（三隻同時登場只算一次衝擊）。
+ *     傲慢之塔（含支配者傲慢之塔）與時空裂痕不限制；副本（王房、四大龍副本）維持舊規則
  *     有轉生狀態者（2026-10-22）：解除限制，場上 5 隻、王在場照樣出小怪；
  *     但王登場時（不論怎麼出現：自然出怪、傳送控制戒指、王房、變身成下一階都算）先對全隊
  *     （你＋傭兵＋寵物＋召喚物）造成最大 HP 10% 的真實傷害，每隻王（每一階）一次
@@ -189,35 +191,94 @@
     window.tick = function () { var r = oTickE.apply(this, arguments); if (dreamOn() && reborn()) scanBossEntry(); return r; };
   }
   var siege = function () { try { return typeof isSiegeArea === 'function' && isSiegeArea(mapState.current); } catch (e) { return false; } };
+  // ── 場上規則（2026-10-22 改）──
+  //   ‧傲慢之塔（舊 100 樓、支配者傲慢之塔）與時空裂痕（含暗夢星迴）：不限制，照一般出怪
+  //   ‧副本（四軍王之室等王房、四大龍副本）：維持舊規則（未轉生：最多 3 隻、有王只剩王；轉生：5 格）
+  //   ‧其他地區：場上的王保持 1 隻；用傳送控制戒指找來的王一次出 3 隻同名王
+  //     未轉生：最多 3 隻、有王只剩王、王在場不再出怪；轉生：5 格、王在場照樣出小怪
+  var curMap = function () { try { return String(mapState.current || ''); } catch (e) { return ''; } };
+  var exemptArea = function () {
+    var c = curMap();
+    try { if (state.riftRun || state.dreamStar || state.prideClimb) return true; } catch (e) {}
+    return c.indexOf('pride_') === 0 || c === 'town_pride' || c.indexOf('dom_tower_') === 0;
+  };
+  var instanceArea = function () {
+    var c = curMap();
+    try { if (typeof KING_ROOMS !== 'undefined' && KING_ROOMS[c]) return true; } catch (e) {}
+    try { if (typeof ANTHARAS_AREA_BOSS !== 'undefined' && ANTHARAS_AREA_BOSS[c]) return true; } catch (e) {}
+    try { if (state.antharas) return true; } catch (e) {}
+    return false;
+  };
+  var noMultiBoss = false;   // 內部用：讓核心這一次出怪不能再抽到第二隻王
   if (typeof window.backSlotsActive === 'function') {
     var oBack = window.backSlotsActive;
-    window.backSlotsActive = function () { if (dreamOn() && !siege() && !reborn() && !(typeof window.__afkHostileCall === 'function' && window.__afkHostileCall())) return false; return oBack.apply(this, arguments); };   // 敵對血盟呼朋引伴時開滿 5 格（afk-castlewar）
+    window.backSlotsActive = function () {
+      if (noMultiBoss) return false;
+      if (dreamOn() && !siege() && !reborn() && !exemptArea() && !(typeof window.__afkHostileCall === 'function' && window.__afkHostileCall())) return false;   // 敵對血盟呼朋引伴時開滿 5 格（afk-castlewar）
+      return oBack.apply(this, arguments);
+    };
   }
   if (typeof window.spawnMob === 'function') {
     var oSpawn = window.spawnMob;
     var live = function (m) { return m && !m._dead && m.curHp > 0; };
-    window.spawnMob = function (idx) {
-      if (!dreamOn() || siege()) return oSpawn.apply(this, arguments);
-      if (reborn()) {   // 轉生者：場上限制解除（5 隻、王在場也出小怪），王登場先放全隊 10% 真實傷害
-        var r0 = oSpawn.apply(this, arguments);
-        scanBossEntry();
-        return r0;
+    var bossIdOf = function (m) { var ks = Object.keys(DB.mobs); for (var i = 0; i < ks.length; i++) { var b = DB.mobs[ks[i]]; if (b && b.boss && b.n === m.n) return ks[i]; } return null; };
+    // 傳送控制戒指：同名王再補 2 隻（總共 3 隻）
+    var cloneBoss = function (nm, idx) {
+      var bid = bossIdOf(nm), base = bid && DB.mobs[bid]; if (!base) return 0;
+      var ms = mapState.mobs, slots = backSlotsActive() ? 5 : 3, want = 2, made = 0, order = [];
+      for (var j = 0; j < slots; j++) if (j !== idx && !live(ms[j])) order.push(j);
+      for (var k = 0; k < slots; k++) if (k !== idx && live(ms[k]) && !ms[k].boss && !ms[k].trollPlayer && order.indexOf(k) < 0) order.push(k);
+      for (var q = 0; q < order.length && made < want; q++) {
+        var s = order[q], seq = 0;
+        try { seq = ++_mobBornSeq; } catch (e) { seq = Date.now(); }
+        ms[s] = Object.assign({}, base, { curHp: base.hp, uid: (typeof uid === 'function' ? uid() : 'c' + Math.random()), _born: seq, _bornMs: Date.now(), _magCd: {}, justHit: false, st: newMobStatus(), _afkRingTrio: true, _afkEntryBlast: true });   // 三隻同時登場只算一次衝擊
+        try { applySherineBuff(s); } catch (e) {}
+        try { if (ms[s].hard && typeof initHardSkin === 'function') initHardSkin(ms[s]); } catch (e) {}
+        made++;
       }
-      if (typeof window.__afkWantHostile === 'function' && window.__afkWantHostile(idx)) return oSpawn.apply(this, arguments);   // 宣戰：王在場也會出敵對血盟 NPC（afk-castlewar）
+      if (made) { try { logSys('<span class="text-fuchsia-300">🌙 傳送控制戒指引來了 ' + (made + 1) + ' 隻 ' + nm.n + '！（夢艷地獄）</span>'); } catch (e) {} if (!state.ff) { try { renderMobs(); } catch (e) {} } }
+      return made;
+    };
+    var oldRule = function (idx, args) {   // 副本：舊規則
+      if (reborn()) { var r0 = oSpawn.apply(null, args); scanBossEntry(); return r0; }
+      if (typeof window.__afkWantHostile === 'function' && window.__afkWantHostile(idx)) return oSpawn.apply(null, args);
       var ms = mapState.mobs;
-      if (ms.some(function (m, j) { return j !== idx && live(m) && m.boss; })) return;   // 王在場：不再出怪
+      if (ms.some(function (m, j) { return j !== idx && live(m) && m.boss; })) return;
       if (ms.filter(function (m, j) { return j !== idx && live(m); }).length >= 3) return;
-      var r = oSpawn.apply(this, arguments);
-      var nm = ms[idx];
-      if (nm && nm.boss) {
-        var gone = 0;
-        for (var j = 0; j < ms.length; j++) if (j !== idx && live(ms[j]) && !ms[j].boss && !ms[j].trollPlayer) { ms[j] = null; gone++; }
-        if (gone) {
-          if (mapState.targetIdx >= 0 && !ms[mapState.targetIdx]) mapState.targetIdx = idx;
-          try { logSys('<span class="text-fuchsia-300">🌙 ' + nm.n + ' 降臨，周圍的怪物四散逃離……（夢艷地獄：有王時場上只有王）</span>'); } catch (e) {}
-          if (!state.ff) { try { renderMobs(); } catch (e) {} }
-        }
+      var r = oSpawn.apply(null, args); clearForBoss(idx); return r;
+    };
+    var clearForBoss = function (idx) {   // 未轉生：王出現時其他小怪離場
+      var ms = mapState.mobs, nm = ms[idx];
+      if (!nm || !nm.boss) return;
+      var gone = 0;
+      for (var j = 0; j < ms.length; j++) if (j !== idx && live(ms[j]) && !ms[j].boss && !ms[j].trollPlayer) { ms[j] = null; gone++; }
+      if (gone) {
+        if (mapState.targetIdx >= 0 && !ms[mapState.targetIdx]) mapState.targetIdx = idx;
+        try { logSys('<span class="text-fuchsia-300">🌙 ' + nm.n + ' 降臨，周圍的怪物四散逃離……（夢艷地獄：有王時場上只有王）</span>'); } catch (e) {}
+        if (!state.ff) { try { renderMobs(); } catch (e) {} }
       }
+    };
+    window.spawnMob = function (idx) {
+      var args = arguments;
+      if (!dreamOn() || siege()) return oSpawn.apply(this, args);
+      if (exemptArea()) { var re = oSpawn.apply(this, args); if (reborn()) scanBossEntry(); return re; }
+      if (instanceArea()) return oldRule(idx, args);
+      var ms = mapState.mobs, ring = !!mapState.forceBoss;
+      var bossLive = ms.some(function (m, j) { return j !== idx && live(m) && m.boss; });
+      if (!reborn()) {
+        if (typeof window.__afkWantHostile === 'function' && window.__afkWantHostile(idx)) return oSpawn.apply(this, args);   // 宣戰：王在場也會出敵對血盟 NPC（afk-castlewar）
+        if (bossLive) return;                                                                   // 王在場：不再出怪
+        if (ms.filter(function (m, j) { return j !== idx && live(m); }).length >= 3) return;
+      }
+      var r;
+      if (bossLive && !ring) { noMultiBoss = true; try { r = oSpawn.apply(this, args); } finally { noMultiBoss = false; } }   // 王保持 1 隻
+      else r = oSpawn.apply(this, args);
+      var nm = ms[idx];
+      if (nm && nm.boss && live(nm)) {
+        if (!reborn()) clearForBoss(idx);
+        if (ring) cloneBoss(nm, idx);
+      }
+      if (reborn()) scanBossEntry();
       return r;
     };
   }
