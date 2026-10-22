@@ -24,7 +24,7 @@
     var row=W.AFK_CARD_ASCENSION.active(actor);
     if(!row||!RULES[row.tier])return null;
     // Read the registered definition, never a caller-supplied tier or level.
-    if(row.tier==='mythic'&&!(Number(row.form&&row.form.cardNativeLevel)>=70))return null;
+    // 神話擴到 32 種後不再限 Lv70 以上（玩家 2026-10-23）
     return row;
   }
   function memory(actor){var s=ledger.get(actor);if(!s){s={seen:new WeakSet(),nextAt:-Infinity};ledger.set(actor,s);}return s;}
@@ -138,6 +138,7 @@
     var row=active(actor);if(!row||!d)return;
     var rule=RULES[row.tier];RES.forEach(function(k){d[k]=(Number(d[k])||0)+rule.resist;});
     CRIT.forEach(function(k){d[k]=(Number(d[k])||0)+rule.crit;});CRIT_DAMAGE.forEach(function(k){d[k]=(Number(d[k])||0)+rule.critDamage;});
+    if(row.bonus)Object.keys(row.bonus).forEach(function(k){d[k]=(Number(d[k])||0)+row.bonus[k];});   // 每個變身的專屬效果（afk-card-forms）
   }
   function monsterActive(actor){
     var A=W.AFK_CARD_ASCENSION,f=actor&&actor.poly;

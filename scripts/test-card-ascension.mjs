@@ -16,13 +16,14 @@ try {
       const before=JSON.stringify(Object.fromEntries(Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)])));
       const denied=[A.synthesize('mythic'),A.acquire(A.catalog.mythic[0].id),A.exchangeFragments()];
       const after=JSON.stringify(Object.fromEntries(Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)])));
-      const native70=[...POLY_TIERS.flatMap(t=>t.forms),...CONTROL_ONLY_POLY_FORMS].filter(f=>f.lv>=70);
-      const eligible=[...new Set(native70.map(f=>f.n))].sort();
+      /* 神話：選得到的變身裡等級最高的 32 種（玩家 2026-10-23） */
+      const seen=new Set(),pool=[];[...POLY_TIERS.flatMap(t=>t.forms),...CONTROL_ONLY_POLY_FORMS,...(window.__afkPolyCatalog||[])].forEach(f=>{if(f&&f.lv>0&&!seen.has(f.n)){seen.add(f.n);pool.push(f);}});
+      pool.sort((a,b)=>b.lv-a.lv||a.n.localeCompare(b.n,'zh-Hant'));const eligible=pool.slice(0,32).map(f=>f.n).sort();
       const mythic=A.catalog.mythic.map(r=>r.prototype||r.form.cardVisualBase).sort();
       return {denied:denied.every(r=>!r.ok),unchanged:before===after,counts:Object.fromEntries(Object.entries(A.catalog).map(([k,v])=>[k,v.length])),eligible,mythic,missingSpeeds:AFK_CARD_FORMS.monsterNames().filter(n=>!AFK_CARD_FORMS.monsterForm(n))};
     });
     assert.equal(startup.denied,true);assert.equal(startup.unchanged,true);
-    assert.deepEqual(startup.mythic,startup.eligible);assert.equal(startup.counts.celestial,3);assert.equal(startup.counts.spacetime,3);
+    assert.deepEqual(startup.mythic,startup.eligible);assert.equal(startup.counts.mythic,32);assert.equal(startup.counts.celestial,21);assert.equal(startup.counts.spacetime,14);
     assert.deepEqual(startup.missingSpeeds,[]);
     reports.push({case:'catalog and title screen',...startup});
 
@@ -128,7 +129,8 @@ try {
         player.enSeed=__findCardSeed(tier,draw=>Array.from({length:10},(_,i)=>i+1).every(n=>draw(n)>=rate));
         const other=['mythic','celestial','spacetime'].filter(t=>t!==tier);
         other.forEach((t,i)=>player.cardAscension.failures[t]=i+2);
-        gainItem(cardId(AFK_CARD_FORMS.monsterNames()[0],5),55,true,true);gainItem('potion_red',9,true,true);
+        /* 各階材料（玩家 2026-10-23）：神話＝變身金卡、天上＝怪物白金卡、時空＝怪物鑽石卡 */
+        if(tier==='mythic')gainItem(AFK_POLY_CODEX.itemId(AFK_POLY_CODEX.forms[0].n,3),55,true,true);else gainItem(cardId(AFK_CARD_FORMS.monsterNames()[0],tier==='celestial'?4:5),55,true,true);gainItem('potion_red',9,true,true);
         const dex=JSON.stringify(player.cardDex),results=[];
         for(let n=0;n<11;n++)results.push(A.synthesize(tier));
         return {tier,results,diamonds:__allDiamondCount(),ordinary:__cardCount('potion_red'),fragments:__cardCount(A.items.fragment),choices:__cardCount(A.items.diamondChoice),dexUnchanged:dex===JSON.stringify(player.cardDex),counters:player.cardAscension.failures,attempts:player.cardAscension.attempts,other};
@@ -137,8 +139,9 @@ try {
       assert.equal(pity.results[10].success,true);assert.equal(pity.results[10].guaranteed,true);assert.equal(pity.results[10].reward.kind,'unlock');
       assert.equal(pity.attempts[tier],11);assert.equal(pity.counters[tier],0);
       pity.other.forEach((t,i)=>assert.equal(pity.counters[t],i+2));
-      assert.equal(pity.diamonds,tier==='mythic'?10:0);assert.equal(pity.ordinary,9);assert.equal(pity.dexUnchanged,true);
-      assert.equal(pity.fragments,tier==='spacetime'?10:0);assert.equal(pity.choices,tier==='celestial'?10:0);
+      /* 失敗補償：神話沒有；天上 1 張隨機鑽石卡；時空 1 張未收藏鑽石卡（全收藏時改給隨機鑽石卡） */
+      assert.equal(pity.diamonds,tier==='mythic'?0:10);assert.equal(pity.ordinary,9);assert.equal(pity.dexUnchanged,true);
+      assert.equal(pity.fragments,0);assert.equal(pity.choices,0);
       reports.push({case:'independent pity and conserved refunds',...pity});
     }
 
@@ -146,26 +149,24 @@ try {
     const threshold=await page.evaluate(()=>{
       const A=AFK_CARD_ASCENSION;__fillDiamond();__fullPredecessor('mythic');
       const s=player.cardAscension;
+      /* 玩家 2026-10-23：神話收集一半（16 種）同時開放天上與時空 */
+      const half=Math.ceil(A.catalog.mythic.length/2);
       s.owned[A.catalog.mythic[0].id]=true;
       const oneMyth=A.status().tiers[1].unlocked;
-      A.catalog.mythic.slice(0,-1).forEach(r=>s.owned[r.id]=true);
-      const missingMyth=A.status().tiers[1].unlocked;
-      s.owned[A.catalog.mythic.at(-1).id]=true;
-      const allMyth=A.status().tiers[1].unlocked;
-      s.owned[A.catalog.celestial[0].id]=true;
-      const oneCelestial=A.status().tiers[2].unlocked;
-      A.catalog.celestial.forEach(r=>s.owned[r.id]=true);
-      return {oneMyth,missingMyth,allMyth,oneCelestial,allCelestial:A.status().tiers[2].unlocked};
+      A.catalog.mythic.slice(0,half-1).forEach(r=>s.owned[r.id]=true);
+      const belowHalf=A.status().tiers[1].unlocked||A.status().tiers[2].unlocked;
+      s.owned[A.catalog.mythic[half-1].id]=true;
+      return {oneMyth,belowHalf,halfCelestial:A.status().tiers[1].unlocked,halfSpacetime:A.status().tiers[2].unlocked};
     });
-    assert.deepEqual(threshold,{oneMyth:false,missingMyth:false,allMyth:true,oneCelestial:false,allCelestial:true});
-    reports.push({case:'complete previous collection gates the next tier',...threshold});
+    assert.deepEqual(threshold,{oneMyth:false,belowHalf:false,halfCelestial:true,halfSpacetime:true});
+    reports.push({case:'half of mythic opens celestial and spacetime together',...threshold});
 
     await fixture();
     const duplicate=await page.evaluate(()=>{
       const A=AFK_CARD_ASCENSION;__fillDiamond();__fullPredecessor('mythic');
       const rows=A.catalog.mythic;
       player.enSeed=__findCardSeed('mythic',draw=>draw(1)<.5&&draw(2)<.5&&Math.floor(draw(1,'card')*rows.length)===Math.floor(draw(2,'card')*rows.length));
-      gainItem(cardId(AFK_CARD_FORMS.monsterNames()[0],5),10,true,true);
+      gainItem(AFK_POLY_CODEX.itemId(AFK_POLY_CODEX.forms[0].n,3),10,true,true);   /* 神話材料：變身金卡 */
       const a=A.synthesize('mythic'),b=A.synthesize('mythic');
       return {a,b,remaining:__allDiamondCount(),owned:A.listOwned(player).length,failures:player.cardAscension.failures.mythic};
     });
@@ -200,7 +201,7 @@ try {
       const token=player.inv.find(i=>i.id===A.items.choice);useItem(token.uid);
       return {left:__cardCount(A.items.fragment),tokens:__cardCount(A.items.choice),choices:[...document.querySelectorAll('[data-choice-card]')].map(x=>x.dataset.choiceCard)};
     });
-    assert.equal(fragments.left,1);assert.equal(fragments.tokens,1);assert.equal(fragments.choices.length,3);
+    assert.equal(fragments.left,1);assert.equal(fragments.tokens,1);assert.equal(fragments.choices.length,21);
     await page.locator('[data-choice-card]').first().click();
     const chosen=await page.evaluate(()=>({owned:AFK_CARD_ASCENSION.listOwned(player).map(r=>r.id),token:__cardCount(AFK_CARD_ASCENSION.items.choice),fragment:__cardCount(AFK_CARD_ASCENSION.items.fragment),spacetime:AFK_CARD_ASCENSION.status().tiers[2].unlocked}));
     assert.equal(chosen.owned.length,1);assert.equal(chosen.token,0);assert.equal(chosen.fragment,1);assert.equal(chosen.spacetime,false);
@@ -295,7 +296,7 @@ try {
       openCardBook();
       return {tiers:root.querySelectorAll('[data-ascend-tier]').length,words:root.textContent,collection:!!document.getElementById('afk-card-ascension-open')};
     });
-    assert.equal(nativeUI.tiers,3);assert.equal(nativeUI.collection,true);assert.match(nativeUI.words,/第 11 次必定成功/);assert.match(nativeUI.words,/尚未登錄鑽石卡/);
+    assert.equal(nativeUI.tiers,3);assert.equal(nativeUI.collection,true);assert.match(nativeUI.words,/第 11 次必定成功/);assert.match(nativeUI.words,/尚未收藏鑽石卡/);
     reports.push({case:'native synthesis and card-book entry points',tiers:nativeUI.tiers,collection:nativeUI.collection});
 
     // Save a real card form, then disable its parent without rewriting that

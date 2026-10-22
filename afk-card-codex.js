@@ -29,14 +29,25 @@
       lit++; var s = Math.min(7, a.starsOf(row.id, p)); stars += s;
       total += s * 5 + (s >= 7 ? 10 : 0); if (s >= 7) full++;
     }); });
-    return { total: total, lit: lit, full: full, stars: stars };
+    // 收集加成（玩家 2026-10-23）：每張卡加 HP 等；收集一半、全部再加
+    var stats = {}, hp = 0, add = function (k, v) { stats[k] = (stats[k] || 0) + v; };
+    var PER = { mythic: { hp: 20 }, celestial: { hp: 40, extraDmg: 1 }, spacetime: { hp: 60, extraDmg: 1, extraHit: 1 } };
+    var HALF = { mythic: 2, celestial: 3, spacetime: 5 }, FULL = { mythic: 3, celestial: 5, spacetime: 8 };
+    TIERS.forEach(function (t) {
+      var rows = a.catalog[t] || [], n = rows.filter(function (row) { return a.owned(row.id, p); }).length;
+      Object.keys(PER[t]).forEach(function (k) { if (k === 'hp') hp += PER[t].hp * n; else add(k, PER[t][k] * n); });
+      if (rows.length && n >= Math.ceil(rows.length / 2)) { add('extraDmg', HALF[t]); add('extraHit', HALF[t]); }
+      if (rows.length && n >= rows.length) { add('extraDmg', FULL[t]); add('extraHit', FULL[t]); add('extraMp', FULL[t]); }
+    });
+    return { total: total, lit: lit, full: full, stars: stars, stats: stats, hp: hp };
   };
+  if (window.__afkMaxAdd && window.__afkMaxAdd.add) window.__afkMaxAdd.add(function (p) { if (!enabled() || !p || !p.cardAscension) return; var b = bonusOf(p); if (b.hp) p.mhp = (p.mhp || 0) + b.hp; });
   if (typeof window.recomputeStats === 'function') {
     var oRe = window.recomputeStats;
     window.recomputeStats = function () {
       var r = oRe.apply(this, arguments);
       try {
-        var p = P(); if (p && p.d && enabled()) { var b = bonusOf(p).total; if (b) RES.forEach(function (k) { p.d[k] = (Number(p.d[k]) || 0) + b; }); }
+        var p = P(); if (p && p.d && enabled()) { var bo = bonusOf(p), b = bo.total; if (b) RES.forEach(function (k) { p.d[k] = (Number(p.d[k]) || 0) + b; }); Object.keys(bo.stats).forEach(function (k) { p.d[k] = (Number(p.d[k]) || 0) + bo.stats[k]; }); }
       } catch (e) {}
       return r;
     };
@@ -51,8 +62,11 @@
     var old = host.querySelector('#afk-codex'); if (old) old.remove();
     var a = A(), b = bonusOf(p), all = 0; TIERS.forEach(function (t) { all += (a.catalog[t] || []).length; });
     var box = document.createElement('section'); box.id = 'afk-codex'; box.className = 'afk-ca-panel';
+    var PC = window.AFK_POLY_CODEX, gold = PC ? PC.goldCount(p) : 5;
+    if (gold < 5 && !b.lit) { box.innerHTML = '<h3>神話變身卡冊</h3><p>變身收集冊的金卡登錄滿 5 種後開放查看（目前 ' + gold + '/5）。</p>'; host.appendChild(box); return; }
     var h = '<h3>變身卡冊</h3><p>取得高階變身卡會點亮卡冊；同一張再取得可升星（最多 7 星）。每顆星五種屬性抗性 +5，滿 7 星再 +10。</p>'
-      + '<div>點亮 <b>' + b.lit + '</b>/' + all + '　總星數 <b>' + b.stars + '</b>　滿星 ' + b.full + '　目前加成：五種屬性抗性各 <b style="color:#86efac">+' + b.total + '</b></div>';
+      + '<div>點亮 <b>' + b.lit + '</b>/' + all + '　總星數 <b>' + b.stars + '</b>　滿星 ' + b.full + '　目前加成：五種屬性抗性各 <b style="color:#86efac">+' + b.total + '</b>、最大 HP +' + b.hp + Object.keys(b.stats).map(function (k) { return '、' + ({ extraDmg: '額外傷害', extraHit: '額外命中', extraMp: '額外魔法點數' }[k] || k) + ' +' + b.stats[k]; }).join('') + '</div>'
+      + '<p>收集加成：每張神話 HP +20；天上 HP +40、額外傷害 +1；時空 HP +60、額外傷害 +1、額外命中 +1。同一階收集一半、全部收集再各加額外傷害與命中（神話 +2／+3、天上 +3／+5、時空 +5／+8；全收另加同值額外魔法點數）。</p>';
     TIERS.forEach(function (t) {
       h += '<h3 style="color:' + COLOR[t] + '">' + RULE_TXT[t] + '卡</h3>';
       (a.catalog[t] || []).forEach(function (row) {
@@ -68,13 +82,14 @@
     var town = DB.towns && DB.towns.town_gludio;
     if (town && Array.isArray(town.npcs) && !town.npcs.some(function (x) { return x.id === 'npc_zhihuan'; })) {
       town.npcs.push({ id: 'npc_zhihuan', n: '至幻者', title: '變身卡冊', type: 'cardcodex',
-        d: '把多餘的鑽石卡交給至幻者，合成神話、天上與時空變身卡，並在卡冊上點亮與升星。' });
+        d: '變身收集冊、神話／天上／時空變身卡的合成與卡冊，都在至幻者這裡。' });
     }
     if (typeof NPC_SPR_FIXED !== 'undefined' && !NPC_SPR_FIXED.npc_zhihuan) NPC_SPR_FIXED.npc_zhihuan = '902';
   } catch (e) {}
   function openNpc(host) {
     if (!host) return;
     var a = A();
+    try { if (window.AFK_POLY_CODEX) window.AFK_POLY_CODEX.render(host); } catch (e) {}
     try { if (typeof a.renderSynth === 'function') a.renderSynth(host); } catch (e) {}
     var acts = document.createElement('div'); acts.className = 'afk-ca-actions'; acts.id = 'afk-codex-actions';
     var p = P(), choice = p && (p.inv || []).find(function (i) { return i && i.id === 'afk_card_celestial_choice' && !i.lock; });
