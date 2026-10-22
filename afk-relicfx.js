@@ -342,9 +342,9 @@
 
   // ── 屬性印記（比照海洋水晶球「潮濕」：維持 10 秒，受到剋制屬性的下一次傷害 ×2 並解除）──
   //   潮濕（水）→ 風 ×2（原本就有）　灼熱（火）→ 水 ×2　泥濘（地）→ 火 ×2　風化（風）→ 地 ×2
-  //   破綻（無屬性）→ 下一次任何四屬性傷害 ×1.5
+  //   蝕刻（無屬性）→ 下一次任何四屬性傷害 ×1.5
   //   施加：遺物武器的一般攻擊命中時 20% 依武器屬性施加（海洋水晶球維持 100% 潮濕）
-  var MARK = { fire: { k: '_afkScorch', n: '灼熱', by: 'water' }, earth: { k: '_afkMud', n: '泥濘', by: 'fire' }, wind: { k: '_afkErode', n: '風化', by: 'earth' }, none: { k: '_afkExpose', n: '破綻', by: '*' } };
+  var MARK = { fire: { k: '_afkScorch', n: '灼熱', by: 'water' }, earth: { k: '_afkMud', n: '泥濘', by: 'fire' }, wind: { k: '_afkErode', n: '風化', by: 'earth' }, none: { k: '_afkExpose', n: '蝕刻', by: '*' } };
   window.__afkMarks = MARK;
   var applyMark = function (t, wpn) {
     if (!wpn || !wpn.relic || wpn.onHitWet || !t || t.curHp <= 0) return;

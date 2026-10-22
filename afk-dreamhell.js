@@ -16,6 +16,8 @@
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
+ *     有轉生狀態者（2026-10-22）：解除限制，場上 5 隻、王在場照樣出小怪；
+ *     但王登場時先對全隊（你＋傭兵）造成最大 HP 10% 的真實傷害
  * 報酬
  *   ‧經驗 0、金幣 0；每殺一隻 0.1% 機率掉龍之鑽石（掉的時候一半是 1～499 隨機、一半是 500）
  *   ‧掉落機率 ×50（恩賜 ×10 × 5）；裝備掉落 100% 祝福；席琳結晶掉率 ×5
@@ -133,16 +135,39 @@
   }
 
   // ── 場上怪物上限：最多 3 隻；有王的時候場上只有王（玩家 2026-10-21 指定）──
+  var reborn = function () { try { return !!(player && player.rebirth > 0); } catch (e) { return false; } };
+  // 轉生者：王登場先給全隊一波最大 HP 10% 真實傷害
+  var bossEntryBlast = function (nm) {
+    try {
+      var hit = [];
+      if (!player.dead) {
+        var d0 = Math.max(1, Math.floor((player.mhp || 1) * 0.1)); player.hp -= d0; hit.push('你 ' + d0);
+        if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer();
+      }
+      (player.allies || []).forEach(function (x) {
+        if (!x || x._downed || !(x.curHp > 0)) return;
+        var d = Math.max(1, Math.floor((x.mhp || x.curHp || 1) * 0.1)); x.curHp -= d; hit.push((x._allyName || '傭兵') + ' ' + d);
+        if (x.curHp <= 0) { x.curHp = 0; x._downed = true; x._reviveCd = 150; }
+      });
+      if (!state.ff) logCombat('<span class="text-fuchsia-300 font-bold">🌙 ' + nm.n + ' 降臨的衝擊席捲全隊！</span>最大 HP 10% 真實傷害（' + hit.join('、') + '）', 'enemy');
+    } catch (e) {}
+  };
   var siege = function () { try { return typeof isSiegeArea === 'function' && isSiegeArea(mapState.current); } catch (e) { return false; } };
   if (typeof window.backSlotsActive === 'function') {
     var oBack = window.backSlotsActive;
-    window.backSlotsActive = function () { if (dreamOn() && !siege() && !(typeof window.__afkHostileCall === 'function' && window.__afkHostileCall())) return false; return oBack.apply(this, arguments); };   // 敵對血盟呼朋引伴時開滿 5 格（afk-castlewar）
+    window.backSlotsActive = function () { if (dreamOn() && !siege() && !reborn() && !(typeof window.__afkHostileCall === 'function' && window.__afkHostileCall())) return false; return oBack.apply(this, arguments); };   // 敵對血盟呼朋引伴時開滿 5 格（afk-castlewar）
   }
   if (typeof window.spawnMob === 'function') {
     var oSpawn = window.spawnMob;
     var live = function (m) { return m && !m._dead && m.curHp > 0; };
     window.spawnMob = function (idx) {
       if (!dreamOn() || siege()) return oSpawn.apply(this, arguments);
+      if (reborn()) {   // 轉生者：場上限制解除（5 隻、王在場也出小怪），王登場先放全隊 10% 真實傷害
+        var ms0 = mapState.mobs, had = ms0[idx] && live(ms0[idx]) && ms0[idx].boss;
+        var r0 = oSpawn.apply(this, arguments);
+        var nm0 = ms0[idx]; if (nm0 && nm0.boss && live(nm0) && !had && !nm0._afkEntryBlast) { nm0._afkEntryBlast = true; bossEntryBlast(nm0); }
+        return r0;
+      }
       if (typeof window.__afkWantHostile === 'function' && window.__afkWantHostile(idx)) return oSpawn.apply(this, arguments);   // 宣戰：王在場也會出敵對血盟 NPC（afk-castlewar）
       var ms = mapState.mobs;
       if (ms.some(function (m, j) { return j !== idx && live(m) && m.boss; })) return;   // 王在場：不再出怪
