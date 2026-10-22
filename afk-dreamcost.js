@@ -245,5 +245,26 @@
   };
   petRegenHook(); setTimeout(petRegenHook, 0);
 
+
+  // ── 反射傷害歸給真正出手的人（玩家 2026-10-22 回報：傭兵打的也全反彈給玩家）──
+  //   有些傭兵出手的路徑（借用玩家的施法／觸發函式）呼叫反射時沒帶傭兵 → 一律算到你頭上。
+  //   傭兵回合中（核心 _dpsAllyTurn）反射沒指定對象時，改給正在行動的那名傭兵。
+  var curAlly = null;
+  if (typeof window.processAllyStatusTick === 'function') {
+    var oPAS = window.processAllyStatusTick;
+    window.processAllyStatusTick = function (ally) { curAlly = ally || null; return oPAS.apply(this, arguments); };
+  }
+  if (typeof window.reflectWallOnDamage === 'function') {
+    var oRWD = window.reflectWallOnDamage;
+    window.reflectWallOnDamage = function (mob, dmg, kind, ally) {
+      try {
+        if (!ally && curAlly && !curAlly._downed && typeof _dpsAllyTurn !== 'undefined' && _dpsAllyTurn) {
+          var a = Array.prototype.slice.call(arguments); a[3] = curAlly; return oRWD.apply(this, a);
+        }
+      } catch (e) {}
+      return oRWD.apply(this, arguments);
+    };
+  }
+
   console.log('[AFK-dreamcost] 已啟用：夢艷地獄死亡詛咒、轉生夢艷技能與復活代價、寵物 MP 恢復吃玩家面板');
 })();
