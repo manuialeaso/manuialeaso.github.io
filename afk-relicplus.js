@@ -49,6 +49,8 @@
   var KIND_OK = function (d) { return !!(d && isRelic(d) && !d.gmOnly && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && ['pet', 'petwpn', 'petarm', 'doll'].indexOf(d.slot) < 0); };
   // 戒指／耳環／項鍊／腰帶等強化上限 +5 的飾品：新增 +6～+10 的設計里程碑
   //   判斷依原作者的強化上限（enhanceCap）：上限 +5 的道具都算這一類
+  // 第二詞綴在第幾級抽：飾品 +5、武器防具 +10（玩家 2026-10-23）
+  var fxAt = function (base) { var d = DB.items[base]; return d && d.type === 'acc' ? 5 : 10; };
   var maxOf = function (base) { var d = DB.items[base]; if (!d) return 15; var cap = 15; try { cap = enhanceCap(d); } catch (e) { cap = d.type === 'acc' ? 5 : 15; } return cap <= 5 ? 10 : 15; };
 
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
@@ -191,17 +193,18 @@
   // 舊存檔：遺物本體帶著一般強化值（en>0，例如測試工具或舊版留下的「+15」），改成遺物合成等級，才能套用分階特效（玩家 2026-10-23）
   function migrateEn(items) {
     var n = 0;
+    if (!enabled()) return 0;   // 遺物合成關掉時不動玩家的物品
     (items || []).forEach(function (it) {
       if (!it || !it.id) return;
       if (String(it.id).indexOf('~') >= 0) {   // 已是合成等級但 +10 以上沒有第二詞綴（前一版轉換留下的）→ 補抽
         var pp = parseId(it.id);
-        if (pp && pp.n >= 10 && !pp.fx && maxOf(pp.base) >= 10) { var dd = donorsFor(pp.base); if (dd.length) { var nid = makeId(pp.base, pp.n, dd[Math.floor(Math.random() * dd.length)], pp.asc, pp.evo); ensure(nid); if (DB.items[nid]) { it.id = nid; n++; } } }
+        if (pp && pp.n >= fxAt(pp.base) && !pp.fx) { var dd = donorsFor(pp.base); if (dd.length) { var nid = makeId(pp.base, pp.n, dd[Math.floor(Math.random() * dd.length)], pp.asc, pp.evo); ensure(nid); if (DB.items[nid]) { it.id = nid; n++; } } }
         return;
       }
       var d = DB.items[it.id], en = Math.floor(Number(it.en) || 0);
       if (en <= 0 || !KIND_OK(d)) return;
       var lv = Math.min(en, maxOf(it.id)), fx = null;
-      if (lv >= 10) { var ds = donorsFor(it.id); fx = ds.length ? ds[Math.floor(Math.random() * ds.length)] : null; }   // 跟正常合成一樣：到 +10 抽第二詞綴
+      if (lv >= fxAt(it.id)) { var ds = donorsFor(it.id); fx = ds.length ? ds[Math.floor(Math.random() * ds.length)] : null; }   // 跟正常合成一樣：到 +10 抽第二詞綴
       var id = makeId(it.id, lv, fx);
       ensure(id); if (!DB.items[id]) return;
       it.id = id; it.en = 0; n++;
@@ -368,7 +371,7 @@
     if (diamonds() < c.dia) return { ok: false, msg: '龍之鑽石不足（需要 ' + c.dia.toLocaleString() + '）。' };
     if (gold() < c.gold) return { ok: false, msg: '金幣不足（需要 ' + c.gold.toLocaleString() + '）。' };
     var fx = g.fx;
-    if (target === 10 && !fx && mx >= 10) { var ds = donorsFor(g.base); fx = ds.length ? ds[Math.floor(Math.random() * ds.length)] : null; }
+    if (target === fxAt(g.base) && !fx && mx >= target) { var ds = donorsFor(g.base); fx = ds.length ? ds[Math.floor(Math.random() * ds.length)] : null; }
     var newId = makeId(g.base, target, fx);
     if (!ensure(newId)) return { ok: false, msg: '無法建立 +' + target + ' 的資料。' };
 
@@ -396,7 +399,7 @@
     try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
     var nm = (DB.items[g.base] || {}).n;
     var msg = success
-      ? '🔨 遺物合成成功：' + nm + ' +' + target + (target === 10 && fx ? '，繼承了「' + DB.items[fx].n + '」的特效' : '') + '。'
+      ? '🔨 遺物合成成功：' + nm + ' +' + target + (target === fxAt(g.base) && fx ? '，繼承了「' + DB.items[fx].n + '」的特效' : '') + '。'
       : '🔨 遺物強化失敗：' + nm + ' 仍是 +' + g.n + '（遺物沒有消失）。';
     try { logSys('<span class="' + (success ? 'text-amber-300 font-bold' : 'text-slate-300') + '">' + msg + '</span>'); } catch (e) {}
     return { ok: true, success: success, msg: msg, id: success ? newId : null };
@@ -785,7 +788,7 @@
       + '<p><b>武器、防具最高 +15。</b>合成 +1～+10 要 2 件同款、同階遺物。做出 +1～+6，每次 500 龍鑽＋5,000 萬金幣；+7～+10 每高一階，費用再加 100 龍鑽＋1,000 萬金幣。+11～+15 改用單件，每次 5 萬龍鑽、成功率 10%，失敗保留遺物。</p>'
       + '<p><b>戒指、耳環、項鍊、腰帶等飾品最高 +10。</b>+1～+5 每階要 3 件同款、同階遺物；+6～+10 改為 2 件，成功率 50%，失敗時遺物都還在。龍鑽和金幣為上述費用的 3 倍，另需席琳結晶 500 顆。</p>'
       + '<p><b>能力成長：</b>武器一般每 +1 增加小型／大型傷害各 1，每 +3 增加原有能力各 1；防具、飾品每 +1 防禦 −1、魔法防禦 +1，每 +3 遠距迴避 +1，每 +5 傷害減免 +1。各件的專屬階段數值優先，完整效果可查「遺物進階」。</p>'
-      + '<p><b>+10 第二詞綴：</b>隨機抽取同部位另一件遺物，繼承其原始特效中的未重複欄位；沒有可繼承效果時，改給四屬性抗性各 +10。</p>'
+      + '<p><b>第二詞綴（武器、防具 +10；飾品 +5）：</b>隨機抽取同部位另一件遺物，繼承其原始特效中的未重複欄位；沒有可繼承效果時，改給四屬性抗性各 +10。</p>'
       + '<p><b>昇華支配：</b>武器、防具達 +15，飾品達 +10 後開放。昇華每 +1，武器大小型傷害各 +10、原有能力各 +5；防具、飾品六項能力各 +1，防禦 −1、魔法防禦／遠距迴避／減傷各 +1，四屬性抗性各 +10。防具另加生命、魔力自然恢復各 50。</p>'
       + '<p>只使用背包裡未鎖定的遺物與材料；穿戴中、倉庫內或上鎖的物品不列入。第 029 件昇華後即達終階，GM 測試道具不適用合成。</p></details>'
       + '<div class="rp-tools" id="rp-tools"></div>'
@@ -867,7 +870,7 @@
           + (c.merge ? '合成 +' + t + (c.rate < 1 ? '（' + Math.round(c.rate * 100) + '%）' : '') : '強化 +' + t + '（10%）') + '<br><span style="font-weight:600;font-size:13px">' + c.dia.toLocaleString() + ' 鑽' + (c.gold ? '＋' + (c.gold / 10000).toLocaleString() + ' 萬' : '') + (c.crystal ? '＋結晶 ' + c.crystal : '') + (c.need > 2 ? '（' + c.need + ' 個）' : '') + '</span></button>';
       }
       var nextTxt = '';
-      if (c) { var nid = makeId(g.base, t, g.fx); var nd = DB.items[nid] || buildDef(g.base, t, g.fx); nextTxt = '下一級：' + pretty(statLine(nd, g.base)) + (t === 10 && !g.fx && mx >= 10 ? '、獲得第二詞綴（隨機同部位遺物特效）' : ''); }
+      if (c) { var nid = makeId(g.base, t, g.fx); var nd = DB.items[nid] || buildDef(g.base, t, g.fx); nextTxt = '下一級：' + pretty(statLine(nd, g.base)) + (t === fxAt(g.base) && !g.fx && mx >= t ? '、獲得第二詞綴（隨機同部位遺物特效）' : ''); }
       var img = ''; try { img = getIconUrl(bd); } catch (e) {}
       return '<div class="rp-row"><img src="' + esc(img) + '" alt="" onerror="this.style.visibility=\'hidden\'">'
         + '<div class="rp-mid"><div class="rp-nm">' + (g.asc != null ? '+' + g.asc + ' ' + esc(bd.n) + '昇華支配' : (g.n ? '+' + g.n + ' ' : '') + esc(bd.n)) + ' <span style="color:#94a3b8;font-weight:600">× ' + g.cnt + '</span></div>'

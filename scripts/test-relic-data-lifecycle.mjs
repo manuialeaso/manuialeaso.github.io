@@ -49,7 +49,7 @@ try {
     const fixture=await page.evaluate(()=>{
       const R=AFK_RELIC_RUNTIME,D=__afkRelicData;
       const id=(n,level,fx,asc,evo)=>D.makeId(R.byId[n].key,level,fx?R.byId[fx].key:null,asc,evo);
-      const ids={gloves:id(137,15,null,5),donor:id(2,10,1),ascended:id(3,15,null,5),armor:id(132,15,null,0),legacy:id(229,5,null,5,6),accessory:id(230,10,null,5)};
+      const ids={gloves:id(137,15,133,5),donor:id(2,10,1),ascended:id(3,15,1,5),armor:id(132,15,133,0),legacy:id(229,5,231,5,6),accessory:id(230,10,231,5)};   /* 第二詞綴：武器防具 +10、飾品 +5 起必有（缺的會被自動補抽），測試物品一併帶上 */
       Object.values(ids).forEach(x=>{if(!D.ensure(x))throw Error('Unregistered fixture '+x);});
       __profile({cls:'knight',lv:100,eq:{wpn:'wpn_2hsword',gloves:ids.gloves}});
       state.ff=false;currentSlot=1;player.enSeed='relic-data-lifecycle';player.name='Relic data lifecycle';
