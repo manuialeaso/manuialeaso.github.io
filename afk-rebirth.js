@@ -22,6 +22,15 @@
   if (typeof window.recomputeStats !== 'function') { console.warn('[AFK-rebirth] 找不到 recomputeStats，略過'); return; }
 
   var reborn = function () { return !!(typeof player !== 'undefined' && player && player.rebirth > 0); };
+  // 「增加 300%」依指定例子定義為原補量的三倍：5～80 → 15～240。
+  // 只倍率化藥水本體；體質、裝備加成與原冷卻仍由各使用路徑結算。
+  function potionMultiplier(actor) { return actor && actor.rebirth > 0 ? 3 : 1; }
+  if (typeof window.potionHealBase === 'function') {
+    var originalPotionHealBase = window.potionHealBase;
+    window.potionHealBase = function (def, actor) {
+      return originalPotionHealBase.call(this, def) * potionMultiplier(actor || (typeof player !== 'undefined' ? player : null));
+    };
+  }
   window.__afkAttrCap = function () { return reborn() ? 200 : 100; };
   window.__afkAllocCap = function () { return reborn() ? 200 : 60; };
 
@@ -151,11 +160,11 @@
       player.lv = 1; player.exp = 0;
       try { calcStats(); } catch (e) {}
       player.hp = player.mhp; player.mp = player.mmp;
-      try { logSys('<span class="c-sherine font-bold">♻️ 輪迴轉生！</span><span class="text-fuchsia-200">你回到了 Lv1，但保留了全部屬性；屬性上限提升到 200、裝備不限職業、所有武器都能雙持，面板能力 +50。</span>'); } catch (e) {}
+      try { logSys('<span class="c-sherine font-bold">♻️ 輪迴轉生！</span><span class="text-fuchsia-200">走過輪迴，再啟新生。你回到 Lv1，保留全部屬性；屬性上限提升至 200、裝備不限職業、所有武器皆可雙持、面板能力 +50，治療藥水的基礎補量變為 3 倍。</span>'); } catch (e) {}
       try { updateUI(); renderTabs(true); saveGame(); } catch (e) {}
     };
     if (force) { go(); return { ok: true }; }
-    var msg = '輪迴轉生後等級回到 1、經驗歸零（屬性、技能、裝備、背包都保留）。\n換來：屬性上限 200、裝備不限職業、所有武器可雙持、面板能力 +50。\n每個角色只能轉生一次，確定嗎？';
+    var msg = '輪迴轉生後等級回到 1、經驗歸零（屬性、技能、裝備、背包都保留）。\n獲得：屬性上限 200、裝備不限職業、所有武器可雙持、面板能力 +50；治療藥水基礎補量變為 3 倍（例如 5～80 → 15～240）。\n每個角色只能轉生一次，確定嗎？';
     if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '輪迴轉生', message: msg, okText: '轉生', cancelText: '取消', danger: true, onOk: go });
     else if (confirm(msg)) go();
     return { ok: true, pending: true };
@@ -192,6 +201,6 @@
         + '<div class="grid gap-2 w-full max-w-[560px]" style="grid-template-columns:1fr 1fr;">' + cards + '</div></div>';
     };
   }
-  window.__afkRebirth = { reborn: reborn };
+  window.__afkRebirth = { reborn: reborn, potionMultiplier: potionMultiplier };
   console.log('[AFK-rebirth] 已啟用：輪迴轉生');
 })();

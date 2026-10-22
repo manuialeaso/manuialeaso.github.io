@@ -1,0 +1,1011 @@
+{
+  "passed": 21,
+  "pageErrors": [],
+  "cases": [
+    {
+      "case": "catalog and title screen",
+      "denied": true,
+      "unchanged": true,
+      "counts": {
+        "mythic": 14,
+        "celestial": 3,
+        "spacetime": 3
+      },
+      "eligible": [
+        "伊詩蒂",
+        "反王肯恩",
+        "喬",
+        "格利特",
+        "死亡",
+        "烈焰的死亡騎士",
+        "焚焰死亡騎士",
+        "特羅斯",
+        "真夏納",
+        "絲莉安",
+        "莉絲安",
+        "闇黑死亡騎士",
+        "雷霆死亡騎士",
+        "黃金死亡騎士"
+      ],
+      "mythic": [
+        "伊詩蒂",
+        "反王肯恩",
+        "喬",
+        "格利特",
+        "死亡",
+        "烈焰的死亡騎士",
+        "焚焰死亡騎士",
+        "特羅斯",
+        "真夏納",
+        "絲莉安",
+        "莉絲安",
+        "闇黑死亡騎士",
+        "雷霆死亡騎士",
+        "黃金死亡騎士"
+      ],
+      "missingSpeeds": []
+    },
+    {
+      "case": "locked monster scroll and forced set exception",
+      "name": "哥布林",
+      "named": null,
+      "match": false,
+      "confirmed": false,
+      "before": 4,
+      "after": 4,
+      "lockedShown": false,
+      "force": "死亡騎士"
+    },
+    {
+      "case": "native diamond acquisition, UI scroll, exact base speeds and renewal",
+      "diamond": {
+        "name": "哥布林",
+        "score": 10000,
+        "copies": 1,
+        "ring": false,
+        "available": true
+      },
+      "selected": {
+        "name": "哥布林",
+        "aspd": 2,
+        "cast": 0,
+        "stun": 0,
+        "expectedAspd": 2,
+        "expectedCast": 0,
+        "expectedStun": 0,
+        "before": 3,
+        "after": 2,
+        "renewed": 1800,
+        "renewedName": "哥布林",
+        "ring": false,
+        "mythicActive": null
+      }
+    },
+    {
+      "case": "one completed region unlocks mythic; insufficient stock is atomic",
+      "region": "安塔瑞斯巢穴",
+      "regionCount": 7,
+      "total": 725,
+      "full": false,
+      "unlock": true,
+      "result": {
+        "ok": false,
+        "msg": "需要 5 張未鎖定的多餘鑽石卡。"
+      },
+      "noMaterialsChanged": true,
+      "dexUnchanged": true
+    },
+    {
+      "case": "locked diamond and platinum cannot pay the five-card cost",
+      "result": {
+        "ok": false,
+        "msg": "需要 5 張未鎖定的多餘鑽石卡。"
+      },
+      "unchanged": true,
+      "dexUnchanged": true,
+      "available": 0
+    },
+    {
+      "case": "native deferred-save catch-up preserves materials and shared diamond registration",
+      "action": {
+        "ok": false,
+        "msg": "正在結算戰鬥進度，請稍後再合成或兌換。"
+      },
+      "invUnchanged": true,
+      "dexUnchanged": true,
+      "sharedUnchanged": true
+    },
+    {
+      "case": "independent pity and conserved refunds",
+      "tier": "mythic",
+      "results": [
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 1,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_殘忍的烈炎獸",
+            "n": "殘忍的烈炎獸 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 2,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_黑長者",
+            "n": "黑長者 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 3,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_不滅的巫妖(支配)",
+            "n": "不滅的巫妖(支配) 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 4,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_火元素守護者",
+            "n": "火元素守護者 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 5,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_炎魔的思克巴女皇",
+            "n": "炎魔的思克巴女皇 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 6,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_長者",
+            "n": "長者 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 7,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_精銳 侏儒將軍",
+            "n": "精銳 侏儒將軍 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 8,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_高崙守護者(紅)",
+            "n": "高崙守護者(紅) 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 9,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_死亡的司祭(巴列斯)",
+            "n": "死亡的司祭(巴列斯) 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 10,
+          "reward": {
+            "kind": "diamond",
+            "id": "card_d_地獄束縛犬",
+            "n": "地獄束縛犬 的鑽石卡"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "mythic",
+          "success": true,
+          "guaranteed": true,
+          "spent": 5,
+          "failures": 0,
+          "reward": {
+            "kind": "unlock",
+            "id": "mythic_95c7_9ed1_6b7b_4ea1_9a0e_58eb",
+            "n": "神話・闇黑死亡騎士"
+          }
+        }
+      ],
+      "diamonds": 10,
+      "ordinary": 9,
+      "fragments": 0,
+      "choices": 0,
+      "dexUnchanged": true,
+      "counters": {
+        "celestial": 2,
+        "spacetime": 3,
+        "mythic": 0
+      },
+      "attempts": {
+        "mythic": 11
+      },
+      "other": [
+        "celestial",
+        "spacetime"
+      ]
+    },
+    {
+      "case": "independent pity and conserved refunds",
+      "tier": "celestial",
+      "results": [
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 1,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 2,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 3,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 4,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 5,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 6,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 7,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 8,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 9,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 10,
+          "reward": {
+            "kind": "choice",
+            "id": "afk_card_diamond_missing_choice",
+            "n": "鑽石卡自選（未收藏）"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "celestial",
+          "success": true,
+          "guaranteed": true,
+          "spent": 5,
+          "failures": 0,
+          "reward": {
+            "kind": "unlock",
+            "id": "celestial_knight",
+            "n": "天上・曙光聖騎"
+          }
+        }
+      ],
+      "diamonds": 0,
+      "ordinary": 9,
+      "fragments": 0,
+      "choices": 10,
+      "dexUnchanged": true,
+      "counters": {
+        "mythic": 2,
+        "spacetime": 3,
+        "celestial": 0
+      },
+      "attempts": {
+        "celestial": 11
+      },
+      "other": [
+        "mythic",
+        "spacetime"
+      ]
+    },
+    {
+      "case": "independent pity and conserved refunds",
+      "tier": "spacetime",
+      "results": [
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 1,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 2,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 3,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 4,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 5,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 6,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 7,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 8,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 9,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": false,
+          "guaranteed": false,
+          "spent": 5,
+          "failures": 10,
+          "reward": {
+            "kind": "fragment",
+            "id": "afk_card_celestial_fragment",
+            "n": "天上自選碎片"
+          }
+        },
+        {
+          "ok": true,
+          "tier": "spacetime",
+          "success": true,
+          "guaranteed": true,
+          "spent": 5,
+          "failures": 0,
+          "reward": {
+            "kind": "unlock",
+            "id": "spacetime_sage",
+            "n": "時空・萬象先知"
+          }
+        }
+      ],
+      "diamonds": 0,
+      "ordinary": 9,
+      "fragments": 10,
+      "choices": 0,
+      "dexUnchanged": true,
+      "counters": {
+        "mythic": 2,
+        "celestial": 3,
+        "spacetime": 0
+      },
+      "attempts": {
+        "spacetime": 11
+      },
+      "other": [
+        "mythic",
+        "celestial"
+      ]
+    },
+    {
+      "case": "complete previous collection gates the next tier",
+      "oneMyth": false,
+      "missingMyth": false,
+      "allMyth": true,
+      "oneCelestial": false,
+      "allCelestial": true
+    },
+    {
+      "case": "duplicate mythic yields exactly one ordinary diamond",
+      "a": {
+        "ok": true,
+        "tier": "mythic",
+        "success": true,
+        "guaranteed": false,
+        "spent": 5,
+        "failures": 0,
+        "reward": {
+          "kind": "unlock",
+          "id": "mythic_7279_7f85_65af",
+          "n": "神話・特羅斯"
+        }
+      },
+      "b": {
+        "ok": true,
+        "tier": "mythic",
+        "success": true,
+        "guaranteed": false,
+        "spent": 5,
+        "failures": 0,
+        "reward": {
+          "kind": "duplicate",
+          "id": "card_d_巴土瑟",
+          "n": "巴土瑟 的鑽石卡",
+          "cardId": "mythic_7279_7f85_65af"
+        }
+      },
+      "remaining": 1,
+      "owned": 1,
+      "failures": 0
+    },
+    {
+      "case": "native choice only accepts missing diamonds and preserves full-collection voucher",
+      "choiceStart": {
+        "id": "afk_card_diamond_missing_choice",
+        "rejected": {
+          "ok": false,
+          "msg": "請選擇尚未登錄鑽石卡的怪物。"
+        },
+        "options": [
+          "妖魔"
+        ],
+        "missing": "妖魔"
+      },
+      "choiceEnd": {
+        "score": 10000,
+        "before": 1,
+        "after": 1,
+        "full": true,
+        "open": false
+      }
+    },
+    {
+      "case": "native fragment use, ten-to-one exchange and celestial choice UI",
+      "fragments": {
+        "left": 1,
+        "tokens": 1,
+        "choices": [
+          "celestial_knight",
+          "celestial_ranger",
+          "celestial_sage"
+        ]
+      },
+      "chosen": {
+        "owned": [
+          "celestial_knight"
+        ],
+        "token": 0,
+        "fragment": 1,
+        "spacetime": false
+      }
+    },
+    {
+      "case": "native celestial and spacetime duplicates each refund one diamond",
+      "results": [
+        {
+          "tier": "celestial",
+          "delta": 1,
+          "left": 0,
+          "owned": true
+        },
+        {
+          "tier": "spacetime",
+          "delta": 1,
+          "left": 0,
+          "owned": true
+        }
+      ]
+    },
+    {
+      "case": "native card use, signed save/load, actor ownership and forced-form precedence",
+      "active": "mythic_6b7b_4ea1",
+      "owned": true,
+      "used": 0,
+      "signed": true,
+      "valid": true,
+      "before": {
+        "v": 1,
+        "owned": {
+          "mythic_6b7b_4ea1": true
+        },
+        "failures": {
+          "celestial": 7
+        },
+        "attempts": {
+          "celestial": 12
+        },
+        "unlocked": {
+          "mythic": true
+        },
+        "rewardSeq": 0
+      },
+      "after": {
+        "v": 1,
+        "owned": {
+          "mythic_6b7b_4ea1": true
+        },
+        "failures": {
+          "celestial": 7
+        },
+        "attempts": {
+          "celestial": 12
+        },
+        "unlocked": {
+          "mythic": true
+        },
+        "rewardSeq": 0
+      },
+      "stillOwned": true,
+      "otherActorLocked": null,
+      "otherActorOwned": "mythic_6b7b_4ea1",
+      "forcedOverrides": null,
+      "diskState": {
+        "v": 1,
+        "owned": {
+          "mythic_6b7b_4ea1": true
+        },
+        "failures": {
+          "celestial": 7
+        },
+        "attempts": {
+          "celestial": 12
+        },
+        "unlocked": {
+          "mythic": true
+        },
+        "rewardSeq": 0
+      },
+      "notInMisc": true
+    },
+    {
+      "case": "both toggle escape paths and low-level metadata rejection",
+      "base": {
+        "aspd": 1,
+        "cast": 13,
+        "str": 8
+      },
+      "wasActive": true,
+      "ownOff": {
+        "poly": null,
+        "active": null,
+        "aspd": 1,
+        "cast": 13,
+        "str": 8
+      },
+      "parentOff": {
+        "poly": null,
+        "active": null,
+        "aspd": 1,
+        "cast": 13,
+        "str": 8
+      },
+      "forged": {
+        "can": false,
+        "active": null,
+        "cleared": true
+      },
+      "lowActive": null,
+      "enabled": true,
+      "owned": true
+    },
+    {
+      "case": "fully locked random pool does not crash or consume scroll",
+      "pool": 0,
+      "state": null,
+      "left": 2,
+      "poly": null
+    },
+    {
+      "case": "native stale-role save rejection preserves other character and materials",
+      "nativeSave": false,
+      "action": {
+        "ok": false,
+        "msg": "角色存檔已變更，請重新載入角色。"
+      },
+      "storedUnchanged": true,
+      "invUnchanged": true,
+      "stateUnchanged": true
+    },
+    {
+      "case": "native synthesis and card-book entry points",
+      "tiers": 3,
+      "collection": true
+    },
+    {
+      "case": "full page reload with parent off, lower-level owner access, and player/mercenary diamond-speed reset",
+      "off": {
+        "enabled": false,
+        "poly": null,
+        "active": null,
+        "owned": true,
+        "level": 20,
+        "held": {
+          "card_d_妖魔": 4,
+          "card_w_哥布林": 3,
+          "card_d_妖魔弓箭手": 3,
+          "afk_card_pick": 2,
+          "doll_哈瑪": 2,
+          "afk_asc_card_mythic_6b7b_4ea1": 2,
+          "afk_card_celestial_choice": 1,
+          "afk_card_celestial_fragment": 2,
+          "afk_card_diamond_missing_choice": 3
+        },
+        "stored": {
+          "card_d_妖魔": 1,
+          "card_w_哥布林": 2,
+          "card_d_妖魔弓箭手": 3,
+          "afk_card_pick": 4,
+          "doll_哈瑪": 5,
+          "afk_asc_card_mythic_6b7b_4ea1": 6,
+          "afk_card_celestial_choice": 7,
+          "afk_card_celestial_fragment": 8,
+          "afk_card_diamond_missing_choice": 9
+        },
+        "tierCount": 5,
+        "bootDefinitions": true,
+        "diamondScore": 10000,
+        "platinumScore": 1000,
+        "afterUse": {
+          "card_d_妖魔": 4,
+          "card_w_哥布林": 3,
+          "card_d_妖魔弓箭手": 3,
+          "afk_card_pick": 2,
+          "doll_哈瑪": 2,
+          "afk_asc_card_mythic_6b7b_4ea1": 2,
+          "afk_card_celestial_choice": 1,
+          "afk_card_celestial_fragment": 2,
+          "afk_card_diamond_missing_choice": 3
+        },
+        "dexUnchanged": true
+      },
+      "resumed": {
+        "held": {
+          "card_d_妖魔": 4,
+          "card_w_哥布林": 3,
+          "card_d_妖魔弓箭手": 2,
+          "afk_card_pick": 2,
+          "doll_哈瑪": 2,
+          "afk_asc_card_mythic_6b7b_4ea1": 2,
+          "afk_card_celestial_choice": 1,
+          "afk_card_celestial_fragment": 2,
+          "afk_card_diamond_missing_choice": 3
+        },
+        "score": 10000,
+        "tierCount": 5,
+        "regionVals": true
+      },
+      "selected": true,
+      "returned": "mythic_6b7b_4ea1",
+      "diamond": {
+        "poly": "妖魔",
+        "cast": 0
+      },
+      "cleared": {
+        "playerPoly": null,
+        "allyPoly": null,
+        "playerCast": 13,
+        "allyCast": 13
+      },
+      "reEnabled": true
+    },
+    {
+      "case": "platinum/diamond, choice, Hama and advanced inventories/warehouse survive disabled reload; native actions preserve stock while off",
+      "before": {
+        "card_d_妖魔": 4,
+        "card_w_哥布林": 3,
+        "card_d_妖魔弓箭手": 3,
+        "afk_card_pick": 2,
+        "doll_哈瑪": 2,
+        "afk_asc_card_mythic_6b7b_4ea1": 2,
+        "afk_card_celestial_choice": 1,
+        "afk_card_celestial_fragment": 2,
+        "afk_card_diamond_missing_choice": 3
+      },
+      "warehouse": {
+        "card_d_妖魔": 1,
+        "card_w_哥布林": 2,
+        "card_d_妖魔弓箭手": 3,
+        "afk_card_pick": 4,
+        "doll_哈瑪": 5,
+        "afk_asc_card_mythic_6b7b_4ea1": 6,
+        "afk_card_celestial_choice": 7,
+        "afk_card_celestial_fragment": 8,
+        "afk_card_diamond_missing_choice": 9
+      },
+      "denied": {
+        "held": {
+          "card_d_妖魔": 4,
+          "card_w_哥布林": 3,
+          "card_d_妖魔弓箭手": 3,
+          "afk_card_pick": 2,
+          "doll_哈瑪": 2,
+          "afk_asc_card_mythic_6b7b_4ea1": 2,
+          "afk_card_celestial_choice": 1,
+          "afk_card_celestial_fragment": 2,
+          "afk_card_diamond_missing_choice": 3
+        },
+        "dexUnchanged": true,
+        "pickOpen": false,
+        "advancedOpen": false,
+        "hamaCount": 0
+      },
+      "off": {
+        "enabled": false,
+        "poly": null,
+        "active": null,
+        "owned": true,
+        "level": 20,
+        "held": {
+          "card_d_妖魔": 4,
+          "card_w_哥布林": 3,
+          "card_d_妖魔弓箭手": 3,
+          "afk_card_pick": 2,
+          "doll_哈瑪": 2,
+          "afk_asc_card_mythic_6b7b_4ea1": 2,
+          "afk_card_celestial_choice": 1,
+          "afk_card_celestial_fragment": 2,
+          "afk_card_diamond_missing_choice": 3
+        },
+        "stored": {
+          "card_d_妖魔": 1,
+          "card_w_哥布林": 2,
+          "card_d_妖魔弓箭手": 3,
+          "afk_card_pick": 4,
+          "doll_哈瑪": 5,
+          "afk_asc_card_mythic_6b7b_4ea1": 6,
+          "afk_card_celestial_choice": 7,
+          "afk_card_celestial_fragment": 8,
+          "afk_card_diamond_missing_choice": 9
+        },
+        "tierCount": 5,
+        "bootDefinitions": true,
+        "diamondScore": 10000,
+        "platinumScore": 1000,
+        "afterUse": {
+          "card_d_妖魔": 4,
+          "card_w_哥布林": 3,
+          "card_d_妖魔弓箭手": 3,
+          "afk_card_pick": 2,
+          "doll_哈瑪": 2,
+          "afk_asc_card_mythic_6b7b_4ea1": 2,
+          "afk_card_celestial_choice": 1,
+          "afk_card_celestial_fragment": 2,
+          "afk_card_diamond_missing_choice": 3
+        },
+        "dexUnchanged": true
+      },
+      "resumed": {
+        "held": {
+          "card_d_妖魔": 4,
+          "card_w_哥布林": 3,
+          "card_d_妖魔弓箭手": 2,
+          "afk_card_pick": 2,
+          "doll_哈瑪": 2,
+          "afk_asc_card_mythic_6b7b_4ea1": 2,
+          "afk_card_celestial_choice": 1,
+          "afk_card_celestial_fragment": 2,
+          "afk_card_diamond_missing_choice": 3
+        },
+        "score": 10000,
+        "tierCount": 5,
+        "regionVals": true
+      }
+    }
+  ]
+}

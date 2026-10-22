@@ -1,11 +1,11 @@
 /* ============================================================================
- * afk-relicplus.js — 遺物合成（武器／防具 +1～+15、飾品 +1～+5；燃柳村 NPC「哈瑪大師」，玩家 2026-10-20／21 指定）
+ * afk-relicplus.js — 遺物合成（武器／防具 +1～+15、飾品 +1～+10；燃柳村 NPC「哈瑪大師」，玩家 2026-10-20／21 指定）
  *
  * 合成規則
  *   ‧+1～+10：同款同強化值合成高一級。武器／防具 2 個：做出 +1～+6 每次 500 龍鑽＋5,000 萬，
  *     +7～+10 每高一級再多 100 龍鑽＋1,000 萬（+10＝900／9,000 萬）
- *   ‧原作者強化上限 +5 的道具（戒指、耳環、項鍊、腰帶…）：最高 +5；每級 3 個同級、龍鑽與金幣 ×3、席琳結晶 500 顆
- *   ‧+11～+15：只用一個，每次 50,000 龍鑽，成功率 10%，失敗不會消失；+15 顯示「可升級：材料未知」（進化另外規劃）
+ *   ‧原作者強化上限 +5 的道具（戒指、耳環、項鍊、腰帶…）：最高 +10；每級 3 個同級、龍鑽與金幣 ×3、席琳結晶 500 顆
+ *   ‧+11～+15：只用一個，每次 50,000 龍鑽，成功率 10%，失敗不會消失；滿階後開放昇華支配
  *   ‧只看背包（不含倉庫、不含穿在身上的）；上鎖的不列入
  * 每一級的能力
  *   ‧武器：每 +1 大小傷 +1；每 +3 原本的白字能力各 +1
@@ -16,7 +16,7 @@
  *   ‧+10 第二詞綴：隨機抽一件同部位的其他遺物，繼承它的特效（只加原本沒有的欄位）；抽到本身沒有特效的 → 四屬性抗性 +10
  *   ‧幸運暴走兔腳：兩邊耳環可以各戴一個，遺物掉落判定 ×2 → ×4
  *   ‧+10 以上：中毒必定觸發；匕首／單手矛出血每一下必中、最多 50 層，持續時間照原本（核心補丁 17＋afk-relicfx）
- *   ‧持續傷害上限（全遊戲）：中毒＋出血對同一隻怪，每秒最多扣牠最大 HP 的 1%（window.__afkDotCap）
+ *   ‧持續傷害上限：一般來源中毒＋出血共用每秒最大 HP 的 1%；昇華來源只在受過昇華命中的目標上豁免
  *
  * 做法（不改核心戰鬥程式）
  *   +N 遺物是一個「衍生物品」：id＝原遺物 id + "~r" + N（+10 以上再加 "~" + 特效來源 id），
@@ -28,12 +28,13 @@
 (function () {
   'use strict';
   var T = window.AFK_TOGGLES;
-  if (T && !T.enabled('relicplus')) return;
+  var enabled = function () { return !T || T.enabled('relicplus'); };
+  var disabled = function () { return { ok: false, msg: '遺物合成功能已關閉。' }; };
   if (typeof DB === 'undefined' || !DB.items || typeof isRelic !== 'function') { try { console.warn('[AFK-relicplus] 找不到物品資料，未啟用'); } catch (e) {} return; }
 
   var MAX = 15;
   var REG_KEY = 'afk_relicplus_ids';
-  var ID_RE = /relic_[a-z0-9_]+~r\d{1,2}(?:~relic_[a-z0-9_]+)?(?:~a\d)?(?:~e\d)?/g;
+  var ID_RE = /(?:relic_|wpn_)[a-z0-9_]+~r\d{1,2}(?:~(?:relic_|wpn_)[a-z0-9_]+)?(?:~a\d)?(?:~e\d)?/g;
   var WHITE = ['hit', 'dmgBonus', 'bowHit', 'bowDmg', 'magicHit', 'mdmg', 'extraDmg', 'str', 'dex', 'con', 'int', 'wis', 'cha', 'mr', 'dr', 'extraMp'];   // 武器每 +3 各 +1（HP/MP 恢復另有規則）
   var RATE_TOP = /^(comboRate|pierceChance|procRateBase|dblStrikeRate|missGrazeRate|heavyRatePct|windSpellProcRate|procFireSkillRate|procPoisonRate)$/;
   // +10 繼承特效時「不算特效」的欄位（基本數值、武器型態、說明文字…）
@@ -41,17 +42,18 @@
     'isBow', 'ranged', 'rapidfire', 'rapidMax', 'isWand', 'qigu', 'chainsword', 'oneHand', 'w2h', 'isArrow', 'noConsume', 'eff', 'comboRate', 'ele',
     'extraMp', 'str', 'dex', 'con', 'int', 'wis', 'cha', 'mr', 'mdmg', 'mpR', 'hpR', 'mhp', 'mmp', 'dr', 'magicHit', 'relicRole', 'h', 'classicOk',
     'maxLv', 'noBleed', 'tag', 'bowHit', 'bowDmg', 'extraDmg', 'relicBase', 'relicPlus', 'relicFx', 'relicBleedBonus', 'safe', 'maxEn',
-    'ac', 'er', 'resFire', 'resWater', 'resWind', 'resEarth', 'weight', 'fireNullifyTicks', 'armguard', 'cls']);
+    'ac', 'er', 'resFire', 'resWater', 'resWind', 'resEarth', 'weight', 'fireNullifyTicks', 'armguard', 'cls',
+    'relicCatalogId', 'relicStage', 'relicRuntime', 'relicLore', 'relicAsc', 'relicEvo', 'relicFxRes', 'noAscUp', 'gmOnly']);
   var RES4 = ['resFire', 'resWater', 'resWind', 'resEarth'];
   var hasEffect = function (b) { return Object.keys(b).some(function (f) { return !NOT_FX.has(f); }); };
-  var KIND_OK = function (d) { return !!(d && isRelic(d) && !d.isArrow && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && ['pet', 'petwpn', 'petarm', 'doll'].indexOf(d.slot) < 0); };
-  // 戒指／耳環／項鍊／腰帶等強化上限 +5 的飾品：最高 +5，沒有 +10 繼承特效
+  var KIND_OK = function (d) { return !!(d && isRelic(d) && !d.gmOnly && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && ['pet', 'petwpn', 'petarm', 'doll'].indexOf(d.slot) < 0); };
+  // 戒指／耳環／項鍊／腰帶等強化上限 +5 的飾品：新增 +6～+10 的設計里程碑
   //   判斷依原作者的強化上限（enhanceCap）：上限 +5 的道具都算這一類
-  var maxOf = function (base) { var d = DB.items[base]; if (!d) return 15; var cap = 15; try { cap = enhanceCap(d); } catch (e) { cap = d.type === 'acc' ? 5 : 15; } return cap <= 5 ? 5 : 15; };
+  var maxOf = function (base) { var d = DB.items[base]; if (!d) return 15; var cap = 15; try { cap = enhanceCap(d); } catch (e) { cap = d.type === 'acc' ? 5 : 15; } return cap <= 5 ? 10 : 15; };
 
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
   var parseId = function (id) {
-    var m = /^(relic_[a-z0-9_]+)~r(\d{1,2})(?:~(relic_[a-z0-9_]+))?(?:~a(\d))?(?:~e(\d))?$/.exec(String(id || ''));
+    var m = /^((?:relic_|wpn_)[a-z0-9_]+)~r(\d{1,2})(?:~((?:relic_|wpn_)[a-z0-9_]+))?(?:~a(\d))?(?:~e(\d))?$/.exec(String(id || ''));
     if (!m) return null;
     return { base: m[1], n: Math.min(MAX, parseInt(m[2], 10)), fx: m[3] || null, asc: m[4] != null ? Math.min(5, parseInt(m[4], 10)) : null, evo: m[5] != null ? parseInt(m[5], 10) : null };
   };
@@ -67,7 +69,7 @@
 
   // ── 衍生物品定義 ──
   function buildDef(base, n, fx, asc, evo) {
-    var b = DB.items[base];
+    var b = (window.AFK_RELIC_RUNTIME && window.AFK_RELIC_RUNTIME.originalBase(base)) || DB.items[base];
     var d = clone(b);
     d.relicBase = base; d.relicPlus = n; d.relicFx = fx || null; d.relicAsc = (asc != null) ? asc : null; d.relicEvo = (evo != null && asc === 5) ? evo : null;
     d.gachaWeight = 0;
@@ -80,7 +82,7 @@
       if (k3) WHITE.forEach(function (f) { if (typeof b[f] === 'number' && b[f] !== 0) d[f] = b[f] + k3; });
     } else {
       // 防具／飾品：每 +1 AC-1、MR+1；每 +3 ER+1；每 +5 傷害減免+1
-      d.ac = (Number(b.ac) || 0) - n;
+      d.ac = (Number(b.ac) || 0) + n;
       d.mr = (Number(b.mr) || 0) + n;
       if (k3) d.er = (Number(b.er) || 0) + k3;
       if (k5) d.dr = (Number(b.dr) || 0) + k5;
@@ -107,18 +109,22 @@
     var fxName = '';
     if (fx && DB.items[fx]) {
       // +10 第二詞綴：繼承抽到的遺物特效；抽到「本身沒有特效」的遺物 → 改給四屬性抗性 +10
-      var donor = DB.items[fx];
+      // Inheritance uses the original base effect. Runtime metadata and the
+      // donor's upgraded stage must never become effects on the recipient.
+      var donor = (window.AFK_RELIC_RUNTIME && window.AFK_RELIC_RUNTIME.originalBase(fx)) || DB.items[fx];
       var copied = 0;
       if (hasEffect(donor)) Object.keys(donor).forEach(function (f) { if (!NOT_FX.has(f) && !(f in b)) { d[f] = clone(donor[f]); copied++; } });
       // 抽到沒有特效的遺物，或抽到的特效跟本身完全重複（例如兩把都只有出血）→ 改給四屬性抗性 +10，避免「繼承了卻什麼都沒有」
       if (!copied) { RES4.forEach(function (f) { d[f] = (Number(d[f]) || 0) + 10; }); d.relicFxRes = true; }
       fxName = donor.n;
     }
-    // +10 以上：中毒必定觸發（出血必中與 20 層由核心補丁 17 依 relicPlus 判斷）
+    // +10 以上：中毒必定觸發（出血必中與 50 層上限由遺物戰鬥介面依來源判斷）
     if (n >= 10) {
       Object.keys(d).forEach(function (f) { var v = d[f]; if (v && typeof v === 'object' && /^procPoison$/.test(f) && typeof v.rate === 'number') v.rate = 100; });
       if (typeof d.procPoisonRate === 'number') d.procPoisonRate = 100;
     }
+    // 專屬階段先定值，再加共通昇華成長，避免白字增量被覆蓋。
+    if (typeof window.__afkRelicTier === 'function') window.__afkRelicTier(d, b, n, asc);
     // 昇華支配：每 +1（玩家 2026-10-21 規格）
     if (asc != null && asc > 0) {
       var A = asc;
@@ -128,22 +134,25 @@
       } else {
         if (b.type === 'arm') { d.hpR = (Number(d.hpR) || 0) + 50 * A; d.mpR = (Number(d.mpR) || 0) + 50 * A; }
         ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(function (f) { d[f] = (Number(d[f]) || 0) + A; });
-        d.er = (Number(d.er) || 0) + A; d.ac = (Number(d.ac) || 0) - A; d.mr = (Number(d.mr) || 0) + A; d.dr = (Number(d.dr) || 0) + A;
+        d.er = (Number(d.er) || 0) + A; d.ac = (Number(d.ac) || 0) + A; d.mr = (Number(d.mr) || 0) + A; d.dr = (Number(d.dr) || 0) + A;
         RES4.forEach(function (f) { d[f] = (Number(d[f]) || 0) + 10 * A; });
       }
     }
-    d.d = (b.d || '') + ' 〔遺物合成 +' + n + '〕' + (asc != null ? '〔昇華支配 +' + asc + '〕' : '') + (fxName ? (d.relicFxRes ? '〔第二詞綴：抽到「' + fxName + '」（無特效）→ 四屬性抗性 +10〕' : '〔第二詞綴：繼承「' + fxName + '」的特效〕') : '') + (asc != null && asc >= 5 ? (d.relicEvo != null ? '〔至高的支配：' + EVO[d.relicEvo] + '〕' : '〔可進化：至高的支配〕') : '');
-    if (typeof window.__afkRelicTier === 'function') { try { window.__afkRelicTier(d, b, n, asc); } catch (e) {} }   // afk-relicfx：個別遺物的強化特效
+    d.d = (d.d || b.d || '') + ' 〔遺物合成 +' + n + '〕' + (asc != null ? '〔昇華支配 +' + asc + '〕' : '') + (fxName ? (d.relicFxRes ? '〔第二詞綴：抽到「' + fxName + '」（無特效）→ 四屬性抗性 +10〕' : '〔第二詞綴：繼承「' + fxName + '」的特效〕') : '') + (asc != null && asc >= 5 ? (d.relicEvo != null ? '〔至高的支配：' + EVO[d.relicEvo] + '〕' : '〔可進化：至高的支配〕') : '');
     return d;
   }
   function ensure(id) {
-    if (DB.items[id]) return true;
-    var p = parseId(id);
+    var p = parseId(id), current = DB.items[id], on = enabled();
+    if (current && (!p || current._relicDataEnabled === on)) return true;
     if (!p || !KIND_OK(DB.items[p.base]) || p.n > maxOf(p.base)) return false;
-    if (p.asc != null && p.n !== maxOf(p.base)) return false;
+    if (p.asc != null && p.n !== maxOf(p.base) && !(DB.items[p.base].type === 'acc' && p.n === 5)) return false; // 舊 +5 昇華飾品存檔仍可讀取
     if (p.evo != null && (p.asc !== 5 || p.evo < 1 || p.evo > 9)) return false;
     if (p.fx && !DB.items[p.fx]) p.fx = null;
-    var def = buildDef(p.base, p.n, p.fx, p.asc, p.evo);
+    // Identity belongs to the save; combat definitions belong to the toggle.
+    // Never rewrite the instance ID or affixes when temporarily disabling it.
+    var def = on ? buildDef(p.base, p.n, p.fx, p.asc, p.evo) : buildDef(p.base, 0, null, null, null);
+    if (!on) def.d = (def.d || '').replace(/ 〔遺物合成 \+0〕$/, '');
+    Object.defineProperty(def, '_relicDataEnabled', { value: on, configurable: true });
     Object.defineProperty(DB.items, id, { value: def, writable: true, configurable: true, enumerable: false });
     try {
       if (typeof WEAPON_TAGS !== 'undefined' && WEAPON_TAGS[p.base] && !WEAPON_TAGS[id])
@@ -159,35 +168,73 @@
   var scanText = function (s) { if (!s || s.indexOf('~r') < 0) return; var m = String(s).match(ID_RE); if (m) m.forEach(function (id) { if (ensure(id)) remember(id); }); };
   var scanKey = function (key) {
     try { scanText(localStorage.getItem(key)); } catch (e) {}
+    try { if (typeof _lsGet === 'function') scanText(_lsGet(key)); } catch (e) {}
     try { var raw = (typeof _lzGet === 'function') ? _lzGet(key) : null; if (raw) { var u = _saveUnwrap(raw); scanText(u && u.ok !== false && u.payload ? u.payload : raw); } } catch (e) {}
   };
   var scanAll = function () {
     registry().forEach(ensure);
     try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/lineage|wh|warehouse/i.test(k)) scanKey(k); } } catch (e) {}
   };
+  function ensureItems(items) { (items || []).forEach(function (it) { if (it && it.id) ensure(it.id); }); }
+  function ensureActor(actor) {
+    if (!actor) return;
+    [actor].concat(actor.allies || []).forEach(function (p) { if (!p) return; ensureItems(p.inv); ensureItems(Object.keys(p.eq || {}).map(function (k) { return p.eq[k]; })); });
+  }
+  function refreshData() {
+    Object.getOwnPropertyNames(DB.items).forEach(function (id) { if (parseId(id)) ensure(id); });
+    scanAll();
+    var R = window.AFK_RELIC_RUNTIME; if (R && R.invalidate) R.invalidate();
+  }
+  // This read/identity API is infrastructure, even when crafting is disabled.
+  // It is intentionally separate from __afkRelicPlus, which signals availability
+  // to the encyclopedia and other feature UIs.
+  window.__afkRelicData = { ensure: ensure, buildDef: buildDef, makeId: makeId, parseId: parseId, scanAll: scanAll, refresh: refreshData, enabled: enabled };
   scanAll();
   // 讀檔／招募傭兵／載入倉庫之前再補一次（匯入其他電腦的存檔時用得到）
   ['loadGame', 'toggleAlly'].forEach(function (fn) {
     var o = window[fn]; if (typeof o !== 'function') return;
-    window[fn] = function () { try { scanAll(); } catch (e) {} return o.apply(this, arguments); };
+    window[fn] = function () { try { scanAll(); if (typeof currentSlot !== 'undefined') scanKey('lineage_idle_save_' + currentSlot); ensureActor(typeof player !== 'undefined' ? player : null); } catch (e) {} return o.apply(this, arguments); };
   });
   if (typeof window.loadWarehouse === 'function') {
     var oWh = window.loadWarehouse;
-    window.loadWarehouse = function () { var w = oWh.apply(this, arguments); try { (w && w.items || []).forEach(function (it) { if (it && it.id && it.id.indexOf('~r') > 0) ensure(it.id); }); } catch (e) {} return w; };
+    window.loadWarehouse = function () { var w = oWh.apply(this, arguments); try { ensureItems(w && w.items); } catch (e) {} return w; };
+  }
+  if (typeof window.purgeOrphanItems === 'function') {
+    var oPurge = window.purgeOrphanItems;
+    window.purgeOrphanItems = function (warehouse) { ensureActor(typeof player !== 'undefined' ? player : null); ensureItems(warehouse && warehouse.items); return oPurge.apply(this, arguments); };
+  }
+  if (T && typeof T.set === 'function') {
+    var oToggle = T.set;
+    T.set = function (id, on) {
+      var prior = enabled(), out = oToggle.apply(this, arguments);
+      if (id === 'relicplus' && prior !== enabled()) {
+        refreshData();
+        var p = typeof player !== 'undefined' ? player : null, R = window.AFK_RELIC_RUNTIME;
+        if (p && p.cls && R && R.recalc) [p].concat(p.allies || []).forEach(function (actor) { R.recalc(actor); });
+        if (!enabled()) { doClose(); ['rp-open','m-afk-nav-relicplus'].forEach(function (key) { var el = document.getElementById(key); if (el) el.remove(); }); }
+      }
+      return out;
+    };
   }
   // 名稱前加 +N
   if (typeof window.getItemFullName === 'function') {
     var oName = window.getItemFullName;
     window.getItemFullName = function (item) {
+      if (item && item.id) ensure(item.id);
       var s = oName.apply(this, arguments);
       try {
-        var d = item && DB.items[item.id];
-        if (d && d.relicPlus) {
+        var d = item && DB.items[item.id], saved = item && parseId(item.id);
+        var level = saved || d && d.relicPlus && { n: d.relicPlus, asc: d.relicAsc, evo: d.relicEvo };
+        // The title describes the saved affix. Its active proc still follows
+        // the native three-star cap while ascension abilities are disabled.
+        if (!enabled() && saved && saved.asc != null && item.attrMagicStar > 3)
+          s = s.replace(/^(<span[^>]*>)★+(<\/span>)/, '$1' + '★'.repeat(Math.min(5, Math.floor(item.attrMagicStar))) + '$2');
+        if (d && level && level.n) {
           var i = s.lastIndexOf('>' + d.n);
           if (i >= 0) {
-            if (d.relicEvo != null) s = s.slice(0, i + 1) + d.n + '至高的支配【' + EVO[d.relicEvo] + '】' + s.slice(i + 1 + d.n.length);
-            else if (d.relicAsc != null) s = s.slice(0, i + 1) + '+' + d.relicAsc + ' ' + d.n + '昇華支配' + s.slice(i + 1 + d.n.length);   // +15 → 「+0 XXX昇華支配」…最高「+5 XXX昇華支配」
-            else s = s.slice(0, i + 1) + '+' + d.relicPlus + ' ' + s.slice(i + 1);
+            if (level.evo != null) s = s.slice(0, i + 1) + d.n + '至高的支配【' + EVO[level.evo] + '】' + s.slice(i + 1 + d.n.length);
+            else if (level.asc != null) s = s.slice(0, i + 1) + '+' + level.asc + ' ' + d.n + '昇華支配' + s.slice(i + 1 + d.n.length);   // +15 → 「+0 XXX昇華支配」…最高「+5 XXX昇華支配」
+            else s = s.slice(0, i + 1) + '+' + level.n + ' ' + s.slice(i + 1);
           }
         }
       } catch (e) {}
@@ -205,7 +252,7 @@
     c.need = c.merge ? 2 : 1; c.crystal = 0;
     // 上限 +5 的飾品（戒指、耳環、項鍊、腰帶…）：每次要 3 個同款同強化值、龍鑽與金幣 ×3，另外消耗席琳結晶 500 顆
     //   例：+0→+1＝3 個 +0、1,500 龍鑽、1.5 億金幣、席琳結晶 500 顆
-    if (base && maxOf(base) <= 5) { c.need = 3; c.dia *= 3; c.gold *= 3; c.crystal = 500; }
+    if (base && DB.items[base] && DB.items[base].type === 'acc') { c.need = 3; c.dia *= 3; c.gold *= 3; c.crystal = 500; }
     return c;
   }
   var crystals = function () { var p = P(); return p ? (p.inv || []).reduce(function (s, i) { return s + (i && i.id === CRYSTAL && !i.lock ? Math.max(1, Math.floor(Number(i.cnt) || 1)) : 0); }, 0) : 0; };
@@ -272,10 +319,12 @@
 
   // 執行一次合成／強化；回傳 { ok, success, msg }
   function upgrade(key) {
+    if (!enabled()) return disabled();
     var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
     if (typeof state !== 'undefined' && state && state.ff) return { ok: false, msg: '補跑中，請稍候再試。' };
     var g = groups().filter(function (x) { return x.key === key; })[0];
     if (!g) return { ok: false, msg: '找不到這個遺物，可能已經被移動。' };
+    if (g.asc != null) return { ok: false, msg: '這件遺物已昇華，請使用昇華支配強化。' };
     var mx = maxOf(g.base);
     if (g.n >= mx) return { ok: false, msg: '已經是 +' + mx + '（最高）。' };
     var target = g.n + 1, c = costOf(target, g.base);
@@ -319,7 +368,7 @@
   }
 
 
-  // ── 昇華支配（+15 之後；飾品為 +5 之後）──────────────────────────────
+  // ── 昇華支配（+15 之後；飾品為 +10 之後，保留舊 +5 昇華物品）──────
   //   +15 → 昇華支配 +0：10 萬龍鑽、席琳結晶 1 萬、夢艷結晶 500、地獄精華 100、四屬性滅魔蔑視水晶各 5、
   //                     四大古代龍鱗盔甲各 1、真．冥皇套裝（名稱以「真．冥皇」開頭的裝備）各 1；成功率 100%
   //   +0→+1～+3→+4：四屬性滅魔蔑視水晶各 20、至暗星塵 5；成功率 100%／50%／30%／10%
@@ -384,11 +433,13 @@
   var STONE = { wpn: 'afk_asc_stone_wpn', arm: 'afk_asc_stone_arm', acc: 'afk_asc_stone_acc' };
   var stoneOf = function (base) { var d = DB.items[base]; return d ? STONE[d.type] : null; };
   function ascend(key, dust, useStone) {
+    if (!enabled()) return disabled();
     var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
     if (typeof state !== 'undefined' && state && state.ff) return { ok: false, msg: '補跑中，請稍候再試。' };
     var g = groups().filter(function (x) { return x.key === key; })[0];
     if (!g) return { ok: false, msg: '找不到這個遺物。' };
-    if (g.n !== maxOf(g.base)) return { ok: false, msg: '需要先強化到 +' + maxOf(g.base) + '。' };
+    var mx = maxOf(g.base), legacyAscended = mx === 10 && g.n === 5 && g.asc != null;
+    if (g.n !== mx && !legacyAscended) return { ok: false, msg: '需要先強化到 +' + mx + '。' };
     var A = g.asc == null ? 0 : g.asc + 1;
     if (g.asc != null && typeof window.__afkRelicNoUp === 'function' && window.__afkRelicNoUp(makeId(g.base, g.n, g.fx, g.asc))) return { ok: false, msg: '這件遺物昇華支配後無法再強化。' };
     if (A > 5) return { ok: false, msg: '已經是昇華支配 +5（最高）。' };
@@ -428,6 +479,7 @@
   }
   // 至暗星塵：地獄精華 20 個合成 1 個，成功率 70%
   function craftStardust(times) {
+    if (!enabled()) return disabled();
     var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
     times = Math.max(1, Math.floor(Number(times) || 1));
     times = Math.min(times, Math.floor(invCnt('afk_hell_essence') / 20));
@@ -448,11 +500,13 @@
   var TS_MATS = ['afk_ts_contempt_earth', 'afk_ts_contempt_water', 'afk_ts_contempt_wind', 'afk_ts_contempt_fire', 'afk_ts_dark_stardust', 'afk_ts_dream_dust'];
   var EVO_MAX_EQUIP = 6;
   var equippedEvo = function (who) {
+    if (!enabled()) return [];
     var out = []; var eq = (who || P() || {}).eq || {};
     Object.keys(eq).forEach(function (k) { var e = eq[k]; var d = e && DB.items[e.id]; if (d && d.relicEvo != null) out.push(d.relicEvo); });
     return out;
   };
   function evolve(key) {
+    if (!enabled()) return disabled();
     var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
     if (typeof state !== 'undefined' && state && state.ff) return { ok: false, msg: '補跑中，請稍候再試。' };
     var g = groups().filter(function (x) { return x.key === key; })[0];
@@ -547,6 +601,7 @@
 
   // 滅魔蔑視水晶碎片 100 → 指定屬性水晶 1；昇華支配碎片 100 → 自選強化石 1；相消術卷軸 10 龍鑽 1 張
   function exchange(kind, arg, times) {
+    if (!enabled()) return disabled();
     var p = P(); if (!p) return { ok: false, msg: '請先進入遊戲。' };
     if (typeof state !== 'undefined' && state && state.ff) return { ok: false, msg: '補跑中，請稍候再試。' };
     times = Math.max(1, Math.floor(Number(times) || 1));
@@ -587,6 +642,7 @@
     return it;
   }
   function hamaAttr(ele) {
+    if (!enabled()) return disabled();
     var it = relicWpnForAttr(); if (!it) return { ok: false, msg: '請先在武器欄裝備 +15 以上的遺物武器。' };
     if (typeof doBianAttr !== 'function') return { ok: false, msg: '找不到屬性卷軸功能。' };
     var d = DB.items[it.id];
@@ -604,6 +660,7 @@
     earth: { n: '陷陣岩崩', sk: ['sk_earthquake', 'sk_blaze'] }   // 遊戲裡沒有「炎爆術」，以烈炎術代替
   };
   window.__afkAttr5 = function (target, inst, wpn, proc) {
+    if (!enabled()) return;
     if (Math.random() * 100 >= 25) return;   // 5% × 5 星
     var cfg = ATTR5[proc.ele]; if (!cfg) return;
     try { logCombat('<span class="font-bold" style="color:#f0abfc;text-shadow:0 0 6px #a21caf">【' + cfg.n + '】</span>昇華支配之力爆發！', 'player-special'); } catch (e) {}
@@ -621,7 +678,7 @@
 
   // ── 能力預覽 ──
   function statLine(d, base) {
-    var b = DB.items[base], out = b.type === 'wpn' ? ['大小傷 ' + d.dmgS + '/' + d.dmgL] : ['AC ' + (d.ac || 0) + '、MR ' + (d.mr || 0)];
+    var b = DB.items[base], out = b.type === 'wpn' ? ['小型／大型傷害 ' + d.dmgS + '／' + d.dmgL] : ['防禦 ' + (-(d.ac || 0)) + '、魔法防禦 ' + (d.mr || 0)];
     ['er', 'dr', 'hpR', 'mpR'].forEach(function (f) { if ((d[f] || 0) !== (b[f] || 0)) out.push(f + ' ' + (b[f] || 0) + '→' + d[f]); });
     if ((d.resFire || 0) !== (b.resFire || 0) && !d.relicFxRes) out.push('四屬性抗性 +' + ((d.resFire || 0) - (b.resFire || 0)));
     if (d.highestAttrPlus && d.highestAttrPlus !== b.highestAttrPlus && d.highestAttrPlus !== true) out.push('主屬性強化 +' + d.highestAttrPlus);
@@ -631,16 +688,16 @@
       var v = b[f];
       if (typeof v === 'number' && RATE_TOP.test(f) && d[f] !== v) out.push(f + ' ' + v + '%→' + d[f] + '%');
       else if (v && typeof v === 'object' && /^proc/.test(f)) {
-        if (typeof v.rate === 'number' && d[f].rate !== v.rate) out.push(f + ' ' + v.rate + '%→' + d[f].rate + '%');
-        else if (typeof v.pct === 'number' && d[f].pct !== v.pct) out.push(f + ' ' + v.pct + '%→' + d[f].pct + '%');
+        if (d[f] && typeof v.rate === 'number' && d[f].rate !== v.rate) out.push(f + ' ' + v.rate + '%→' + d[f].rate + '%');
+        else if (d[f] && typeof v.pct === 'number' && d[f].pct !== v.pct) out.push(f + ' ' + v.pct + '%→' + d[f].pct + '%');
       }
     });
     if (d.relicBleedBonus) out.push('出血 20%→' + (20 + d.relicBleedBonus) + '%');
     return out.join('、');
   }
-  var LABEL = { er: 'ER', dr: '傷害減免', hpR: 'HP恢復', mpR: 'MP恢復', hit: '近距命中', dmgBonus: '近距傷害', bowHit: '遠距命中', bowDmg: '遠距傷害', magicHit: '魔法命中', mdmg: '魔法傷害', extraDmg: '額外傷害',
-    str: '力量', dex: '敏捷', con: '體質', int: '智力', wis: '精神', cha: '魅力', mr: '魔防', dr: '傷害減免', hpR: 'HP恢復', mpR: 'MP恢復', extraMp: '額外魔力',
-    comboRate: '連擊', pierceChance: '穿透', procRateBase: '觸發技能', procPoison: '中毒', procStatusSkill: '異常', procBonusDmg: '額外傷害', procBurn: '灼燒', procPoisonPct: '劇毒' };
+  var LABEL = { er: '遠距迴避', dr: '傷害減免', hpR: '生命自然恢復', mpR: '魔力自然恢復', hit: '近距命中', dmgBonus: '近距傷害', bowHit: '遠距命中', bowDmg: '遠距傷害', magicHit: '魔法命中', mdmg: '魔法傷害', extraDmg: '額外傷害',
+    str: '力量', dex: '敏捷', con: '體質', int: '智力', wis: '精神', cha: '魅力', mr: '魔法防禦', extraMp: '額外魔力',
+    comboRate: '連擊率', pierceChance: '穿透率', procRateBase: '技能觸發率', procPoison: '中毒率', procStatusSkill: '異常觸發率', procBonusDmg: '追加傷害率', procBurn: '灼燒率', procPoisonPct: '劇毒率', dblStrikeRate: '雙重破壞率', missGrazeRate: '擦傷率', heavyRatePct: '重擊率', windSpellProcRate: '風系法術觸發率', procFireSkillRate: '火系法術觸發率', procPoisonRate: '中毒率' };
   var pretty = function (s) { return s.replace(/([a-zA-Z]+)(?= )/g, function (k) { return LABEL[k] || k; }); };
 
   // ── 視窗 ──
@@ -652,21 +709,24 @@
     st.textContent = [
       '.rp-open{display:block;width:100%;margin:0 0 12px;padding:9px 12px;border:1px solid #b45309;border-radius:9px;background:linear-gradient(135deg,#3b2105,#6b3a0a);color:#fde68a;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}',
       '.rp-open:hover{filter:brightness(1.15)}',
-      '#rp-modal{position:fixed;inset:0;top:var(--orig-bar-h,0px);z-index:9700;background:rgba(2,6,23,.72);display:none;align-items:center;justify-content:center;padding:14px}',
-      '.rp-box{width:min(760px,96vw);max-height:min(88vh,860px);display:flex;flex-direction:column;background:#0b1220;border:2px solid #b45309;border-radius:14px;overflow:hidden;color:#e2e8f0;box-shadow:0 22px 60px rgba(0,0,0,.75)}',
-      '.rp-head{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#1c1206;border-bottom:1px solid #78350f;font-weight:800;color:#fcd34d}',
+      '#rp-modal{position:fixed;inset:0;top:var(--orig-bar-h,0px);z-index:9700;background:rgba(2,6,23,.72);display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;font-size:14px;line-height:1.65}',
+      '.rp-box{width:min(760px,100%);max-height:100%;min-height:0;display:flex;flex-direction:column;background:#0b1220;border:2px solid #b45309;border-radius:14px;overflow:hidden;color:#e2e8f0;box-shadow:0 22px 60px rgba(0,0,0,.75)}',
+      '.rp-head{display:flex;flex-wrap:wrap;flex-shrink:0;align-items:center;gap:10px;padding:11px 14px;background:#1c1206;border-bottom:1px solid #78350f;font-weight:800;font-size:17px;color:#fcd34d}',
       '.rp-head .rp-bal{margin-left:auto;font-weight:600;font-size:13px;color:#e2e8f0}',
-      '.rp-x{border:0;background:#334155;color:#e2e8f0;border-radius:6px;padding:2px 10px;cursor:pointer;font-size:16px}',
-      '.rp-rule{padding:8px 14px;font-size:12px;color:#94a3b8;border-bottom:1px solid #1e293b;line-height:1.6}',
-      '.rp-list{overflow-y:auto;padding:8px 10px;flex:1}',
-      '.rp-row{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #1e293b;border-radius:9px;margin-bottom:6px;background:#0f172a}',
+      '.rp-x{border:0;background:#334155;color:#e2e8f0;border-radius:6px;min-width:40px;min-height:40px;padding:2px 10px;cursor:pointer;font-size:18px}',
+      '.rp-content{min-height:0;overflow-y:auto;overscroll-behavior:contain}',
+      '.rp-rule{padding:8px 14px;font-size:13px;color:#cbd5e1;border-bottom:1px solid #1e293b;line-height:1.7;flex-shrink:0}',
+      '.rp-rule summary{cursor:pointer;font-weight:700;color:#fde68a}.rp-rule p{margin:8px 0}',
+      '.rp-list{padding:8px 10px}',
+      '.rp-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px;border:1px solid #1e293b;border-radius:9px;margin-bottom:6px;background:#0f172a}',
       '.rp-row img{width:36px;height:36px;image-rendering:pixelated;flex:0 0 auto}',
-      '.rp-mid{flex:1;min-width:0}.rp-nm{font-weight:800;color:#67e8f9}.rp-sub{font-size:12px;color:#94a3b8;margin-top:2px}',
-      '.rp-go{flex:0 0 auto;padding:6px 10px;border-radius:8px;border:1px solid #b45309;background:#78350f;color:#fef3c7;font-weight:800;cursor:pointer;font-size:13px;white-space:nowrap}',
+      '.rp-mid{flex:1 1 180px;min-width:0}.rp-nm{font-weight:800;color:#67e8f9}.rp-sub{font-size:13px;color:#94a3b8;margin-top:2px;overflow-wrap:break-word}',
+      '.rp-go{flex:0 1 auto;max-width:100%;min-height:40px;padding:6px 10px;border-radius:8px;border:1px solid #b45309;background:#78350f;color:#fef3c7;font-weight:800;cursor:pointer;font-size:13px;white-space:normal}',
       '.rp-go[disabled]{opacity:.45;cursor:not-allowed}',
       '.rp-empty{padding:30px;text-align:center;color:#64748b}',
-      '.rp-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid #1e293b;font-size:12px;color:#cbd5e1}',
-      '.rp-tools button,.rp-tools select{font:inherit;padding:4px 10px;border-radius:7px;border:1px solid #6d28d9;background:#2e1065;color:#ede9fe;cursor:pointer}',
+      '.rp-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px;border-bottom:1px solid #1e293b;font-size:13px;color:#cbd5e1}',
+      '.rp-tools button,.rp-tools select{font:inherit;min-height:40px;max-width:100%;padding:4px 10px;border-radius:7px;border:1px solid #6d28d9;background:#2e1065;color:#ede9fe;cursor:pointer}',
+      '.rp-tools select{font-size:16px}.rp-tools input[type=checkbox]{min-width:18px;min-height:18px}',
       '.rp-tools button[disabled]{opacity:.45;cursor:not-allowed}',
       '.rp-asc{border-color:#a21caf!important;background:#4a044e!important;color:#fae8ff!important}',
       '.rp-miss{color:#fca5a5}',
@@ -674,6 +734,7 @@
       '.rp-embed .rp-box{width:100%;max-height:none;border:0;border-radius:0;box-shadow:none;background:transparent;font-size:14px}',
       '.rp-embed .rp-head{background:transparent;border-bottom:1px solid #334155;padding:4px 2px 8px;font-size:15px}',
       '.rp-embed .rp-x{display:none}',
+      '.rp-embed .rp-content{overflow:visible}',
       '.rp-embed .rp-rule{font-size:14px;color:#cbd5e1;padding:8px 2px}',
       '.rp-embed .rp-tools{font-size:14px;padding:8px 2px}',
       '.rp-embed .rp-sub{font-size:13px}.rp-embed .rp-nm{font-size:15px}',
@@ -684,14 +745,16 @@
   function build() {
     css();
     var m = document.createElement('div'); m.id = 'rp-modal';
-    m.innerHTML = '<div class="rp-box"><div class="rp-head">🔨 哈瑪大師・遺物強化<span class="rp-bal" id="rp-bal"></span><button class="rp-x" type="button" id="rp-x">✕</button></div>'
-      + '<div class="rp-rule">兩個同款同強化值合成高一級：做出 +1～+6 每次 500 鑽＋5,000 萬；+7～+10 每級再多 100 鑽＋1,000 萬。+11～+15 單件強化：每次 5 萬鑽、成功率 10%，失敗不會消失。'
-      + '<br>武器：每 +1 大小傷 +1、每 +3 白字各 +1。防具／飾品：每 +1 AC-1 與 MR+1、每 +3 ER+1、每 +5 傷害減免+1。'
-      + '<br>共通：每 +5 遺物特效 +5%；HP／MP 恢復每 +1 多 1（本身 ≥50 的多 10）；+10 獲得第二詞綴：隨機抽一件同部位遺物繼承它的特效，抽到沒有特效的則改為四屬性抗性 +10。'
-      + '<br>戒指、耳環、項鍊、腰帶最高 +5，每級要 3 個同級遺物、龍鑽與金幣 ×3，另需席琳結晶 500 顆。'
-      + '<br>滿級（+15／飾品 +5）之後可以昇華支配 +0～+5：武器每 +1 大小傷 +10、白字 +5；防具每 +1 HP/MP 恢復 +50、六屬性 +1、ER/AC/MR/減傷 +1、四屬性抗性 +10（飾品沒有 HP/MP 恢復）。只計算背包裡未上鎖的遺物與材料。</div>'
+    m.innerHTML = '<div class="rp-box" role="dialog" aria-modal="true" aria-label="哈瑪大師・遺物強化"><div class="rp-head">🔨 哈瑪大師・遺物強化<span class="rp-bal" id="rp-bal"></span><button class="rp-x" type="button" id="rp-x" aria-label="關閉遺物強化">✕</button></div>'
+      + '<div class="rp-content"><details class="rp-rule"><summary>合成、昇華與費用說明</summary>'
+      + '<p><b>武器、防具最高 +15。</b>合成 +1～+10 要 2 件同款、同階遺物。做出 +1～+6，每次 500 龍鑽＋5,000 萬金幣；+7～+10 每高一階，費用再加 100 龍鑽＋1,000 萬金幣。+11～+15 改用單件，每次 5 萬龍鑽、成功率 10%，失敗保留遺物。</p>'
+      + '<p><b>戒指、耳環、項鍊、腰帶等飾品最高 +10。</b>每階要 3 件同款、同階遺物，龍鑽和金幣為上述費用的 3 倍，另需席琳結晶 500 顆。</p>'
+      + '<p><b>能力成長：</b>武器一般每 +1 增加小型／大型傷害各 1，每 +3 增加原有能力各 1；防具、飾品每 +1 防禦 −1、魔法防禦 +1，每 +3 遠距迴避 +1，每 +5 傷害減免 +1。各件的專屬階段數值優先，完整效果可查「遺物進階」。</p>'
+      + '<p><b>+10 第二詞綴：</b>隨機抽取同部位另一件遺物，繼承其原始特效中的未重複欄位；沒有可繼承效果時，改給四屬性抗性各 +10。</p>'
+      + '<p><b>昇華支配：</b>武器、防具達 +15，飾品達 +10 後開放。昇華每 +1，武器大小型傷害各 +10、原有能力各 +5；防具、飾品六項能力各 +1，防禦 −1、魔法防禦／遠距迴避／減傷各 +1，四屬性抗性各 +10。防具另加生命、魔力自然恢復各 50。</p>'
+      + '<p>只使用背包裡未鎖定的遺物與材料；穿戴中、倉庫內或上鎖的物品不列入。第 029 件昇華後即達終階，GM 測試道具不適用合成。</p></details>'
       + '<div class="rp-tools" id="rp-tools"></div>'
-      + '<div class="rp-list" id="rp-list"></div></div>';
+      + '<div class="rp-list" id="rp-list"></div></div></div>';
     document.body.appendChild(m);
     m.addEventListener('click', function (e) { if (e.target === m) close(); });
     document.getElementById('rp-x').onclick = close;
@@ -734,16 +797,20 @@
     }
     var list = document.getElementById('rp-list'); if (!list) return;
     var gs = groups();
-    if (!gs.length) { list.innerHTML = '<div class="rp-empty">背包裡沒有可以合成的武器遺物。</div>'; return; }
+    if (!gs.length) { list.innerHTML = '<div class="rp-empty">背包裡沒有可合成的遺物。請先卸下裝備、從倉庫取出，並確認物品未鎖定。</div>'; return; }
     list.innerHTML = gs.map(function (g) {
       var bd = DB.items[g.base], cur = DB.items[makeId(g.base, g.n, g.fx, g.asc)] || bd;
-      var mx = maxOf(g.base), t = g.n + 1, c = t <= mx ? costOf(t, g.base) : null, btn, ascTxt = '';
+      var mx = maxOf(g.base), t = g.n + 1, c = g.asc == null && t <= mx ? costOf(t, g.base) : null, btn, ascTxt = '';
       if (!c) {
         var A = g.asc == null ? 0 : g.asc + 1;
-        if (A > 5 && g.evo != null) btn = '<button class="rp-go" disabled>至高的支配<br><span style="font-weight:600;font-size:11px">' + esc(EVO[g.evo]) + '</span></button>';
+        if (g.asc != null && typeof window.__afkRelicNoUp === 'function' && window.__afkRelicNoUp(makeId(g.base, g.n, g.fx, g.asc))) {
+          btn = '<button class="rp-go" disabled>已達終階</button>';
+          ascTxt = '<div class="rp-sub">這件遺物昇華支配後即達終階，沒有後續強化。</div>';
+        }
+        else if (A > 5 && g.evo != null) btn = '<button class="rp-go" disabled>至高的支配<br><span style="font-weight:600;font-size:13px">' + esc(EVO[g.evo]) + '</span></button>';
         else if (A > 5) {
           var evMiss = TS_MATS.filter(function (id) { return invCnt(id) < 1; });
-          btn = '<button class="rp-go rp-evo" type="button" data-k="' + esc(g.key) + '"' + (evMiss.length ? ' disabled' : '') + '>進化<br><span style="font-weight:600;font-size:11px">至高的支配 100%</span></button>';
+          btn = '<button class="rp-go rp-evo" type="button" data-k="' + esc(g.key) + '"' + (evMiss.length ? ' disabled' : '') + '>進化<br><span style="font-weight:600;font-size:13px">至高的支配 100%</span></button>';
           ascTxt = '<div class="rp-sub" style="color:#fde047">進化：隨機獲得一種至高的支配特效（克特／死亡騎士／惡魔／四大軍王／真．冥皇套裝、全能力 +30、面板能力 +50、四屬性抗性 +100，不跟你已有的重複）' + (bd.set === 'priest' ? '；司祭苦行套裝直接擁有全部八種' : '') + '</div>'
             + '<div class="rp-sub">需要：' + TS_MATS.map(function (id) { var h = invCnt(id); return '<span class="' + (h ? '' : 'rp-miss') + '">' + esc((DB.items[id] || {}).n || id) + ' ' + h + '/1</span>'; }).join('、') + '</div>';
         }
@@ -751,7 +818,7 @@
           var ac = ascCost(A), rate = Math.min(1, ac.rate + 0.1 * dustUse);
           if (stoneUse && A >= 1 && stoneOf(g.base)) { ac = { dia: 0, items: {}, equip: [], rate: 1 }; ac.items[stoneOf(g.base)] = 1; rate = 1; }
           var miss = ascMissing(ac);
-          btn = '<button class="rp-go rp-asc" type="button" data-k="' + esc(g.key) + '"' + (miss.length ? ' disabled' : '') + '>昇華支配 +' + A + '<br><span style="font-weight:600;font-size:11px">成功率 ' + Math.round(rate * 100) + '%</span></button>';
+          btn = '<button class="rp-go rp-asc" type="button" data-k="' + esc(g.key) + '"' + (miss.length ? ' disabled' : '') + '>昇華支配 +' + A + '<br><span style="font-weight:600;font-size:13px">成功率 ' + Math.round(rate * 100) + '%</span></button>';
           var need = [];
           if (ac.dia) need.push('龍鑽 ' + ac.dia.toLocaleString());
           Object.keys(ac.items).forEach(function (id) { var h = invCnt(id), ok = h >= ac.items[id]; need.push('<span class="' + (ok ? '' : 'rp-miss') + '">' + esc((DB.items[id] || {}).n || id) + ' ' + h + '/' + ac.items[id] + '</span>'); });
@@ -762,7 +829,7 @@
       } else {
         var enough = g.cnt >= c.need && diamonds() >= c.dia && gold() >= c.gold && (!c.crystal || crystals() >= c.crystal);
         btn = '<button class="rp-go" type="button" data-k="' + esc(g.key) + '"' + (enough ? '' : ' disabled') + '>'
-          + (c.merge ? '合成 +' + t : '強化 +' + t + '（10%）') + '<br><span style="font-weight:600;font-size:11px">' + c.dia.toLocaleString() + ' 鑽' + (c.gold ? '＋' + (c.gold / 10000).toLocaleString() + ' 萬' : '') + (c.crystal ? '＋結晶 ' + c.crystal : '') + (c.need > 2 ? '（' + c.need + ' 個）' : '') + '</span></button>';
+          + (c.merge ? '合成 +' + t : '強化 +' + t + '（10%）') + '<br><span style="font-weight:600;font-size:13px">' + c.dia.toLocaleString() + ' 鑽' + (c.gold ? '＋' + (c.gold / 10000).toLocaleString() + ' 萬' : '') + (c.crystal ? '＋結晶 ' + c.crystal : '') + (c.need > 2 ? '（' + c.need + ' 個）' : '') + '</span></button>';
       }
       var nextTxt = '';
       if (c) { var nid = makeId(g.base, t, g.fx); var nd = DB.items[nid] || buildDef(g.base, t, g.fx); nextTxt = '下一級：' + pretty(statLine(nd, g.base)) + (t === 10 && !g.fx && mx >= 10 ? '、獲得第二詞綴（隨機同部位遺物特效）' : ''); }
@@ -815,13 +882,14 @@
     else if (confirm(msg)) go();
   }
   function open() {
-    if (!P()) return;
+    if (!enabled() || !P()) return;
     if (!document.getElementById('rp-modal')) build();
     var mm = document.getElementById('rp-modal');
     if (mm.classList.contains('rp-embed')) { mm.classList.remove('rp-embed'); document.body.appendChild(mm); }
     mm.style.display = 'flex';
     render();
     layer = (window.AFK_UI && AFK_UI.openLayer) ? AFK_UI.openLayer(doClose) : null;
+    document.getElementById('rp-x').focus();
   }
   function close() {
     var mm = document.getElementById('rp-modal');
@@ -830,7 +898,7 @@
   }
   // 從燃柳村 NPC 進來：放進遊戲本身的 NPC 對話框（標題、關閉鈕、字體與其他 NPC 一致）
   function embed(div) {
-    if (!P() || !div) return;
+    if (!enabled() || !P() || !div) return;
     if (!document.getElementById('rp-modal')) build();
     var mm = document.getElementById('rp-modal');
     mm.classList.add('rp-embed'); div.innerHTML = ''; div.appendChild(mm); mm.style.display = 'block';
@@ -843,11 +911,12 @@
     var oBook = window.renderRelicBook;
     window.renderRelicBook = function () {
       var r = oBook.apply(this, arguments);
+      if (!enabled()) return r;
       try {
         var host = document.getElementById('relic-book-body');
         if (host && !host.querySelector('#rp-open')) {
           css();
-          var b = document.createElement('button'); b.id = 'rp-open'; b.type = 'button'; b.className = 'rp-open'; b.textContent = '🔨 遺物合成（+1～+15）';
+          var b = document.createElement('button'); b.id = 'rp-open'; b.type = 'button'; b.className = 'rp-open'; b.textContent = '🔨 遺物合成與昇華';
           b.addEventListener('click', open); host.insertBefore(b, host.firstChild);
         }
       } catch (e) {}
@@ -857,9 +926,9 @@
   // 燃柳村 NPC「哈瑪大師」：點了直接打開遺物強化視窗
   try {
     var town = DB.towns && DB.towns.town_gludio;
-    if (town && Array.isArray(town.npcs) && !town.npcs.some(function (x) { return x.id === 'npc_hama'; })) {
+    if (enabled() && town && Array.isArray(town.npcs) && !town.npcs.some(function (x) { return x.id === 'npc_hama'; })) {
       town.npcs.push({ id: 'npc_hama', n: '哈瑪大師', title: '遺物強化', type: 'relicsmith',
-        d: '鑽研古老遺物數十年的工匠大師，能把同款遺物熔鑄合一，喚醒沉睡其中的力量。武器與防具最高 +15，戒指、耳環等飾品最高 +5。' });
+        d: '爐火映著歲月，哈瑪將同源遺物熔鑄合一，喚醒其中沉睡的力量。武器與防具最高 +15，戒指、耳環等飾品最高 +10，滿階後可昇華支配。' });
     }
     if (typeof NPC_SPR_FIXED !== 'undefined' && !NPC_SPR_FIXED.npc_hama) NPC_SPR_FIXED.npc_hama = '1768';   // 矮人鐵匠外型（與火焰鐵匠同款）
   } catch (e) {}
@@ -867,12 +936,13 @@
     var oNpc = window.interactNPC;
     window.interactNPC = function (npcId) {
       var r = oNpc.apply(this, arguments);
-      if (npcId === 'npc_hama') { try { embed(document.getElementById('interaction-content')); } catch (e) {} }
+      if (enabled() && npcId === 'npc_hama') { try { embed(document.getElementById('interaction-content')); } catch (e) {} }
       return r;
     };
   }
 
   var navTimer = setInterval(function () {
+    if (!enabled()) { clearInterval(navTimer); return; }
     var row = document.getElementById('m-afk-navrow');
     if (!row) return;
     if (!document.getElementById('m-afk-nav-relicplus')) {
@@ -887,6 +957,7 @@
   // ── 持續傷害上限：中毒＋出血對同一隻怪，每秒最多扣牠最大 HP 的 1%（核心補丁 17 呼叫；玩家 2026-10-21 選定）──
   //    2026-10-22：被昇華支配遺物打過的怪（_afkAscDot）不受這個上限
   window.__afkDotCap = function (m, dmg) {
+    if (!enabled()) return dmg;
     try {
       if (!m || !(dmg > 0)) return dmg;
       if (m._afkAscDot) return dmg;   // 2026-10-22：昇華支配遺物造成的持續傷害不受上限
@@ -901,6 +972,7 @@
 
   // 幸運暴走兔腳：可以戴兩個，遺物掉落判定 ×2 → 兩個 ×4（核心補丁 16 讀這個函式）
   window.__afkRelicDropMult = function () {
+    if (!enabled()) return 1;
     try {
       if (typeof player === 'undefined' || !player || player._allyName || (typeof _recomputingAlly !== 'undefined' && _recomputingAlly) || !player.eq) return 1;
       var c = 0; for (var k in player.eq) { var it = player.eq[k], d = it && DB.items[it.id]; if (d && d.relicDropX2) c++; }
@@ -908,6 +980,7 @@
     } catch (e) { return 1; }
   };
 
-  window.__afkRelicPlus = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, embed: embed, evolve: evolve, equippedEvo: equippedEvo, EVO: EVO, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
-  console.log('[AFK-relicplus] 已啟用：遺物合成（武器 +1～+15）');
+  var featureApi = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, embed: embed, evolve: evolve, equippedEvo: equippedEvo, EVO: EVO, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
+  Object.defineProperty(window, '__afkRelicPlus', { configurable: true, get: function () { return enabled() ? featureApi : null; } });
+  if (enabled()) console.log('[AFK-relicplus] 已啟用：遺物合成（武器 +1～+15）');
 })();

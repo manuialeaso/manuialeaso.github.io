@@ -303,13 +303,18 @@
         if (mob._dead || !(mob.curHp > 0)) return r;
         mob._afkDreamReflect = null;   // 只反射一次（玩家 2026-10-22：連續反射會暴斃）
         var k = rf.kind === 'phys' ? '物理' : '魔法', mn = '<span class="' + getMobColor(mob.lv) + '">' + mob.n + '</span>';
+        var actor = ally || player, R = window.AFK_RELIC_RUNTIME;
+        if (ally ? ally._downed || ally.curHp <= 0 : player.dead || player.hp <= 0) return r;
+        var context = { kind: kind, origin: 'reflection', main: false, direct: true };
+        if (R) dmg = R.incoming(actor, dmg, mob, context);
         if (ally) {
-          if (ally._downed) return r;
           ally.curHp -= dmg;
+          if (R) R.afterIncoming(actor, dmg, mob, context);
           logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 反彈了' + k + '傷害，協力·' + (ally._allyName || '傭兵') + ' 受到 ' + dmg + ' 點傷害！', 'enemy');
           if (ally.curHp <= 0) { ally.curHp = 0; ally._downed = true; ally._reviveCd = 150; }
         } else {
           player.hp -= dmg;
+          if (R) R.afterIncoming(actor, dmg, mob, context);
           logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 反彈了' + k + '傷害，你受到 ' + dmg + ' 點傷害！', 'enemy');
           if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer();
         }

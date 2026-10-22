@@ -77,7 +77,7 @@ function summonAttack(sm, owner) {
         let dmg = Math.max(1, roll(sm.dmgDice[0], sm.dmgDice[1]) + cha + _sgb.dmg + (_teamAtk ? _teamAtk.ed : 0) - (t.dr || 0));
         dmg += traumaPhysicalBonus(t);
         markBossPhysicalHit(t);
-        t.justHit = 'normal'; t.curHp -= dmg; mobWake(t);
+        t.justHit = 'normal'; t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(owner,t,dmg,{kind:'melee'}):dmg)); /* card-combat:settle-summonAttack */ mobWake(t);
         logCombat(`<span class="text-purple-300">${sm.n}</span> 攻擊 <span class="${getMobColor(t.lv)}">${t.n}</span>，造成 ${dmg} 點傷害。`, 'player');
         if(t.curHp <= 0 && idx !== -1) killMob(idx); else renderMobs();
         return;
@@ -107,7 +107,7 @@ function summonAttack(sm, owner) {
             t.justHit = 'normal';
             markBossPhysicalHit(t);
         }
-        t.curHp -= dmg; mobWake(t);
+        t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(owner,t,dmg,{kind:sm.kind==='magic'?'magic':'melee'}):dmg)); mobWake(t);
         logCombat(`<span class="text-purple-300">${sm.n}</span> 攻擊 <span class="${getMobColor(t.lv)}">${t.n}</span>，造成 ${dmg} 點傷害。`, 'player');
     }
     if(t.curHp <= 0 && idx !== -1) killMob(idx);
@@ -140,7 +140,7 @@ function summonTick(sm, clearFn, owner) {
                     let raw = (roll(sm.proc.dmgDice[0], sm.proc.dmgDice[1]) + procFlat) * summonDamageMult(sm, owner, false);
                     pd = Math.max(1, Math.floor(raw) - (t.dr || 0) - hardSkin);
                 }
-                t.curHp -= pd; t.justHit = sm.proc.ele !== 'none' ? sm.proc.ele : 'magic';
+                t.curHp -= (pd=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(owner,t,pd,{kind:'magic'}):pd)); /* card-combat:settle-summonTick */ t.justHit = sm.proc.ele !== 'none' ? sm.proc.ele : 'magic';
                 logCombat(`${sm.n} 發動 ${sm.proc.name}，額外造成 ${pd} 點傷害。`, 'magic');
                 let idx = mapState.mobs.findIndex(m => m && m.uid === t.uid);
                 if(t.curHp <= 0 && idx !== -1) killMob(idx); else renderMobs();
@@ -170,7 +170,7 @@ function cubeTick() {
             if (t && t.curHp > 0 && !t._dead) {
                 let d = Math.max(1, Math.floor(summonElementDamage(c.dice, c.ele || 'none', t, player.d.magicDmg || 0, magicDamageCoef(player.d, magicAttrDefense(t, c.ele || 'none'), sk.tier)) * illuLvMult(player) * wpnEnFinalMult(player.eq && player.eq.wpn)));   // 🔮 立方：SP／屬性防禦公式 ×(1+專屬法術階級/10)
                 d = illusionMagicDmg(d, true);   // 🔮 幻覺2/5回MP＋5/5二次傷害（比照立方dmg）
-                t.curHp -= d; if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, t, d); t.justHit = (c.ele && c.ele !== 'none') ? c.ele : 'magic'; mobWake(t);
+                t.curHp -= (d=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,d,{kind:'dot'}):d)); /* card-combat:settle-cubeTick */ if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, t, d); t.justHit = (c.ele && c.ele !== 'none') ? c.ele : 'magic'; mobWake(t);
                 logCombat(`<span class="font-bold" style="color:#fb923c;text-shadow:0 0 6px #ea580c;">【${sk.n}】</span>對 <span class="${getMobColor(t.lv)}">${t.n}</span> 造成 ${d} 點傷害。`, 'dot', 'player');   // 🟢 立方傷害＝DoT(綠)、玩家來源
                 if (t.curHp <= 0) { let i = mapState.mobs.findIndex(x => x && x.uid === t.uid); if (i !== -1) killMob(i); }
                 renderMobs();
@@ -181,7 +181,7 @@ function cubeTick() {
         if (!live.length) return;
         if (c.kind === 'dmg') {
             let txt = [];
-            live.forEach((m, i) => { let d = Math.max(1, Math.floor(summonElementDamage(c.dice, c.ele || 'none', m, player.d.magicDmg || 0, magicDamageCoef(player.d, magicAttrDefense(m, c.ele || 'none'), sk.tier)) * illuLvMult(player) * wpnEnFinalMult(player.eq && player.eq.wpn))); d = illusionMagicDmg(d, true, i === 0); m.curHp -= d; if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, m, d); m.justHit = (c.ele && c.ele !== 'none') ? c.ele : 'magic'; mobWake(m); txt.push(d); });   // 🔮 全體立方每次發動只回一次MP，5件仍逐目標生效
+            live.forEach((m, i) => { let d = Math.max(1, Math.floor(summonElementDamage(c.dice, c.ele || 'none', m, player.d.magicDmg || 0, magicDamageCoef(player.d, magicAttrDefense(m, c.ele || 'none'), sk.tier)) * illuLvMult(player) * wpnEnFinalMult(player.eq && player.eq.wpn))); d = illusionMagicDmg(d, true, i === 0); m.curHp -= (d=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,m,d,{kind:'dot'}):d)); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, m, d); m.justHit = (c.ele && c.ele !== 'none') ? c.ele : 'magic'; mobWake(m); txt.push(d); });   // 🔮 全體立方每次發動只回一次MP，5件仍逐目標生效
             logCombat(`<span class="font-bold" style="color:#fb923c;text-shadow:0 0 6px #ea580c;">【${sk.n}】</span>對全體造成 ${txt.join('、')} 點傷害。`, 'dot', 'player');   // 🟢 立方傷害＝持續傷害(DoT)→綠色 dot 分類＋玩家來源(src 顯式'player'蓋過 cubeTick 所處的 _combatSrc='summon')
             live.forEach(m => { if (m.curHp <= 0) { let i = mapState.mobs.findIndex(x => x && x.uid === m.uid); if (i !== -1) killMob(i); } });
             renderMobs();
@@ -228,7 +228,7 @@ function illuSummonTick(owner) {
             dmg += traumaPhysicalBonus(t);
         }
         dmg = Math.max(1, Math.floor(dmg * fragileMult(t) * illuLvMult(owner)));   // 🔮 幻覺召喚物：幻術士等級加成 ×(1+等級/50)
-        t.curHp -= dmg; t.justHit = (c.kind === 'magic') ? 'magic' : 'none'; mobWake(t);
+        t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(owner,t,dmg,{kind:c.kind==='magic'?'magic':'melee'}):dmg)); /* card-combat:settle-illuSummonTick */ t.justHit = (c.kind === 'magic') ? 'magic' : 'none'; mobWake(t);
         logCombat(`<span class="text-purple-300 font-bold">【幻覺：${c.n}】</span>對 <span class="${getMobColor(t.lv)}">${t.n}</span> 造成 ${dmg} 點傷害。`, 'magic', 'summon');
         let idx = mapState.mobs.findIndex(m => m && m.uid === t.uid);
         if (t.curHp <= 0) { if (idx !== -1) killMob(idx); continue; }
@@ -461,7 +461,7 @@ function castSkillInner(skId) {
         let raw = (base.dmg || 1) + mobHardSkin(_t);                     // 無視硬皮：加回硬皮扣減量
         let dmg = Math.max(1, Math.floor(raw * mult));   // MP 佔比倍率（必定爆擊已含於 base.dmg）
         if (_t.race === '血盟') dmg *= 2;                                 // 對血盟敵人 x2
-        _t.curHp -= dmg; _t.justHit = getWpnEle(player.eq.wpn, wpn); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, _t, dmg); mobWake(_t);
+        if (window.AFK_RELIC_RUNTIME) dmg=window.AFK_RELIC_RUNTIME.spellDamage(player,_t,dmg,sk,{skillId:skId}); _t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,_t,dmg,{nativeRefund:'full',kind:window.AFK_CARD_COMBAT.physicalKind(player)}):dmg)); /* card-combat:refund-castSkillInner */ /* card-combat:settle-castSkillInner */ _t.justHit = getWpnEle(player.eq.wpn, wpn); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, _t, dmg); mobWake(_t);
         if (typeof reflectWallOnDamage === 'function') reflectWallOnDamage(_t, dmg, (wpn && (wpn.isBow || wpn.ranged)) ? 'ranged' : 'melee', null);   // 🌑 v3.4.14 血壁空間：會心一擊＝技能直擊反射（玩家傭兵一致）
         if (player.dead) return true;   // ☠️ v3.5.87 反射可反殺施放者：死後中止收尾（不結算擊殺經驗/掉落·比照 js/04 playerAttack）
         logCombat(`<span class="font-bold" style="color:#f0abfc;text-shadow:0 0 8px #d946ef;">【會心一擊】</span>對 <span class="${getMobColor(_t.lv)}">${_t.n}</span> 造成 ${dmg} 點致命傷害！`, 'player-crit');
@@ -481,8 +481,10 @@ function castSkillInner(skId) {
     if (sk.throwAxe && hasMastery('k_dualaxe')) cost = 0;   // ⚔️ 雙斧精通：戰斧投擲不消耗 MP
     if (sk.callAllies && hasMastery('k_royal_pledge')) cost = Math.ceil(cost / 2);   // 👑 血盟精通：呼喚盟友消耗 MP 減半
     if (_autoCastNow && sk.dmgType === 'magic' && cost > 0) { let _mm = _equipWpnField('autoCastMpMult'); if (_mm) cost = Math.round(cost * _mm); }   // 🐍 枯竭魔杖：自動施放傷害魔法 MP×autoCastMpMult(2)
-    if(player.mp < cost) return false;
-    if(sk.hpCost && player.hp <= sk.hpCost + 5) return false;  // HP 不足，拒絕施放
+    if (window.AFK_RELIC_RUNTIME) cost=window.AFK_RELIC_RUNTIME.castCost(player,sk,skId,cost);
+    if(player.mp < cost) return false; /* relic-runtime:cast-cost */
+    if (window.AFK_RELIC_RUNTIME && window.AFK_RELIC_RUNTIME.action() && window.AFK_RELIC_RUNTIME.action().costContext) { let cc=window.AFK_RELIC_RUNTIME.action().costContext; if (cc.hpCost && player.hp<=cc.hpCost+(sk.hpCost||0)) return false; }
+    if(sk.hpCost && player.hp <= sk.hpCost + 5) /* relic-runtime:cast-blood-gate */ return false;  // HP 不足，拒絕施放
     if(sk.hpCost && sk.type !== 'convert') { let _hpSkEl = document.getElementById('set-hp-skill'); let _hpSkThr = _hpSkEl ? (parseFloat(_hpSkEl.value) || 0) : 0; if(_hpSkThr > 0 && (player.mhp || 0) > 0 && (player.hp / player.mhp * 100) < _hpSkThr) return false; }   // 🐉 消耗HP技能：HP 低於自訂門檻(%)時暫停自動施放（自動路徑專用；轉換魔法另有 set-hp-convert 門檻，故排除避免重複）
     if(sk.hpCost && sk.mp && sk.type !== 'convert') { let _mpSkEl = document.getElementById('set-mp-atk'); let _mpSkThr = _mpSkEl ? (parseFloat(_mpSkEl.value) || 0) : 0; if(_mpSkThr > 0 && (player.mmp || 0) > 0 && (player.mp / player.mmp * 100) < _mpSkThr) return false; }   // 🔧 同時消耗HP與MP的技能：MP 低於「攻擊技能MP門檻(set-mp-atk)」時亦暫停自動施放→與HP門檻(set-hp-skill)取「任一不符即停」（攻擊型本就在 autoCastSpells 先擋過此門檻，這裡再涵蓋增益型如覺醒/冥想/隱身/堅固防護）
     if(sk.costItem) {   // 🌀 施法材料：背包＋倉庫合併計量（比照製作系統），不足則不施放（提示 60 秒節流）
@@ -500,7 +502,7 @@ function castSkillInner(skId) {
         if(sk.drain) {
             let _t = getTarget();
             if(!_t || _t.curHp <= 0) return false;   // 沒有目標：不施放、不耗 HP
-            player.mp -= cost;
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
             player.hp = Math.max(1, player.hp - (sk.hpCost || 0));
             if(abnormalMagicHit(_t)) {
                 let gain = roll(1, Math.max(1, Math.floor((_t.lv || 1) / 2)));   // 🔧 吸取量＝1D(怪物等級/2)
@@ -513,7 +515,7 @@ function castSkillInner(skId) {
             calcStats(); updateUI(); return true;
         }
         // 心靈轉換 / 魂體轉換（輔助類）：消耗 HP 換取 MP，不佔用攻擊/治癒冷卻
-        player.mp -= cost;
+        if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
         player.hp = Math.max(1, player.hp - (sk.hpCost || 0));
         player.mp = Math.min(player.mmp, player.mp + sk.mpGain);
         player.cds.convertSk = getAutoCastInterval(player, true, player.cds.convertSk);
@@ -529,12 +531,12 @@ function castSkillInner(skId) {
         let _dk = (skId === 'sk_antidote') ? ['poison']
             : (skId === 'sk_holy_light') ? ['stone', 'paralyze']
             : (skId === 'sk_cancel') ? ['freeze', 'stone', 'poison', 'paralyze', 'burn', 'scald', 'weaken', 'disease', 'blind', 'potionFrost', 'foulWater'] : null;   // 🌅 審查修：魔法相消術可解日出之國四新異常；🌊 v3.6.20 含汙濁之水
-        if(!_dk) { player.mp -= cost; player.cds.purifySk = getAutoCastInterval(player, true, player.cds.purifySk); logCombat(`施放 ${sk.n}。${sk.msg || ''}`, 'heal'); return true; }   // 非淨化 heal（保底·理論上無此類）
+        if(!_dk) { if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */ player.cds.purifySk = getAutoCastInterval(player, true, player.cds.purifySk); logCombat(`施放 ${sk.n}。${sk.msg || ''}`, 'heal'); return true; }   // 非淨化 heal（保底·理論上無此類）
         if(dispelCasterBlocked(player.statuses)) return false;   // 🆕 自己硬控/沉默/魔封→無法使用
         let _tgt = teamCleanseOne(_dk);
         if (_tgt) _lastHealFxTarget = _tgt;   // ✨ 淨化類技能的治癒特效要錨在「實際被解狀態的對象」上；不設的話會沿用上一次被治癒的隊員（或 fallback 到玩家）   // 🆕 v2.6.29 一次只解一人·優先主要玩家
         if(!_tgt) return false;           // 隊伍(含自己)無對應可解狀態：不施放、不耗 MP
-        player.mp -= cost;
+        if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
         player.cds.purifySk = getAutoCastInterval(player, true, player.cds.purifySk);
         logCombat(`施放 ${sk.n}，解除了 ${_dispelTargetName(_tgt)} 的負面狀態。${sk.msg || ''}`, 'heal');
         return true;
@@ -545,7 +547,7 @@ function castSkillInner(skId) {
         // 體力回復術 / 生命的祝福：HoT 持續回復
         if(sk.hot) {
             if(player.hots && player.hots[skId] && player.hots[skId].ticksLeft > 0) return false;  // 🍃 該技能團隊 HoT 已在持續中→不重複(防自動施放洗版/耗MP)；不同技能(生命的祝福/體力回復術)可並存、同技能後放取代先放
-            player.mp -= cost;
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
             applyTeamHot(skId, sk, player.d, player);   // 🍃 施放時全隊(玩家＋全體傭兵)持續回復；🏺 v3.1.80 傳施放者供團體治癒強化(groupHealMult)快照
             player.cds.healSk = getAutoCastInterval(player, true, player.cds.healSk);  // 🔧 HoT 不再把共用治癒冷卻鎖到結束：重複施放已由上方守衛擋住；長鎖會餓死其他自動治癒（高級治癒術/生命之泉等）
             logCombat(`施放 ${sk.n}，全隊開始持續回復 HP。`, 'heal');
@@ -557,7 +559,7 @@ function castSkillInner(skId) {
         if (!_cands.length) return false;
         let _hTgt = player, _hPct = Infinity;
         _cands.forEach(c => { let _mx = (typeof _supMhp === 'function') ? _supMhp(c) : (c.mhp || 1); if (_mx > 0) { let _p2 = ((typeof _supHp === 'function') ? _supHp(c) : (c === player ? player.hp : c.curHp) || 0) / _mx; if (_p2 < _hPct) { _hPct = _p2; _hTgt = c; } } });
-        player.mp -= cost;
+        if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
         _lastHealFxTarget = _hTgt;   // 🩹 記錄受益者→castSkill 把治癒特效疊在其身上（寵物/召喚物 _partyMemberRect 回 null→退預設錨點）
         player.cds.healSk = getAutoCastInterval(player, true, player.cds.healSk);
         if (sk.healCooldownTicks) { if (!player.cds.healSkillCds) player.cds.healSkillCds = {}; player.cds.healSkillCds[skId] = sk.healCooldownTicks; }
@@ -592,10 +594,10 @@ function castSkillInner(skId) {
             let t = getTarget(); if (!t || t.curHp <= 0) return false;
             let wpn = player.eq.wpn ? DB.items[player.eq.wpn.id] : null;
             if (!wpn || wpn.isBow || wpn.ranged) return false;   // 需近距離武器
-            player.mp -= cost; player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */ player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
             if (sk.hpCost) player.hp = Math.max(1, player.hp - effHpCost(sk));
             let layers = t.weakExpose || 0, bonus = layers > 0 ? 10 * layers : 0;
-            let consume = layers > 0 && !hasMastery('k_weakness');   // 🏅 弱點精通：屠宰者不消耗弱點曝光
+            let consume = layers > 0 && !hasMastery('k_weakness') && !(window.AFK_RELIC_WEAPON_BRIDGE && window.AFK_RELIC_WEAPON_BRIDGE.keepExpose(wpn)); /* relic-weapon-bridge:slaughter-preserve */   // 🏅 弱點精通：屠宰者不消耗弱點曝光
             let _slRand = !!wpn.slaughterRandom;   // 🏺 v3.6.44 凜冽的青色火炎：屠宰者變成攻擊 5 次·每擊隨機攻擊場上任意目標（各目標吃自身弱點曝光層數）
             let times = wpn.slaughterHits || sk.hits || 3, total = 0, log = [], applied = false;
             let _slHitSet = [];   // random 模式：吃到弱點加成的目標（收尾統一消耗）
@@ -611,15 +613,15 @@ function castSkillInner(skId) {
                 if (_hb > 0) { dmg += _hb; applied = true; if (_slRand && !_slHitSet.includes(ht)) _slHitSet.push(ht); }   // 🐉 弱點曝光：每一擊命中都吃 +10/層
                 dmg = Math.floor(dmg * weakExposeDmgMult(ht));   // 🏅 鎖刃精通：每層弱點曝光最終傷害+10%
                 if (sk.hpCost && player._setDragonblood5) dmg = Math.max(1, Math.floor(dmg * 1.2));   // 🐉 龍血5/5：HP消耗技傷害+20%（屠宰者＝物理HP消耗技·與魔法路徑 js/07 一致）
-                ht.curHp -= dmg; ht.justHit = getWpnEle(player.eq.wpn, wpn); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, ht, dmg); total += dmg; mobWake(ht);
+                if (window.AFK_RELIC_RUNTIME) dmg=window.AFK_RELIC_RUNTIME.spellDamage(player,ht,dmg,sk,{skillId:skId}); ht.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,ht,dmg,{nativeRefund:'full',kind:window.AFK_CARD_COMBAT.physicalKind(player)}):dmg)); ht.justHit = getWpnEle(player.eq.wpn, wpn); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, ht, dmg); total += dmg; mobWake(ht);
                 if (typeof reflectWallOnDamage === 'function') reflectWallOnDamage(ht, dmg, 'melee', null);   // 🌑 v3.4.14 血壁空間：屠宰者每擊＝近距離技能直擊反射（玩家傭兵一致）
-                if (player.dead) { if (consume && applied) t.weakExpose = 0; if (_slRand) _slHitSet.forEach(m => { if (!hasMastery('k_weakness')) m.weakExpose = 0; }); return true; }   // ☠️ v3.5.87 反射反殺：死後中止後續斬擊與擊殺結算　⚡ 早退前補做弱點曝光消耗
+                if (player.dead) { if (consume && applied) t.weakExpose = 0; if (_slRand) _slHitSet.forEach(m => { if (!hasMastery('k_weakness') && !(window.AFK_RELIC_WEAPON_BRIDGE && window.AFK_RELIC_WEAPON_BRIDGE.keepExpose(wpn))) m.weakExpose = 0; /* relic-weapon-bridge:slaughter-random-preserve */ }); return true; }   // ☠️ v3.5.87 反射反殺：死後中止後續斬擊與擊殺結算　⚡ 早退前補做弱點曝光消耗
                 log.push(dmg + (res.heavy ? '(重)' : '') + (_slRand ? `→${ht.n}` : ''));
                 if (ht.curHp > 0) wearHardSkin(ht, player.eq.wpn ? player.eq.wpn.id : null, res.heavy, false, true, player.classicMode);
                 if (_slRand && ht.curHp <= 0) { let _ki = mapState.mobs.findIndex(x => x && x.uid === ht.uid); if (_ki !== -1) killMob(_ki); }   // random 模式：逐擊結算擊殺（下一擊重抽活目標）
             }
             if (consume && applied && !_slRand) t.weakExpose = 0;
-            if (_slRand) _slHitSet.forEach(m => { if (!hasMastery('k_weakness')) m.weakExpose = 0; });   // 🏅 弱點精通不消耗
+            if (_slRand) _slHitSet.forEach(m => { if (!hasMastery('k_weakness') && !(window.AFK_RELIC_WEAPON_BRIDGE && window.AFK_RELIC_WEAPON_BRIDGE.keepExpose(wpn))) m.weakExpose = 0; /* relic-weapon-bridge:slaughter-random-preserve */ });   // 🏅 弱點精通不消耗
             if (total > 0) { logCombat(`施放 <span style="font-weight:700;color:#7dd3fc">${sk.n}</span>，${_slRand ? `亂舞斬擊造成 [${log.join(', ')}] 共 ${total} 點傷害` : `連續斬擊 <span class="${getMobColor(t.lv)}">${t.n}</span> 造成 [${log.join(', ')}] 共 ${total} 點傷害${bonus > 0 ? `（弱點曝光 每擊+${bonus}）` : ''}`}。`, 'skill'); if (!_slRand && t.curHp <= 0) killMob(mapState.targetIdx); else renderMobs(); }
             else logCombat(`施放 ${sk.n} 未命中。`, 'miss');
             return true;
@@ -629,10 +631,10 @@ function castSkillInner(skId) {
             let targets = mapState.mobs.filter(m => m && m.curHp > 0 && !m._dead);
             if (!targets.length) return false;
             if (player.mp < cost) return false;
-            player.mp -= cost; player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */ player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
             if (sk.hpCost) player.hp = Math.max(1, player.hp - effHpCost(sk));
             let base = 50 + Math.max(0, (player.lv || 1) - 30);
-            targets.forEach(m => { if (player.dead) return; if (!m || m.curHp <= 0 || m._dead) return; let dmg = Math.max(1, Math.floor(base * fragileMult(m))); m.curHp -= dmg; if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, m, dmg); m.justHit = 'magic'; m._spellHurt = true; mobWake(m); if (typeof reflectWallOnDamage === 'function') reflectWallOnDamage(m, dmg, 'magic', null); });   // 🎬 v3.0.14 _spellHurt：法術傷害→hurt 動畫(含頭目)；🌑 v3.3.33 血壁空間魔法反射
+            targets.forEach(m => { if (player.dead) return; if (!m || m.curHp <= 0 || m._dead) return; let dmg = Math.max(1, Math.floor(base * fragileMult(m))); if (window.AFK_RELIC_RUNTIME) dmg=window.AFK_RELIC_RUNTIME.spellDamage(player,m,dmg,sk,{skillId:skId}); m.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,m,dmg,{nativeRefund:'full',kind:'magic'}):dmg)); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, m, dmg); m.justHit = 'magic'; m._spellHurt = true; mobWake(m); if (typeof reflectWallOnDamage === 'function') reflectWallOnDamage(m, dmg, 'magic', null); });   // 🎬 v3.0.14 _spellHurt：法術傷害→hurt 動畫(含頭目)；🌑 v3.3.33 血壁空間魔法反射
             if (player.dead) return true;   // ☠️ v3.5.87 反射反殺：死後不結算擊殺
             logCombat(`施放 <span style="font-weight:700;color:#7dd3fc">${sk.n}</span>，咆哮震懾全場，對所有敵人造成約 ${base} 點固定傷害。`, 'skill');
             targets.forEach(m => { if (m && m.curHp <= 0 && !m._dead) { let i = mapState.mobs.findIndex(x => x && x.uid === m.uid); if (i !== -1) killMob(i); } });
@@ -645,7 +647,7 @@ function castSkillInner(skId) {
             let allies = (player.allies || []).filter(a => a && a.curHp > 0);
             if (!allies.length) return false;
             if (player.mp < cost) return false;
-            player.mp -= cost; player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */ player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
             logCombat(`<span class="text-amber-300 font-bold">${sk.n}！</span>你號召盟友一同出擊。`, 'player');
             allies.forEach(a => { try { allyAttackOnce(a); } catch(e){} });
             return true;
@@ -655,7 +657,7 @@ function castSkillInner(skId) {
             let t = getTarget(); if (!t || t.curHp <= 0) return false;
             let fs = sk.fixedStatus;
             if (sk.noRecastStatus && t.st && t.st[sk.noRecastStatus] > 0) return false;   // 已有狀態：不重複（不耗 HP/CD）
-            player.mp -= cost; player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */ player.cds.atkSk = getAutoCastInterval(player, false, player.cds.atkSk);
             if (sk.hpCost) player.hp = Math.max(1, player.hp - effHpCost(sk));
             if (Math.random() < fs.chance) {
                 if (!t.st) t.st = newMobStatus();
@@ -695,7 +697,7 @@ function castSkillInner(skId) {
                 dmg = Math.max(1, Math.floor(magicBaseDamage(dmg, player.d, 0, true) * magicDamageCoef(player.d, magicAttrDefense(t, 'none'), sk.tier) * ((player.eq.wpn && (DB.items[player.eq.wpn.id] || {}).spellIgnoreMr) ? 1 : mrMult(Math.max(0, effMr)))));   // 🏺 v3.6.44 血祭儀式短刀：無視魔抗
             }
             dmg = Math.max(1, Math.floor(dmg * fragileMult(t) * illuLvMult(player) * wpnEnFinalMult(player.eq.wpn) * elementCounterMult(sk.weaponDmg ? getWpnEle(player.eq.wpn, player.eq.wpn ? DB.items[player.eq.wpn.id] : null) : 'none', t.e)));   // 🔮 幻術士等級加成 ×(1+等級/50)；🔧 武器強化 +11~+20 最終倍率；⚔️ 屬性剋制(僅武器傷害技吃武器屬性)
-            t.curHp -= dmg; if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, t, dmg); t.justHit = sk.weaponDmg ? getWpnEle(player.eq.wpn, player.eq.wpn ? DB.items[player.eq.wpn.id] : null) : 'magic'; if (!sk.weaponDmg) t._spellHurt = true; mobWake(t);   // 🎬 v3.0.14 純魔法技→hurt(含頭目)
+            if (window.AFK_RELIC_RUNTIME) dmg=window.AFK_RELIC_RUNTIME.spellDamage(player,t,dmg,sk,{skillId:skId}); t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,dmg,{nativeRefund:t._reflectWall?'full':null,kind:sk.weaponDmg?window.AFK_CARD_COMBAT.physicalKind(player):'magic'} /* card-combat:mental-kind */):dmg)); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, t, dmg); t.justHit = sk.weaponDmg ? getWpnEle(player.eq.wpn, player.eq.wpn ? DB.items[player.eq.wpn.id] : null) : 'magic'; if (!sk.weaponDmg) t._spellHurt = true; mobWake(t);   // 🎬 v3.0.14 純魔法技→hurt(含頭目)
             if (typeof reflectWallOnDamage === 'function' && t._reflectWall) { let _rwW = player.eq.wpn && DB.items[player.eq.wpn.id]; reflectWallOnDamage(t, dmg, sk.weaponDmg ? ((_rwW && (_rwW.isBow || _rwW.ranged)) ? 'ranged' : 'melee') : 'magic', null); }   // 🌑 v3.3.33 血壁空間：玩家技能傷害反射
             if (player.dead) return true;   // ☠️ v3.5.87 反射反殺：死後中止收尾（不結算擊殺）
             if (sk.mpDmgPct && t.st && t.st.mrhalf > 0) t.st.mrhalf = 0;   // 🔧 心靈破壞（魔法）：受一次魔法傷害後解除魔抗減半（與其他魔法路徑一致）
@@ -721,7 +723,7 @@ function castSkillInner(skId) {
                 arrowData = consumeArrow();
                 if (!arrowData) return false;
             }
-            player.mp -= cost;
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
             // 👑 魔法精通的免費追加施放是「額外的一次」，它繞過了 521 行的 atkSk 閘門進場，
             //    若在這裡照樣重設冷卻，會把玩家原本已累積的冷卻進度整段吃掉（nextCastCooldown
             //    對正值 current 直接丟棄 carry）→ 平均只剩名目效益的一半。物理與魔法兩條分支都要擋。
@@ -748,7 +750,7 @@ function castSkillInner(skId) {
                 // 🔮 紅獅 5/5 已於 getPhysicalDmg 內套用（避免重複），此處不再乘
                 // 遠距離物理技能命中滿血被動怪物，賦予 3 秒延遲（整段只觸發一次）
                 if(!delayDone && t.curHp === t.hp && t.beh === '被動' && res.ranged) { t._delayTicks = 30; delayDone = true; }
-                t.curHp -= res.dmg;
+                if (window.AFK_RELIC_RUNTIME) res.dmg=window.AFK_RELIC_RUNTIME.spellDamage(player,t,res.dmg,sk,{skillId:skId}); t.curHp -= (res.dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,res.dmg,{nativeRefund:'full',kind:window.AFK_CARD_COMBAT.physicalKind(player)}):res.dmg));
                 if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, t, res.dmg);
                 t.justHit = getWpnEle(player.eq.wpn, wpn);
                 if (typeof reflectWallOnDamage === 'function') reflectWallOnDamage(t, res.dmg, res.ranged ? 'ranged' : 'melee', null);   // 🌑 v3.4.14 血壁空間：物理技能每擊反射（衝擊之暈/三重矢·玩家傭兵一致）
@@ -794,7 +796,7 @@ function castSkillInner(skId) {
                 if(live.length > 0 && live.every(m => m.st && m.st[sk.status.kind] > 0)) return false;
             }
             
-            player.mp -= cost;
+            if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
             // 👑 魔法精通的免費追加施放是「額外的一次」，它繞過了 521 行的 atkSk 閘門進場，
             //    若在這裡照樣重設冷卻，會把玩家原本已累積的冷卻進度整段吃掉（nextCastCooldown
             //    對正值 current 直接丟棄 carry）→ 平均只剩名目效益的一半。物理與魔法兩條分支都要擋。
@@ -810,7 +812,7 @@ function castSkillInner(skId) {
                 }
 
                 let effMr = (t.st && t.st.mrhalf > 0) ? (t.mr / 2) : t.mr;
-                let mrFactor = (player.eq.wpn && (DB.items[player.eq.wpn.id] || {}).spellIgnoreMr) ? 1 : mrMult(effMr);   // 🏺 v3.6.44 血祭儀式短刀：施放的傷害魔法無視目標魔法抗性
+                let mrFactor = (player.eq.wpn && (DB.items[player.eq.wpn.id]||{}).spellIgnoreMr) ? 1 : mrMult(window.AFK_RELIC_WEAPON_BRIDGE?window.AFK_RELIC_WEAPON_BRIDGE.spellMr(player,player.eq.wpn&&DB.items[player.eq.wpn.id],skId,effMr):effMr); /* relic-weapon-bridge:cast-spell-mr */   // 🏺 v3.6.44 血祭儀式短刀：施放的傷害魔法無視目標魔法抗性
 
                 let dmgArray = sk.multiDmg || (sk.dmgDice ? [[sk.dmgDice[0], sk.dmgDice[1]]] : []);
                 let totalDmg = 0;
@@ -848,7 +850,7 @@ function castSkillInner(skId) {
                     if (sk.hpCost && player._setDragonblood5) totalDmg = Math.max(1, Math.floor(totalDmg * 1.2));   // 🐉 龍血5/5：HP消耗技傷害+20%
                     totalDmg = illusionMagicDmg(totalDmg, false);   // 🔮 攻擊技能下拉選單可選的一般傷害法術，不觸發幻覺2/5與5/5
                     totalDmg = Math.max(1, Math.floor(totalDmg * equipSkillDmgMult(sk, skId) * (_autoCastNow ? (_equipWpnField('autoCastDmgMult') || 1) : 1)));   // 🏺 遺物 特定技能傷害倍率（冰錐/光箭/究極光裂術 ×1.5）；🐍 枯竭魔杖：auto 施放傷害 ×autoCastDmgMult(1.5)
-                    t.curHp -= totalDmg;
+                    if (window.AFK_RELIC_RUNTIME) totalDmg=window.AFK_RELIC_RUNTIME.spellDamage(player,t,totalDmg,sk,{skillId:skId}); t.curHp -= (totalDmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,totalDmg,{nativeRefund:'full',kind:'magic'}):totalDmg));
                     if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, t, totalDmg);
                     _burstDmg += totalDmg;   // 🔧 魔爆累計
                     t.justHit = (sk.ele && sk.ele !== 'none') ? sk.ele : 'magic';
@@ -900,7 +902,7 @@ function castSkillInner(skId) {
             // 🔧 神官魔杖·魔爆：施放傷害魔法時依機率(單體 智力/100、全體 智力/60)引爆本次傷害30%的無屬性傷害，均分給場上所有敵人
             {
                 let _bw = player.eq.wpn ? DB.items[player.eq.wpn.id] : null;
-                if (_bw && _bw.eff === 'magicburst' && _burstDmg > 0 && !player.classicMode) {   // 🎮 經典模式：停用魔爆
+                if (window.AFK_RELIC_WEAPON_BRIDGE && _bw && window.AFK_RELIC_WEAPON_BRIDGE.magicBurst(_bw,_burstDmg,sk,targets)) {} else if (_bw && _bw.eff === 'magicburst' && _burstDmg > 0 && !player.classicMode) { /* relic-weapon-bridge:magic-burst */   // 🎮 經典模式：停用魔爆
                     let _aoe = (sk.target === 'all') || (targets.length > 1);
                     let _msB = hasMastery('m_strike');   // 🏅 v2.6.71：改發魔擊時觸發率比照原生魔擊＝力量/60（不再吃智力/100或/60）
                     if (Math.random() < (_msB ? ((player.d.str || 0) / 60) : ((player.d.int || 0) / (_aoe ? 60 : 100)))) {
@@ -914,7 +916,7 @@ function castSkillInner(skId) {
                             logCombat(`<span class="font-bold" style="color:#f0abfc;text-shadow:0 0 6px #c026d3;">【魔爆】</span>魔力過載爆炸，波及全場！`, 'player-special');
                             _live.forEach((m, i) => {
                                 let _d = Math.max(1, Math.floor(_ex * fragileMult(m)));
-                                _d = illusionMagicDmg(_d, true, i === 0); m.curHp -= _d; if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, m, _d); if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(m, _d, 'magic'); m.justHit = 'magic'; mobWake(m);   // 🔮 魔爆每次發動只回一次MP，5件仍逐目標生效；🌅 巨大骷髏視為魔法
+                                _d = illusionMagicDmg(_d, true, i === 0); if (window.AFK_RELIC_RUNTIME) _d=window.AFK_RELIC_RUNTIME.spellDamage(player,m,_d,sk,{skillId:skId}); m.curHp -= (_d=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,m,_d,{nativeRefund:'terror',kind:'magic',inherited:window.AFK_CARD_COMBAT.inherited(player,targets)}):_d)); if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, m, _d); if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(m, _d, 'magic'); m.justHit = 'magic'; mobWake(m);   // 🔮 魔爆每次發動只回一次MP，5件仍逐目標生效；🌅 巨大骷髏視為魔法
                                 logCombat(`魔爆波及 <span class="${getMobColor(m.lv)}">${m.n}</span>，造成 ${_d} 點無屬性傷害。`, 'player');
                                 if (m.curHp <= 0) { let ri = mapState.mobs.findIndex(x => x && x.uid === m.uid); if (ri !== -1) killMob(ri); }
                             });
@@ -946,16 +948,16 @@ function castSkillInner(skId) {
         if(sk.summon) {
             if (typeof SUMMON_V2_SKILLS !== 'undefined' && SUMMON_V2_SKILLS.includes(skId) && typeof summonV2CastFor === 'function') {
                 if (!summonV2CastFor(skId, false)) return false;
-                player.mp -= cost; calcStats(); return true;
+                if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */ calcStats(); return true;
             }
-            setupSummon(skId, sk); player.mp -= cost; calcStats(); return true;
+            setupSummon(skId, sk); if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */ calcStats(); return true;
         }
         // 🧹 v3.1.79 大掃除：移除不可達的舊版淨化分支（sk_antidote/sk_holy_light/sk_cancel 的 type 皆為 'heal'→一律在上方 heal 淨化分支處理並 return·永遠到不了本 buff 分支；現行規則＝teamCleanseOne 一次只解一人·舊分支「只解玩家自身」語意已過時）
         player.buffs[skId] = sk.dur;
         applyMoveDashBuffMutex(player, skId);
         if(sk.awaken && !(typeof _afkM === 'function' ? _afkM(player, 'k_awaken') : player.mastery === 'k_awaken')) { ['sk_dragon_awaken_antares','sk_dragon_awaken_falion','sk_dragon_awaken_baraka'].forEach(_ak => { if(_ak !== skId) player.buffs[_ak] = 0; }); }   // 🐉 覺醒互斥：非覺醒精通時同時只能維持一種覺醒
         if(sk.haste) player.buffs.haste = Math.max(player.buffs.haste || 0, sk.dur); // 加速術 → 套用 haste 效果
-        player.mp -= cost;
+        if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.castPaid(player,cost); player.mp -= cost; /* relic-runtime:cast-paid */
         if(sk.hpCost) player.hp = Math.max(1, player.hp - effHpCost(sk));  // 消耗 HP（冥想術/堅固防護/隱身術；🐉 龍血精通減半）
         if(sk.costItem && typeof consumeMaterialById === 'function') consumeMaterialById(sk.costItem.id, sk.costItem.qty || 1);   // 🌀 施法材料扣除（背包優先、不足取倉庫；上方已驗存量。目前僅增益型技能使用 costItem，其他類型若要用需自行在該分支扣除）
         logCombat(`施放 ${sk.n}。${sk.msg || ''}`, 'magic');
@@ -973,6 +975,8 @@ function castSkillInner(skId) {
 // 🍃 團隊 HoT（生命的祝福 / 體力回復術）單一真相：施放時登錄「全隊持續回復」到 player.hots[skId]。
 //   ・player.hots 為 dict(skId→HoT 實例)→不同技能可並存；同 skId 後放覆蓋先放（取代/刷新）。
 //   ・dStats＝施法者衍生值(玩家 player.d 或傭兵 ally.d)→spCoef 由施法者魔法傷害決定；每 interval 於 js/03 tick 對「玩家＋全體非倒地傭兵」各回復一次。
+/* relic-runtime:spell-castSkillInner */
+
 function applyTeamHot(skId, sk, dStats, caster) {
     if (!player.hots) player.hots = {};
     let mDmg = (dStats && dStats.magicDmg) || 0;

@@ -269,7 +269,7 @@ function guardAttackOnce(s, d, t) {
     dmg = Math.max(1, Math.floor(dmg) - (t.dr || 0));
     dmg += (typeof traumaPhysicalBonus === 'function') ? traumaPhysicalBonus(t) : 0;
     if (typeof markBossPhysicalHit === 'function') markBossPhysicalHit(t);
-    t.curHp -= dmg; if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, dmg, 'melee'); t.justHit = 'normal'; mobWake(t);
+    t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,dmg,{nativeRefund:'terror',kind:'melee'}):dmg)); /* card-combat:refund-guardAttackOnce */ /* card-combat:settle-guardAttackOnce */ if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, dmg, 'melee'); t.justHit = 'normal'; mobWake(t);
     logCombat(`<span class="text-cyan-300">${s.form}</span> 攻擊 <span class="${getMobColor(t.lv)}">${t.n}</span>，造成 ${dmg}${r === 20 ? '（重擊）' : ''} 點傷害。`, 'player');
     if (t.curHp <= 0) { let i = mapState.mobs.findIndex(x => x && x.uid === t.uid); if (i !== -1) killMob(i); }
     else { try { renderMobs(); } catch (e2) {} }

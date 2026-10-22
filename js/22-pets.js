@@ -463,10 +463,10 @@ function _petEnforceCarry() {   // 換角色載入：魅力不足/超過4隻→�
     let cha = Number(player.d.cha), used = 0, n = 0;
     out.forEach(p => {
         let need = (PET_BOOK[p.form] || {}).cha || 6;
-        if (n >= PET_CARRY_MAX || used + need > cha) {
+        if (n >= (window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSlots(PET_CARRY_MAX):PET_CARRY_MAX) /* relic-companion:slots-_petEnforceCarry */ || used + need > cha) {
             p.outOwner = null; p.outSlot = null; p.outV = _petNowStamp(); _petRosterDirty = true;
             // 🐾 v3.3.30 補訊息（用戶回報黃金龍「莫名自己收回」＝原本靜默）：說明原因（魅力不足/超過上限）·同一寵收回後不再入 petsOutList→不會重複洗版
-            try { logSys(`<span class="text-amber-300">⚠ ${n >= PET_CARRY_MAX ? `超過攜帶上限 ${PET_CARRY_MAX} 隻` : `魅力不足（${petDisplayName(p)} 需 ${need}·已用 ${used}／目前魅力 ${cha}）`}，${petDisplayName(p)} 已自動返回寵物保管。</span>`); } catch (e) {}
+            try { logSys(`<span class="text-amber-300">⚠ ${n >= (window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSlots(PET_CARRY_MAX):PET_CARRY_MAX) /* relic-companion:slots-_petEnforceCarry */ ? `超過攜帶上限 ${(window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSlots(PET_CARRY_MAX):PET_CARRY_MAX) /* relic-companion:slots-_petEnforceCarry */} 隻` : `魅力不足（${petDisplayName(p)} 需 ${need}·已用 ${used}／目前魅力 ${cha}）`}，${petDisplayName(p)} 已自動返回寵物保管。</span>`); } catch (e) {}
         }
         else { used += need; n++; }
     });
@@ -614,7 +614,7 @@ function petDeployToggle(uidv) {
     if (isOut) { p.outOwner = null; p.outSlot = null; p.outV = _petNowStamp(); logSys(`${petDisplayName(p)} 返回了寵物保管。`); }
     else {
         let outs = petsOutList();
-        if (outs.length >= PET_CARRY_MAX) { logSys(`<span class="text-red-400">最多同時攜帶 ${PET_CARRY_MAX} 隻寵物。</span>`); return; }
+        if (outs.length >= (window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSlots(PET_CARRY_MAX):PET_CARRY_MAX) /* relic-companion:slots-petDeployToggle */) { logSys(`<span class="text-red-400">最多同時攜帶 ${(window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSlots(PET_CARRY_MAX):PET_CARRY_MAX) /* relic-companion:slots-petDeployToggle */} 隻寵物。</span>`); return; }
         let need = (PET_BOOK[p.form] || {}).cha || 6;
         if (petChaUsed() + need > (player.d.cha || 0)) { logSys(`<span class="text-red-400">魅力不足：攜帶 ${p.form} 需要魅力 ${need}（目前已用 ${petChaUsed()}/${player.d.cha || 0}）。</span>`); return; }
         p.outOwner = owner; p.outSlot = slot; p.outV = _petNowStamp(); p.hp = Math.max(1, p.hp);
@@ -820,7 +820,7 @@ function petsGainExp(playerGain) {
     let each = Math.floor(playerGain);
     if (each <= 0) return;
     elig.forEach(p => {
-        p.exp = (p.exp || 0) + each;
+        p.exp = (p.exp || 0) + Math.floor(each * (typeof window.__afkTtmiPetExpMult === 'function' ? window.__afkTtmiPetExpMult(p) : 1)); /* relic-runtime:ttmi-pet-exp */
         let up = 0;
         while (p.lv < _cap && p.exp >= petExpReq(p.lv)) {
             p.exp -= petExpReq(p.lv);
@@ -884,7 +884,7 @@ function petsTick() {
             p._castCd = (p._castCd != null ? p._castCd : (d.castItv - 1)) - 1;
             if (p._castCd <= 0 && (p._actionCd || 0) <= 0) {
                 let _ok; if (typeof threatWrap === 'function') threatWrap(p, () => { _ok = petCastSkill(p, d, tgt); }); else _ok = petCastSkill(p, d, tgt);   // 🎯 v3.7.97 仇恨：寵物技能傷害→記給該寵物
-                if (_ok) { p._castCd = d.castItv; p._actionCd = 4; }
+                if (_ok) { p._castCd = window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.nextPetSkillWait(p,d.castItv):d.castItv; /* relic-companion:pet-next-wait */ p._actionCd = 4; }
                 else p._castCd = Math.min(10, d.castItv);
             }
         }
@@ -910,7 +910,7 @@ function _petStatusTick(p) {
     let st = p._statuses; if (!st) return;
     let dots = [['poison','poisonDmg','poisonTick'],['burn','burnDmg','burnTick'],['scald','scaldDmg','scaldTick'],['bleed','bleedDmg','bleedTick']];
     for (let x of dots) {
-        if ((st[x[0]] || 0) > 0 && state.ticks % Math.max(1, st[x[2]] || 10) === 0) p.hp -= Math.max(1, st[x[1]] || 1);
+        if ((st[x[0]] || 0) > 0 && state.ticks % Math.max(1, st[x[2]] || 10) === 0) { let rd=Math.max(1,st[x[1]]||1); if (window.AFK_RELIC_COMPANIONS) rd=window.AFK_RELIC_COMPANIONS.incoming(p,rd,null,{kind:'dot',dotKind:x[0],direct:false}); p.hp-=rd; if (window.AFK_RELIC_COMPANIONS) window.AFK_RELIC_COMPANIONS.afterIncoming(p,rd,null); } /* relic-companion:pet-dot */
     }
     ['freeze','stun','stone','sleep','paralyze','silence','magicseal','slowAtk','poison','burn','scald','bleed','weaken','disease','blind','potionFrost','foulWater'].forEach(k => { if ((st[k] || 0) > 0) st[k]--; });   // 🌊 v3.6.20 含汙濁之水
     if (p.hp <= 0) _petDown(p, '持續傷害');
@@ -961,7 +961,7 @@ function petAttackOnce(p, d, target, forceCrit, addDmg, skName) {
             dmg = Math.max(1, (d.attackMult || 1) > 1 ? Math.ceil(dmg * atkMult) : Math.floor(dmg * atkMult));   // 🦎 蜥蜴普攻以同級黃金龍為底再套角色倍率；其餘寵物維持原取整
             if (skName && typeof _relicPetSkillMult === 'function') dmg = Math.max(1, Math.floor(dmg * _relicPetSkillMult()));
             markBossPhysicalHit(target);
-            target.curHp -= dmg; if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(target, dmg, skName ? 'magic' : 'melee'); target.justHit = 'none'; mobWake(target);   // 🌅 巨大骷髏：寵物普攻＝近距離、寵物技能＝魔法
+            if (window.AFK_RELIC_RUNTIME) dmg=window.AFK_RELIC_RUNTIME.companionDamage(player,p,target,dmg,{kind:'pet',skillId:skName||null,element:'none'}); target.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,target,dmg,{nativeRefund:'terror',kind:'melee'}):dmg)); /* card-combat:refund-petAttackOnce */ /* card-combat:settle-petAttackOnce */ /* relic-companion:pet-hit */ if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(target, dmg, skName ? 'magic' : 'melee'); target.justHit = 'none'; mobWake(target);   // 🌅 巨大骷髏：寵物普攻＝近距離、寵物技能＝魔法
             let _pw = p && p.eq && p.eq.wpn ? DB.items[p.eq.wpn.id] : null;
             if (_pw && _pw.petBleed && target.curHp > 0 && typeof applyBleed === 'function') applyBleed(target, dmg, 5, 'pet');   // 🏺 遺物 仿製小惡魔尖牙套：寵物一般攻擊命中造成出血；🎯 DPS 歸夥伴
             _petAnimAct(p, 'attack', target.uid);
@@ -983,13 +983,13 @@ function petDebuffChance(p, d, target, sk) {
 }
 function petCastSkill(p, d, target) {
     let def = PET_BOOK[p.form];
-    let usable = def.sk.filter(s => p.mp >= s.mp);
+    let usable = def.sk.filter(s => p.mp >= (window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSkillCost(p,s.mp):s.mp) /* relic-companion:pet-affordable */);
     if (!usable.length) return false;
     // 權重擇一（w 欄位·未標=均分）
     let sk;
     if (usable.length === 1) sk = usable[0];
     else { let tw = usable.reduce((s, x) => s + (x.w || 100 / usable.length), 0); let rr = Math.random() * tw; for (let x of usable) { rr -= (x.w || 100 / usable.length); if (rr < 0) { sk = x; break; } } sk = sk || usable[usable.length - 1]; }
-    p.mp -= sk.mp;
+    p.mp -= window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSkillCost(p,sk.mp):sk.mp; /* relic-companion:pet-pay */
     _combatSrc = 'pet';
     let _snap = (sk.kind !== 'extra' && typeof _dpsSnap === 'function') ? _dpsSnap() : null;
     try {
@@ -1044,7 +1044,7 @@ function petCastSkill(p, d, target) {
                 dmg = Math.max(1, (d.magicMult || 1) > 1 ? Math.ceil(dmg * magicMult) : Math.floor(dmg * magicMult));   // 🦎 蜥蜴魔法以同級黃金龍為底再套角色倍率；其餘寵物維持原取整
                 if (typeof _relicPetSkillMult === 'function') dmg = Math.max(1, Math.floor(dmg * _relicPetSkillMult()));   // 🏺 馴獸師的訓狗棒：寵物技能×1.5
                 if (sk.n && sk.n.includes('冰錐') && typeof equipSkillDmgMult === 'function') dmg = Math.max(1, Math.floor(dmg * equipSkillDmgMult(DB.skills.sk_ice_spike, 'sk_ice_spike')));   // 🏺 v3.2.35 暴走兔最愛的胡蘿蔔：攜帶的暴走兔/高等暴走兔施放的冰錐也 ×1.5（掃玩家裝備 skillDmgMult.sk_ice_spike·與訓狗棒相乘）
-                m.curHp -= dmg; if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(m, dmg, 'magic'); m.justHit = sk.ele || 'none'; mobWake(m);   // 🌅 巨大骷髏：寵物傷害技能視為魔法
+                if (window.AFK_RELIC_RUNTIME) dmg=window.AFK_RELIC_RUNTIME.companionDamage(player,p,m,dmg,{kind:'pet',skillId:sk.n,element:sk.ele||'none'}); m.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,m,dmg,{nativeRefund:'terror',kind:'magic'}):dmg)); /* card-combat:refund-petCastSkill */ /* card-combat:settle-petCastSkill */ /* relic-companion:pet-magic */ if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(m, dmg, 'magic'); m.justHit = sk.ele || 'none'; mobWake(m);   // 🌅 巨大骷髏：寵物傷害技能視為魔法
                 let _fz = false;   // 🦎 v3.6.43 詛咒蜥蜴冰雪暴：freezeCh% 機率冰凍 4 秒（頭目免疫冰凍·比照 js/04 BOSS_IMMUNE）
                 if (sk.freezeCh && m.curHp > 0 && Math.random() * 100 < sk.freezeCh && !(m.boss && typeof BOSS_IMMUNE !== 'undefined' && BOSS_IMMUNE.includes('freeze'))) {
                     m.st = m.st || newMobStatus(); m.st.freeze = Math.max(m.st.freeze || 0, 40); _fz = true;
@@ -1091,7 +1091,7 @@ function enemyAttackPet(mob, p) {
     if (typeof ironGuardTauntWeakensAttack === 'function' && ironGuardTauntWeakensAttack(mob)) dmg = Math.floor(dmg * 0.9);   // 🔮 鐵衛 5/5：受嘲諷目標的一般攻擊傷害 -10%
     dmg = Math.max(1, Math.floor(dmg * riftDamageMult()));
     if (petDevotionGuardOn(p)) dmg = 0;   // 🏺 v3.6.44 珍愛夥伴的執念：復活後 8 秒受到傷害 −100%
-    p.hp -= dmg;
+    if (window.AFK_RELIC_COMPANIONS) dmg=window.AFK_RELIC_COMPANIONS.incoming(p,dmg,mob,{kind:'melee',heavy:heavy}); p.hp -= dmg; if (window.AFK_RELIC_COMPANIONS) window.AFK_RELIC_COMPANIONS.afterIncoming(p,dmg,mob); /* relic-companion:enemyAttackPet-incoming */
     _petAnimAct(p, 'hurt');
     if (!p._stunCycle) { p._atkCd = (p._atkCd || 0) + d.stunTicks; p._stunCycle = true; }   // 硬直：延後下次攻擊
     logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 攻擊寵物 <span class="text-sky-300 font-bold">${p.form}</span>，造成 ${dmg} 點傷害。`, 'enemy-attack', 'enemy');
@@ -1133,7 +1133,7 @@ function applyMobMagicToPet(mob, sk, p) {
     dmg = Math.max(1, Math.floor(Math.max(1, dmg * shMul) * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1) * petMasteryTakenMult() * petArmorDmgReduceMult(p)));   // 👑 夥伴精通：受到傷害 −50%；🏺 寵物專用盔甲：受傷 ×(1−petDmgReduce)
     dmg = Math.max(1, Math.floor(dmg * riftDamageMult()));
     if (petDevotionGuardOn(p)) dmg = 0;   // 🏺 v3.6.44 珍愛夥伴的執念：復活後 8 秒受到傷害 −100%（魔法亦免）
-    p.hp -= dmg; _petAnimAct(p, 'hurt');
+    if (window.AFK_RELIC_COMPANIONS) dmg=window.AFK_RELIC_COMPANIONS.incoming(p,dmg,mob,{kind:'magic',element:sk.ele||'none',skill:sk}); p.hp -= dmg; if (window.AFK_RELIC_COMPANIONS) window.AFK_RELIC_COMPANIONS.afterIncoming(p,dmg,mob); /* relic-companion:applyMobMagicToPet-incoming */ _petAnimAct(p, 'hurt');
     if (!p._stunCycle) { p._atkCd = (p._atkCd || 0) + d.stunTicks; p._stunCycle = true; }
     logCombat(`<span class="${getMobColor(mob.lv)}">${mob.n}</span> 施放${sk.skn || '魔法'}，對 ${nm} 造成 ${dmg} 點魔法傷害。`, 'enemy');
     if (sk.vamp || sk.vampFull) { let heal = sk.vampFull ? dmg : roll(sk.vamp[0], sk.vamp[1]); mob.curHp = Math.min(mob.hp, mob.curHp + heal); }
@@ -1175,10 +1175,12 @@ function petTryPotion(p) {   // HP<X% 用治癒藥水（邏輯同傭兵 allyTryP
         if (!stack) return;
     }
     stack.cnt--; if (stack.cnt <= 0) player.inv = player.inv.filter(i => i.uid !== stack.uid);   // 🛡️ v3.2.42 稽核修：只移除喝空的那疊（原全背包 filter 會誤刪 cnt 為 undefined 的舊物品）
-    let h = Math.max(1, Math.floor(potionHealBase(pdef) * (1 + getConPotionPct((player.d && player.d.con) || 0) / 100)));
-    if (p._statuses && p._statuses.potionFrost > 0) h = Math.max(1, Math.floor(h * 0.5));   // 🌅 藥水霜化：寵物也以自己的 MR/狀態判定，不再借用主角色結果
-    if (p._statuses && p._statuses.foulWater > 0) h = Math.max(1, Math.floor(h * 0.5));   // 🌊 v3.6.20 汙濁之水：治癒藥水也減半
+    let h = Math.max(1, Math.floor(potionHealBase(pdef, player) * /* relic-runtime:potion-owner-pet */ (1 + getConPotionPct((player.d && player.d.con) || 0) / 100)));
+    if (window.AFK_RELIC_RUNTIME) h=window.AFK_RELIC_RUNTIME.foreignHeal(p,h,'potion',{item:pdef});
+    if (p._statuses && p._statuses.potionFrost > 0 && !(window.AFK_RELIC_RUNTIME && window.AFK_RELIC_RUNTIME.ignorePotionReduction(p))) /* relic-runtime:potion-before-p */ h = Math.max(1, Math.floor(h * 0.5));   // 🌅 藥水霜化：寵物也以自己的 MR/狀態判定，不再借用主角色結果
+    if (p._statuses && p._statuses.foulWater > 0 && !(window.AFK_RELIC_RUNTIME && window.AFK_RELIC_RUNTIME.ignorePotionReduction(p))) /* relic-runtime:potion-foul-p */ h = Math.max(1, Math.floor(h * 0.5));   // 🌊 v3.6.20 汙濁之水：治癒藥水也減半
     p.hp = Math.min(petMhpEff(p), p.hp + h);
+    if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.foreignHealDone(p,h,'onPotion'); /* relic-runtime:potion-after-p */
     p._potCd = 10;
     logCombat(`寵物 <span class="text-emerald-300 font-bold">${p.form}</span> 飲用 ${pdef.n}，恢復 ${h} 點 HP。`, 'heal');
     petMarkDirty();
@@ -1307,10 +1309,10 @@ function renderPetStorageNPC(div, confirmUid) {
     let vicCnt = player.inv.filter(i => i.id === 'item_victory_fruit').reduce((s, i) => s + (i.cnt || 0), 0);
     div.innerHTML = `
     <div class="flex flex-col gap-3 p-1" data-petui="1">
-        <div class="text-slate-300 text-sm leading-relaxed">${hostName}：我幫你照顧捕獲的寵物。<b class="text-amber-300">最多保管 ${PET_STORAGE_MAX} 隻，同一模式的角色共通</b>。其他角色出戰中的寵物會顯示「使用中」，<b class="text-amber-200">必須先由原角色收回，不能直接轉移</b>。使用誘捕道具後擊殺對應的動物即可捕獲；點「出戰」讓寵物加入隊伍（最多 ${PET_CARRY_MAX} 隻·依寵物需求消耗魅力）。<b class="text-amber-300">只有「一般型態」的寵物（Lv30 以上）可進化，且有兩條路</b>：用「進化果實」→對應的高等型態，或用「勝利果實」→黃金龍；兩種果實都帶在身上時，進化前可自行選擇要走哪條路。高等型態與黃金龍都是最終型態、不會再進化——身上沒有果實可是不能進化的喔。</div>
+        <div class="text-slate-300 text-sm leading-relaxed">${hostName}：我幫你照顧捕獲的寵物。<b class="text-amber-300">最多保管 ${PET_STORAGE_MAX} 隻，同一模式的角色共通</b>。其他角色出戰中的寵物會顯示「使用中」，<b class="text-amber-200">必須先由原角色收回，不能直接轉移</b>。使用誘捕道具後擊殺對應的動物即可捕獲；點「出戰」讓寵物加入隊伍（最多 ${(window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSlots(PET_CARRY_MAX):PET_CARRY_MAX) /* relic-companion:slots-renderPetStorageNPC */} 隻·依寵物需求消耗魅力）。<b class="text-amber-300">只有「一般型態」的寵物（Lv30 以上）可進化，且有兩條路</b>：用「進化果實」→對應的高等型態，或用「勝利果實」→黃金龍；兩種果實都帶在身上時，進化前可自行選擇要走哪條路。高等型態與黃金龍都是最終型態、不會再進化——身上沒有果實可是不能進化的喔。</div>
         <div class="flex items-center gap-4 bg-slate-800/60 border border-slate-600 rounded p-3 text-sm flex-wrap">
             <span>保管：<span class="text-amber-300 font-bold">${list.length}/${PET_STORAGE_MAX}</span></span>
-            <span>出戰：<span class="text-emerald-300 font-bold">${petsOutList().length}/${PET_CARRY_MAX}</span></span>
+            <span>出戰：<span class="text-emerald-300 font-bold">${petsOutList().length}/${(window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.petSlots(PET_CARRY_MAX):PET_CARRY_MAX) /* relic-companion:slots-renderPetStorageNPC */}</span></span>
             <span>魅力：<span class="${petChaUsed() > cha ? 'text-red-400' : 'text-green-400'} font-bold">${petChaUsed()}/${cha}</span></span>
             <span>進化果實×<span class="text-amber-300 font-bold">${evoCnt}</span>　勝利果實×<span class="text-amber-300 font-bold">${vicCnt}</span></span>
         </div>

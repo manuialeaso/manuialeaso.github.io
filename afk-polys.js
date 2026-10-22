@@ -16,7 +16,6 @@
 (function () {
   'use strict';
   var T = window.AFK_TOGGLES;
-  if (T && !T.enabled('polys')) return;
   if (typeof POLY_TIERS === 'undefined') { console.warn('[AFK-polys] 找不到變身表，略過'); return; }
 
   // 透視鏡 11 欄 → 遊戲武器家族
@@ -55,6 +54,10 @@
     form('生日慶祝妖精(遠攻型)', 52, [90, 80, 80, 72, 90, 96, 80, 90, 90, 72, 80], 84, 72, 0.25, { controlOnly: true }),
     form('生日慶祝妖精(魔法型)', 52, [90, 80, 72, 72, 90, 96, 80, 90, 90, 72, 80], 84, 80, 0.25, { controlOnly: true })
   ];
+  // Collection requirements remain stable when the optional normal-form menu
+  // is disabled. This is data only; inserting normal forms still obeys its switch.
+  window.__afkPolyCatalog = LV52.concat(LV80, CTRL);
+  if (T && !T.enabled('polys')) return;
   var exists = function (n) { return POLY_TIERS.some(function (t) { return t.forms.some(function (f) { return f.n === n; }); }); };
   var tierFor = function (lv) { for (var i = 0; i < POLY_TIERS.length; i++) if (lv >= POLY_TIERS[i].min && lv <= POLY_TIERS[i].max) return POLY_TIERS[i]; return POLY_TIERS[POLY_TIERS.length - 1]; };
   var added = [];

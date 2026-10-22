@@ -3,13 +3,13 @@
  *   四大龍副本＝侵蝕安塔瑞斯、破滅法利昂、災厄林德拜爾、深淵巴拉卡斯）
  *
  * 照「侵蝕的安塔瑞斯巢穴」複製：同樣在威頓村 NPC 多魯嘉貝爾進入、同樣 4 區推進（入口→通道→深處→棲息地）、
- * 擊敗各區頭目自動深入、最終龍三段變身、通關回威頓村。入場限制完全相同：
+ * 擊敗各區頭目自動深入、最終龍七階變身、通關回威頓村。入場限制完全相同：
  *   每個角色每天每座副本可通關 1 次（主戰與出戰傭兵都消耗；UTC+8 凌晨 12 點重置；失敗／離開不消耗）、
  *   區內禁止傳送、不能選地圖、禁止離線掛機（需核心補丁 23）。
  * 各副本的通關次數分開計算（安塔瑞斯通關不影響法利昂）。
  *
  * 額外效果（只有這三座新副本）：
- *   ‧房間效果：在副本內每秒受到該龍屬性傷害 100（吃對應屬性抗性；你與傭兵都會受到）
+ *   ‧四龍房間效果：每秒 500 真實傷害＋500 對應屬性傷害（屬性部分受抗性影響；玩家與傭兵皆受影響）
  *   ‧王的效果：場上有頭目時，每 20 秒對全隊施放三種治療減益之一，持續 10 秒：
  *       死亡藥水（喝治癒藥水變成扣血）、死亡治療（治癒魔法變成扣血）、減少治療（治癒效果減半）
  *
@@ -53,7 +53,7 @@
       var a = DB.items['mat_antharas_' + part] || {};
       DB.items[id] = { n: C.dragon + '之' + MAT[part], type: 'etc', p: a.p || 1000, c: 'text-amber-300', noUse: true, gachaWeight: 0,
         img: 'assets/icons/items/' + C.dragon + '之' + MAT[part] + '.png',
-        d: '從' + C.pre + '的' + C.dragon + '身上取得的龍之素材（' + MAT[part] + '）。之後可用來製作' + C.dragon + '的特殊裝備。' };
+        d: '取自' + C.pre + '的' + C.dragon + '的龍之素材（' + MAT[part] + '），仍殘留古龍氣息。可在材料工坊提煉，亦可作為已開放配方的材料。' };
     });
   });
 
@@ -331,10 +331,16 @@
   var has = function (t, k) { var d = t && debuff.get(t); return !!(d && d[k] > (S().ticks || 0)); };
   var DEB = [['pot', '死亡藥水', '喝治癒藥水會變成扣血'], ['heal', '死亡治療', '治癒魔法會變成扣血'], ['half', '減少治療', '受到的治癒效果減半']];
   var team = function () { var a = []; if (!player.dead) a.push(player); (player.allies || []).forEach(function (x) { if (x && !x._downed && (x.curHp || 0) > 0) a.push(x); }); return a; };
-  var hurt = function (t, dmg) {
-    dmg = Math.max(1, Math.floor(dmg));
-    if (t === player) { player.hp -= dmg; if (player.hp <= 0 && typeof killPlayer === 'function') { killPlayer(); return true; } }
-    else { t.curHp -= dmg; if (t.curHp <= 0) { t.curHp = 0; t._downed = true; t._reviveCd = 150; } }
+  var hurt = function (t, dmg, opts) {
+    if (!t || (t === player ? player.dead || player.hp <= 0 : t._downed || t.curHp <= 0)) return false;
+    dmg = Math.max(0, Math.floor(dmg));
+    var R = window.AFK_RELIC_RUNTIME;
+    var context = Object.assign({ kind: 'dot', dotKind: 'healing-reversal', origin: 'healing-reversal', direct: false, main: false }, opts || {});
+    if (R) dmg = R.incoming(t, dmg, context.attacker || null, context);
+    if (t === player) player.hp -= dmg; else t.curHp -= dmg;
+    if (R) R.afterIncoming(t, dmg, context.attacker || null, context);
+    if (t === player) { if (player.hp <= 0 && typeof killPlayer === 'function') { killPlayer(); return true; } }
+    else if (t.curHp <= 0) { t.curHp = 0; t._downed = true; t._reviveCd = 150; }
     return false;
   };
   if (typeof window.foulWaterHealMult === 'function') {
@@ -434,7 +440,7 @@
       try { dragonTick(); } catch (e) {}
       if (t0 % 10 === 0) {
         var ele = dragonEle(), died0 = false;
-        team().forEach(function (x) { if (!died0) died0 = hurt(x, 500 + 500 * effRes(x, ele)); });   // 500 真實傷害＋500 屬性傷害（吃屬性抗性）
+        team().forEach(function (x) { if (!died0) died0 = hurt(x, 500 + 500 * effRes(x, ele), { dotKind: 'environment', origin: 'dragon-aura', element: ele }); });   // 500 真實傷害＋500 屬性傷害（吃屬性抗性），仍先經護盾與免死判定
         if (died0) return;
       }
     }
@@ -470,7 +476,7 @@
       var r = oNpc.apply(this, arguments);
       try {
         var html = '<div class="border-t border-slate-700 pt-2 mt-2 space-y-2"><div class="font-bold text-fuchsia-300">其他龍之巢穴</div>'
-          + '<div class="text-xs text-slate-400">入場規則同安塔瑞斯（每座副本每日各一次）。巢穴內每秒受到該龍屬性傷害 100（吃屬性抗性）；頭目每 20 秒施放死亡藥水／死亡治療／減少治療其中之一。</div>';
+          + '<div class="text-xs text-slate-400">每座副本每日可通關一次；巢穴每秒造成 500 真實傷害與 500 龍屬性傷害（屬性部分可用抗性減免），頭目每 20 秒隨機施放死亡藥水、死亡治療或減少治療。</div>';
         Object.keys(DRAGONS).forEach(function (key) {
           var C = DRAGONS[key], used = withCtx(key, function () { return antharasPartyUsedToday(); });
           html += '<button onclick="afkCorruptEnter(\'' + key + '\')" ' + (used.length ? 'disabled ' : '') + 'class="btn w-full font-bold py-2 rounded ' + (used.length ? 'bg-slate-700 border-slate-600 opacity-60 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700 border-slate-500') + '" style="color:' + C.color + '">'

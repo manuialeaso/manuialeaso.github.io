@@ -1,0 +1,4039 @@
+{
+  "schema": 2,
+  "createdAt": "2026-10-22T15:34:52.229Z",
+  "mode": "matrix",
+  "seed": 20261022,
+  "expectedCases": 1,
+  "stages": [
+    "",
+    "+5",
+    "+10",
+    "昇華支配",
+    "昇華支配+5"
+  ],
+  "methodology": {
+    "clock": "Native tick at 0.1 game seconds; each case uses a new isolated browser context.",
+    "profiles": "Legal creation points, level allocations and rebirth carry from createProfile; native recomputeStats and buildAlly.",
+    "combat": "Unmodified native attacks, skills, enemy spawns, transformations and reflection. Boss encounter selection is fixed; stats are not changed.",
+    "reflectionPressure": "Four additional cases hold only the player ordinary attack schedule and offensive auto-cast until a native reflection window of the matching damage type appears. Enemy actions, environmental damage, defensive counters and healing remain active. No reflection status is inserted. For the two GM pressure cases, a normal final-stage weapon100 outfit waits first, then native equipItem equips the GM item during the natural window without replenishing HP.",
+    "supplies": "100 white potions; native auto-buy to 100; potion threshold 75%; native haste/class/blue potions enabled. No manually selected polymorph, cards, dolls or manually granted invulnerability; native equipment-forced transformations remain active.",
+    "skills": "All class/level-legal skills learned; one legal mastery before rebirth, native all-masteries after rebirth. Mage auto-casts tornado; legal healing selected at 70% HP. Listed safe buffs use native automatic casts.",
+    "party": "One knight leader plus 3 knights, 4 elves, 4 mages and 4 illusionists, all level150 reborn; 15 allies instantiated by native buildAlly from isolated test saves.",
+    "measurement": "Read/write-transparent HP observers record bounded HP loss, native recovery, raw single-hit loss and minimum HP. Net DPS=(actual HP loss-native enemy recovery)/elapsed game time. Overkill is excluded from applied damage.",
+    "limitation": "One fixed seed per configuration is a reproducible scenario, not a statistical estimate of win probability. Lair tests begin in the final room, retaining all seven native stages and mechanics."
+  },
+  "sourceStart": {
+    "afk-relic-weapons.js": "f7430004f2f524df",
+    "afk-relic-weapon-bridge.js": "4ddad5c50d46e731",
+    "afk-relic-runtime.js": "fb0395b880a51b78",
+    "afk-relic-defense.js": "e0a579dccd656fde",
+    "afk-relic-defense-bridge.js": "bbec977d32fe8511",
+    "afk-relic-companions.js": "0b3300209218a2c1",
+    "afk-relic-integration.js": "0b4725597de35544",
+    "afk-relic-gm.js": "364f8d5bde8dc4d0",
+    "afk-relicfx.js": "10cd3ff8eed72745",
+    "afk-relicplus.js": "f2c2b93bbdb52c1d",
+    "afk-corrupt.js": "b079f29148acc341",
+    "afk-dreamhell.js": "b3910df9711ee211",
+    "afk-dreamstar.js": "83c03d98529ebeb5",
+    "afk-rebirth.js": "6e325b8e528d4556",
+    "afk-card-combat.js": "6c20ca0c44bad0ac",
+    "afk-card-forms.js": "1f11bf2a2308b5a6",
+    "afk-card-ascension.js": "9e42d804fc3b65fc",
+    "afk-cardplus.js": "c755b2b80c5ca934",
+    "afk-arts.js": "c3cc37536a5138a1",
+    "afk-stackdot.js": "0b731f34239af36b",
+    "afk-extradata.js": "7173c5b4bdde63e8",
+    "js/00-data.js": "81d761a1d17d61bb",
+    "js/01-drops-config.js": "0ce660b13022c236",
+    "js/02-stats-recompute.js": "618e3ecd7e99c1a6",
+    "js/03-combat-core.js": "190d8f30a6b1a7fe",
+    "js/04-combat-attack.js": "c279ccd019238443",
+    "js/05-kill-progression.js": "0669495780f38daa",
+    "js/06-status-allies.js": "a6a88eb14e91f654",
+    "js/07-skills-cast.js": "4c3ee19d2bbc9a3e",
+    "js/08-items-equip.js": "910157216b56792c",
+    "js/09-vfx-render.js": "c0f0e91e1939a2d1",
+    "js/10-ui-tabs.js": "1bf51764ce929f1d",
+    "js/11-world-map.js": "0558770fbcfb095f",
+    "js/12-npc-quests.js": "66c949067415e103",
+    "js/13-shop-save.js": "9381995b4ba309ae",
+    "js/14-craft-pandora.js": "5461285580d8c232",
+    "js/15-cards.js": "d27dbe30063980ae",
+    "js/16-equip-book.js": "06993d3f559d8306",
+    "js/17-audio.js": "0533a411a7fb1fe3",
+    "js/18-misc-book.js": "9a4bbc3677194ff7",
+    "js/19-equipment-window.js": "f7b534e88c2da59f",
+    "js/20-warehouse-window.js": "11d7418a9978323d",
+    "js/21-relic-book.js": "40aef7ae9b066c6c",
+    "js/22-pets.js": "cf9144338c49c4de",
+    "js/23-summons.js": "3b313d1e6e8f82b1",
+    "js/24-pandora-relic-market.js": "157a07455ae5a4f7",
+    "js/25-clan-system.js": "6365f5ea0b5ca125",
+    "js/26-world-channel.js": "f03d4f92d3f4d497",
+    "js/27-offline-rewards.js": "8381c876481dfd97",
+    "js/28-pvp-arena.js": "735b3ed78942a3e9",
+    "js/29-siege-v2-data.js": "9e6e76f0aade3334",
+    "js/30-siege-v2.js": "a029565379174d04",
+    "js/31-castle-guards.js": "7d7e98043aab6099",
+    "js/32-threat.js": "2d4b566d70535671"
+  },
+  "results": [
+    {
+      "id": "lv100-knight-w51-s4",
+      "cls": "knight",
+      "weapon": 51,
+      "lv": 100,
+      "rebirth": 0,
+      "stage": 4,
+      "map": "cr_lindvior_lair",
+      "seed": 20261022,
+      "maxSeconds": 300,
+      "traceDefense": true,
+      "status": "dead",
+      "elapsedSeconds": 104.1,
+      "clearSeconds": null,
+      "netDps": 13379.582132564843,
+      "bossNetDps": 9250.043227665707,
+      "totals": {
+        "loss": 1415086.5,
+        "recovery": 22272,
+        "bossLoss": 985201.5,
+        "bossRecovery": 22272,
+        "maxRawHit": 7890,
+        "maxAppliedHit": 6930,
+        "reflectionHpLoss": 17613.15625,
+        "reflectionEvents": 37,
+        "reflectionIncoming": 146048,
+        "reflectionAfterDefense": 17870,
+        "reflectionCalls": 142,
+        "reflectionMaxIncoming": 3930,
+        "reflectionMaxAfterDefense": 1965,
+        "healing": 75323.84375
+      },
+      "bosses": [
+        {
+          "name": "災厄的林德拜爾",
+          "id": "cr_lindvior_d1",
+          "boss": true,
+          "stage": 1,
+          "maxHp": 90000,
+          "spawnedAt": 0,
+          "transformedAt": 17,
+          "defeatedAt": null,
+          "lockedAt": 7
+        },
+        {
+          "name": "災厄的狂怒林德拜爾",
+          "id": "cr_lindvior_d2",
+          "boss": true,
+          "stage": 2,
+          "maxHp": 180000,
+          "spawnedAt": 17,
+          "transformedAt": 40.6,
+          "defeatedAt": null,
+          "lockedAt": 30.6
+        },
+        {
+          "name": "災厄的發瘋林德拜爾",
+          "id": "cr_lindvior_d3",
+          "boss": true,
+          "stage": 3,
+          "maxHp": 360000,
+          "spawnedAt": 40.6,
+          "transformedAt": 78,
+          "defeatedAt": null,
+          "lockedAt": 68
+        },
+        {
+          "name": "災厄的癲狂林德拜爾",
+          "id": "cr_lindvior_d4",
+          "boss": true,
+          "stage": 4,
+          "maxHp": 396000,
+          "spawnedAt": 78,
+          "transformedAt": null,
+          "defeatedAt": null,
+          "lockedAt": null
+        }
+      ],
+      "enemyCount": 176,
+      "initial": {
+        "leader": {
+          "name": "Balance knight 0",
+          "cls": "knight",
+          "lv": 100,
+          "rebirth": 0,
+          "base": {
+            "str": 20,
+            "dex": 12,
+            "con": 18,
+            "int": 8,
+            "wis": 9,
+            "cha": 8
+          },
+          "alloc": {
+            "str": 40,
+            "dex": 0,
+            "con": 11,
+            "int": 0,
+            "wis": 0,
+            "cha": 0
+          },
+          "mastery": "k_counter",
+          "skills": 13,
+          "hp": 5442.4375,
+          "mp": 3317.5,
+          "stats": {
+            "str": 100,
+            "dex": 78,
+            "con": 94,
+            "int": 73,
+            "wis": 74,
+            "cha": 73,
+            "meleeDmg": 178,
+            "meleeHit": 144,
+            "meleeCrit": 14,
+            "rangedDmg": 96,
+            "rangedHit": 72,
+            "rangedCrit": 7,
+            "extraDmg": 0,
+            "extraHit": 33,
+            "magicDmg": 21,
+            "magicHit": 23,
+            "magicCrit": 9,
+            "extraMp": 21,
+            "mpReduce": 30,
+            "meleeCritDmg": 50,
+            "rangedCritDmg": 50,
+            "magicCritDmg": 50,
+            "ac": -315,
+            "mr": 606,
+            "er": 200,
+            "dr": 99,
+            "resFire": 650,
+            "resWater": 710,
+            "resEarth": 650,
+            "resWind": 650,
+            "hpRegenMax": 52,
+            "hpR": 2033,
+            "mpR": 2024,
+            "aspd": 0.48,
+            "crushDr": 0,
+            "meleeHaste": 0,
+            "atkSpdPct": 0,
+            "hpRegenFaster": 0,
+            "noEvade": false,
+            "critDmgLowHp": null,
+            "thornsDmg": 0,
+            "instakillFull": 0,
+            "onDmgHeal": null,
+            "onDmgHealCd": 0,
+            "onDmgHealName": "",
+            "hurtExplode": 0,
+            "fireNullify": false,
+            "wearerEle": "",
+            "physDrGated": 0,
+            "lowMpRegenBonus": 0,
+            "moveSpeedPct": 100,
+            "bossEncounterPct": 0,
+            "corrosiveJellySkin": false,
+            "charmOnHit": false,
+            "poisonHealMult": 0,
+            "dotCrit": false,
+            "dmgReflect": 0,
+            "fullHpMpHalf": false,
+            "eleWpnMult": null,
+            "equipExtraAtk": 0,
+            "immStone": false,
+            "immPoison": false,
+            "immSilence": false,
+            "resNone": 0,
+            "_raw": {
+              "str": 145,
+              "dex": 78,
+              "int": 73,
+              "con": 94,
+              "wis": 74,
+              "cha": 73
+            },
+            "hitstun": 0,
+            "hitstunReduce": 100000,
+            "castLock": 7,
+            "supportCastLock": 7,
+            "_cardWeightBonus": 0,
+            "_equipWeightBonus": 0,
+            "_miscWeightBonus": 0,
+            "intSp": 21,
+            "itemSp": 0,
+            "weightPct": 14,
+            "loadTier": 0,
+            "equippedWeight": 881,
+            "weightCapacity": 6050,
+            "aspdOff": 0
+          },
+          "equipment": {
+            "wpn": {
+              "id": "wpn_uncursed_emperor_blade~r15~a5",
+              "name": "解除詛咒的真死亡騎士．冥皇執行劍",
+              "req": "royal,knight,elf,mage,dark,dragon",
+              "stage": 4
+            },
+            "helm": {
+              "id": "relic_weathered_skull~r15~a5",
+              "name": "風化的頭蓋骨",
+              "req": "all"
+            },
+            "armor": {
+              "id": "relic_steel_bulwark~r15~a5",
+              "name": "不動的鋼鐵堅壁",
+              "req": "royal,knight,warrior"
+            },
+            "shin": {
+              "id": "relic_orc_loincloth~r15~a5",
+              "name": "妖魔的兜襠布",
+              "req": "all"
+            },
+            "shield": {
+              "id": "relic_lizard_shield~r15~a5",
+              "name": "蜥蜴人的鋼鐵圓盾",
+              "req": "royal,knight,elf,dark,dragon"
+            },
+            "cloak": {
+              "id": "relic_guardian_riddle~r15~a5",
+              "name": "守護獸的難題",
+              "req": "all"
+            },
+            "tshirt": {
+              "id": "relic_magic_resist_shirt~r15~a5",
+              "name": "魔力阻抗襯衫",
+              "req": "all"
+            },
+            "gloves": {
+              "id": "relic_general_swordguard~r15~a5",
+              "name": "將軍愛用的握劍護腕",
+              "req": "all"
+            },
+            "boots": {
+              "id": "relic_monia_sandals~r15~a5",
+              "name": "莫妮亞的疾速涼鞋",
+              "req": "all"
+            },
+            "ring1": {
+              "id": "relic_sr_child_ring~r10~a5",
+              "name": "牛鬼之子的黑戒",
+              "req": "all"
+            },
+            "ring2": {
+              "id": "relic_sr_kama_pot~r10~a5",
+              "name": "鐮鼬的藥壺",
+              "req": "all"
+            },
+            "amulet": {
+              "id": "relic_stbernard_barrel~r10~a5",
+              "name": "聖伯納的急救酒桶",
+              "req": "all"
+            },
+            "ear1": {
+              "id": "relic_pup_fang~r10~a5",
+              "name": "幼犬的稚嫩犬齒",
+              "req": "all"
+            },
+            "belt": {
+              "id": "relic_bluetail_tail~r10~a5",
+              "name": "藍尾蜥蜴的斷尾",
+              "req": "all"
+            }
+          }
+        },
+        "allies": [],
+        "allyCap": 7,
+        "encounter": {
+          "name": "災厄的林德拜爾",
+          "id": "cr_lindvior_d1",
+          "boss": true,
+          "stage": 1,
+          "maxHp": 90000,
+          "spawnedAt": 0,
+          "transformedAt": 17,
+          "defeatedAt": null,
+          "lockedAt": 7
+        }
+      },
+      "friendly": [
+        {
+          "name": "Balance knight 0",
+          "maxHp": 5442.4375,
+          "minHp": 0,
+          "damage": 80509.4375,
+          "healing": 75323.84375,
+          "reflectionLoss": 17613.15625
+        }
+      ],
+      "alliesAlive": 0,
+      "finalHp": 0,
+      "finalMp": 3296.5,
+      "finalMap": "cr_lindvior_lair",
+      "death": {
+        "seconds": 104.1,
+        "actor": "Balance knight 0",
+        "amount": 735.65625,
+        "raw": 992.5,
+        "kind": "reflection",
+        "damageType": "melee",
+        "enemy": "災厄的癲狂林德拜爾",
+        "hpAtDeathCall": -256.84375
+      },
+      "transientHpZeroCrossings": 1,
+      "recentDamage": [
+        {
+          "seconds": 99.5,
+          "actor": "Balance knight 0",
+          "amount": 331.25,
+          "raw": 331.25,
+          "kind": "reflection",
+          "damageType": "melee",
+          "enemy": "災厄的癲狂林德拜爾"
+        },
+        {
+          "seconds": 100,
+          "actor": "Balance knight 0",
+          "amount": 562,
+          "raw": 562,
+          "kind": "dragon-aura",
+          "damageType": "dot",
+          "dotKind": "environment",
+          "enemy": null
+        },
+        {
+          "seconds": 100.3,
+          "actor": "Balance knight 0",
+          "amount": 98,
+          "raw": 98,
+          "kind": "healing-reversal",
+          "damageType": "dot",
+          "dotKind": "healing-reversal",
+          "enemy": null
+        },
+        {
+          "seconds": 101,
+          "actor": "Balance knight 0",
+          "amount": 114,
+          "raw": 114,
+          "kind": "healing-reversal",
+          "damageType": "dot",
+          "dotKind": "healing-reversal",
+          "enemy": null
+        },
+        {
+          "seconds": 101,
+          "actor": "Balance knight 0",
+          "amount": 562,
+          "raw": 562,
+          "kind": "dragon-aura",
+          "damageType": "dot",
+          "dotKind": "environment",
+          "enemy": null
+        },
+        {
+          "seconds": 101.7,
+          "actor": "Balance knight 0",
+          "amount": 112,
+          "raw": 112,
+          "kind": "healing-reversal",
+          "damageType": "dot",
+          "dotKind": "healing-reversal",
+          "enemy": null
+        },
+        {
+          "seconds": 102,
+          "actor": "Balance knight 0",
+          "amount": 562,
+          "raw": 562,
+          "kind": "dragon-aura",
+          "damageType": "dot",
+          "dotKind": "environment",
+          "enemy": null
+        },
+        {
+          "seconds": 102.4,
+          "actor": "Balance knight 0",
+          "amount": 124,
+          "raw": 124,
+          "kind": "healing-reversal",
+          "damageType": "dot",
+          "dotKind": "healing-reversal",
+          "enemy": null
+        },
+        {
+          "seconds": 103,
+          "actor": "Balance knight 0",
+          "amount": 562,
+          "raw": 562,
+          "kind": "dragon-aura",
+          "damageType": "dot",
+          "dotKind": "environment",
+          "enemy": null
+        },
+        {
+          "seconds": 103.1,
+          "actor": "Balance knight 0",
+          "amount": 106,
+          "raw": 106,
+          "kind": "healing-reversal",
+          "damageType": "dot",
+          "dotKind": "healing-reversal",
+          "enemy": null
+        },
+        {
+          "seconds": 103.3,
+          "actor": "Balance knight 0",
+          "amount": 447.5,
+          "raw": 447.5,
+          "kind": "reflection",
+          "damageType": "melee",
+          "enemy": "災厄的癲狂林德拜爾"
+        },
+        {
+          "seconds": 103.6,
+          "actor": "Balance knight 0",
+          "amount": 305,
+          "raw": 305,
+          "kind": "reflection",
+          "damageType": "melee",
+          "enemy": "災厄的癲狂林德拜爾"
+        },
+        {
+          "seconds": 103.8,
+          "actor": "Balance knight 0",
+          "amount": 106,
+          "raw": 106,
+          "kind": "healing-reversal",
+          "damageType": "dot",
+          "dotKind": "healing-reversal",
+          "enemy": null
+        },
+        {
+          "seconds": 104,
+          "actor": "Balance knight 0",
+          "amount": 562,
+          "raw": 562,
+          "kind": "dragon-aura",
+          "damageType": "dot",
+          "dotKind": "environment",
+          "enemy": null
+        },
+        {
+          "seconds": 104.1,
+          "actor": "Balance knight 0",
+          "amount": 735.65625,
+          "raw": 992.5,
+          "kind": "reflection",
+          "damageType": "melee",
+          "enemy": "災厄的癲狂林德拜爾"
+        }
+      ],
+      "maxHitEvents": [
+        {
+          "seconds": 0.5,
+          "target": "災厄的林德拜爾",
+          "raw": 925,
+          "actual": 925,
+          "source": "wpn_uncursed_emperor_blade",
+          "origin": "normal"
+        },
+        {
+          "seconds": 1,
+          "target": "災厄的林德拜爾",
+          "raw": 1295,
+          "actual": 1295,
+          "source": "wpn_uncursed_emperor_blade",
+          "origin": "normal"
+        },
+        {
+          "seconds": 1.5,
+          "target": "災厄的林德拜爾",
+          "raw": 1775,
+          "actual": 1775,
+          "source": "wpn_uncursed_emperor_blade",
+          "origin": "normal"
+        },
+        {
+          "seconds": 2.6,
+          "target": "災厄的林德拜爾",
+          "raw": 3360,
+          "actual": 3360,
+          "source": "wpn_uncursed_emperor_blade",
+          "origin": "normal"
+        },
+        {
+          "seconds": 11.6,
+          "target": "災厄的林德拜爾",
+          "raw": 4785,
+          "actual": 1,
+          "source": "wpn_uncursed_emperor_blade",
+          "origin": "normal"
+        },
+        {
+          "seconds": 32.5,
+          "target": "災厄的狂怒林德拜爾",
+          "raw": 7890,
+          "actual": 1,
+          "source": "wpn_uncursed_emperor_blade",
+          "origin": "normal"
+        }
+      ],
+      "defenseDiagnostics": {
+        "hits": [
+          {
+            "seconds": 5.3,
+            "actor": "Balance knight 0",
+            "amount": 413.75,
+            "raw": 413.75,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的林德拜爾",
+            "hpBefore": 3259.4375,
+            "hpAfter": 2845.6875,
+            "incoming": 1655,
+            "afterDefense": 413.75,
+            "preDefense": {
+              "seconds": 5.3,
+              "maxHp": 5442.4375,
+              "hp": 3259.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 5.3,
+              "maxHp": 5442.4375,
+              "hp": 2845.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 5.6,
+            "actor": "Balance knight 0",
+            "amount": 298.75,
+            "raw": 298.75,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的林德拜爾",
+            "hpBefore": 2945.6875,
+            "hpAfter": 2646.9375,
+            "incoming": 1195,
+            "afterDefense": 298.75,
+            "preDefense": {
+              "seconds": 5.6,
+              "maxHp": 5442.4375,
+              "hp": 2945.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 5.6,
+              "maxHp": 5442.4375,
+              "hp": 2646.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 6.1,
+            "actor": "Balance knight 0",
+            "amount": 322.5,
+            "raw": 322.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的林德拜爾",
+            "hpBefore": 2904.9375,
+            "hpAfter": 2582.4375,
+            "incoming": 1290,
+            "afterDefense": 322.5,
+            "preDefense": {
+              "seconds": 6.1,
+              "maxHp": 5442.4375,
+              "hp": 2904.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 6.1,
+              "maxHp": 5442.4375,
+              "hp": 2582.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 6.4,
+            "actor": "Balance knight 0",
+            "amount": 491.25,
+            "raw": 491.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的林德拜爾",
+            "hpBefore": 2686.4375,
+            "hpAfter": 2195.1875,
+            "incoming": 1965,
+            "afterDefense": 491.25,
+            "preDefense": {
+              "seconds": 6.4,
+              "maxHp": 5442.4375,
+              "hp": 2686.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 6.4,
+              "maxHp": 5442.4375,
+              "hp": 2195.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 20.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 22.4,
+            "actor": "Balance knight 0",
+            "amount": 320,
+            "raw": 320,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的狂怒林德拜爾",
+            "hpBefore": 2338.1875,
+            "hpAfter": 2018.1875,
+            "incoming": 1280,
+            "afterDefense": 320,
+            "preDefense": {
+              "seconds": 22.4,
+              "maxHp": 5442.4375,
+              "hp": 2338.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 22.4,
+              "maxHp": 5442.4375,
+              "hp": 2018.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 0,
+                "healReadyAt": 0,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 22.7,
+            "actor": "Balance knight 0",
+            "amount": 251.25,
+            "raw": 251.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的狂怒林德拜爾",
+            "hpBefore": 2614.1875,
+            "hpAfter": 2362.9375,
+            "incoming": 1005,
+            "afterDefense": 251.25,
+            "preDefense": {
+              "seconds": 22.7,
+              "maxHp": 5442.4375,
+              "hp": 2614.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 9.7
+              }
+            },
+            "postDefense": {
+              "seconds": 22.7,
+              "maxHp": 5442.4375,
+              "hp": 2362.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 9.7
+              }
+            }
+          },
+          {
+            "seconds": 23.2,
+            "actor": "Balance knight 0",
+            "amount": 311.25,
+            "raw": 311.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的狂怒林德拜爾",
+            "hpBefore": 2700.9375,
+            "hpAfter": 2389.6875,
+            "incoming": 1245,
+            "afterDefense": 311.25,
+            "preDefense": {
+              "seconds": 23.2,
+              "maxHp": 5442.4375,
+              "hp": 2700.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 9.2
+              }
+            },
+            "postDefense": {
+              "seconds": 23.2,
+              "maxHp": 5442.4375,
+              "hp": 2389.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 9.2
+              }
+            }
+          },
+          {
+            "seconds": 23.5,
+            "actor": "Balance knight 0",
+            "amount": 470,
+            "raw": 470,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的狂怒林德拜爾",
+            "hpBefore": 2443.6875,
+            "hpAfter": 1973.6875,
+            "incoming": 1880,
+            "afterDefense": 470,
+            "preDefense": {
+              "seconds": 23.5,
+              "maxHp": 5442.4375,
+              "hp": 2443.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 8.899999999999999
+              }
+            },
+            "postDefense": {
+              "seconds": 23.5,
+              "maxHp": 5442.4375,
+              "hp": 1973.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 8.899999999999999
+              }
+            }
+          },
+          {
+            "seconds": 24,
+            "actor": "Balance knight 0",
+            "amount": 323.75,
+            "raw": 323.75,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的狂怒林德拜爾",
+            "hpBefore": 2843.6875,
+            "hpAfter": 2519.9375,
+            "incoming": 1295,
+            "afterDefense": 323.75,
+            "preDefense": {
+              "seconds": 24,
+              "maxHp": 5442.4375,
+              "hp": 2843.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 8.399999999999999
+              }
+            },
+            "postDefense": {
+              "seconds": 24,
+              "maxHp": 5442.4375,
+              "hp": 2519.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 35.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 8.399999999999999
+              }
+            }
+          },
+          {
+            "seconds": 45.8,
+            "actor": "Balance knight 0",
+            "amount": 1965,
+            "raw": 1965,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 2879.9375,
+            "hpAfter": 914.9375,
+            "incoming": 3930,
+            "afterDefense": 1965,
+            "preDefense": {
+              "seconds": 45.8,
+              "maxHp": 5442.4375,
+              "hp": 2879.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 45.8,
+              "maxHp": 5442.4375,
+              "hp": 914.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 42.4,
+                "healReadyAt": 32.4,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 46,
+            "actor": "Balance knight 0",
+            "amount": 242.5,
+            "raw": 242.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 2302.9375,
+            "hpAfter": 2060.4375,
+            "incoming": 970,
+            "afterDefense": 242.5,
+            "preDefense": {
+              "seconds": 46,
+              "maxHp": 5442.4375,
+              "hp": 2302.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 9.799999999999997
+              }
+            },
+            "postDefense": {
+              "seconds": 46,
+              "maxHp": 5442.4375,
+              "hp": 2060.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 9.799999999999997
+              }
+            }
+          },
+          {
+            "seconds": 46.6,
+            "actor": "Balance knight 0",
+            "amount": 455,
+            "raw": 455,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 1498.4375,
+            "hpAfter": 1043.4375,
+            "incoming": 1820,
+            "afterDefense": 455,
+            "preDefense": {
+              "seconds": 46.6,
+              "maxHp": 5442.4375,
+              "hp": 1498.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 9.199999999999996
+              }
+            },
+            "postDefense": {
+              "seconds": 46.6,
+              "maxHp": 5442.4375,
+              "hp": 1043.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 9.199999999999996
+              }
+            }
+          },
+          {
+            "seconds": 47.1,
+            "actor": "Balance knight 0",
+            "amount": 265,
+            "raw": 265,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 1427.4375,
+            "hpAfter": 1162.4375,
+            "incoming": 1060,
+            "afterDefense": 265,
+            "preDefense": {
+              "seconds": 47.1,
+              "maxHp": 5442.4375,
+              "hp": 1427.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 8.699999999999996
+              }
+            },
+            "postDefense": {
+              "seconds": 47.1,
+              "maxHp": 5442.4375,
+              "hp": 1162.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 8.699999999999996
+              }
+            }
+          },
+          {
+            "seconds": 47.7,
+            "actor": "Balance knight 0",
+            "amount": 540,
+            "raw": 540,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 1622.4375,
+            "hpAfter": 1082.4375,
+            "incoming": 1080,
+            "afterDefense": 540,
+            "preDefense": {
+              "seconds": 47.7,
+              "maxHp": 5442.4375,
+              "hp": 1622.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.25,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 8.099999999999994
+              }
+            },
+            "postDefense": {
+              "seconds": 47.7,
+              "maxHp": 5442.4375,
+              "hp": 1082.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.25,
+                  "until": 60.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 8.099999999999994
+              }
+            }
+          },
+          {
+            "seconds": 65.8,
+            "actor": "Balance knight 0",
+            "amount": 615,
+            "raw": 615,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 3585.4375,
+            "hpAfter": 2970.4375,
+            "incoming": 1230,
+            "afterDefense": 615,
+            "preDefense": {
+              "seconds": 65.8,
+              "maxHp": 5442.4375,
+              "hp": 3585.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 65.8,
+              "maxHp": 5442.4375,
+              "hp": 2970.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 66.1,
+            "actor": "Balance knight 0",
+            "amount": 287.5,
+            "raw": 287.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 2572.4375,
+            "hpAfter": 2284.9375,
+            "incoming": 1150,
+            "afterDefense": 287.5,
+            "preDefense": {
+              "seconds": 66.1,
+              "maxHp": 5442.4375,
+              "hp": 2572.4375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 66.1,
+              "maxHp": 5442.4375,
+              "hp": 2284.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 66.7,
+            "actor": "Balance knight 0",
+            "amount": 476.25,
+            "raw": 476.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 2330.9375,
+            "hpAfter": 1854.6875,
+            "incoming": 1905,
+            "afterDefense": 476.25,
+            "preDefense": {
+              "seconds": 66.7,
+              "maxHp": 5442.4375,
+              "hp": 2330.9375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 66.7,
+              "maxHp": 5442.4375,
+              "hp": 1854.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 65.8,
+                "healReadyAt": 55.8,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 66.9,
+            "actor": "Balance knight 0",
+            "amount": 242.5,
+            "raw": 242.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 2398.6875,
+            "hpAfter": 2156.1875,
+            "incoming": 970,
+            "afterDefense": 242.5,
+            "preDefense": {
+              "seconds": 66.9,
+              "maxHp": 5442.4375,
+              "hp": 2398.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 9.799999999999997
+              }
+            },
+            "postDefense": {
+              "seconds": 66.9,
+              "maxHp": 5442.4375,
+              "hp": 2156.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 9.799999999999997
+              }
+            }
+          },
+          {
+            "seconds": 67.5,
+            "actor": "Balance knight 0",
+            "amount": 345,
+            "raw": 345,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 2401.1875,
+            "hpAfter": 2056.1875,
+            "incoming": 1380,
+            "afterDefense": 345,
+            "preDefense": {
+              "seconds": 67.5,
+              "maxHp": 5442.4375,
+              "hp": 2401.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 9.200000000000003
+              }
+            },
+            "postDefense": {
+              "seconds": 67.5,
+              "maxHp": 5442.4375,
+              "hp": 2056.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 9.200000000000003
+              }
+            }
+          },
+          {
+            "seconds": 67.7,
+            "actor": "Balance knight 0",
+            "amount": 397.5,
+            "raw": 397.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的發瘋林德拜爾",
+            "hpBefore": 2056.1875,
+            "hpAfter": 1658.6875,
+            "incoming": 1590,
+            "afterDefense": 397.5,
+            "preDefense": {
+              "seconds": 67.7,
+              "maxHp": 5442.4375,
+              "hp": 2056.1875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 9
+              }
+            },
+            "postDefense": {
+              "seconds": 67.7,
+              "maxHp": 5442.4375,
+              "hp": 1658.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 80.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 9
+              }
+            }
+          },
+          {
+            "seconds": 83.2,
+            "actor": "Balance knight 0",
+            "amount": 550,
+            "raw": 550,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 985.6875,
+            "hpAfter": 435.6875,
+            "incoming": 1100,
+            "afterDefense": 550,
+            "preDefense": {
+              "seconds": 83.2,
+              "maxHp": 5442.4375,
+              "hp": 985.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 95.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 83.2,
+              "maxHp": 5442.4375,
+              "hp": 435.6875,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.75,
+                  "until": 95.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": false,
+                "deathReadyAt": 0,
+                "deathCooldownRemaining": 0,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 76.7,
+                "healCooldownRemaining": 0
+              }
+            }
+          },
+          {
+            "seconds": 89.2,
+            "actor": "Balance knight 0",
+            "amount": 895,
+            "raw": 895,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 3396.40625,
+            "hpAfter": 2501.40625,
+            "incoming": 1790,
+            "afterDefense": 895,
+            "preDefense": {
+              "seconds": 89.2,
+              "maxHp": 5442.4375,
+              "hp": 3396.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 100.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 24.5,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 4.5
+              }
+            },
+            "postDefense": {
+              "seconds": 89.2,
+              "maxHp": 5442.4375,
+              "hp": 2501.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 100.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 24.5,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 4.5
+              }
+            }
+          },
+          {
+            "seconds": 89.4,
+            "actor": "Balance knight 0",
+            "amount": 450,
+            "raw": 450,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2501.40625,
+            "hpAfter": 2051.40625,
+            "incoming": 1800,
+            "afterDefense": 450,
+            "preDefense": {
+              "seconds": 89.4,
+              "maxHp": 5442.4375,
+              "hp": 2501.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 100.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 24.299999999999997,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 4.299999999999997
+              }
+            },
+            "postDefense": {
+              "seconds": 89.4,
+              "maxHp": 5442.4375,
+              "hp": 2051.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 100.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 24.299999999999997,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 4.299999999999997
+              }
+            }
+          },
+          {
+            "seconds": 90,
+            "actor": "Balance knight 0",
+            "amount": 311.25,
+            "raw": 311.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2902.40625,
+            "hpAfter": 2591.15625,
+            "incoming": 1245,
+            "afterDefense": 311.25,
+            "preDefense": {
+              "seconds": 90,
+              "maxHp": 5442.4375,
+              "hp": 2902.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 100.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 23.700000000000003,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 3.700000000000003
+              }
+            },
+            "postDefense": {
+              "seconds": 90,
+              "maxHp": 5442.4375,
+              "hp": 2591.15625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 100.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 23.700000000000003,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 3.700000000000003
+              }
+            }
+          },
+          {
+            "seconds": 93.2,
+            "actor": "Balance knight 0",
+            "amount": 727.5,
+            "raw": 727.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2459.15625,
+            "hpAfter": 1731.65625,
+            "incoming": 1455,
+            "afterDefense": 727.5,
+            "preDefense": {
+              "seconds": 93.2,
+              "maxHp": 5442.4375,
+              "hp": 2459.15625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 20.5,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 0.5
+              }
+            },
+            "postDefense": {
+              "seconds": 93.2,
+              "maxHp": 5442.4375,
+              "hp": 1731.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 20.5,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 0.5
+              }
+            }
+          },
+          {
+            "seconds": 93.5,
+            "actor": "Balance knight 0",
+            "amount": 286.25,
+            "raw": 286.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 1841.65625,
+            "hpAfter": 1555.40625,
+            "incoming": 1145,
+            "afterDefense": 286.25,
+            "preDefense": {
+              "seconds": 93.5,
+              "maxHp": 5442.4375,
+              "hp": 1841.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 20.200000000000003,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 0.20000000000000284
+              }
+            },
+            "postDefense": {
+              "seconds": 93.5,
+              "maxHp": 5442.4375,
+              "hp": 1555.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 20.200000000000003,
+                "cleanseReadyAt": 86.7,
+                "healReadyAt": 93.7,
+                "healCooldownRemaining": 0.20000000000000284
+              }
+            }
+          },
+          {
+            "seconds": 94.1,
+            "actor": "Balance knight 0",
+            "amount": 292.5,
+            "raw": 292.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2373.40625,
+            "hpAfter": 2080.90625,
+            "incoming": 1170,
+            "afterDefense": 292.5,
+            "preDefense": {
+              "seconds": 94.1,
+              "maxHp": 5442.4375,
+              "hp": 2373.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 19.60000000000001,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 9.700000000000003
+              }
+            },
+            "postDefense": {
+              "seconds": 94.1,
+              "maxHp": 5442.4375,
+              "hp": 2080.90625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 19.60000000000001,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 9.700000000000003
+              }
+            }
+          },
+          {
+            "seconds": 94.3,
+            "actor": "Balance knight 0",
+            "amount": 306.25,
+            "raw": 306.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2080.90625,
+            "hpAfter": 1774.65625,
+            "incoming": 1225,
+            "afterDefense": 306.25,
+            "preDefense": {
+              "seconds": 94.3,
+              "maxHp": 5442.4375,
+              "hp": 2080.90625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 19.400000000000006,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 9.5
+              }
+            },
+            "postDefense": {
+              "seconds": 94.3,
+              "maxHp": 5442.4375,
+              "hp": 1774.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 19.400000000000006,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 9.5
+              }
+            }
+          },
+          {
+            "seconds": 94.9,
+            "actor": "Balance knight 0",
+            "amount": 630,
+            "raw": 630,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 1868.65625,
+            "hpAfter": 1238.65625,
+            "incoming": 2520,
+            "afterDefense": 630,
+            "preDefense": {
+              "seconds": 94.9,
+              "maxHp": 5442.4375,
+              "hp": 1868.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 18.799999999999997,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 8.899999999999991
+              }
+            },
+            "postDefense": {
+              "seconds": 94.9,
+              "maxHp": 5442.4375,
+              "hp": 1238.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 105.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 18.799999999999997,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 8.899999999999991
+              }
+            }
+          },
+          {
+            "seconds": 95.1,
+            "actor": "Balance knight 0",
+            "amount": 475,
+            "raw": 475,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 1466.65625,
+            "hpAfter": 991.65625,
+            "incoming": 1900,
+            "afterDefense": 475,
+            "preDefense": {
+              "seconds": 95.1,
+              "maxHp": 5442.4375,
+              "hp": 1466.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 18.60000000000001,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 8.700000000000003
+              }
+            },
+            "postDefense": {
+              "seconds": 95.1,
+              "maxHp": 5442.4375,
+              "hp": 991.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4440,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 18.60000000000001,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 8.700000000000003
+              }
+            }
+          },
+          {
+            "seconds": 98.4,
+            "actor": "Balance knight 0",
+            "amount": 547.5,
+            "raw": 547.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2860.65625,
+            "hpAfter": 2313.15625,
+            "incoming": 1095,
+            "afterDefense": 547.5,
+            "preDefense": {
+              "seconds": 98.4,
+              "maxHp": 5442.4375,
+              "hp": 2860.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 15.299999999999997,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 5.3999999999999915
+              }
+            },
+            "postDefense": {
+              "seconds": 98.4,
+              "maxHp": 5442.4375,
+              "hp": 2313.15625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 15.299999999999997,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 5.3999999999999915
+              }
+            }
+          },
+          {
+            "seconds": 98.7,
+            "actor": "Balance knight 0",
+            "amount": 296.25,
+            "raw": 296.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2313.15625,
+            "hpAfter": 2016.90625,
+            "incoming": 1185,
+            "afterDefense": 296.25,
+            "preDefense": {
+              "seconds": 98.7,
+              "maxHp": 5442.4375,
+              "hp": 2313.15625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 15,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 5.099999999999994
+              }
+            },
+            "postDefense": {
+              "seconds": 98.7,
+              "maxHp": 5442.4375,
+              "hp": 2016.90625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 15,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 5.099999999999994
+              }
+            }
+          },
+          {
+            "seconds": 99.2,
+            "actor": "Balance knight 0",
+            "amount": 992.5,
+            "raw": 992.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 2268.90625,
+            "hpAfter": 1276.40625,
+            "incoming": 1985,
+            "afterDefense": 992.5,
+            "preDefense": {
+              "seconds": 99.2,
+              "maxHp": 5442.4375,
+              "hp": 2268.90625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 14.5,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 4.599999999999994
+              }
+            },
+            "postDefense": {
+              "seconds": 99.2,
+              "maxHp": 5442.4375,
+              "hp": 1276.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 14.5,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 4.599999999999994
+              }
+            }
+          },
+          {
+            "seconds": 99.5,
+            "actor": "Balance knight 0",
+            "amount": 331.25,
+            "raw": 331.25,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 1276.40625,
+            "hpAfter": 945.15625,
+            "incoming": 1325,
+            "afterDefense": 331.25,
+            "preDefense": {
+              "seconds": 99.5,
+              "maxHp": 5442.4375,
+              "hp": 1276.40625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 14.200000000000003,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 4.299999999999997
+              }
+            },
+            "postDefense": {
+              "seconds": 99.5,
+              "maxHp": 5442.4375,
+              "hp": 945.15625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 110.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 14.200000000000003,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 4.299999999999997
+              }
+            }
+          },
+          {
+            "seconds": 103.3,
+            "actor": "Balance knight 0",
+            "amount": 447.5,
+            "raw": 447.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 1481.15625,
+            "hpAfter": 1033.65625,
+            "incoming": 895,
+            "afterDefense": 447.5,
+            "preDefense": {
+              "seconds": 103.3,
+              "maxHp": 5442.4375,
+              "hp": 1481.15625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 115.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 10.400000000000006,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 0.5
+              }
+            },
+            "postDefense": {
+              "seconds": 103.3,
+              "maxHp": 5442.4375,
+              "hp": 1033.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 115.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 10.400000000000006,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 0.5
+              }
+            }
+          },
+          {
+            "seconds": 103.6,
+            "actor": "Balance knight 0",
+            "amount": 305,
+            "raw": 305,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 1033.65625,
+            "hpAfter": 728.65625,
+            "incoming": 1220,
+            "afterDefense": 305,
+            "preDefense": {
+              "seconds": 103.6,
+              "maxHp": 5442.4375,
+              "hp": 1033.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 115.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 10.100000000000009,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 0.20000000000000284
+              }
+            },
+            "postDefense": {
+              "seconds": 103.6,
+              "maxHp": 5442.4375,
+              "hp": 728.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439.5,
+                  "until": 115.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 10.100000000000009,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 0.20000000000000284
+              }
+            }
+          },
+          {
+            "seconds": 104.1,
+            "actor": "Balance knight 0",
+            "amount": 735.65625,
+            "raw": 992.5,
+            "kind": "reflection",
+            "damageType": "melee",
+            "enemy": "災厄的癲狂林德拜爾",
+            "hpBefore": 735.65625,
+            "hpAfter": -256.84375,
+            "incoming": 1985,
+            "afterDefense": 992.5,
+            "preDefense": {
+              "seconds": 104.1,
+              "maxHp": 5442.4375,
+              "hp": 735.65625,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 115.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 9.600000000000009,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 0
+              }
+            },
+            "postDefense": {
+              "seconds": 104.1,
+              "maxHp": 5442.4375,
+              "hp": -256.84375,
+              "shields": [
+                {
+                  "source": "relic_magic_resist_shirt",
+                  "amount": 4439,
+                  "until": 115.1,
+                  "active": true,
+                  "kind": "magic"
+                }
+              ],
+              "invulnerability": [],
+              "tail": {
+                "used": true,
+                "deathReadyAt": 113.7,
+                "deathCooldownRemaining": 9.600000000000009,
+                "cleanseReadyAt": 113.8,
+                "healReadyAt": 103.8,
+                "healCooldownRemaining": 0
+              }
+            }
+          }
+        ],
+        "cooldownSuccesses": [
+          {
+            "seconds": 0.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 5.1
+          },
+          {
+            "seconds": 0.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 10.1
+          },
+          {
+            "seconds": 4,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 14
+          },
+          {
+            "seconds": 5.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 10.1
+          },
+          {
+            "seconds": 10.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 15.1
+          },
+          {
+            "seconds": 10.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 20.1
+          },
+          {
+            "seconds": 14,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 24
+          },
+          {
+            "seconds": 15.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 20.1
+          },
+          {
+            "seconds": 20.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 25.1
+          },
+          {
+            "seconds": 20.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 30.1
+          },
+          {
+            "seconds": 22.4,
+            "source": "relic_bluetail_tail",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 32.4
+          },
+          {
+            "seconds": 24,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 34
+          },
+          {
+            "seconds": 25.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 30.1
+          },
+          {
+            "seconds": 30.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 35.1
+          },
+          {
+            "seconds": 30.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 40.1
+          },
+          {
+            "seconds": 34,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 44
+          },
+          {
+            "seconds": 35.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 40.1
+          },
+          {
+            "seconds": 40.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 45.1
+          },
+          {
+            "seconds": 40.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 50.1
+          },
+          {
+            "seconds": 44,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 54
+          },
+          {
+            "seconds": 45.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 50.1
+          },
+          {
+            "seconds": 45.8,
+            "source": "relic_bluetail_tail",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 55.8
+          },
+          {
+            "seconds": 47.1,
+            "source": "relic_orc_loincloth",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 57.1
+          },
+          {
+            "seconds": 47.1,
+            "source": "relic_monia_sandals",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 57.1
+          },
+          {
+            "seconds": 50.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 55.1
+          },
+          {
+            "seconds": 50.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 60.1
+          },
+          {
+            "seconds": 54,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 64
+          },
+          {
+            "seconds": 55.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 60.1
+          },
+          {
+            "seconds": 60.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 65.1
+          },
+          {
+            "seconds": 60.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 70.1
+          },
+          {
+            "seconds": 65,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 75
+          },
+          {
+            "seconds": 65.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 70.1
+          },
+          {
+            "seconds": 66.7,
+            "source": "relic_bluetail_tail",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 76.7
+          },
+          {
+            "seconds": 70.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 75.1
+          },
+          {
+            "seconds": 70.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 80.1
+          },
+          {
+            "seconds": 75,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 85
+          },
+          {
+            "seconds": 75.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 80.1
+          },
+          {
+            "seconds": 80.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 85.1
+          },
+          {
+            "seconds": 80.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 90.1
+          },
+          {
+            "seconds": 83.7,
+            "source": "relic_bluetail_tail",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 93.7
+          },
+          {
+            "seconds": 85,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 95
+          },
+          {
+            "seconds": 85.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 90.1
+          },
+          {
+            "seconds": 90.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 95.1
+          },
+          {
+            "seconds": 90.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 100.1
+          },
+          {
+            "seconds": 93.8,
+            "source": "relic_bluetail_tail",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 103.8
+          },
+          {
+            "seconds": 95,
+            "source": "relic_sr_kama_pot",
+            "key": "heal",
+            "duration": 10,
+            "readyAt": 105
+          },
+          {
+            "seconds": 95.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 100.1
+          },
+          {
+            "seconds": 100.1,
+            "source": "relic_magic_resist_shirt",
+            "key": "willWard",
+            "duration": 5,
+            "readyAt": 105.1
+          },
+          {
+            "seconds": 100.1,
+            "source": "relic_monia_sandals",
+            "key": "phantomStep",
+            "duration": 10,
+            "readyAt": 110.1
+          }
+        ]
+      },
+      "reflection": {
+        "windows": [
+          {
+            "boss": "災厄的林德拜爾",
+            "stage": 1,
+            "kind": "phys",
+            "openedAt": 5.1,
+            "until": 7.1
+          },
+          {
+            "boss": "災厄的狂怒林德拜爾",
+            "stage": 2,
+            "kind": "phys",
+            "openedAt": 22.1,
+            "until": 24.1
+          },
+          {
+            "boss": "災厄的狂怒林德拜爾",
+            "stage": 2,
+            "kind": "magic",
+            "openedAt": 27.1,
+            "until": 29.1
+          },
+          {
+            "boss": "災厄的發瘋林德拜爾",
+            "stage": 3,
+            "kind": "phys",
+            "openedAt": 45.7,
+            "until": 47.7
+          },
+          {
+            "boss": "災厄的發瘋林德拜爾",
+            "stage": 3,
+            "kind": "magic",
+            "openedAt": 50.7,
+            "until": 52.7
+          },
+          {
+            "boss": "災厄的發瘋林德拜爾",
+            "stage": 3,
+            "kind": "magic",
+            "openedAt": 55.7,
+            "until": 57.7
+          },
+          {
+            "boss": "災厄的發瘋林德拜爾",
+            "stage": 3,
+            "kind": "magic",
+            "openedAt": 60.7,
+            "until": 62.7
+          },
+          {
+            "boss": "災厄的發瘋林德拜爾",
+            "stage": 3,
+            "kind": "phys",
+            "openedAt": 65.7,
+            "until": 67.7
+          },
+          {
+            "boss": "災厄的癲狂林德拜爾",
+            "stage": 4,
+            "kind": "phys",
+            "openedAt": 83.1,
+            "until": 85.1
+          },
+          {
+            "boss": "災厄的癲狂林德拜爾",
+            "stage": 4,
+            "kind": "phys",
+            "openedAt": 88.1,
+            "until": 90.1
+          },
+          {
+            "boss": "災厄的癲狂林德拜爾",
+            "stage": 4,
+            "kind": "phys",
+            "openedAt": 93.1,
+            "until": 95.1
+          },
+          {
+            "boss": "災厄的癲狂林德拜爾",
+            "stage": 4,
+            "kind": "phys",
+            "openedAt": 98.1,
+            "until": 100.1
+          },
+          {
+            "boss": "災厄的癲狂林德拜爾",
+            "stage": 4,
+            "kind": "phys",
+            "openedAt": 103.1,
+            "until": 105.1
+          }
+        ],
+        "hits": [
+          {
+            "seconds": 57.7,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 432.5,
+            "afterDefense": 0,
+            "hpBefore": 2872.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 460,
+            "afterDefense": 0,
+            "hpBefore": 2940.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 460,
+            "afterDefense": 0,
+            "hpBefore": 2940.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 530,
+            "afterDefense": 0,
+            "hpBefore": 2940.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 635,
+            "afterDefense": 0,
+            "hpBefore": 2378.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 635,
+            "afterDefense": 0,
+            "hpBefore": 2378.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 590,
+            "afterDefense": 0,
+            "hpBefore": 2378.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.5,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 937,
+            "afterDefense": 0,
+            "hpBefore": 2427.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.5,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 937,
+            "afterDefense": 0,
+            "hpBefore": 2427.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.5,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 477.5,
+            "afterDefense": 0,
+            "hpBefore": 2427.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.8,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 550,
+            "afterDefense": 0,
+            "hpBefore": 2427.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.8,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 550,
+            "afterDefense": 0,
+            "hpBefore": 2427.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 61.8,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 520,
+            "afterDefense": 0,
+            "hpBefore": 2427.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 567,
+            "afterDefense": 0,
+            "hpBefore": 3237.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 567,
+            "afterDefense": 0,
+            "hpBefore": 3237.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 512.5,
+            "afterDefense": 0,
+            "hpBefore": 3237.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62.3,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 662,
+            "afterDefense": 0,
+            "hpBefore": 2726.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62.3,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 662,
+            "afterDefense": 0,
+            "hpBefore": 2726.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62.3,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 440,
+            "afterDefense": 0,
+            "hpBefore": 2726.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62.6,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 1402,
+            "afterDefense": 0,
+            "hpBefore": 2726.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62.6,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 1402,
+            "afterDefense": 0,
+            "hpBefore": 2726.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 62.6,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "magic",
+            "incoming": 840,
+            "afterDefense": 0,
+            "hpBefore": 2726.4375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 65.8,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 1230,
+            "afterDefense": 615,
+            "hpBefore": 3585.4375,
+            "actualDamage": 615
+          },
+          {
+            "seconds": 66.1,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 1150,
+            "afterDefense": 287.5,
+            "hpBefore": 2572.4375,
+            "actualDamage": 287.5
+          },
+          {
+            "seconds": 66.4,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 1250,
+            "afterDefense": 0,
+            "hpBefore": 2284.9375,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 66.7,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 1905,
+            "afterDefense": 476.25,
+            "hpBefore": 2330.9375,
+            "actualDamage": 476.25
+          },
+          {
+            "seconds": 66.9,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 970,
+            "afterDefense": 242.5,
+            "hpBefore": 2398.6875,
+            "actualDamage": 242.5
+          },
+          {
+            "seconds": 67.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 1325,
+            "afterDefense": 0,
+            "hpBefore": 2401.1875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 67.5,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 1380,
+            "afterDefense": 345,
+            "hpBefore": 2401.1875,
+            "actualDamage": 345
+          },
+          {
+            "seconds": 67.7,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的發瘋林德拜爾",
+            "kind": "melee",
+            "incoming": 1590,
+            "afterDefense": 397.5,
+            "hpBefore": 2056.1875,
+            "actualDamage": 397.5
+          },
+          {
+            "seconds": 83.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1100,
+            "afterDefense": 550,
+            "hpBefore": 985.6875,
+            "actualDamage": 550
+          },
+          {
+            "seconds": 83.7,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 2320,
+            "afterDefense": 0,
+            "hpBefore": 537.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 84,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 3690,
+            "afterDefense": 0,
+            "hpBefore": 3364.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 84.3,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1020,
+            "afterDefense": 0,
+            "hpBefore": 3364.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 84.8,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 3300,
+            "afterDefense": 0,
+            "hpBefore": 3476.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 85.1,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1815,
+            "afterDefense": 0,
+            "hpBefore": 3476.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 88.4,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 995,
+            "afterDefense": 0,
+            "hpBefore": 3914.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 88.6,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 2620,
+            "afterDefense": 0,
+            "hpBefore": 3914.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 88.9,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 2610,
+            "afterDefense": 0,
+            "hpBefore": 3914.6875,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 89.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1790,
+            "afterDefense": 895,
+            "hpBefore": 3396.40625,
+            "actualDamage": 895
+          },
+          {
+            "seconds": 89.4,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1800,
+            "afterDefense": 450,
+            "hpBefore": 2501.40625,
+            "actualDamage": 450
+          },
+          {
+            "seconds": 89.7,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1325,
+            "afterDefense": 0,
+            "hpBefore": 2051.40625,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 90,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1245,
+            "afterDefense": 311.25,
+            "hpBefore": 2902.40625,
+            "actualDamage": 311.25
+          },
+          {
+            "seconds": 93.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1455,
+            "afterDefense": 727.5,
+            "hpBefore": 2459.15625,
+            "actualDamage": 727.5
+          },
+          {
+            "seconds": 93.5,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1145,
+            "afterDefense": 286.25,
+            "hpBefore": 1841.65625,
+            "actualDamage": 286.25
+          },
+          {
+            "seconds": 93.8,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1195,
+            "afterDefense": 0,
+            "hpBefore": 1555.40625,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 94.1,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1170,
+            "afterDefense": 292.5,
+            "hpBefore": 2373.40625,
+            "actualDamage": 292.5
+          },
+          {
+            "seconds": 94.3,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1225,
+            "afterDefense": 306.25,
+            "hpBefore": 2080.90625,
+            "actualDamage": 306.25
+          },
+          {
+            "seconds": 94.6,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1215,
+            "afterDefense": 0,
+            "hpBefore": 1774.65625,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 94.9,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 2520,
+            "afterDefense": 630,
+            "hpBefore": 1868.65625,
+            "actualDamage": 630
+          },
+          {
+            "seconds": 95.1,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1900,
+            "afterDefense": 475,
+            "hpBefore": 1466.65625,
+            "actualDamage": 475
+          },
+          {
+            "seconds": 98.4,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1095,
+            "afterDefense": 547.5,
+            "hpBefore": 2860.65625,
+            "actualDamage": 547.5
+          },
+          {
+            "seconds": 98.7,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1185,
+            "afterDefense": 296.25,
+            "hpBefore": 2313.15625,
+            "actualDamage": 296.25
+          },
+          {
+            "seconds": 98.9,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1135,
+            "afterDefense": 0,
+            "hpBefore": 2110.90625,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 99.2,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1985,
+            "afterDefense": 992.5,
+            "hpBefore": 2268.90625,
+            "actualDamage": 992.5
+          },
+          {
+            "seconds": 99.5,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1325,
+            "afterDefense": 331.25,
+            "hpBefore": 1276.40625,
+            "actualDamage": 331.25
+          },
+          {
+            "seconds": 100,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 2630,
+            "afterDefense": 0,
+            "hpBefore": 1953.15625,
+            "actualDamage": 0
+          },
+          {
+            "seconds": 103.3,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 895,
+            "afterDefense": 447.5,
+            "hpBefore": 1481.15625,
+            "actualDamage": 447.5
+          },
+          {
+            "seconds": 103.6,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1220,
+            "afterDefense": 305,
+            "hpBefore": 1033.65625,
+            "actualDamage": 305
+          },
+          {
+            "seconds": 104.1,
+            "actor": "Balance knight 0",
+            "enemy": "災厄的癲狂林德拜爾",
+            "kind": "melee",
+            "incoming": 1985,
+            "afterDefense": 992.5,
+            "hpBefore": 735.65625,
+            "actualDamage": 735.65625
+          }
+        ],
+        "attackReleasedAt": null,
+        "engaged": true,
+        "bypassed": false,
+        "holdUnreleased": false,
+        "gmEquipped": null
+      },
+      "checks": [
+        "native boss and legal equipment"
+      ],
+      "pageErrors": [],
+      "wallSeconds": 0.909,
+      "sourceStart": {
+        "afk-relic-weapons.js": "f7430004f2f524df",
+        "afk-relic-weapon-bridge.js": "4ddad5c50d46e731",
+        "afk-relic-runtime.js": "fb0395b880a51b78",
+        "afk-relic-defense.js": "e0a579dccd656fde",
+        "afk-relic-defense-bridge.js": "bbec977d32fe8511",
+        "afk-relic-companions.js": "0b3300209218a2c1",
+        "afk-relic-integration.js": "0b4725597de35544",
+        "afk-relic-gm.js": "364f8d5bde8dc4d0",
+        "afk-relicfx.js": "10cd3ff8eed72745",
+        "afk-relicplus.js": "f2c2b93bbdb52c1d",
+        "afk-corrupt.js": "b079f29148acc341",
+        "afk-dreamhell.js": "b3910df9711ee211",
+        "afk-dreamstar.js": "83c03d98529ebeb5",
+        "afk-rebirth.js": "6e325b8e528d4556",
+        "afk-card-combat.js": "6c20ca0c44bad0ac",
+        "afk-card-forms.js": "1f11bf2a2308b5a6",
+        "afk-card-ascension.js": "9e42d804fc3b65fc",
+        "afk-cardplus.js": "c755b2b80c5ca934",
+        "afk-arts.js": "c3cc37536a5138a1",
+        "afk-stackdot.js": "0b731f34239af36b",
+        "afk-extradata.js": "7173c5b4bdde63e8",
+        "js/00-data.js": "81d761a1d17d61bb",
+        "js/01-drops-config.js": "0ce660b13022c236",
+        "js/02-stats-recompute.js": "618e3ecd7e99c1a6",
+        "js/03-combat-core.js": "190d8f30a6b1a7fe",
+        "js/04-combat-attack.js": "c279ccd019238443",
+        "js/05-kill-progression.js": "0669495780f38daa",
+        "js/06-status-allies.js": "a6a88eb14e91f654",
+        "js/07-skills-cast.js": "4c3ee19d2bbc9a3e",
+        "js/08-items-equip.js": "910157216b56792c",
+        "js/09-vfx-render.js": "c0f0e91e1939a2d1",
+        "js/10-ui-tabs.js": "1bf51764ce929f1d",
+        "js/11-world-map.js": "0558770fbcfb095f",
+        "js/12-npc-quests.js": "66c949067415e103",
+        "js/13-shop-save.js": "9381995b4ba309ae",
+        "js/14-craft-pandora.js": "5461285580d8c232",
+        "js/15-cards.js": "d27dbe30063980ae",
+        "js/16-equip-book.js": "06993d3f559d8306",
+        "js/17-audio.js": "0533a411a7fb1fe3",
+        "js/18-misc-book.js": "9a4bbc3677194ff7",
+        "js/19-equipment-window.js": "f7b534e88c2da59f",
+        "js/20-warehouse-window.js": "11d7418a9978323d",
+        "js/21-relic-book.js": "40aef7ae9b066c6c",
+        "js/22-pets.js": "cf9144338c49c4de",
+        "js/23-summons.js": "3b313d1e6e8f82b1",
+        "js/24-pandora-relic-market.js": "157a07455ae5a4f7",
+        "js/25-clan-system.js": "6365f5ea0b5ca125",
+        "js/26-world-channel.js": "f03d4f92d3f4d497",
+        "js/27-offline-rewards.js": "8381c876481dfd97",
+        "js/28-pvp-arena.js": "735b3ed78942a3e9",
+        "js/29-siege-v2-data.js": "9e6e76f0aade3334",
+        "js/30-siege-v2.js": "a029565379174d04",
+        "js/31-castle-guards.js": "7d7e98043aab6099",
+        "js/32-threat.js": "2d4b566d70535671"
+      },
+      "sourceEnd": {
+        "afk-relic-weapons.js": "f7430004f2f524df",
+        "afk-relic-weapon-bridge.js": "4ddad5c50d46e731",
+        "afk-relic-runtime.js": "fb0395b880a51b78",
+        "afk-relic-defense.js": "e0a579dccd656fde",
+        "afk-relic-defense-bridge.js": "bbec977d32fe8511",
+        "afk-relic-companions.js": "0b3300209218a2c1",
+        "afk-relic-integration.js": "0b4725597de35544",
+        "afk-relic-gm.js": "364f8d5bde8dc4d0",
+        "afk-relicfx.js": "10cd3ff8eed72745",
+        "afk-relicplus.js": "f2c2b93bbdb52c1d",
+        "afk-corrupt.js": "b079f29148acc341",
+        "afk-dreamhell.js": "b3910df9711ee211",
+        "afk-dreamstar.js": "83c03d98529ebeb5",
+        "afk-rebirth.js": "6e325b8e528d4556",
+        "afk-card-combat.js": "6c20ca0c44bad0ac",
+        "afk-card-forms.js": "1f11bf2a2308b5a6",
+        "afk-card-ascension.js": "9e42d804fc3b65fc",
+        "afk-cardplus.js": "c755b2b80c5ca934",
+        "afk-arts.js": "c3cc37536a5138a1",
+        "afk-stackdot.js": "0b731f34239af36b",
+        "afk-extradata.js": "7173c5b4bdde63e8",
+        "js/00-data.js": "81d761a1d17d61bb",
+        "js/01-drops-config.js": "0ce660b13022c236",
+        "js/02-stats-recompute.js": "618e3ecd7e99c1a6",
+        "js/03-combat-core.js": "190d8f30a6b1a7fe",
+        "js/04-combat-attack.js": "c279ccd019238443",
+        "js/05-kill-progression.js": "0669495780f38daa",
+        "js/06-status-allies.js": "a6a88eb14e91f654",
+        "js/07-skills-cast.js": "4c3ee19d2bbc9a3e",
+        "js/08-items-equip.js": "910157216b56792c",
+        "js/09-vfx-render.js": "c0f0e91e1939a2d1",
+        "js/10-ui-tabs.js": "1bf51764ce929f1d",
+        "js/11-world-map.js": "0558770fbcfb095f",
+        "js/12-npc-quests.js": "66c949067415e103",
+        "js/13-shop-save.js": "9381995b4ba309ae",
+        "js/14-craft-pandora.js": "5461285580d8c232",
+        "js/15-cards.js": "d27dbe30063980ae",
+        "js/16-equip-book.js": "06993d3f559d8306",
+        "js/17-audio.js": "0533a411a7fb1fe3",
+        "js/18-misc-book.js": "9a4bbc3677194ff7",
+        "js/19-equipment-window.js": "f7b534e88c2da59f",
+        "js/20-warehouse-window.js": "11d7418a9978323d",
+        "js/21-relic-book.js": "40aef7ae9b066c6c",
+        "js/22-pets.js": "cf9144338c49c4de",
+        "js/23-summons.js": "3b313d1e6e8f82b1",
+        "js/24-pandora-relic-market.js": "157a07455ae5a4f7",
+        "js/25-clan-system.js": "6365f5ea0b5ca125",
+        "js/26-world-channel.js": "f03d4f92d3f4d497",
+        "js/27-offline-rewards.js": "8381c876481dfd97",
+        "js/28-pvp-arena.js": "735b3ed78942a3e9",
+        "js/29-siege-v2-data.js": "9e6e76f0aade3334",
+        "js/30-siege-v2.js": "a029565379174d04",
+        "js/31-castle-guards.js": "7d7e98043aab6099",
+        "js/32-threat.js": "2d4b566d70535671"
+      }
+    }
+  ],
+  "sourceEnd": {
+    "afk-relic-weapons.js": "f7430004f2f524df",
+    "afk-relic-weapon-bridge.js": "4ddad5c50d46e731",
+    "afk-relic-runtime.js": "fb0395b880a51b78",
+    "afk-relic-defense.js": "e0a579dccd656fde",
+    "afk-relic-defense-bridge.js": "bbec977d32fe8511",
+    "afk-relic-companions.js": "0b3300209218a2c1",
+    "afk-relic-integration.js": "0b4725597de35544",
+    "afk-relic-gm.js": "364f8d5bde8dc4d0",
+    "afk-relicfx.js": "10cd3ff8eed72745",
+    "afk-relicplus.js": "f2c2b93bbdb52c1d",
+    "afk-corrupt.js": "b079f29148acc341",
+    "afk-dreamhell.js": "b3910df9711ee211",
+    "afk-dreamstar.js": "83c03d98529ebeb5",
+    "afk-rebirth.js": "6e325b8e528d4556",
+    "afk-card-combat.js": "6c20ca0c44bad0ac",
+    "afk-card-forms.js": "1f11bf2a2308b5a6",
+    "afk-card-ascension.js": "9e42d804fc3b65fc",
+    "afk-cardplus.js": "c755b2b80c5ca934",
+    "afk-arts.js": "c3cc37536a5138a1",
+    "afk-stackdot.js": "0b731f34239af36b",
+    "afk-extradata.js": "7173c5b4bdde63e8",
+    "js/00-data.js": "81d761a1d17d61bb",
+    "js/01-drops-config.js": "0ce660b13022c236",
+    "js/02-stats-recompute.js": "618e3ecd7e99c1a6",
+    "js/03-combat-core.js": "190d8f30a6b1a7fe",
+    "js/04-combat-attack.js": "c279ccd019238443",
+    "js/05-kill-progression.js": "0669495780f38daa",
+    "js/06-status-allies.js": "a6a88eb14e91f654",
+    "js/07-skills-cast.js": "4c3ee19d2bbc9a3e",
+    "js/08-items-equip.js": "910157216b56792c",
+    "js/09-vfx-render.js": "c0f0e91e1939a2d1",
+    "js/10-ui-tabs.js": "1bf51764ce929f1d",
+    "js/11-world-map.js": "0558770fbcfb095f",
+    "js/12-npc-quests.js": "66c949067415e103",
+    "js/13-shop-save.js": "9381995b4ba309ae",
+    "js/14-craft-pandora.js": "5461285580d8c232",
+    "js/15-cards.js": "d27dbe30063980ae",
+    "js/16-equip-book.js": "06993d3f559d8306",
+    "js/17-audio.js": "0533a411a7fb1fe3",
+    "js/18-misc-book.js": "9a4bbc3677194ff7",
+    "js/19-equipment-window.js": "f7b534e88c2da59f",
+    "js/20-warehouse-window.js": "11d7418a9978323d",
+    "js/21-relic-book.js": "40aef7ae9b066c6c",
+    "js/22-pets.js": "cf9144338c49c4de",
+    "js/23-summons.js": "3b313d1e6e8f82b1",
+    "js/24-pandora-relic-market.js": "157a07455ae5a4f7",
+    "js/25-clan-system.js": "6365f5ea0b5ca125",
+    "js/26-world-channel.js": "f03d4f92d3f4d497",
+    "js/27-offline-rewards.js": "8381c876481dfd97",
+    "js/28-pvp-arena.js": "735b3ed78942a3e9",
+    "js/29-siege-v2-data.js": "9e6e76f0aade3334",
+    "js/30-siege-v2.js": "a029565379174d04",
+    "js/31-castle-guards.js": "7d7e98043aab6099",
+    "js/32-threat.js": "2d4b566d70535671"
+  },
+  "completedAt": "2026-10-22T15:34:54.860Z",
+  "summary": {
+    "cases": 1,
+    "cleared": 0,
+    "dead": 1,
+    "timeout": 0,
+    "errors": 0
+  },
+  "diagnosticComparison": {
+    "baseline": "docs/relic-balance-results.json",
+    "fieldsEqual": {
+      "status": true,
+      "elapsedSeconds": true,
+      "netDps": true,
+      "bossNetDps": true,
+      "totals": true,
+      "bosses": true,
+      "initial": true,
+      "friendly": true,
+      "alliesAlive": true,
+      "finalHp": true,
+      "finalMp": true,
+      "death": true,
+      "transientHpZeroCrossings": true,
+      "recentDamage": true,
+      "maxHitEvents": true,
+      "reflection": true,
+      "sourceStart": true,
+      "sourceEnd": true
+    },
+    "allEqual": true,
+    "nativeGameplayUnchanged": true,
+    "fatal": {
+      "maxHp": 5442.4375,
+      "hpBefore": 735.65625,
+      "hpBeforePct": 13.517036254435627,
+      "incoming": 1985,
+      "afterDefense": 992.5,
+      "afterDefensePct": 18.236314151517586,
+      "maxReflectionIncoming": 3930,
+      "maxReflectionAfterDefense": 1965,
+      "maxReflectionAfterDefensePct": 36.105145901997034
+    }
+  }
+}

@@ -40,7 +40,7 @@
       if (sum > 0) {
         if (typeof window.__afkDotCap === 'function') sum = window.__afkDotCap(m, sum);
         if (sum > 0) {
-          m.curHp -= sum; m.justHit = kind === 'burn' ? 'fire' : 'magic';
+          if(window.AFK_CARD_COMBAT)sum=window.AFK_CARD_COMBAT.damage(window.AFK_CARD_COMBAT.sourceActor(st[kind + 'Src']),m,sum,{kind:'dot',dotCapped:true}); m.curHp -= sum; m.justHit /* card-combat:stack-dot */ = kind === 'burn' ? 'fire' : 'magic';
           try { mobWake(m); } catch (e) {}
           try { if (typeof _dpsCreditDot === 'function') _dpsCreditDot(st[kind + 'Src'], sum); } catch (e) {}
           try { if (!state.ff) logCombat('<span class="' + getMobColor(m.lv) + '">' + m.n + '</span> 受到' + NAME[kind] + '傷害 ' + sum + ' 點（' + (arr.length || 1) + ' 層）。', 'dot'); } catch (e) {}

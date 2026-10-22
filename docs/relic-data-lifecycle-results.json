@@ -1,0 +1,488 @@
+{
+  "passed": 8,
+  "reports": [
+    {
+      "case": "signed save with equipped, inventory, warehouse, second affix, legacy ascension and evolution",
+      "ids": {
+        "gloves": "relic_general_swordguard~r15~a5",
+        "donor": "relic_thorn_needle~r10~relic_shadow_stinger",
+        "ascended": "relic_killerbee_sting~r15~a5",
+        "armor": "relic_swordsman_underwear~r15~a0",
+        "legacy": "relic_sr_kama_pot~r5~a5~e6",
+        "accessory": "relic_tamer_feedbag~r10~a5"
+      },
+      "slot": 1,
+      "warehouseSaved": true,
+      "saved": true,
+      "signed": true,
+      "verified": true,
+      "weaponMagic": {
+        "ele": "water",
+        "skId": "sk_blizzard",
+        "baseRate": 2,
+        "star": 5,
+        "rate": 10
+      },
+      "stock": {
+        "inventory": [
+          {
+            "id": "relic_tamer_feedbag~r10~a5",
+            "uid": "rd-acc",
+            "cnt": 3,
+            "en": 0,
+            "bless": true,
+            "anc": false,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": false
+          },
+          {
+            "id": "relic_swordsman_underwear~r15~a0",
+            "uid": "rd-arm",
+            "cnt": 4,
+            "en": 0,
+            "bless": false,
+            "anc": true,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": false
+          },
+          {
+            "id": "relic_killerbee_sting~r15~a5",
+            "uid": "rd-asc",
+            "cnt": 2,
+            "en": 0,
+            "bless": true,
+            "anc": false,
+            "attr": "wa5",
+            "attrMagic": "sk_blizzard",
+            "attrMagicStar": 5,
+            "seteff": false,
+            "lock": false
+          },
+          {
+            "id": "relic_thorn_needle~r10~relic_shadow_stinger",
+            "uid": "rd-donor",
+            "cnt": 3,
+            "en": 0,
+            "bless": true,
+            "anc": true,
+            "attr": "fr3",
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": true
+          },
+          {
+            "id": "relic_sr_kama_pot~r5~a5~e6",
+            "uid": "rd-legacy",
+            "cnt": 2,
+            "en": 0,
+            "bless": false,
+            "anc": false,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": true
+          }
+        ],
+        "equipment": [
+          {
+            "id": "relic_general_swordguard~r15~a5",
+            "uid": "rd-equip",
+            "cnt": 1,
+            "en": 0,
+            "bless": true,
+            "anc": true,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": true
+          }
+        ],
+        "warehouse": [
+          {
+            "id": "relic_tamer_feedbag~r10~a5",
+            "uid": "rd-wh-accessory",
+            "cnt": 6,
+            "en": 0,
+            "bless": false,
+            "anc": true,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": false
+          },
+          {
+            "id": "relic_swordsman_underwear~r15~a0",
+            "uid": "rd-wh-armor",
+            "cnt": 4,
+            "en": 0,
+            "bless": false,
+            "anc": true,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": false
+          },
+          {
+            "id": "relic_killerbee_sting~r15~a5",
+            "uid": "rd-wh-ascended",
+            "cnt": 3,
+            "en": 0,
+            "bless": true,
+            "anc": false,
+            "attr": "wa5",
+            "attrMagic": "sk_blizzard",
+            "attrMagicStar": 5,
+            "seteff": false,
+            "lock": true
+          },
+          {
+            "id": "relic_thorn_needle~r10~relic_shadow_stinger",
+            "uid": "rd-wh-donor",
+            "cnt": 2,
+            "en": 0,
+            "bless": false,
+            "anc": true,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": false
+          },
+          {
+            "id": "relic_general_swordguard~r15~a5",
+            "uid": "rd-wh-gloves",
+            "cnt": 1,
+            "en": 0,
+            "bless": true,
+            "anc": false,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": true
+          },
+          {
+            "id": "relic_sr_kama_pot~r5~a5~e6",
+            "uid": "rd-wh-legacy",
+            "cnt": 5,
+            "en": 0,
+            "bless": true,
+            "anc": false,
+            "attr": false,
+            "attrMagic": null,
+            "attrMagicStar": null,
+            "seteff": false,
+            "lock": true
+          }
+        ],
+        "warehouseGold": 7654321,
+        "gold": 1000000,
+        "enabled": true,
+        "feature": true,
+        "data": true,
+        "source": {
+          "id": 137,
+          "stage": 4,
+          "n": 15,
+          "asc": 5
+        },
+        "forceHeavy": true,
+        "weaponMaxMult": 2,
+        "effective": {
+          "plus": 15,
+          "asc": 5,
+          "evo": null,
+          "swordStr": 20
+        },
+        "names": [
+          {
+            "id": "relic_tamer_feedbag~r10~a5",
+            "name": "<span class=\"c-blessed\">祝福的 </span><span class=\"c-relic\">+5 馴獸師的飼料袋昇華支配 (3)</span>"
+          },
+          {
+            "id": "relic_swordsman_underwear~r15~a0",
+            "name": "<span class=\"c-ancient\">遠古 </span><span class=\"c-relic\">+0 劍客的輕便內衣昇華支配 (4)</span>"
+          },
+          {
+            "id": "relic_killerbee_sting~r15~a5",
+            "name": "<span class=\"text-yellow-300 font-bold\">★★★★★</span> <span class=\"c-attr-wa5 c-attr-glow\">伊娃 </span><span class=\"c-blessed\">祝福的 </span><span class=\"c-relic\">+5 殺人蜂的尾刺昇華支配 (2)</span>"
+          },
+          {
+            "id": "relic_thorn_needle~r10~relic_shadow_stinger",
+            "name": "<span class=\"c-attr-fr3\">火靈 </span><span class=\"c-ancient\">遠古 </span><span class=\"c-blessed\">祝福的 </span><span class=\"c-relic\">+10 刺針 (3)</span>"
+          },
+          {
+            "id": "relic_general_swordguard~r15~a5",
+            "name": "<span class=\"c-ancient\">遠古 </span><span class=\"c-blessed\">祝福的 </span><span class=\"c-relic\">+5 將軍愛用的握劍護腕昇華支配</span>"
+          },
+          {
+            "id": "relic_sr_kama_pot~r5~a5~e6",
+            "name": "<span class=\"c-relic\">鐮鼬的藥壺至高的支配【全能力 +30】 (2)</span>"
+          }
+        ],
+        "parsed": [
+          {
+            "id": "relic_tamer_feedbag~r10~a5",
+            "meta": {
+              "base": "relic_tamer_feedbag",
+              "n": 10,
+              "fx": null,
+              "asc": 5,
+              "evo": null
+            }
+          },
+          {
+            "id": "relic_swordsman_underwear~r15~a0",
+            "meta": {
+              "base": "relic_swordsman_underwear",
+              "n": 15,
+              "fx": null,
+              "asc": 0,
+              "evo": null
+            }
+          },
+          {
+            "id": "relic_killerbee_sting~r15~a5",
+            "meta": {
+              "base": "relic_killerbee_sting",
+              "n": 15,
+              "fx": null,
+              "asc": 5,
+              "evo": null
+            }
+          },
+          {
+            "id": "relic_thorn_needle~r10~relic_shadow_stinger",
+            "meta": {
+              "base": "relic_thorn_needle",
+              "n": 10,
+              "fx": "relic_shadow_stinger",
+              "asc": null,
+              "evo": null
+            }
+          },
+          {
+            "id": "relic_sr_kama_pot~r5~a5~e6",
+            "meta": {
+              "base": "relic_sr_kama_pot",
+              "n": 5,
+              "fx": null,
+              "asc": 5,
+              "evo": 6
+            }
+          }
+        ],
+        "magicStars": 5,
+        "serializedMagicStars": 5,
+        "evolveEffects": []
+      }
+    },
+    {
+      "case": "live disable rebuilds actual source to stage zero and blocks six stale API mutations",
+      "denied": {
+        "results": [
+          {
+            "ok": false,
+            "msg": "遺物合成功能已關閉。"
+          },
+          {
+            "ok": false,
+            "msg": "遺物合成功能已關閉。"
+          },
+          {
+            "ok": false,
+            "msg": "遺物合成功能已關閉。"
+          },
+          {
+            "ok": false,
+            "msg": "遺物合成功能已關閉。"
+          },
+          {
+            "ok": false,
+            "msg": "遺物合成功能已關閉。"
+          },
+          {
+            "ok": false,
+            "msg": "遺物合成功能已關閉。"
+          }
+        ],
+        "same": true,
+        "modalVisible": false,
+        "full": {
+          "n": 15,
+          "asc": 5
+        },
+        "ultimate": {
+          "n": 15,
+          "asc": 5
+        },
+        "evolve": []
+      },
+      "source": {
+        "id": 137,
+        "stage": 0,
+        "n": 0,
+        "asc": null
+      },
+      "effective": {
+        "plus": 0,
+        "asc": null,
+        "evo": null,
+        "swordStr": 3
+      },
+      "magicStars": 3
+    },
+    {
+      "case": "startup disabled discovers signed compressed items without registry; native load/purge preserves every item and affix",
+      "before": {
+        "known": true,
+        "plus": false,
+        "data": true,
+        "stages": [
+          {
+            "n": 0,
+            "asc": null
+          },
+          {
+            "n": 0,
+            "asc": null
+          },
+          {
+            "n": 0,
+            "asc": null
+          },
+          {
+            "n": 0,
+            "asc": null
+          },
+          {
+            "n": 0,
+            "asc": null
+          },
+          {
+            "n": 0,
+            "asc": null
+          }
+        ]
+      },
+      "purged": 0,
+      "signed": true
+    },
+    {
+      "case": "late imported identities are restored before native warehouse read and orphan cleanup",
+      "loaded": true,
+      "removed": 0,
+      "guarded": true,
+      "stages": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "enable after disabled boot restores real final-stage dispatch, affixes and original names",
+      "source": {
+        "id": 137,
+        "stage": 4,
+        "n": 15,
+        "asc": 5
+      },
+      "effective": {
+        "plus": 15,
+        "asc": 5,
+        "evo": null,
+        "swordStr": 20
+      },
+      "magicStars": 5
+    },
+    {
+      "case": "native save and second full reload preserve all stock after re-enable",
+      "source": {
+        "id": 137,
+        "stage": 4,
+        "n": 15,
+        "asc": 5
+      },
+      "inventoryCount": 14,
+      "warehouseCount": 21
+    },
+    {
+      "case": "always-on identity data does not bypass the separate relicfx switch",
+      "count": 0,
+      "heavy": false,
+      "identity": true,
+      "data": true,
+      "plus": true
+    },
+    {
+      "case": "legacy +5 ascended accessory keeps its ascension route, cannot be downgraded by normal merge, and persists the native transaction",
+      "oldId": "relic_sr_kama_pot~r5~relic_tamer_feedbag~a0",
+      "nextId": "relic_sr_kama_pot~r5~relic_tamer_feedbag~a1",
+      "downgrade": {
+        "ok": false,
+        "msg": "這件遺物已昇華，請使用昇華支配強化。"
+      },
+      "downgradeUnchanged": true,
+      "button": "昇華支配 +1成功率 100%",
+      "next": {
+        "ok": true,
+        "success": true,
+        "msg": "✨ 昇華支配成功：+1 鐮鼬的藥壺昇華支配（使用昇華支配強化石）！",
+        "rate": 1,
+        "id": "relic_sr_kama_pot~r5~relic_tamer_feedbag~a1"
+      },
+      "produced": {
+        "id": "relic_sr_kama_pot~r5~relic_tamer_feedbag~a1",
+        "uid": "tr57z98wm",
+        "cnt": 1,
+        "en": 0,
+        "bless": true,
+        "anc": "eternal",
+        "attr": false,
+        "seteff": false,
+        "lock": false,
+        "junk": false
+      },
+      "remaining": 2,
+      "stones": 0,
+      "normal": {
+        "ok": false,
+        "msg": "需要先強化到 +10。"
+      },
+      "normalUnchanged": true,
+      "signed": true,
+      "reload": {
+        "item": {
+          "id": "relic_sr_kama_pot~r5~relic_tamer_feedbag~a1",
+          "uid": "tr57z98wm",
+          "cnt": 1,
+          "en": 0,
+          "bless": true,
+          "anc": "eternal",
+          "attr": false,
+          "seteff": false,
+          "lock": false,
+          "junk": false
+        },
+        "meta": {
+          "base": "relic_sr_kama_pot",
+          "n": 5,
+          "fx": "relic_tamer_feedbag",
+          "asc": 1,
+          "evo": null
+        }
+      }
+    }
+  ]
+}

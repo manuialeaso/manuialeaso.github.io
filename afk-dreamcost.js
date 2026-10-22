@@ -2,7 +2,7 @@
  * afk-dreamcost.js — 夢艷地獄的代價（玩家 2026-10-22 指定）；開關沿用 dreamhell
  *
  * 一、夢艷地獄（不論是否轉生、任何地區）
- *   ‧一般怪死亡：全隊（你＋傭兵＋寵物＋召喚物）受到「當前 HP」5% 真實傷害（越扣越少，詛咒本身不會致死；玩家 2026-10-22 改）
+ *   ‧一般怪死亡：不再對隊伍造成扣血（玩家指定移除 5% 死亡詛咒，避免快速清怪反而更危險）
  *   ‧王死亡：全隊受到當前 HP 10% 真實傷害，並吸走你與傭兵當前 MP 的 10%
  *
  * 二、轉生後進入夢艷地獄
@@ -76,9 +76,6 @@
           var d0 = Math.floor((player.mp || 0) * 0.1); if (d0 > 0 && !player.dead) { player.mp -= d0; mp.push('你 ' + d0); }
           (player.allies || []).forEach(function (x) { if (!x || x._downed) return; var d = Math.floor((x.mp || 0) * 0.1); if (d > 0) { x.mp -= d; mp.push((x._allyName || '傭兵') + ' ' + d); } });
           clog('<span class="text-fuchsia-300 font-bold">🌙 ' + m.n + ' 倒下時的死亡詛咒！</span>全隊當前 HP 10% 真實傷害（' + hit.join('、') + '）' + (mp.length ? '，並吸走 MP 10%（' + mp.join('、') + '）' : ''));
-        } else {
-          var hit2 = teamHit(0.05, m.n + '的死亡詛咒');
-          if (hit2.length) clog('<span class="text-fuchsia-300">🌙 ' + m.n + ' 的死亡詛咒：全隊當前 HP 5% 真實傷害（' + hit2.join('、') + '）</span>');
         }
       }
     } catch (e) {}

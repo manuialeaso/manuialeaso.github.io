@@ -1069,6 +1069,9 @@
     { k: 'miscbook', n: '收藏-道具' },
     { k: 'card', n: '收藏-怪物' },
     { k: 'relicbook', n: '收藏-遺物' },
+    { k: 'relicstages', n: '遺物進階' },
+    { k: 'cardforms', n: '鑽石變身' },
+    { k: 'versionrules', n: '冒險規則' },
     { k: 'magic', n: '職業魔法' },
     { k: 'mastery', n: '職業專精' },
     { k: 'equip', n: '裝備' },
@@ -1267,6 +1270,12 @@
   });
 
   function tabHTML(key, cls) {
+    var guide = window.AFK_GAME_GUIDE;
+    if (guide && guide.render) { var page = guide.render(key); if (page !== null) return page; }
+    var html = nativeTabHTML(key, cls);
+    return guide && guide.augment ? guide.augment(key, html) : html;
+  }
+  function nativeTabHTML(key, cls) {
     if (key === 'mastery') return renderMastery(cls);
     if (key === 'weapon') return renderWeapon();
     if (key === 'combat') return renderCombat();
@@ -1332,6 +1341,9 @@
     { key: 'miscbook', cls: false, label: '收藏-道具' },
     { key: 'card', cls: false, label: '收藏-怪物' },
     { key: 'relicbook', cls: false, label: '收藏-遺物' },
+    { key: 'relicstages', cls: false, label: '遺物進階', search: function(terms,max) { return window.AFK_GAME_GUIDE ? AFK_GAME_GUIDE.searchRelics(terms,max) : []; } },
+    { key: 'cardforms', cls: false, label: '鑽石變身' },
+    { key: 'versionrules', cls: false, label: '冒險規則' },
     { key: 'magic', cls: false, label: '職業魔法' },
     { key: 'mastery', cls: true, label: '職業專精' },
     { key: 'equip', cls: false, label: '裝備', search: eqSearchBlocks },   // 詳情改成點開才建 → 掃 DOM 找不到內容,走專用搜尋器掃索引
@@ -1526,7 +1538,7 @@
         hits = hits.filter(function (h) { return h.isHelp; }).concat(body);
         if (hits.length) parts.push('<div class="m-wiki-sub">' + esc(s.label) + ' <span class="m-wiki-cnt">' + body.length + (over ? '+' : '') + '</span></div>' +
           hits.map(function (h) { return h.html; }).join('') +
-          (over ? '<div class="m-wiki-hint">符合的太多，只列前 ' + SEARCH_CARD_CAP + ' 件；要看全部請到「裝備」分頁用篩選器縮範圍。</div>' : ''));
+          (over ? '<div class="m-wiki-hint">符合的項目較多，先列出 ' + SEARCH_CARD_CAP + ' 件；請到「' + esc(s.label) + '」分頁縮小搜尋範圍。</div>' : ''));
         return;
       }
       // cls 分頁逐職業各搜一次;任務分頁另含「全職業共通」桶(QUEST_COMMON：雷德/希米哲等只在 cls='all' 渲染,否則搜不到)
@@ -1833,45 +1845,51 @@
 
     var tiers = (typeof CARD_TIERS !== 'undefined') ? CARD_TIERS : [];
     var price = function (t) { var c = tiers[t - 1]; return c ? Number(c.price).toLocaleString() : '?'; };
-    out += wCard('🎴 三階卡片',
-      wTbl(['卡片', '掉落機率', '解鎖的怪物資料', '自行賣價'], [
+    var cardRows = [
         ['普卡', '0.1%', '怪名、等級', price(1) + ' 金'],
         ['銀卡', '0.01%', '＋ HP、屬性', price(2) + ' 金'],
         ['金卡', '0.001%', '＋ 防禦(AC)、魔防、出沒地圖', price(3) + ' 金']
-      ]) +
+    ];
+    if(tiers.length>=5)cardRows.push(['白金卡','基礎 0.001%','瘋狂席琳世界及夢艷地獄',price(4)+' 金'],['鑽石卡','基礎 0.001%','夢艷地獄；解鎖該怪變身',price(5)+' 金']);
+    out += wCard('🎴 卡片階級與來源',
+      wTbl(['卡片', '掉落機率', '資料／來源', '自行賣價'], cardRows) +
       wDesc('三階<b>各自獨立判定</b>（同一隻可能只掉普卡、也可能直接掉金卡）。機率<b>固定</b>，<b>不受任何掉落倍率影響</b>——席琳的世界 ×3、瘋狂的席琳世界 ×5、恩賜怪 ×10 通通不吃，任何狀態下都是上表的機率。') +
-      wDesc('<b>圖鑑未開通的怪</b>：撿到卡片直接<b>自動登錄</b>（不必手動使用；若一次推過 100 分，超出的會自動退還等值卡片）。<b>圖鑑開通後</b>：再撿到同怪卡片改<b>進背包</b>，留著合成、換魔法娃娃或自己賣。高階卡含低階資訊（金卡看得到全部）。')
+      wDesc('普、銀、金卡以 1、10、100 分登錄；尚未達金階時會自動使用，超過 100 分的部分退回卡片。') +
+      (tiers.length>=5?wDesc('白金與鑽石卡的基礎掉率另乘隊伍人數（最高 ×8），並吃幸運暴走兔腳加成；不吃席琳或夢艷的掉落倍率。')+wDesc('首次取得更高階的白金／鑽石卡會自動登錄；已達該階的重複卡留在背包。鑽石變身與三階合成請看「鑽石變身」。'):'')
     );
 
     out += wCard('💰 卡片也能用買的',
       wDesc('打不到的卡片可以<b>花錢買</b>，管道有兩條，都在「遺物市場」分頁有詳細規則：') +
       wTbl(['管道', '怎麼做', '價錢'], [
-        ['<b>潘朵拉黑市陳列</b>', '卡片會混在黑市商品裡輪替上架，而且<b>佔了大半格子</b>，看到就能買', '普卡 <b>10 萬～1,000 萬</b>、銀卡 <b>100 萬～1 億</b>、金卡 <b>1,000 萬～100 億</b>金，每件在該區間隨機'],
+        ['<b>潘朵拉黑市陳列</b>', window.AFK_TOGGLES&&AFK_TOGGLES.enabled('marketnocard')?'目前開啟「黑市不賣卡片」，隨機陳列不會出卡片。':'卡片可能隨黑市商品輪替上架。', '以當次陳列標價為準'],
         ['<b>黑市收購單</b>', '在黑市「收購」輸入框打卡片全名，出個價掛著等它上架', '你自己出的價（系統擲出的市價不高於你的出價才命中）']
       ]) +
-      wDesc('反過來也可以<b>賣</b>：安全區的<b>叫賣玩家</b>會點名收購卡片——<b>金幣收購者</b>三階都收，<b>龍鑽收購者</b>只收<b>銀卡與金卡</b>。') +
+      wDesc('安全區的叫賣玩家會指定收購卡片；可交種類、需求與報酬以當次委託為準。') +
       wDesc('黑市商品右上角有紅色<b>「未收藏」</b>小標，代表<b>那隻怪的圖鑑還沒開到這一階</b>，看到就是你缺的。') +
       wDesc('⚠️ 卡片<b>不會</b>從時空裂痕獎勵、血盟野外特殊掉落、遺物布告欄的委託材料裡出現——這些池子都把卡片排除掉了。')
     );
 
     var regs = (typeof CARD_REGIONS !== 'undefined') ? CARD_REGIONS : [];
     var rows = regs.map(function (r) {
-      return [esc(r.name), esc(cardStatCN(r.stat)), '+' + r.vals[0], '+' + r.vals[1], '+' + r.vals[2]];
+      return [esc(r.name), esc(cardStatCN(r.stat))].concat(r.vals.slice(0,tiers.length).map(function(v){return '+'+v;}));
     });
     out += wCard('🏅 地區完成加成（把一個地區的怪收齊）',
-      wDesc('把某地區<b>所有怪</b>都收到同一階，就拿到該地區加成（<b>取已達到的最高階</b>：全金 > 全銀 > 全普）。加成不大但確實有：') +
-      wTbl(['地區', '加成', '全普卡', '全銀卡', '全金卡'], rows) +
+      wDesc('地區內每隻怪都達到同一階後，取得該階的地區加成；只採已完成的最高階。') +
+      wTbl(['地區', '加成'].concat(tiers.map(function(t){return '全'+t.sfx;})), rows) +
       wDesc('提醒：<b>之後同地區新增怪物，原本收滿的地區會變成沒收滿</b>（加成跟著消失，要把新怪也收齊才會回來）。')
     );
 
     out += wCard('🔨 卡片合成・兌換（威頓村「魔法娃娃商人」）',
       wTbl(['做什麼', '規則'], [
-        ['卡片合成', '任意 10 張<b>已開通圖鑑的同階卡</b>（可<b>跨怪湊</b>，不必同名） → 1 張<b>高一階</b>；合成出的是那 10 張裡「<b>數量最多</b>的怪」（普→銀→金，可連鎖）'],
+        ['普／銀卡合成', '10 張已開通圖鑑的同階卡 → 1 張高一階卡；可跨怪湊數，產出取材料中數量最多的怪。此流程為普 → 銀 → 金。'],
         ['開通退費', '用卡片把某怪收集積分推過 100 分時，超出的分<b>退還卡片</b>（每超 10 分退 1 張銀卡、每超 1 分退 1 張普卡），不浪費'],
         ['銀卡換娃娃袋子', '圖鑑已開到<b>金階</b>的怪，其重複<b>銀卡</b> 1:1 換「魔法娃娃的袋子」'],
         ['金卡換娃娃盒子', '圖鑑已開到<b>金階</b>的怪，其重複<b>金卡</b> 1:1 換「高級魔法娃娃的盒子」']
       ])
     );
+    if(tiers.length>=5)out+=wCard('💠 白金與鑽石卡的用途',wTbl(['材料','用途'],[
+      ['20 張重複白金卡','自選一隻五階魔法娃娃'],['20 張重複鑽石卡','兌換六階魔法娃娃哈瑪'],['5 張多餘鑽石卡','三階變身合成；條件與機率見「鑽石變身」']
+    ]));
 
     out += wCard('🎎 重複卡片 → 魔法娃娃（娃娃怎麼換：先看這裡）',
       wDesc('<b>不是「整個地圖收滿」</b>——是<b>單獨某一隻怪</b>的圖鑑收到<b>金階</b>（那隻的收集積分推滿）。之後再掉<b>那隻怪</b>的銀／金卡，就<b>不再自動登錄、直接留在背包（身上）</b>成為「重複卡」。') +
@@ -2783,12 +2801,16 @@
   // 閒置預熱:分批把 eqHay 建好。一片最多做 EQ_WARM_CHUNK 件、且 timeRemaining 不足就讓出去,
   //   不跟遊戲的 tick／畫面更新搶 CPU(小百科在遊戲中是疊在遊戲上的模態,背後仍在跑)。
   var EQ_WARM_CHUNK = 24;
-  var _eqWarmAt = -1;
+  var _eqWarmAt = -1, _eqWarmPending = false;
   function eqWarmHay() {
-    if (_eqWarmAt === -2) return;                                  // 已全部建好
+    if (_eqWarmAt === -2 || _eqWarmPending) return;
     var idle = window.requestIdleCallback || function (fn) { return setTimeout(function () { fn({ timeRemaining: function () { return 6; } }); }, 60); };
     if (_eqWarmAt < 0) _eqWarmAt = 0;
+    _eqWarmPending = true;
     idle(function (dl) {
+      _eqWarmPending = false;
+      var modal = document.getElementById('m-wiki-modal');
+      if (_eqWarmAt === -2 || state.tab !== 'equip' || !modal || !modal.classList.contains('open')) return;
       var idx = eqIndex(), done = 0;
       while (_eqWarmAt < idx.length && done < EQ_WARM_CHUNK && (!dl || dl.timeRemaining() > 4)) { eqHay(idx[_eqWarmAt++]); done++; }
       if (_eqWarmAt >= idx.length) { _eqWarmAt = -2; return; }
@@ -2798,9 +2820,19 @@
 
   // 摺疊說明卡:預設收起(第一屏留給裝備本身),篩到相關條件時自動展開。
   //   ⚠ 這幾張也要進統一搜尋(eqSearchBlocks 會掃它們的文字),不然把說明收起來等於讓搜尋少一票結果。
-  var _eqHelpCache = null;
+  var _eqHelpCache = null, _eqHelpMode = '';
+  function relicHelpMode() {
+    var t = window.AFK_TOGGLES;
+    return { plus: !!window.__afkRelicPlus && (!t || t.enabled('relicplus')), affix: !t || t.enabled('relicaffix') };
+  }
+  function relicHelpText(mode) {
+    return (mode.plus ? '遺物請在燃柳村找<b>哈瑪大師</b>合成：武器、防具最高 <b>+15</b>，飾品最高 <b>+10</b>，滿階後可昇華。各件的 +5、+10 與昇華能力，請看<b>「遺物進階」</b>。' : '目前關閉遺物合成；遺物不能使用一般強化卷軸。已持有的合成遺物會保留。')
+      + (mode.affix ? '開啟「重複遺物帶詞綴」時，再次取得已收錄的遺物，有機會附帶祝福、遠古系詞綴；武器另有機會帶屬性。' : '目前關閉「重複遺物帶詞綴」，新取得的遺物不由此功能附加詞綴；原有詞綴保留。');
+  }
   function eqHelpCards() {
-    if (_eqHelpCache) return _eqHelpCache;
+    var mode = relicHelpMode(), modeKey = Number(mode.plus) + ':' + Number(mode.affix);
+    if (_eqHelpCache && _eqHelpMode === modeKey) return _eqHelpCache;
+    _eqHelpMode = modeKey;
     var tips = [
       '🔍 <b>兩個搜尋框不一樣</b>：這一頁的只篩這頁的裝備（連展開後的數值與效果一起找），最上面那個是<b>跨全部分頁</b>搜。',
       '💍 <b>飾品欄會隨等級解鎖</b>：戒指一開始 2 個，<b>Lv76 開第 3 個、Lv81 開第 4 個</b>；耳環一開始 1 個，<b>Lv59 開第 2 個</b>。',
@@ -2810,7 +2842,7 @@
     ];
     var relic = [
       '<b>每隻怪物各有一件專屬遺物</b>（名稱藍字、說明帶【遺物】），擊殺時 <b>0.0001%</b>（百萬分之一）機率掉落；機率會吃掉落倍率：席琳的世界 <b>×3</b>、瘋狂的席琳世界 <b>×5</b>、恩賜怪 <b>×10</b>。想查哪隻怪掉哪件，到「掉落查詢」搜怪物名。',
-      '<b>無法強化</b>，也<b>不會</b>帶祝福／詛咒、屬性／遠古詞綴或席琳套裝效果——撿到什麼樣就永遠什麼樣。',
+      relicHelpText(mode),
       '不會出現在潘朵拉黑市的陳列商品裡（但可以用黑市的「遺物布告欄」指定兌換，見「遺物市場」分頁）。能給哪些職業用，以每件裝備標示的職業為準。',
       '有專屬新部位「<b>脛甲</b>」（盔甲之下的額外防具格，目前只有遺物）。',
       '取得任何遺物會登錄「<b>遺物收集冊</b>」（遊戲內「收藏」面板第 4 本；進度依一般／經典兩種模式各自一份、與倉庫同規則；只記錄進度、無全收集加成）。',
@@ -2990,7 +3022,18 @@
 
   function renderEnhance() {
     var note = '<div class="m-wiki-note">裝備可以「強化」升等，還可能帶「屬性／遠古／祝福」三種詞綴，<b>可同時各帶一個</b>。</div>';
-    var secs = ENHANCE_SECTIONS.map(sectionCard).join('');
+    var mode = relicHelpMode();
+    var secs = ENHANCE_SECTIONS.map(function (section) {
+      var blocks = (section.blocks || []).map(function (block) {
+        if (!block.p) return block;
+        var p = block.p;
+        if (p.indexOf('遺物不能強化') >= 0) p = relicHelpText(mode);
+        if (mode.affix) p = p.replace('<b>遠古系已無取得途徑</b>，只在舊裝備上看得到（效果仍生效）。', '一般裝備沿用既有取得規則；開啟「重複遺物帶詞綴」時，已收錄遺物再次取得仍有機會帶遠古系詞綴。')
+          .replace('<b>遠古系已停用</b>——「賦予武器／盔甲祝福卷軸」現在沒有用途。', '碧恩不提供遠古系賦予；「賦予武器／盔甲祝福卷軸」目前沒有對應功能。重複遺物隨機附帶遠古系詞綴，是另一項取得方式。');
+        return Object.assign({}, block, {p:p});
+      });
+      return sectionCard(Object.assign({}, section, {blocks:blocks}));
+    }).join('');
     return note + secs;
   }
 
@@ -3096,6 +3139,7 @@
   // 部分型態改用 apm(每分鐘攻擊次數,依裝備武器分流)而非固定 atk;不處理的話整欄會顯示 '—'。
   //   同一型態各武器數值常相同→只印一個;不同才印區間。
   function _spanFromApm(apm, dec) {
+    if (typeof apm === 'number') return apm > 0 ? (60 / apm).toFixed(dec) : '—';
     var vs = Object.keys(apm || {}).map(function (k) { return 60 / apm[k]; });
     if (!vs.length) return null;
     var lo = Math.min.apply(null, vs).toFixed(dec), hi = Math.max.apply(null, vs).toFixed(dec);
@@ -3132,22 +3176,33 @@
   var SET_POLY_LABEL = { dk: '死亡騎士套裝（4 件）', kurt: '克特套裝（4 件）', demon: '惡魔套裝（4 件）', darkelf: '黑暗妖精套裝（3 件）' };
   function renderPoly() {
     if (typeof POLY_TIERS === 'undefined') return '<div class="m-wiki-note">讀不到變形資料。</div>';
+    var cards = window.AFK_CARD_ASCENSION && (!window.AFK_TOGGLES || AFK_TOGGLES.enabled('card-ascension'));
+    var forms = window.AFK_CARD_FORMS;
     var dur = (typeof DB !== 'undefined' && DB.items && DB.items.scroll_poly && DB.items.scroll_poly.dur) || 1800;
     var durMin = Math.round(dur / 60);
     var h = '<div class="m-wiki-note">變形＝用<b>' + wDexLink('變形卷軸') + '</b>暫時把自己變成某種型態，改變你的<b>速度</b>（攻擊間隔／施法冷卻／被擊硬直／怪物重生），持續 <b>' + durMin + ' 分鐘</b>，到時自動解除、不佔裝備欄。<b>套裝專屬變身</b>另外附帶一組戰鬥加成（見最下方）。</div>';
     h += '<div class="m-wiki-sub">🌀 怎麼變形</div>';
+    if (cards) {
+      h += wDesc('先取得某隻怪的<b>鑽石卡</b>，才能使用牠的變身。手動使用變形卷軸可直接選擇已解鎖的卡片型態，不需要控制戒指；自動使用會維持上次選擇。');
+      h += wDesc('普通鑽石變身沿用怪物的基礎攻擊間隔、施法鎖定與受擊硬直。神話、天上與時空另有能力加成，完整解鎖與合成規則見<b>「鑽石變身」</b>。');
+      h += wDesc('套裝及武器的強制變身優先生效，期間暫停卡片變身能力。非怪物的原有卷軸型態仍依等級與原本的控制戒指規則使用。');
+    } else {
     h += '<div class="m-wiki-kv"><b>' + wDexLink('變形卷軸') + '（隨機，也叫變形術）</b>使用後從<b>所有「需要等級 ≤ 你的等級」的型態</b>中<b>隨機</b>變成一種，持續 ' + durMin + ' 分鐘。可在設定開「自動使用／自動購買」自動維持。</div>';
     h += '<div class="m-wiki-kv"><b>' + wDexLink('變形控制戒指') + '（指定型態）</b>只要<b>背包帶著就生效</b>（不必佔戒指欄）。手動使用變形卷軸時會跳選單讓你<b>指定</b>要變哪一種；自動使用時則<b>維持上次選的型態</b>、不再隨機重抽。</div>';
     h += '<div class="m-wiki-kv"><b>套裝專屬變身</b>穿滿對應套裝會<b>強制</b>變成專屬型態（見最下方），<b>優先於卷軸變身</b>、不進隨機池，<b>卸下套裝立即消失</b>。</div>';
     h += '<div class="m-wiki-kv"><b>速度怎麼算</b>：變身會用<b>該型態自己的</b>攻擊間隔／施法冷卻／被擊硬直<b>取代</b>你原本由「職業＋性別×武器」決定的速度（有的變身反而更慢，看下表數字、越小越快）；取代後的<b>攻擊速度</b>仍會再吃加速術／勇敢藥水／精靈餅乾／各精通的<b>相乘</b>加速；<b>但施法間隔完全不受任何加速影響</b>——放技能的快慢只看職業（或變身）本身的施法速度，堆攻速對連法沒有幫助。移動速度則影響<b>怪物重生（下一批出現）</b>快慢。<br><b>戰鬥加成怎麼疊</b>：只有<b>套裝專屬變身</b>會附帶 額外傷害／命中／魔法傷害／MP… 這類加成，直接<b>加</b>在你原本數值上；<b>隨機的變形卷軸型態現在只改速度、沒有這些加成</b>。</div>';
-    h += '<div class="m-wiki-sub">📊 所有變形型態（依需要等級）</div>';
+    }
+    h += '<div class="m-wiki-sub">📊 既有卷軸型態與基礎速度</div>';
+    if (cards) h += wDesc('下表遇到怪物型態時，以鑽石卡解鎖後的速度顯示；其他型態保留原設定。鑽石卡型態可搭配各類武器，攻擊間隔仍會受角色的加速效果影響。');
+    else {
     h += '<div class="m-wiki-note" style="margin-top:0;">用變形卷軸會從<b>所有「需要等級 ≤ 你的等級」的型態</b>裡隨機抽（持變形控制戒指可指定）。⚠️ <b>會依你手上的武器分流</b>：拿<b>弓或十字弓</b>只會變成<b>遠距離型態</b>（下表帶 🏹 的那些），拿其他武器或空手只會變成近距離型態；<b>中途換成不同類的武器會立刻重抽</b>。<b>名稱顏色</b>只是分級（Lv49 以下白、Lv50~51 淡黃、Lv52 以上金，與遊戲內一致），與能不能變無關。</div>';
-    h += '<div class="m-wiki-note" style="margin-top:2px;">四個速度值單位皆為<b>秒、越小越快</b>：攻擊間隔＝兩次普攻的間隔、施法冷卻＝放技能的最短間隔、被擊硬直＝被打斷後的僵直、怪物重生＝下一批怪出現的等待。</div>';
+    }
+    h += '<div class="m-wiki-note" style="margin-top:2px;">速度單位為秒，越小越快；0 表示不增加該項動作鎖定，實際行動仍依戰鬥節拍。怪物重生欄表示一般地圖下一批怪物的等待時間。</div>';
     // 型態一律照「需要等級」排成一張表:原作者 POLY_TIERS 的分段只決定名稱顏色,不影響能不能變
     //   (抽取只看 f.lv <= 你的等級,見 js/02 polyRandomCandidates),分段標題反而讓人誤會
     //   「這個等級帶只能變這幾個」。遠距離型態讀遊戲的 RANGED_POLY_FORMS(作者改名單自動跟上)。
     var _polyForms = [];
-    POLY_TIERS.forEach(function (t) { (t.forms || []).forEach(function (f) { _polyForms.push({ f: f, color: t.color || '', i: _polyForms.length }); }); });   // i=作者原始順序,當排序的最終 tiebreaker
+    POLY_TIERS.forEach(function (t) { (t.forms || []).forEach(function (f) { _polyForms.push({ f: cards && forms && forms.isMonsterName(f.n) ? forms.monsterForm(f.n) || f : f, color: t.color || '', i: _polyForms.length }); }); });
     var _isRangedForm = function (n) { try { return typeof RANGED_POLY_FORMS !== 'undefined' && RANGED_POLY_FORMS.has(n); } catch (e) { return false; } };
     // 🏹⚔️ 遠近篩選:抽到什麼只看你手上是不是弓/十字弓,所以「我現在拿弓」時另外 69 個近距型態全是雜訊。
     var _prange = state.polyRange || 'all';
@@ -3164,7 +3219,7 @@
     //   (與畫面上看到的同一個值;"0.46~0.67" 這種區間取較快的那端、'—' → NaN 排最後),不必另建一套換算。
     var POLY_COLS = [
       { k: 'n', h: '型態', v: function (x) { return x.f.n; }, txt: 1 },
-      { k: 'lv', h: '需要等級', v: function (x) { return x.f.lv || 0; } },
+      { k: 'lv', h: cards ? '解鎖條件' : '需要等級', v: function (x) { return x.f.lv || 0; } },
       { k: 'atk', h: '攻擊間隔', v: function (x) { return parseFloat(polyAtk(x.f)); } },
       { k: 'cast', h: '施法冷卻', v: function (x) { return parseFloat(polyCast(x.f)); } },
       { k: 'stun', h: '被擊硬直', v: function (x) { return parseFloat(polyStun(x.f)); } },
@@ -3187,7 +3242,7 @@
       var f = x.f;
       // 型態名不換行:窄畫面下四字以上會被拆成三四行、整列變超高很難讀,寬度不足時讓表格自己橫捲(m-wiki-tblwrap)
       return ['<span class="' + x.color + '" style="white-space:nowrap;">' + esc(f.n) + (_isRangedForm(f.n) ? ' 🏹' : '') + '</span>',
-        'Lv' + (f.lv || 1), polyAtk(f), polyCast(f), polyStun(f), polyWlk(f)];
+        f.cardMonster ? '取得該怪鑽石卡' : 'Lv' + (f.lv || 1), polyAtk(f), polyCast(f), polyStun(f), polyWlk(f)];
     }));
     h += wDesc('點欄位標題可<b>排序</b>（再點一次反向）。速度欄位<b>越小越快</b>，所以升序＝最快的排最前面；查不到值的（—）一律排最後。目前共 <b>' + _shown.length + '</b> 個型態。');
     // 🧝 戒指限定型態(夏納/真夏納):不在 POLY_TIERS,變形卷軸抽不到,只有變形控制戒指指定得到
@@ -3833,10 +3888,28 @@
     ]}
   ];
   function renderAntharas() {
-    var note = '<div class="m-wiki-note">「侵蝕的安塔瑞斯巢穴」是威頓村開放的<b>副本</b>：四區一路往深處推，最終頭目會三段變身。<b>每個角色每天 1 次</b>（帶傭兵打會一起扣掉他們的次數），還能指定其他存檔角色當「助戰者」加持自己。</div>';
+    var extended = window.__afkCorrupt && (!window.AFK_TOGGLES || AFK_TOGGLES.enabled('corrupt'));
+    var note = '<div class="m-wiki-note">從威頓村進入「侵蝕的安塔瑞斯巢穴」，通過四區後迎戰' + (extended ? '七' : '三') + '階龍王。每個角色每天可通關一次；帶傭兵通關時，也會使用他們當日的次數。</div>';
     var secs = ANTHARAS_SECTIONS.map(function (s) {
-      var lines = s.lines.map(bulletHTML).join('');
-      return '<div class="m-wiki-card"><div class="m-wiki-name">' + esc(s.t) + '</div>' + lines + '</div>';
+      var title = s.t, content = s.lines.slice();
+      if (extended && s.t.indexOf('最終戰：') === 0) {
+        var stages = [], id = 'ant_antharas_eroded', seen = {};
+        while (id && DB.mobs[id] && !seen[id]) { seen[id] = true; var m = DB.mobs[id]; stages.push([String(stages.length + 1), esc(m.n), 'Lv' + m.lv, Number(m.hp).toLocaleString('zh-TW')]); id = m.transformTo; }
+        title = '最終戰：七階龍王';
+        content = [
+          '龍王依序變換七種型態。前六階進入變身門檻後回滿生命，只有最後一階死亡才結算通關與掉落。',
+          wTbl(['階段', '型態', '等級', '基礎生命'], stages),
+          '進入變身或致死門檻後，龍王會以 1 點生命鎖血 10 秒，再變身或結算；七階各自計時。',
+          '最終階仍有中毒、暈眩及全體地屬性攻擊；攜帶抗地、免毒與隊伍回復裝備再深入挑戰。'
+        ];
+      } else if (extended && s.t === '四區的怪與區域頭目') {
+        content = [content[0], wTbl(['區域', '區域頭目', '等級', '基礎生命'], ['antharas_nest_1','antharas_nest_2','antharas_nest_3','antharas_lair'].map(function (key) {
+          var m = DB.mobs[ANTHARAS_AREA_BOSS[key]], area = DB.maps[key];
+          return [esc(area ? area.n : key), esc(m.n), 'Lv' + m.lv, Number(m.hp).toLocaleString('zh-TW')];
+        }))];
+      }
+      if (extended) content = content.map(function (line) { return line.replace(/被侵蝕的瘋狂安塔瑞斯/g, esc(window.__afkAntFinal || '被侵蝕的時空安塔瑞斯')); });
+      return '<div class="m-wiki-card"><div class="m-wiki-name">' + esc(title) + '</div>' + content.map(bulletHTML).join('') + '</div>';
     }).join('');
     return note + secs;
   }
@@ -4381,38 +4454,32 @@
     };
   }
   // 卡片分頁:選定角色的各地區收集進度＋缺卡清單(依目前階分組;點怪名跳掉落查詢看出沒地圖)
-  var CARD_TIER_CN = ['未登錄', '普卡', '銀卡', '金卡'];
+  var CARD_TIER_CN = ['未登錄', '普卡', '銀卡', '金卡', '白金卡', '鑽石卡'];
   function cardStatCN(stat) {   // 地區加成屬性中文;遊戲 CARD_STAT_LABEL 的 mr 是英文縮寫,依鐵則翻「魔防」
     if (stat === 'mr') return '魔防';
     return (typeof CARD_STAT_LABEL !== 'undefined' && CARD_STAT_LABEL[stat]) || stat;
   }
   function cardProgressHTML() {
-    var b = collBuckets(); if (!b) return '';
-    if (typeof CARD_REGIONS === 'undefined' || typeof CARD_REGION_MOBS === 'undefined') return '<div class="m-wiki-note">讀不到卡片地區資料。</div>';
-    function tierOf(nm) { var s = b.card[nm] || 0; return s >= 100 ? 3 : (s >= 10 ? 2 : (s >= 1 ? 1 : 0)); }
-    var rows = [], detail = '';
-    CARD_REGIONS.forEach(function (reg) {
-      var names = CARD_REGION_MOBS[reg.key] || [];
-      var cnt = [0, 0, 0, 0], minT = 3;
-      names.forEach(function (nm) { var t = tierOf(nm); cnt[t]++; if (t < minT) minT = t; });
-      if (!names.length) minT = 0;
-      var lbl = cardStatCN(reg.stat);
-      rows.push([esc(reg.name), String(names.length), String(cnt[3]), String(cnt[2]), String(cnt[1]),
-        cnt[0] ? '<b style="color:#f87171">' + cnt[0] + '</b>' : '0',
-        minT > 0 ? esc(lbl) + ' +' + reg.vals[minT - 1] + '（全' + CARD_TIER_CN[minT] + '）' : '—']);
-      var below = names.length - cnt[3];
-      if (below > 0) {
-        var groups = '';
-        [0, 1, 2].forEach(function (t) {
-          var miss = names.filter(function (nm) { return tierOf(nm) === t; });
-          if (miss.length) groups += '<div class="m-wiki-desc" style="margin-top:4px;"><b>' + (t === 0 ? '❌ 未登錄' : '⬆ 目前' + CARD_TIER_CN[t]) + '（' + miss.length + '）</b>：' + miss.map(function (nm) { return wDexLink(nm) + (t > 0 ? ' <span style="color:#94a3b8;font-size:12px;">' + (b.card[nm] || 0) + '/100</span>' : ''); }).join('、') + '</div>';   // 🎴 括號後附收集積分(0~100·滿100開金卡)——普/銀卡群才顯示,未登錄恆0省略
-        });
-        detail += wCard('📍 ' + esc(reg.name) + '（' + below + '／' + names.length + ' 隻未達金卡）', groups);
+    var b=collBuckets();if(!b)return '';
+    if(typeof CARD_REGIONS==='undefined'||typeof CARD_REGION_MOBS==='undefined')return '<div class="m-wiki-note">讀不到卡片地區資料。</div>';
+    var highest=typeof CARD_TIERS!=='undefined'?CARD_TIERS.length:3,limit=highest>=5?10000:100;
+    function tierOf(nm){var s=Number(b.card[nm])||0;return highest>=5&&s>=10000?5:highest>=4&&s>=1000?4:s>=100?3:s>=10?2:s>=1?1:0;}
+    var rows=[],detail='';
+    CARD_REGIONS.forEach(function(reg){
+      var names=CARD_REGION_MOBS[reg.key]||[],cnt=new Array(highest+1).fill(0),minT=highest;
+      names.forEach(function(nm){var t=tierOf(nm);cnt[t]++;if(t<minT)minT=t;});
+      if(!names.length)minT=0;
+      rows.push([esc(reg.name),cnt[highest]+'／'+names.length,minT>0?esc(cardStatCN(reg.stat))+' +'+reg.vals[minT-1]+'（全'+CARD_TIER_CN[minT]+'）':'尚未全區完成']);
+      var below=names.length-cnt[highest];
+      if(!below)return;
+      var groups='';
+      for(var t=0;t<highest;t++){
+        var miss=names.filter(function(nm){return tierOf(nm)===t;});
+        if(miss.length)groups+='<details class="afk-guide-missing"><summary>'+esc(CARD_TIER_CN[t])+'・'+miss.length+' 隻</summary><div class="m-wiki-desc">'+miss.map(function(nm){return wDexLink(nm)+' <small>'+Number(b.card[nm]||0)+'／'+limit+'</small>';}).join('、')+'</div></details>';
       }
+      detail+=wCard(esc(reg.name)+'・尚缺 '+below+' 張'+CARD_TIER_CN[highest],groups);
     });
-    return wCard('🎴 收集進度（' + esc(b.mode) + '模式）',
-      wTbl(['地區', '怪數', '金', '銀', '普', '未登錄', '目前地區加成'], rows) +
-      wDesc('地區加成取「全部怪都達到」的最高階。下面各地區列出還缺的卡，點怪名可跳「掉落查詢」看出沒地圖。名字後的數字＝該怪收集積分（滿 100 開通金卡；打怪掉普卡 +1、銀卡 +10、金卡 +100，累積到 100 即可）。')) + detail;
+    return wCard('收集進度・'+esc(b.mode)+'模式',wTbl(['地區',CARD_TIER_CN[highest]+'完成度','地區加成'],rows)+wDesc('展開下方地區可查看缺卡；點怪名查看出沒地點。任一地區全鑽石，即可開啟神話合成。'))+detail;
   }
   // 收藏-裝備/道具分頁:選定模式的收集進度(含全收集加成)＋缺件清單(點名字跳掉落查詢看取得方式)
   // bonusOf 傳 null＝這本沒有「全收集加成」(遺物收集冊)→ 不畫那一欄

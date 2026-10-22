@@ -14,6 +14,7 @@
     <script src="afk-lzcache.js"></script>
     <!-- afk-perf：卡頓修正（日誌批次寫入／背包分頁按需重建）。必須排在 afk-toast（包 logSys）與 afk-itemsearch（包 renderTabs）之前 -->
     <script src="afk-perf.js"></script>
+    <script src="afk-display.js"></script>
     <!-- afk-mapsync：地圖下拉自我校正（回城／出發後地區/地圖下拉與所在地不符時自動校正） -->
     <script src="afk-mapsync.js"></script>
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->
@@ -90,15 +91,22 @@
     <script src="afk-mercguard.js"></script>
     <!-- 傭兵技能清單即時更新：隊伍面板 skill 分頁的重建簽章沒把技能清單算進去，傭兵換了授予技能的裝備/學了新魔法，下拉停在舊清單 -->
     <script src="afk-squadsync.js"></script>
-    <!-- 遠古系裝備的來源與傳承：上游是「絕版」(rollAffixesNew 恆回 anc:false)，這裡把產生管道接回來（金卡怪掉落／該分類收滿後的非打怪取得），並讓製作/精煉把本體的詞綴帶到成品（上游只替祝福做了這件事） -->
+    <!-- 金卡怪掉遠古裝備：遠古系在上游是「絕版」(rollAffixesNew 恆回 anc:false)，這裡把產生管道接回來，條件綁卡片收集冊金階 -->
     <script src="afk-ancdrop.js"></script>
     <!-- 重複的遺物會帶詞綴：遺物收集冊已收錄的那件，之後再打到的每一件各自 50% 擲祝福／遠古系／屬性（屬性只上武器遺物）。需核心補丁 11 的 __afkRelicAffix 鉤子 -->
     <script src="afk-relicaffix.js"></script>
-    <!-- 遺物整理：重複的遺物一次清掉（賣金幣走核心 getSellPrice／回收換龍鑽 3 顆一件）；每個遺物 id 自動保留最好的 1 件（布告欄搜尋的抽獎池看的是「你現在手上有沒有」，全清掉會搜回剛丟的那件）。排在 afk-relicaffix 之後＝在最外層包 renderRelicBook，入口不會被它的說明行擠掉 -->
+    <!-- 遺物整理：重複的遺物一次清掉（賣金幣／回收換龍鑽）；每個遺物 id 自動保留最好的 1 件。排在 afk-relicaffix 之後＝在最外層包 renderRelicBook -->
     <script src="afk-relicbatch.js"></script>
     <!-- afk-stackdot：可疊層中毒／灼燒（上限 20 層；供遺物特效使用） -->
     <script src="afk-stackdot.js"></script>
     <!-- afk-relicplus：遺物合成（武器 +1～+15，需核心補丁 15 的出血加成）；排在 afk-relicbatch 之後 -->
+    <!-- afk-relicfx：遺物特效隨強化成長（玩家的遺物特殊效果清單；需核心補丁 35；必須排在 afk-relicplus 之前） -->
+    <script src="afk-relicfx.js"></script>
+    <!-- 完整遺物階段與事件規則；資料與設定先於遺物合成載入。 -->
+    <script src="afk-relic-catalog.js"></script>
+    <script src="afk-relic-weapons.js"></script>
+    <script src="afk-relic-defense.js"></script>
+    <script src="afk-relic-runtime.js"></script>
     <script src="afk-relicplus.js"></script>
     <!-- afk-dreamstar：暗夢星迴（單機版）；需 afk-dreamhell、afk-relicplus，排在 afk-relicplus 之後 -->
     <script src="afk-dreamstar.js"></script>
@@ -114,7 +122,6 @@
     <script src="afk-uifix.js"></script>
     <!-- afk-castlewar：七城攻城、城堡收成、宣戰與統一伺服器（需核心補丁 27；排在 afk-dreamhell／afk-arts 之後） -->
     <script src="afk-castlewar.js"></script>
-    <!-- 黑市收購價提示：收購欄下方即時顯示必中價/命中率/平均要等多久（遊戲只能靠掛單試）；也開 AFK_BM 給 afk-dex 的物品詳情標價 -->
     <script src="afk-bmprice.js"></script>
     <!-- 只迴避指定頭目：把上游「迴避頭目(瞬移卷軸)」的範圍從「全部的王」縮小到玩家挑的那幾隻（每張地圖各自一份） -->
     <script src="afk-bossavoid.js"></script>
@@ -123,14 +130,13 @@
     <script src="afk-invlist.js"></script>
     <script src="afk-eqlist.js"></script>
     <script src="afk-npclist.js"></script>
-    <!-- afk-npclabel：村莊 NPC 名牌不要跑出畫面（包核心的名牌排版，補左右夾邊） -->
+    <!-- afk-npclabel：村莊 NPC 名牌不要跑出畫面 -->
     <script src="afk-npclabel.js"></script>
     <script src="afk-mobname.js"></script>
     <script src="afk-trackinfo.js"></script>
     <!-- afk-trackmaps：追蹤選單補上選不到的圖（黑暗妖精聖地＝地獄奴隸唯一產地、傲慢之塔2~10樓、六張隱藏區域）；三批來歷不同,檔頭有表 -->
     <script src="afk-trackmaps.js"></script>
     <script src="afk-relicguard.js"></script>
-    <!-- afk-wpnfix：補上游漏掉的武器設定（分類表 + 物品欄位；只在上游是空的時候才補，作者填了自動讓路） -->
     <script src="afk-wpnfix.js"></script>
     <!-- 快速強化目標上限 +12→+15（包 buildQuickEnhanceHeader 補下拉選項） -->
     <script src="afk-enhtarget.js"></script>
@@ -155,14 +161,14 @@
     <script src="afk-dollcursor.js"></script>
     <!-- afk-anyclass：去除裝備職業限制（預設關）——包 checkCanEquip，執行期間暫時放行職業那幾關 -->
     <script src="afk-anyclass.js"></script>
-    <!-- afk-locksafe：上鎖的裝備不會被潘朵拉收購/遺物布告欄拿走（包入口，執行期間把上鎖物品從背包暫時抽掉） -->
+    <!-- afk-locksafe：上鎖的裝備不會被潘朵拉收購/遺物布告欄拿走 -->
     <script src="afk-locksafe.js"></script>
-    <!-- afk-buyercompat：收購 NPC 向下兼容（收 +6 也可以繳 +15）——需搭配 apply-core-patches 補丁 13 的 __afkBuyerEnMatch 鉤子；排在 afk-locksafe 之後＝在最外層，算候選時看得到完整背包 -->
+    <!-- afk-buyercompat：收購 NPC 向下兼容（收 +6 也可以繳 +15）——需搭配 apply-core-patches 補丁 13 的 __afkBuyerEnMatch 鉤子；排在 afk-locksafe 之後＝在最外層 -->
     <script src="afk-buyercompat.js"></script>
     <!-- 傳統模式(偽)/自動衝裝：需搭配 scripts/apply-core-patches.mjs 的 gainItem _tEn 鉤子 -->
     <script src="afk-traditional.js"></script>
     <script src="afk-warehouse.js"></script>
-    <!-- 倉庫批次存取(預設關):勾選/全選一次搬完(核心是一件一件搬、每件都 saveGame,幾千格搬不動);排在 afk-warehouse 之後 → afterRender 在它的注入之後才跑 -->
+    <!-- 倉庫批次存取:勾選/全選一次搬完(核心是一件一件搬、每件都 saveGame,幾千格搬不動);排在 afk-warehouse 之後 → afterRender 在它的注入之後才跑 -->
     <script src="afk-whbatch.js"></script>
     <!-- afk-whall：倉庫一鍵存入／一鍵取出（目前分類）；排在 afk-whbatch 之後 -->
     <script src="afk-whall.js"></script>
@@ -174,4 +180,38 @@
     <script src="afk-syncinfo.js"></script>
     <script src="afk-analytics.js"></script>
     <script src="afk-skin.js"></script>
+    <!-- afk-sets：套裝補齊（天堂透視鏡；需核心補丁 34）、afk-polys：變身補齊 -->
+    <script src="afk-sets.js"></script>
+    <script src="afk-polys.js"></script>
+    <!-- afk-maps：地圖補齊（天堂透視鏡；資料 afk-maps-data.js 由 scripts/build-ttmi-maps.mjs 產生） -->
+    <script src="afk-maps-data.js"></script>
+    <script src="afk-maps.js"></script>
+    <!-- afk-hitstun：受擊硬直一致套用到主手／副手／攻擊施法，每次最多延後動作間隔 40%（需核心補丁 33） -->
+    <script src="afk-hitstun.js"></script>
+    <!-- afk-ringany：召喚／傳送／變形控制戒指放背包或倉庫即生效 -->
+    <script src="afk-ringany.js"></script>
+    <!-- afk-resist：屬性抗性查表、無屬性抗性減物理傷害（需核心補丁 31） -->
+    <script src="afk-resist.js"></script>
+    <!-- afk-dreamcost：夢艷地獄的死亡詛咒、轉生夢艷技能／復活代價、寵物 MP 恢復吃玩家面板（需 afk-dreamhell） -->
+    <script src="afk-dreamcost.js"></script>
+    <!-- afk-healstat：本圖效率統計的恢復統計、面板 HP恢復量完整算式（需 afk-arts） -->
+    <script src="afk-healstat.js"></script>
+    <!-- afk-stun：鈍擊＝暈眩（頭目有抗性）、連暈 10 秒→完全停擺 15 秒；包 tick 必須在最外層，所以排最後 -->
+    <script src="afk-stun.js"></script>
+    <!-- 天堂透視鏡已核對物品；套裝與地圖資料就緒後加入配方與裂痕補給。 -->
+    <script src="afk-ttmi-items-data.js"></script>
+    <script src="afk-ttmi-items.js"></script>
+    <!-- 遺物戰鬥掛接、同伴與固定終階 GM 測試道具。 -->
+    <script src="afk-relic-weapon-bridge.js"></script>
+    <script src="afk-relic-companions.js"></script>
+    <script src="afk-relic-defense-bridge.js"></script>
+    <script src="afk-relic-gm.js"></script>
+    <script src="afk-relic-integration.js"></script>
+    <!-- 鑽石卡變身與神話／天上／時空合成；保留原生變形卷軸入口。 -->
+    <script src="afk-card-forms.js"></script>
+    <script src="afk-card-ascension.js"></script>
+    <script src="afk-card-combat.js"></script>
+    <!-- 小百科從目前物品與變身資料生成分階說明。 -->
+    <script src="afk-game-guide.js"></script>
+    <script src="afk-readability.js"></script>
     <!-- ═══════════ 加掛版外掛層 END ═══════════ -->

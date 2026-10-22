@@ -127,6 +127,7 @@
   var count = function (p) {
     var c = {}, seen = {};
     try { for (var k in p.eq) { var e = p.eq[k]; if (!e || k === 'wpn' || k === 'offwpn') continue; if (seen[e.id]) continue; seen[e.id] = 1; var d = DB.items[e.id]; if (d && d.set && I[e.id]) c[d.set] = (c[d.set] || 0) + 1; } } catch (e) {}
+    if (window.AFK_RELIC_GM) window.AFK_RELIC_GM.pluginSets(p,c,seen);
     var has = function (id) { return !!seen[id]; };
     var wet4 = has('afk_set_wet_cloak') && has('afk_set_wet_armor') && has('afk_set_wet_gloves') && has('afk_set_wet_boots');
     return {

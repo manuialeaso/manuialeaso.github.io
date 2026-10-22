@@ -1,0 +1,233 @@
+{
+  "results": [
+    {
+      "tier": "mythic",
+      "name": "神話・莉絲安",
+      "form": {
+        "key": "morph:莉絲安",
+        "domKey": "morph:莉絲安",
+        "base": "assets/morphanim/%E8%8E%89%E7%B5%B2%E5%AE%89/",
+        "wpn": null
+      },
+      "highForms": [
+        {
+          "name": "死亡",
+          "level": 70
+        },
+        {
+          "name": "反王肯恩",
+          "level": 75
+        },
+        {
+          "name": "烈焰的死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "莉絲安",
+          "level": 80
+        },
+        {
+          "name": "焚焰死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "黃金死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "雷霆死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "闇黑死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "真夏納",
+          "level": 85
+        },
+        {
+          "name": "伊詩蒂",
+          "level": 90
+        },
+        {
+          "name": "格利特",
+          "level": 90
+        },
+        {
+          "name": "特羅斯",
+          "level": 90
+        },
+        {
+          "name": "喬",
+          "level": 90
+        },
+        {
+          "name": "絲莉安",
+          "level": 90
+        }
+      ],
+      "rendered": {
+        "tier": "mythic",
+        "src": "http://127.0.0.1:44279/assets/morphanim/%E8%8E%89%E7%B5%B2%E5%AE%89/idle_11.png",
+        "decoded": true,
+        "visible": true,
+        "aura": true,
+        "auraHeight": 100
+      }
+    },
+    {
+      "tier": "celestial",
+      "name": "天上・月羽神弓",
+      "form": {
+        "key": "morph:莉絲安",
+        "domKey": "morph:莉絲安",
+        "base": "assets/morphanim/%E8%8E%89%E7%B5%B2%E5%AE%89/",
+        "wpn": null
+      },
+      "highForms": [
+        {
+          "name": "死亡",
+          "level": 70
+        },
+        {
+          "name": "反王肯恩",
+          "level": 75
+        },
+        {
+          "name": "烈焰的死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "莉絲安",
+          "level": 80
+        },
+        {
+          "name": "焚焰死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "黃金死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "雷霆死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "闇黑死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "真夏納",
+          "level": 85
+        },
+        {
+          "name": "伊詩蒂",
+          "level": 90
+        },
+        {
+          "name": "格利特",
+          "level": 90
+        },
+        {
+          "name": "特羅斯",
+          "level": 90
+        },
+        {
+          "name": "喬",
+          "level": 90
+        },
+        {
+          "name": "絲莉安",
+          "level": 90
+        }
+      ],
+      "rendered": {
+        "tier": "celestial",
+        "src": "http://127.0.0.1:44279/assets/morphanim/%E8%8E%89%E7%B5%B2%E5%AE%89/idle_0.png",
+        "decoded": true,
+        "visible": true,
+        "aura": true,
+        "auraHeight": 87.75
+      }
+    },
+    {
+      "tier": "spacetime",
+      "name": "時空・裂星獵手",
+      "form": {
+        "key": "morph:莉絲安",
+        "domKey": "morph:莉絲安",
+        "base": "assets/morphanim/%E8%8E%89%E7%B5%B2%E5%AE%89/",
+        "wpn": null
+      },
+      "highForms": [
+        {
+          "name": "死亡",
+          "level": 70
+        },
+        {
+          "name": "反王肯恩",
+          "level": 75
+        },
+        {
+          "name": "烈焰的死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "莉絲安",
+          "level": 80
+        },
+        {
+          "name": "焚焰死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "黃金死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "雷霆死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "闇黑死亡騎士",
+          "level": 80
+        },
+        {
+          "name": "真夏納",
+          "level": 85
+        },
+        {
+          "name": "伊詩蒂",
+          "level": 90
+        },
+        {
+          "name": "格利特",
+          "level": 90
+        },
+        {
+          "name": "特羅斯",
+          "level": 90
+        },
+        {
+          "name": "喬",
+          "level": 90
+        },
+        {
+          "name": "絲莉安",
+          "level": 90
+        }
+      ],
+      "rendered": {
+        "tier": "spacetime",
+        "src": "http://127.0.0.1:44279/assets/morphanim/%E8%8E%89%E7%B5%B2%E5%AE%89/idle_3.png",
+        "decoded": true,
+        "visible": true,
+        "aura": true,
+        "auraHeight": 87.75
+      }
+    }
+  ],
+  "errors": []
+}

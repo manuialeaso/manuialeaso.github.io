@@ -2257,7 +2257,7 @@ function castIntervalTicks(p, support) {
     let key = support ? 'supportCastLock' : 'castLock';
     let v = (p && p.d && p.d[key] != null) ? p.d[key]
           : ((p && p.d && p.d.castLock != null) ? p.d.castLock : castLockTicks(p));
-    return Math.max(1, Number(v) || 12);
+    return window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.castInterval(p,v):Math.max(1, Number(v) || 12); /* card-combat:monster-cast-zero */
 }   // 🔮 施法間隔：攻擊／輔助可分流；保留小數 tick 才能準確呈現 CSV 的每分鐘次數，攻擊速度增減不介入。
 function nextCastCooldown(current, p, support) {
     let carry = Number(current);

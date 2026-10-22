@@ -119,6 +119,35 @@
       amr_jacket:       { short: '角色創建時的起始防具，無法另外取得' },
     },
 
+    // Runtime providers keep the guide/search aligned with optional catalogues.
+    // Read live rules rather than duplicating item prices or synthesis rates.
+    itemAcquireOf: function (id) {
+      var manual=this.itemAcquire[id]||null,d=typeof DB!=='undefined'&&DB.items[id];
+      if(!d)return manual;
+      if(d.gmOnly)return {short:'GM 專用測試道具，固定為昇華支配 +5；不開放一般掉落、購買或製作。'};
+      var tt=window.AFK_TTMI_ITEMS,src=tt&&tt.acquisition&&tt.acquisition(id);
+      if(src&&src.rift){
+        var r=src.rift,nm=this.mapName(r.mapId),credit=(DB.items[r.creditId]||{}).n||'裂痕戰勳';
+        return {short:r.isCredit?'進入'+nm+'時取得 '+r.entryCredits+' 枚；擊敗一般敵人再得 '+r.normalCredits+' 枚、首領 '+r.bossCredits+' 枚，用於本場補給，離場後消失。':nm+'內開啟「裂痕補給」，以 '+r.cost+' 枚'+credit+'兌換；只限本場使用，離場後消失。'};
+      }
+      var A=window.AFK_CARD_ASCENSION;
+      if(A){
+        if(id===A.items.diamondChoice)return {short:'天上卡合成失敗時取得；自選尚未登錄鑽石卡的怪物，普卡至白金卡仍可選；全鑽石時保留此券。'};
+        if(id===A.items.fragment)return {short:'時空卡合成失敗時取得 1 枚；使用 10 枚可換取 1 張天上卡自選。'};
+        if(id===A.items.choice)return {short:'使用 10 枚天上自選碎片兌換；選擇一張天上卡永久解鎖，重複時返還 1 張隨機一般鑽石卡。'};
+        if(d.cardAscensionId){
+          var tier=null,row=null;Object.keys(A.catalog).some(function(t){row=A.catalog[t].find(function(x){return x.id===d.cardAscensionId;});if(row){tier=t;return true;}return false;});
+          if(row){var rule=A.rules[tier],unlock=tier==='mythic'?'任一地區的卡片圖鑑全數登錄鑽石卡':tier==='celestial'?'集滿全部 70 級以上變身原型的神話卡':'集滿全部天上卡';
+            return {short:unlock+'後，在威頓村魔法娃娃商人的「卡片合成」使用 '+A.cost+' 張多餘鑽石卡；'+rule.n+'卡成功率 '+Math.round(rule.rate*100)+'%，此階連敗 '+A.pityFailures+' 次後下次必定成功，成功時隨機取得本階變身並永久解鎖。'+rule.fail};
+          }
+        }
+      }
+      if(d.eff==='card'&&d.cardTier>=4){
+        return {short:(d.cardTier===5?'瘋狂席琳夢艷地獄中的怪物卡掉落':'瘋狂席琳世界（含夢艷地獄）中的怪物卡掉落')+'；首次取得自動登錄，後續重複卡保留在背包。'+(d.cardTier===5?'登錄後可使用變形卷軸選擇該怪物變身。':'')};
+      }
+      return manual;
+    },
+
     // ── 武器特性的白話對照(掉落查詢物品卡 + 小百科傳說武器共用)──
     //   weaponTraitEff: 武器 d.eff → 特性白話
     weaponTraitEff: { combo: '連擊', cleave: '切割', pierce: '穿透', crush: '重擊／粉碎', moonburst: '月光爆裂', mp_drain: '命中恢復 MP', dice_death: '即死', magicburst: '魔爆', magicstrike: '魔擊', haste: '自我加速' },

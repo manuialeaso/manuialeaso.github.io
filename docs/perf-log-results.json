@@ -1,0 +1,908 @@
+{
+  "date": "2026-10-22",
+  "methodology": "Frozen original logging block versus current production block. Same queued HTML, native caps and lock semantics. Fixed input; no combat speed or visual degradation changes.",
+  "scope": "Isolated logging only; three visible unlocked panes, manual fixed flushes. Not whole-game FPS or combat throughput.",
+  "command": "node scripts/test-perf-log.mjs --browser",
+  "hashes": {
+    "original": "1052b5b590efd0b4ff2188f55b857e3c0bd5c946c6dc46b92184385dae07eccd",
+    "optimized": "64e580bd6fb152a82506748da98652b662506a866eca1b1e0d3688f65514bf40",
+    "originalFullSource": "553e7900b3ef3d745184fe233319f30e81eab4abbe7360e281181de40206f1e2",
+    "nativeLogFunctions": "4ed6c7360ddf21b35ec40588a6f2c54f8143276b1d59f32f553b98f45cee2b26",
+    "rawResult": "40eb7470aabc1b43c538bed4115e030da7564ec5cccc4a736da376de646e4b9b"
+  },
+  "workload": {
+    "rounds": 5,
+    "alternatingOrder": true,
+    "freshContextAndPage": true,
+    "viewport": {
+      "width": 1100,
+      "height": 750
+    },
+    "paneSize": {
+      "width": 310,
+      "height": 150
+    },
+    "visibleChannels": 3,
+    "warmupPerChannel": 200,
+    "batches": 240,
+    "messagesPerBatchPerChannel": 12,
+    "automaticTimersExecuted": false,
+    "contain": "content"
+  },
+  "assertions": {
+    "unitChecksPassed": 12,
+    "nativeBrowserScenariosPassed": 9,
+    "pageErrors": 0,
+    "allNativeSemanticSnapshotsExactlyEqual": true,
+    "allPairedFinalHtmlAndScrollExactlyEqual": true
+  },
+  "unit": [
+    {
+      "name": "three-channel HTML, sources, classifications, ordering and normal caps"
+    },
+    {
+      "name": "all DOM mutations precede all layout reads, which precede all auto-scroll writes"
+    },
+    {
+      "name": "locked history caps and scroll position survive repeated clipping"
+    },
+    {
+      "name": "retained existing nodes, source context and lock changes before flush"
+    },
+    {
+      "name": "hidden panes, missing elements and per-channel layout failures stay isolated"
+    },
+    {
+      "name": "scroll setter failure does not suppress another channel"
+    },
+    {
+      "name": "catch-up suppresses all messages; rare system unread dot stays immediate"
+    },
+    {
+      "name": "foreground timer and rAF scheduling remain coalesced"
+    },
+    {
+      "name": "background timer fallback retains exact timing and queue bounds"
+    },
+    {
+      "name": "perf disabled does not install the logger"
+    },
+    {
+      "name": "perf-log disabled does not install the logger"
+    },
+    {
+      "name": "flush scheduling and enqueue source text are byte-for-byte unchanged"
+    }
+  ],
+  "browser": [
+    {
+      "name": "unlocked caps and automatic bottom",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "a234383ae4ff3a08a45a4a2b18ced0f89e16f4e34663bcaec4cf175414bb71ad",
+          "htmlBytes": 7022
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "dd92240cdd3f89bdcd44b283a68bb1a74a77a1b70651e3b3497004ebffefb55f",
+          "htmlBytes": 5900
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "f6452ee7d2c44b4946cb9798cc57916603caa8c5a26c584cf2e5d69b35580963",
+          "htmlBytes": 7080
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "dot": "logtab-dot-relic"
+    },
+    {
+      "name": "locked append preserves retained node and text selection",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 80,
+          "top": 80,
+          "height": 1608,
+          "client": 158,
+          "unlock": "",
+          "htmlSha256": "ef5bc22041815c4fe5ba49f2dea30f86d1db9287f481f1d63c47dc3042a0d9a0",
+          "htmlBytes": 11337
+        },
+        {
+          "id": "sys-log",
+          "count": 80,
+          "top": 80,
+          "height": 1608,
+          "client": 158,
+          "unlock": "",
+          "htmlSha256": "9ae5004a1dfc8c4d104653e657632b9d83228d97b8ef8736afae99373dfdc7eb",
+          "htmlBytes": 9540
+        },
+        {
+          "id": "world-log",
+          "count": 90,
+          "top": 80,
+          "height": 1808,
+          "client": 158,
+          "unlock": "",
+          "htmlSha256": "c34e30745dcff90eb39082c7915bc2fc7c1e83395c150f84a17623004e4ab742",
+          "htmlBytes": 10720
+        }
+      ],
+      "locks": [
+        true,
+        true,
+        true
+      ],
+      "dot": "logtab-dot-relic",
+      "sameNode": true,
+      "selection": "normal 訊息 45 & 次序",
+      "expectedSelection": "normal 訊息 45 & 次序"
+    },
+    {
+      "name": "locked per-channel history bounds",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 150,
+          "top": 80,
+          "height": 3008,
+          "client": 158,
+          "unlock": "",
+          "htmlSha256": "2ddf74f8691089e938809b4a23d1f241db6dc9a2406f960c94ca366e0353ad4e",
+          "htmlBytes": 21655
+        },
+        {
+          "id": "sys-log",
+          "count": 150,
+          "top": 80,
+          "height": 3008,
+          "client": 158,
+          "unlock": "",
+          "htmlSha256": "e33eb18c86812b9e4d9d8046f57fb950650484d3460f1e5750b939db7feff7c3",
+          "htmlBytes": 18280
+        },
+        {
+          "id": "world-log",
+          "count": 200,
+          "top": 80,
+          "height": 4008,
+          "client": 158,
+          "unlock": "",
+          "htmlSha256": "7ad4d64916cf84a8c5de189973fe814ef3e292114dc80902a8c59a5727b5b7ee",
+          "htmlBytes": 24280
+        }
+      ],
+      "locks": [
+        true,
+        true,
+        true
+      ],
+      "dot": "logtab-dot-relic"
+    },
+    {
+      "name": "explicit native unlock returns to normal caps",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "eca417a961a5a88fd384169c8016324091857049c31beb1b8e4537ff767ae12e",
+          "htmlBytes": 7212
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "bdf8982fb3cca03d1bb6c696763cf58b30508cea66f26ac88904119ca4e0e221",
+          "htmlBytes": 6090
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "32bc595cf5525fbce6e63e03976cb5e97a0736e27bed638b9b0aca029624a5bf",
+          "htmlBytes": 7310
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "dot": "logtab-dot-relic"
+    },
+    {
+      "name": "surviving log node retains focus",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 856,
+          "height": 1014,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "a337fbe5b23e1585daa13c02b3fe08f4384597074533d37f01663ef9d04df160",
+          "htmlBytes": 7182
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "c9298cf1b8ebc107f7473e1bd9db8da66f46cd0b3170bec9481829b61cd98256",
+          "htmlBytes": 6078
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "6bbfeb0117136b8ceeee628aac69aac8cd2deb58d5f7b5202ec0f6c9da0a392d",
+          "htmlBytes": 7298
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "dot": "logtab-dot-relic",
+      "focus": true,
+      "connected": true
+    },
+    {
+      "name": "hidden channel stays hidden while receiving messages",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 856,
+          "height": 1014,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "d9ed1292f23601a910f4de4cd7bcbc938fe04523edd428030fbe2dc182838246",
+          "htmlBytes": 7137
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 0,
+          "height": 0,
+          "client": 0,
+          "unlock": "hidden",
+          "htmlSha256": "e5d82ad207af3f35a14c735cf95357bea3d375ea6f182be8970fe13fbeafc726",
+          "htmlBytes": 6030
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "1b6d96af55c85124f0e64a114023f0e859a8fe54a1679b951745f0e42b60efd3",
+          "htmlBytes": 7250
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "dot": "logtab-dot-relic"
+    },
+    {
+      "name": "native tab switch restores unlocked channel bottom",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 0,
+          "height": 0,
+          "client": 0,
+          "unlock": "hidden",
+          "htmlSha256": "d9ed1292f23601a910f4de4cd7bcbc938fe04523edd428030fbe2dc182838246",
+          "htmlBytes": 7137
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "e5d82ad207af3f35a14c735cf95357bea3d375ea6f182be8970fe13fbeafc726",
+          "htmlBytes": 6030
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "1b6d96af55c85124f0e64a114023f0e859a8fe54a1679b951745f0e42b60efd3",
+          "htmlBytes": 7250
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "dot": "hidden"
+    },
+    {
+      "name": "rare dot is immediate before flush",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 0,
+          "height": 0,
+          "client": 0,
+          "unlock": "hidden",
+          "htmlSha256": "d9ed1292f23601a910f4de4cd7bcbc938fe04523edd428030fbe2dc182838246",
+          "htmlBytes": 7137
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "e5d82ad207af3f35a14c735cf95357bea3d375ea6f182be8970fe13fbeafc726",
+          "htmlBytes": 6030
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "1b6d96af55c85124f0e64a114023f0e859a8fe54a1679b951745f0e42b60efd3",
+          "htmlBytes": 7250
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "dot": "logtab-dot-legend"
+    },
+    {
+      "name": "rare message is flushed normally",
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 0,
+          "height": 0,
+          "client": 0,
+          "unlock": "hidden",
+          "htmlSha256": "d9ed1292f23601a910f4de4cd7bcbc938fe04523edd428030fbe2dc182838246",
+          "htmlBytes": 7137
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "d253eae0fc93099110212a20058cb782d3e7cadb7c4d265d155a9daf8aa3ead3",
+          "htmlBytes": 5987
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "client": 158,
+          "unlock": "hidden",
+          "htmlSha256": "1b6d96af55c85124f0e64a114023f0e859a8fe54a1679b951745f0e42b60efd3",
+          "htmlBytes": 7250
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "dot": "logtab-dot-legend"
+    }
+  ],
+  "benchmark": [
+    {
+      "variant": "original",
+      "round": 0,
+      "elapsedMs": 4482.5,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 720,
+        "LayoutDuration": 4.247959,
+        "RecalcStyleCount": 720,
+        "RecalcStyleDuration": 0.065871,
+        "TaskDuration": 4.490092
+      }
+    },
+    {
+      "variant": "optimized",
+      "round": 0,
+      "elapsedMs": 3786.8000000044703,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 240,
+        "LayoutDuration": 3.597703,
+        "RecalcStyleCount": 240,
+        "RecalcStyleDuration": 0.061517,
+        "TaskDuration": 3.797245
+      }
+    },
+    {
+      "variant": "optimized",
+      "round": 1,
+      "elapsedMs": 4021.1999999955297,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 240,
+        "LayoutDuration": 3.836278,
+        "RecalcStyleCount": 240,
+        "RecalcStyleDuration": 0.058328,
+        "TaskDuration": 4.025561
+      }
+    },
+    {
+      "variant": "original",
+      "round": 1,
+      "elapsedMs": 4343.79999999702,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 720,
+        "LayoutDuration": 4.132216,
+        "RecalcStyleCount": 720,
+        "RecalcStyleDuration": 0.065323,
+        "TaskDuration": 4.348965
+      }
+    },
+    {
+      "variant": "original",
+      "round": 2,
+      "elapsedMs": 5930.60000000149,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 720,
+        "LayoutDuration": 5.67285,
+        "RecalcStyleCount": 720,
+        "RecalcStyleDuration": 0.078184,
+        "TaskDuration": 5.93511
+      }
+    },
+    {
+      "variant": "optimized",
+      "round": 2,
+      "elapsedMs": 5589.5,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 240,
+        "LayoutDuration": 5.377902,
+        "RecalcStyleCount": 240,
+        "RecalcStyleDuration": 0.071029,
+        "TaskDuration": 5.594931
+      }
+    },
+    {
+      "variant": "optimized",
+      "round": 3,
+      "elapsedMs": 5171.9000000059605,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 240,
+        "LayoutDuration": 4.972018,
+        "RecalcStyleCount": 240,
+        "RecalcStyleDuration": 0.059116,
+        "TaskDuration": 5.176361
+      }
+    },
+    {
+      "variant": "original",
+      "round": 3,
+      "elapsedMs": 4500.30000000447,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 720,
+        "LayoutDuration": 4.272414,
+        "RecalcStyleCount": 720,
+        "RecalcStyleDuration": 0.067578,
+        "TaskDuration": 4.505456000000001
+      }
+    },
+    {
+      "variant": "original",
+      "round": 4,
+      "elapsedMs": 3655.5,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 720,
+        "LayoutDuration": 3.444703,
+        "RecalcStyleCount": 720,
+        "RecalcStyleDuration": 0.061147,
+        "TaskDuration": 3.6598569999999997
+      }
+    },
+    {
+      "variant": "optimized",
+      "round": 4,
+      "elapsedMs": 3939.9000000059605,
+      "panes": [
+        {
+          "id": "combat-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "81da888e9321c7d59cd5776b250a2cd3221574ee725a438abe32ffe6d2265856",
+          "htmlBytes": 8299
+        },
+        {
+          "id": "sys-log",
+          "count": 50,
+          "top": 850,
+          "height": 1008,
+          "htmlSha256": "9acc6228cf6a9f15a48df43552feaa2702f98652d772ac8242f1933852f61292",
+          "htmlBytes": 7120
+        },
+        {
+          "id": "world-log",
+          "count": 60,
+          "top": 1050,
+          "height": 1208,
+          "htmlSha256": "2e3f3141be6ee79ada8f86416da60d817f9c260e7d07b84c786a3534d8e3841c",
+          "htmlBytes": 8540
+        }
+      ],
+      "locks": [
+        false,
+        false,
+        false
+      ],
+      "metrics": {
+        "LayoutCount": 240,
+        "LayoutDuration": 3.755329,
+        "RecalcStyleCount": 240,
+        "RecalcStyleDuration": 0.062,
+        "TaskDuration": 3.947506
+      }
+    }
+  ],
+  "summary": {
+    "original": {
+      "elapsedMs": 4482.5,
+      "layoutCount": 720,
+      "layoutDurationMs": 4247.959,
+      "recalcStyleCount": 720,
+      "recalcStyleDurationMs": 65.871,
+      "taskDurationMs": 4490.092
+    },
+    "optimized": {
+      "elapsedMs": 4021.1999999955297,
+      "layoutCount": 240,
+      "layoutDurationMs": 3836.2780000000002,
+      "recalcStyleCount": 240,
+      "recalcStyleDurationMs": 61.517,
+      "taskDurationMs": 4025.5609999999997
+    }
+  },
+  "limitations": [
+    "Two of five optimized elapsed-time rounds were slower; elapsed timing is noisy in the shared environment.",
+    "Layout counts consistently fall from 720 to 240 in this multi-channel workload; single visible channel or locked panes have less benefit.",
+    "No new whole-game timed A/B was performed; no FPS, battery or total-combat claim follows."
+  ]
+}

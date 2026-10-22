@@ -50,6 +50,11 @@
             //   (實測平板 1180x820 多吃 53px,可用高度少兩倍橫幅)。故這條只掛在與上游同一條手機 media query 裡。
             + '@media (max-width: 768px), (max-height: 520px) and (pointer: coarse){\n'
             + '  #game-screen{ top: var(--orig-bar-h, 0px) !important; height: calc(100% - var(--orig-bar-h, 0px)) !important; }\n'
+            // Native phone geometry also runs when the optional mobile plugin
+            // is off. Its top:8px dialogs must still clear the banner.
+            + '  body.afk-bar:not(.m-mobile) #item-modal:not(.hidden), body.afk-bar:not(.m-mobile) #town-interaction-container:not(.hidden), body.afk-bar:not(.m-mobile) #warehouse-window-frame{ top: calc(8px + var(--orig-bar-h, 0px)) !important; height: calc(100dvh - 16px - var(--orig-bar-h, 0px)) !important; }\n'
+            + '  body.afk-bar:not(.m-mobile) :is(' + MODAL_HOSTS + '){ padding-top: calc(var(--orig-bar-h, 0px) + 8px) !important; padding-bottom: 8px !important; }\n'
+            + '  body.afk-bar:not(.m-mobile) :is(' + MODAL_BOXES + '){ max-height: calc(100dvh - var(--orig-bar-h, 0px) - 16px) !important; }\n'
             + '}\n'
             // 只有首頁(#main-menu 在 #creation-screen 內)需要整頁縱向捲動(內容比縮短後的高度高)；
             //   #game-screen 不加 overflow → 避免它與背包內層 viewport 形成巢狀捲動，害武器等小溢出分頁的觸控被外層吃掉。

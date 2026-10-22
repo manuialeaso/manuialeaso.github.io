@@ -24,10 +24,18 @@
 (function () {
   'use strict';
   var T = window.AFK_TOGGLES;
-  if (T && !T.enabled('cardplus')) return;
+  var enabled = function () { return !T || T.enabled('cardplus'); };
+  var disabledMessage = function () { try { logSys('白金／鑽石卡功能目前停用，持有的卡片與道具仍會保留。'); } catch (e) {} };
+  var installed = false;
+  // Definitions must exist even while disabled: native loadGame removes items
+  // missing from DB.items, including items in the shared warehouse. Install
+  // once in the original script order; every optional action checks the toggle.
+  function install() {
+  if (installed) return;
   if (typeof CARD_TIERS === 'undefined' || typeof CARD_MOB_INFO === 'undefined' || typeof window.acquireCard !== 'function') {
     console.warn('[AFK-cardplus] 找不到卡片系統，略過'); return;
   }
+  installed = true;
 
   // ── 新階級 ──
   var PLUS = [
@@ -59,6 +67,7 @@
   var SCORE = { 4: 1000, 5: 10000 };
   var oTier = window.cardDexTier;
   window.cardDexTier = function (name) {
+    if (!enabled()) return oTier.apply(this, arguments);
     var s = (player && player.cardDex && player.cardDex[name]) || 0;
     if (s >= 10000) return 5;
     if (s >= 1000) return 4;
@@ -72,6 +81,7 @@
   };
   var platCache = { at: 0, v: false };
   var platFull = function () {
+    if (!enabled()) return false;
     var now = Date.now();
     if (now - platCache.at < 2000) return platCache.v;
     var names = Object.keys(CARD_MOB_INFO), ok = names.length > 0;
@@ -93,6 +103,7 @@
   var oAcq = window.acquireCard;
   window.acquireCard = function (name, tier, count) {
     if (tier < 4) return oAcq.apply(this, arguments);
+    if (!enabled()) return false;
     count = Math.max(1, count || 1);
     if (!DB.items[cardId(name, tier)]) return;
     if (cardDexTier(name) >= tier) { gainItem(cardId(name, tier), count); return; }
@@ -105,6 +116,7 @@
   window.useCardItem = function (item) {
     var d = DB.items[item.id];
     if (!d || !(d.cardTier >= 4)) return oUse.apply(this, arguments);
+    if (!enabled()) { disabledMessage(); return false; }
     var nm = d.cardMob, ct = CARD_TIERS[d.cardTier - 1];
     if (cardDexTier(nm) >= d.cardTier) { logSys('<span class="' + ct.col + ' font-bold">「' + nm + '」</span><span class="text-slate-400"> 已經登錄到' + ct.sfx + '（或更高），無法使用。</span>'); try { closeModal(); } catch (e) {} return; }
     var c = Math.max(1, Math.floor(Number(item.cnt) || 1));
@@ -118,6 +130,7 @@
   var oRoll = window.rollCardDrops;
   window.rollCardDrops = function (mob) {
     var r = oRoll.apply(this, arguments);
+    if (!enabled()) return r;
     try {
       if (!mob || !mob._sherineMad || mob.race === '血盟' || mob.race === '建築' || mob.transformTo) return r;
       var nm = (typeof CARD_DROP_ALIAS !== 'undefined' && CARD_DROP_ALIAS[mob.n]) || mob.n;
@@ -137,7 +150,7 @@
       var before = mapState.mobs[idx];
       var r = oTrans.apply(this, arguments);
       try {
-        if (before && mapState.mobs[idx] !== before && CARD_MOB_INFO[before.n]) {
+        if (enabled() && before && mapState.mobs[idx] !== before && CARD_MOB_INFO[before.n]) {
           var stage = Object.assign({}, before); delete stage.transformTo;
           rollCardDrops(stage);
         }
@@ -147,7 +160,7 @@
   }
 
   // ── 圖鑑全滿：夢艷地獄 ×3 ──
-  var dreamOn = function () { return !!(window.__afkDreamHell && window.__afkDreamHell.on()); };
+  var dreamOn = function () { return enabled() && !!(window.__afkDreamHell && window.__afkDreamHell.on()); };
   var equipFull = function () { try { return EQUIP_CATEGORIES.every(function (c) { return equipCatComplete(c.key); }); } catch (e) { return false; } };
   var miscFull = function () { try { return MISC_CATEGORIES.every(function (c) { return miscCatComplete(c.key); }); } catch (e) { return false; } };
   var snap = function (o) { var s = {}; for (var k in o) { if (typeof o[k] === 'number') s[k] = o[k]; } return s; };
@@ -173,8 +186,10 @@
   DB.items.afk_card_pick = DB.items.afk_card_pick || { n: '鑽白金幻化', type: 'misc', eff: 'afk_card_pick', c: 'c-card-diamond', img: 'assets/icons/items/鑽白金幻化.png', p: 0, gachaWeight: 0,
     d: '暗夢星迴頭目 0.01% 掉落。使用後可以自選任一隻怪物，獲得牠的鑽石卡（未登錄會自動登錄到鑽石卡）。' };
   var pickLayer = null;
-  var closePick = function () { var m = document.getElementById('afk-cardpick'); if (m) m.remove(); if (pickLayer && window.AFK_UI) { try { AFK_UI.closeLayer(pickLayer); } catch (e) {} } pickLayer = null; };
+  var hidePick = function () { var m = document.getElementById('afk-cardpick'); if (m) m.remove(); pickLayer = null; };
+  var closePick = function () { var layer = pickLayer; pickLayer = null; if (layer && window.AFK_UI) { try { AFK_UI.closeLayer(layer); } catch (e) {} } hidePick(); };
   var openPick = function (uid) {
+    if (!enabled()) { disabledMessage(); return false; }
     closePick();
     var names = Object.keys(CARD_MOB_INFO).sort(function (a, b) { return (CARD_MOB_INFO[a].mob.lv || 0) - (CARD_MOB_INFO[b].mob.lv || 0); });
     var m = document.createElement('div'); m.id = 'afk-cardpick';
@@ -203,9 +218,10 @@
       if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '鑽白金幻化', message: msg, okText: '確定', cancelText: '取消', onOk: go });
       else if (confirm(msg)) go();
     });
-    pickLayer = (window.AFK_UI && AFK_UI.openLayer) ? AFK_UI.openLayer(closePick) : null;
+    pickLayer = (window.AFK_UI && AFK_UI.openLayer) ? AFK_UI.openLayer(hidePick) : null;
   };
   var pickCard = function (uid, nm) {
+    if (!enabled()) { disabledMessage(); return false; }
     var it = player.inv.find(function (i) { return i.uid === uid; });
     if (!it || it.id !== 'afk_card_pick' || !CARD_MOB_INFO[nm]) return false;
     var c = Math.max(1, Math.floor(Number(it.cnt) || 1));
@@ -218,7 +234,7 @@
   var oUseItem = window.useItem;
   window.useItem = function (u, silent) {
     var it = (player && player.inv) ? player.inv.find(function (i) { return i.uid === u; }) : null;
-    if (it && it.id === 'afk_card_pick') { if (!silent) { try { closeModal(); } catch (e) {} openPick(u); } return; }
+    if (it && it.id === 'afk_card_pick') { if (!enabled()) { if (!silent) disabledMessage(); return false; } if (!silent) { try { closeModal(); } catch (e) {} openPick(u); } return; }
     return oUseItem.apply(this, arguments);
   };
 
@@ -253,6 +269,7 @@
     var oWsp = window.weaponSpellProc;
     window.weaponSpellProc = function (target) {
       var r = oWsp.apply(this, arguments);
+      if (!enabled()) return r;
       try {
         var dl = player.eq && player.eq.doll ? DB.items[player.eq.doll.id] : null;
         if (dl && dl.afkExtraProcs && !arguments[2]) dl.afkExtraProcs.forEach(function (sk) {
@@ -290,6 +307,7 @@
   };
   var after = function () { try { renderTabs(true); updateUI(); saveGame(); } catch (e) {} var c = document.getElementById('interaction-content'); if (c && typeof renderCardSynth === 'function') { try { renderCardSynth(c); } catch (e) {} } };
   window.afkPlatToDoll = function (dollId) {
+    if (!enabled()) return { ok: false, msg: '白金／鑽石卡功能目前停用。' };
     if (T5.indexOf(dollId) < 0) return { ok: false, msg: '請選一隻五階魔法娃娃。' };
     if (!takeCards(4, NEED)) { logSys('<span class="text-red-400">需要 ' + NEED + ' 張已登錄白金階的重複白金卡。</span>'); return { ok: false }; }
     gainItem(dollId, 1, true, true);
@@ -297,6 +315,7 @@
     after(); return { ok: true };
   };
   window.afkDiamondToHama = function () {
+    if (!enabled()) return { ok: false, msg: '白金／鑽石卡功能目前停用。' };
     if (!DB.items[HAMA]) return { ok: false };
     if (!takeCards(5, NEED)) { logSys('<span class="text-red-400">需要 ' + NEED + ' 張已登錄鑽石階的重複鑽石卡。</span>'); return { ok: false }; }
     gainItem(HAMA, 1, true, true);
@@ -307,6 +326,7 @@
     var oSynth = window.renderCardSynth;
     window.renderCardSynth = function (div) {
       var r = oSynth.apply(this, arguments);
+      if (!enabled()) { var hidden = div.querySelector('#afk-cp-doll'); if (hidden) hidden.remove(); return r; }
       try {
         var pc = excessCnt(4), dc = excessCnt(5), okP = pc >= NEED, okD = dc >= NEED;
         var html = '<div id="afk-cp-doll" class="px-4 pb-3 pt-2 border-t border-slate-700/60 space-y-2">'
@@ -322,6 +342,22 @@
     };
   }
 
-  window.__afkCardPlus = { platFull: platFull, equipFull: equipFull, miscFull: miscFull, pickCard: pickCard, openPick: openPick, bump: bump, HAMA: HAMA, T5: T5 };
-  console.log('[AFK-cardplus] 已啟用：白金／鑽石卡、圖鑑全滿夢艷 ×3、鑽白金幻化');
+  window.__afkCardPlus = { platFull: platFull, equipFull: equipFull, miscFull: miscFull, pickCard: pickCard, openPick: openPick, closePick: closePick, bump: bump, HAMA: HAMA, T5: T5 };
+  console.log('[AFK-cardplus] 資料已登錄；功能依白金／鑽石卡開關啟停。');
+  }
+  if (T && typeof T.set === 'function') {
+    var oldSet = T.set;
+    T.set = function (id, on) {
+      var result = oldSet.apply(this, arguments);
+      if (id === 'cardplus') {
+        var wasInstalled = installed;
+        install();
+        if (!wasInstalled && installed && window.AFK_DEX_API && AFK_DEX_API.refresh) AFK_DEX_API.refresh();
+        if (window.__afkCardPlus) { __afkCardPlus.bump(); if (!on) __afkCardPlus.closePick(); }
+        if (typeof player !== 'undefined' && player && player.cls && typeof calcStats === 'function') calcStats();
+      }
+      return result;
+    };
+  }
+  install();
 })();

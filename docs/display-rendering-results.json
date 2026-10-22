@@ -1,0 +1,198 @@
+{
+  "results": [
+    {
+      "checks": [
+        "projectile handler enabled",
+        "transform preserves anchor, size and horizontal mirror",
+        "disabling render optimization restores native path",
+        "static mode creates a visible player on first load",
+        "static mode creates a visible ally on first load",
+        "static player keeps idle frame",
+        "static ally shows final death frame",
+        "removed ally is removed from the battlefield",
+        "static mode creates a visible pet",
+        "static pet shows final death frame",
+        "removed pet is removed from battlefield",
+        "no-glow mode hides card aura",
+        "no-animation mode pauses card glow motion",
+        "full visuals restore aura"
+      ]
+    },
+    {
+      "optimized": false,
+      "round": 0,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 237,
+        "LayoutDuration": 0.204972,
+        "RecalcStyleCount": 237,
+        "RecalcStyleDuration": 0.066047,
+        "TaskDuration": 0.547546
+      }
+    },
+    {
+      "optimized": true,
+      "round": 0,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 192,
+        "LayoutDuration": 0.140251,
+        "RecalcStyleCount": 232,
+        "RecalcStyleDuration": 0.066056,
+        "TaskDuration": 0.388563
+      }
+    },
+    {
+      "optimized": true,
+      "round": 1,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 194,
+        "LayoutDuration": 0.180798,
+        "RecalcStyleCount": 249,
+        "RecalcStyleDuration": 0.078627,
+        "TaskDuration": 0.447325
+      }
+    },
+    {
+      "optimized": false,
+      "round": 1,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 226,
+        "LayoutDuration": 0.223755,
+        "RecalcStyleCount": 226,
+        "RecalcStyleDuration": 0.053094,
+        "TaskDuration": 0.463831
+      }
+    },
+    {
+      "optimized": false,
+      "round": 2,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 215,
+        "LayoutDuration": 0.117414,
+        "RecalcStyleCount": 215,
+        "RecalcStyleDuration": 0.039828,
+        "TaskDuration": 0.338687
+      }
+    },
+    {
+      "optimized": true,
+      "round": 2,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 192,
+        "LayoutDuration": 0.198837,
+        "RecalcStyleCount": 227,
+        "RecalcStyleDuration": 0.059415,
+        "TaskDuration": 0.371541
+      }
+    },
+    {
+      "optimized": true,
+      "round": 3,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 193,
+        "LayoutDuration": 0.104745,
+        "RecalcStyleCount": 250,
+        "RecalcStyleDuration": 0.070387,
+        "TaskDuration": 0.304373
+      }
+    },
+    {
+      "optimized": false,
+      "round": 3,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 232,
+        "LayoutDuration": 0.117349,
+        "RecalcStyleCount": 232,
+        "RecalcStyleDuration": 0.054585,
+        "TaskDuration": 0.33469699999999997
+      }
+    },
+    {
+      "optimized": false,
+      "round": 4,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 232,
+        "LayoutDuration": 0.158113,
+        "RecalcStyleCount": 232,
+        "RecalcStyleDuration": 0.067054,
+        "TaskDuration": 0.38519400000000004
+      }
+    },
+    {
+      "optimized": true,
+      "round": 4,
+      "images": "decoded local SVG fixtures",
+      "generated": 180,
+      "maxNodes": 30,
+      "remaining": 0,
+      "hp": 3382,
+      "targetHp": 10000,
+      "metrics": {
+        "LayoutCount": 193,
+        "LayoutDuration": 0.146406,
+        "RecalcStyleCount": 250,
+        "RecalcStyleDuration": 0.073283,
+        "TaskDuration": 0.349207
+      }
+    }
+  ],
+  "comparison": {
+    "baselineLayouts": 232,
+    "optimizedLayouts": 193,
+    "baselineTaskSeconds": 0.38519400000000004,
+    "optimizedTaskSeconds": 0.371541
+  }
+}

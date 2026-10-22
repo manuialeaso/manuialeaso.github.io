@@ -296,7 +296,8 @@ function doMobTransform(idx) {
     if (!base) return;
     // 🎴 v3.5.2 變身中間階不掉卡：整鏈三張卡（玉藻/九尾/殺生石）全由最終階 殺生石 擲中時隨機選一張（js/15 rollCardDrops 的 transformTo 閘＋CARD_CHAIN_BY_FINAL 隨機池）。
     let next = { ...base, curHp: base.hp, uid: uid(), _born: mob._born, _magCd: {}, justHit: false, st: newMobStatus(), _bornMs: mob._bornMs || Date.now(), _justTransformedTick: state.ticks };
-    mapState.mobs[idx] = next;
+    if (window.AFK_CARD_COMBAT) window.AFK_CARD_COMBAT.inheritTarget(mob, next);
+    mapState.mobs[idx] = next; /* card-combat:inherit-target */
     if (typeof applySherineBuff === 'function') { try { applySherineBuff(idx); } catch (e) {} }   // 🔮 審查修：席琳的世界強化跨變身沿用（與 spawnMob/spawnRiftMob 同序·須在 initHardSkin 之前）
     if (base.hard) initHardSkin(next);
     logCombat(mob.transformLogText
@@ -375,7 +376,7 @@ function killMob(idx) {
     // 🤝 v3.7.62 組隊經驗不再拆分：主玩家、每名未倒地傭兵、每隻未倒地寵物各取得完整經驗；既有組隊加成保留。
     let _expEach = mob.exp * (1 + partyExpBonusPct() / 100);
     let _petExpGain = Math.floor(_expEach * (1 + dollFieldVal('expBonus') / 100));   // 🐾 每隻存活寵物各得完整玩家份額；玩家滿等不影響養寵
-    let _playerExpGain = Math.floor(_petExpGain * getExpGainMult(player.lv));   // ⚠️v3.0.82 經典×0.5 已移除；Lv100 玩家自身仍不獲得經驗
+    let _playerExpGain = Math.floor(_petExpGain * getExpGainMult(player.lv) * (typeof window.__afkTtmiExpMult === 'function' ? window.__afkTtmiExpMult(player) : 1)) /* relic-runtime:ttmi-player-exp */;   // ⚠️v3.0.82 經典×0.5 已移除；Lv100 玩家自身仍不獲得經驗
     player.exp += _playerExpGain;
     checkLvUp();
     // 🐾 寵物經驗：每隻未倒地出戰寵物各得完整份額；不受玩家 Lv100 經驗封頂影響（升級需求＝玩家表 1/10）
@@ -414,8 +415,8 @@ function killMob(idx) {
     if (player.eq && player.eq.wpn && player.eq.wpn.id === 'wpn_giltas_sword') player._giltasFuryUntil = state.ticks + 100;
     if (player.allies && player.allies.length) player.allies.forEach(a => { if (a && !a._downed && a.eq && a.eq.wpn && a.eq.wpn.id === 'wpn_giltas_sword') a._giltasFuryUntil = state.ticks + 100; });
     // 🏺 v3.5.27 食屍鬼的啃食面容：擊殺敵人時恢復 30 HP（玩家與傭兵各自看自己的頭盔·比照吉爾塔斯之劍擊殺掛點）
-    if (player.eq && player.eq.helm && (DB.items[player.eq.helm.id] || {}).killHealHp && !player.dead && player.hp > 0) player.hp = Math.min(player.mhp, player.hp + DB.items[player.eq.helm.id].killHealHp);
-    if (player.allies && player.allies.length) player.allies.forEach(a => { if (a && !a._downed && a.eq && a.eq.helm && (DB.items[a.eq.helm.id] || {}).killHealHp) a.curHp = Math.min(a.mhp || 1, (a.curHp || 0) + DB.items[a.eq.helm.id].killHealHp); });
+    if (player.eq && player.eq.helm && (DB.items[player.eq.helm.id] || {}).killHealHp && !player.dead && player.hp > 0) {let hd=DB.items[player.eq.helm.id];if(window.AFK_RELIC_RUNTIME)window.AFK_RELIC_RUNTIME.procHeal(player,hd.killHealHp,hd.relicBase||player.eq.helm.id);else player.hp=Math.min(player.mhp,player.hp+hd.killHealHp);} /* relic-defense:legacy-helm-kill-player */
+    if (player.allies && player.allies.length) player.allies.forEach(a => { if (a && !a._downed && a.eq && a.eq.helm && (DB.items[a.eq.helm.id] || {}).killHealHp) {let hd=DB.items[a.eq.helm.id];if(window.AFK_RELIC_RUNTIME)window.AFK_RELIC_RUNTIME.procHeal(a,hd.killHealHp,hd.relicBase||a.eq.helm.id);else a.curHp=Math.min(a.mhp||1,(a.curHp||0)+hd.killHealHp);} /* relic-defense:legacy-helm-kill-ally */ });
     // 🪄 吉爾塔斯魔杖：任意擊殺後 10 秒內依主玩家邪惡值取得額外魔法點數（滿邪惡 +20）；再次擊殺刷新時間。
     let _giltasWandTriggered = [];
     if (player.eq && player.eq.wpn && player.eq.wpn.id === 'wpn_giltas_wand') { let _gwB = (typeof pvpEvilBonus === 'function' ? pvpEvilBonus(20) : 0); let _gwSame = player._giltasWandFuryUntil > state.ticks && player._giltasWandBonus === _gwB; player._giltasWandFuryUntil = state.ticks + 100; player._giltasWandBonus = _gwB; if (!_gwSame) _giltasWandTriggered.push(player); }   // 🔌 加掛版補丁:buff 還在且加成值沒變→這次重算不會改變任何衍生值,略過(離線結算的最大熱點)

@@ -23,14 +23,77 @@
         if (k in _ps) return _ps[k];
         try { return (_ps[k] = localStorage.getItem('afk_ps_' + k) === '1'); } catch (e) { return false; }
     }
-    function set(k, v) { try { localStorage.setItem('afk_ps_' + k, v ? '1' : '0'); } catch (e) {} _ps[k] = !!v; }
+    function set(k, v) { if (k !== 'noanim' && k !== 'nofx') return; try { localStorage.setItem('afk_ps_' + k, v ? '1' : '0'); } catch (e) {} _ps[k] = !!v; applyVisualState(); }
 
-    // ① 關戰鬥動畫：包住 8fps ticker 會呼叫的 sprite 函式，開啟時直接 no-op（畫面停在當前幀、不再逐幀動）。
+    // Static mode still creates/removes sprites when a form, companion or life
+    // state changes. A blanket no-op made characters invisible on a fresh load.
+    var staticKeys = Object.create(null);
+    function actorState(actor, group) {
+        if (!actor || !actor.cls || typeof _actorBattleForm !== 'function') return null;
+        var form = _actorBattleForm(actor, group), cache = form && typeof _morphBattleCache !== 'undefined' && _morphBattleCache[form.key];
+        return { actor: actor, form: form, cache: cache, down: !!(actor.dead || actor._downed || (actor.curHp == null ? actor.hp : actor.curHp) <= 0) };
+    }
+    function cacheKey(a) { return a === 'probing' ? 'probing' : a ? ((a.idle && a.idle.length) || 0) + ':' + ((a.death && a.death.length) || 0) : 'empty'; }
+    function petStates() {
+        var out = typeof player !== 'undefined' && player && player.cls && typeof petsOutList === 'function' ? petsOutList() : [];
+        if (typeof summonRenderList === 'function') out = out.concat(summonRenderList());
+        if (typeof guardRenderList === 'function') out = out.concat(guardRenderList());
+        return out;
+    }
+    function snapshotKey(fn) {
+        var bv = document.getElementById('battle-view'), base = (bv && !bv.classList.contains('hidden') && bv.classList.contains('area-fit') ? 'visible' : 'hidden') + '|' + (typeof mapState !== 'undefined' ? mapState.current : '');
+        if (fn === '_playerMorphApply') {
+            var a = actorState(typeof player !== 'undefined' ? player : null, false), el = typeof _pmState !== 'undefined' && _pmState.el;
+            return base + '|' + (a && a.form ? a.form.key + ':' + cacheKey(a.cache) + ':' + a.down : 'none') + ':' + !!(el && el.isConnected);
+        }
+        if (fn === '_allySpritesApply') return base + '|' + ((typeof player !== 'undefined' && player && player.allies) || []).map(function (actor, i) {
+            var a = actorState(actor, i > 0), st = typeof _allySpriteStates !== 'undefined' && _allySpriteStates[String(actor._slot)];
+            return actor._slot + ':' + (a && a.form ? a.form.key + ':' + cacheKey(a.cache) + ':' + a.down : 'none') + ':' + !!(st && st.el && st.el.isConnected);
+        }).join('|');
+        if (fn === '_petAnimApply') return base + '|' + petStates().map(function (p) {
+            var key = (p.formGfx || p.form) + '#' + (p._dir == null ? 6 : p._dir), a = typeof _pet8Cache !== 'undefined' && _pet8Cache[key];
+            return p.uid + ':' + key + ':' + cacheKey(a) + ':' + !!p._downed;
+        }).join('|');
+        return null;
+    }
+    function fixedImage(img, seq, last) {
+        if (!img) return;
+        var f = seq && seq.length ? seq[last ? seq.length - 1 : 0] : null;
+        if (!f) { img.style.visibility = 'hidden'; return; }
+        img.style.visibility = ''; if (img.src !== f.src) img.src = f.src;
+    }
+    function freezeActor(a, st) {
+        if (!a || !st || !st.imgs || !a.cache || a.cache === 'probing') return;
+        var act = a.down && a.cache.death ? 'death' : 'idle', cache = a.cache;
+        fixedImage(st.imgs.bd, cache[act], a.down); fixedImage(st.imgs.sh, cache.shadow && cache.shadow[act], a.down); fixedImage(st.imgs.wp, cache.weapon && cache.weapon[act], a.down);
+    }
+    function freezeSnapshot(fn) {
+        if (fn === '_playerMorphApply' && typeof _pmState !== 'undefined') freezeActor(actorState(player, false), _pmState);
+        if (fn === '_allySpritesApply' && typeof _allySpriteStates !== 'undefined') (player.allies || []).forEach(function (a, i) { freezeActor(actorState(a, i > 0), _allySpriteStates[String(a._slot)]); });
+        if (fn === '_petAnimApply' && typeof _petLayerEl === 'function' && typeof _pet8Cache !== 'undefined') {
+            var layer = _petLayerEl(); if (!layer) return;
+            var els = Array.from(layer.querySelectorAll('[data-pet]'));
+            petStates().forEach(function (p) {
+                var key = (p.formGfx || p.form) + '#' + (p._dirLoaded == null ? 6 : p._dirLoaded), a = _pet8Cache[key], el = els.find(function (e) { return e.getAttribute('data-pet') === String(p.uid); });
+                if (!a || a === 'probing' || !el) return;
+                var act = p._downed && a.death ? 'death' : 'idle';
+                fixedImage(el.querySelector('.pet-body'), a[act], p._downed); fixedImage(el.querySelector('.pet-shadow'), a.shadow && a.shadow[act], p._downed);
+            });
+        }
+    }
+    window.addEventListener('resize', function () { staticKeys = Object.create(null); });
+
+    // ① 關戰鬥動畫：8fps ticker only rebuilds a static snapshot when necessary.
     //   _petAnimApply=寵物/召喚物 sprite(js/22 自己的 ticker,已改間接呼叫讓 wrapper 生效);漏包它=關動畫後召喚物照樣跑(踩過)。
     ['_mobAnimApply', '_allySpritesApply', '_playerMorphApply', '_petAnimApply'].forEach(function (fn) {
         if (typeof window[fn] === 'function' && !window[fn].__afkPs) {
             var o = window[fn];
-            window[fn] = function () { if (on('noanim')) return; return o.apply(this, arguments); };
+            window[fn] = function () {
+                if (!on('noanim')) { delete staticKeys[fn]; return o.apply(this, arguments); }
+                if (fn === '_mobAnimApply') return;
+                var key = snapshotKey(fn); if (staticKeys[fn] === key) return;
+                var value = o.apply(this, arguments); freezeSnapshot(fn); staticKeys[fn] = key; return value;
+            };
             window[fn].__afkPs = true;
         }
     });
@@ -85,7 +148,9 @@
         '    #summon-select-overlay, #pet-evo-overlay, #pet-gear-overlay,',
         '    #pvp-arena-modal, #pvp-result-modal,',
         '    #card-book, #equip-book, #misc-book, #relic-book, #collection-panel) { backdrop-filter: none; }',
-        '.backdrop-blur-sm { backdrop-filter: none; -webkit-backdrop-filter: none; }'
+        '.backdrop-blur-sm { backdrop-filter: none; -webkit-backdrop-filter: none; }',
+        'body.afk-no-glow .afk-trans-aura { display: none; }',
+        'body.afk-no-glow [data-card-aura] { filter: none; }'
     ].join('\n');
     function applyNofx() {
         var el = document.getElementById('afk-ps-nofx');
@@ -96,7 +161,16 @@
             }
         } else if (el && el.parentNode) el.parentNode.removeChild(el);
     }
-    applyNofx();
+    function applyVisualState() {
+        if (document.body) {
+            document.body.classList.toggle('afk-no-animation', on('noanim'));
+            document.body.classList.toggle('afk-no-glow', on('nofx'));
+            document.body.classList.toggle('afk-visual-paused', document.hidden);
+        }
+        applyNofx();
+    }
+    applyVisualState();
+    document.addEventListener('visibilitychange', applyVisualState);
 
     // ── 首頁設定面板 ──
     window.AFK_SETTINGS = window.AFK_SETTINGS || { _items: [], add: function (it) { this._items.push(it); } };
@@ -128,6 +202,23 @@
         } catch (e) {}
         return false;
     }
+    var PRESETS = {
+        full: { label: '完整效果', noanim: false, nofx: false, vfx: true, vfxnum: true },
+        smooth: { label: '流暢顯示', noanim: false, nofx: true, vfx: false, vfxnum: true },
+        low: { label: '極省電', noanim: true, nofx: true, vfx: false, vfxnum: false }
+    };
+    function preset(key) {
+        var p = PRESETS[key]; if (!p) return false;
+        set('noanim', p.noanim); set('nofx', p.nofx);
+        ['vfx', 'vfxnum'].forEach(function (k) { if (coreReady(k)) CORE[k].set(p[k]); });
+        return true;
+    }
+    function snapshot() {
+        var r = { noanim: on('noanim'), nofx: on('nofx') };
+        Object.keys(CORE).forEach(function (k) { if (coreReady(k)) r[k] = CORE[k].get(); });
+        return r;
+    }
+    window.AFK_POWERSAVE = { on: on, set: set, preset: preset, snapshot: snapshot, open: openPanel };
 
     function openPanel() {
         if (document.getElementById('afk-ps-overlay')) return;
@@ -153,22 +244,27 @@
             var attr = o.core ? ('data-pscore="' + o.core + '"') : ('data-ps="' + o.k + '"');
             return '<label style="display:flex;align-items:center;gap:12px;padding:10px;border:1px solid #1e293b;border-radius:10px;margin-bottom:8px;cursor:pointer;background:#0b1222;">'
                 + '<input type="checkbox" ' + attr + ' ' + (checked ? 'checked' : '') + ' style="width:18px;height:18px;flex:none;accent-color:#22c55e;">'
-                + '<span><span style="font-weight:600;">' + esc(o.name) + '</span><span style="display:block;font-size:11px;color:#94a3b8;margin-top:2px;">' + esc(o.desc) + '</span></span></label>';
+                + '<span><span style="font-weight:600;">' + esc(o.name) + '</span><span style="display:block;font-size:13px;line-height:1.6;color:#94a3b8;margin-top:2px;">' + esc(o.desc) + '</span></span></label>';
         }).join('');
         var card = document.createElement('div');
         // max-height:100% 是相對「遮罩扣掉 padding 後」的高度 —— 橫幅讓位(applyBannerPad 改的是同一個 padding)
         // 自動吃得到,不必再自己算 dvh。清單自己捲,標題與「完成」永遠留在畫面上。
         card.style.cssText = 'background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:14px;max-width:460px;width:100%;max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.6);';
-        card.innerHTML = '<div style="padding:16px 18px;border-bottom:1px solid #1e293b;flex:0 0 auto;"><div style="font-size:17px;font-weight:700;">🔋 省電模式</div>'
-            + '<div style="font-size:12px;color:#94a3b8;margin-top:3px;">由上往下省電效果遞減，覺得耗電或卡就從上面開始勾；不影響任何遊戲數值。</div></div>'
-            + '<div style="padding:12px 14px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">' + rows + '</div>'
+        card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-labelledby', 'afk-ps-title');
+        card.innerHTML = '<div style="padding:16px 18px;border-bottom:1px solid #1e293b;flex:0 0 auto;"><div id="afk-ps-title" style="font-size:18px;font-weight:700;">🔋 省電模式</div>'
+            + '<div style="font-size:13px;line-height:1.6;color:#94a3b8;margin-top:5px;">卡頓時先選「流暢顯示」，仍不順再選「極省電」；戰鬥數值照常計算。</div></div>'
+            + '<div style="padding:12px 14px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;"><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">'
+            + Object.keys(PRESETS).map(function (k) { return '<button class="btn" type="button" data-preset="' + k + '" style="flex:1;min-height:40px;">' + PRESETS[k].label + '</button>'; }).join('') + '</div>' + rows + '</div>'
             + '<div style="padding:12px 16px;border-top:1px solid #1e293b;text-align:right;flex:0 0 auto;"><button id="afk-ps-close" style="background:#0ea5e9;border:none;color:#04263a;font-weight:700;border-radius:8px;padding:8px 16px;cursor:pointer;">完成</button></div>';
         ov.appendChild(card); document.body.appendChild(ov);
-        function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+        var previousFocus = document.activeElement, layer = null;
+        function dismiss() { layer = null; if (ov.parentNode) ov.parentNode.removeChild(ov); if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); }
+        function close() { if (layer && window.AFK_UI) AFK_UI.closeLayer(layer); else dismiss(); }
+        if (window.AFK_UI && AFK_UI.openLayer) layer = AFK_UI.openLayer(dismiss);
         ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
         card.querySelector('#afk-ps-close').addEventListener('click', close);
         card.querySelectorAll('input[data-ps]').forEach(function (cb) {
-            cb.addEventListener('change', function () { set(cb.getAttribute('data-ps'), cb.checked); applyNofx(); });
+            cb.addEventListener('change', function () { set(cb.getAttribute('data-ps'), cb.checked); });
         });
         card.querySelectorAll('input[data-pscore]').forEach(function (cb) {
             // 勾選＝省電＝把該效果關掉 → 傳給核心的是「要不要開啟」,所以取反
@@ -176,6 +272,14 @@
                 try { CORE[cb.getAttribute('data-pscore')].set(!cb.checked); } catch (e) {}
             });
         });
+        card.querySelectorAll('[data-preset]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                preset(button.getAttribute('data-preset'));
+                card.querySelectorAll('input[data-ps]').forEach(function (cb) { cb.checked = on(cb.getAttribute('data-ps')); });
+                card.querySelectorAll('input[data-pscore]').forEach(function (cb) { cb.checked = !CORE[cb.getAttribute('data-pscore')].get(); });
+            });
+        });
+        card.querySelector('#afk-ps-close').focus();
     }
 
     try { console.log('[AFK-powersave] hooks OK — 省電模式（關動畫/關光暈濾鏡）已就緒。'); } catch (e) {}

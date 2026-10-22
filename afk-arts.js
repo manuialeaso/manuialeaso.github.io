@@ -340,7 +340,7 @@
       if (i !== -1) { try { killMob(i); } catch (e) {} }
     });
   };
-  var hurtMob = function (m, v) { if (!(v > 0) || !m || m._dead) return; m.curHp -= Math.floor(v); m.justHit = 'magic'; try { if (typeof mobWake === 'function') mobWake(m); } catch (e) {} };
+  var hurtMob = function (m, v, owner) { if (!(v > 0) || !m || m._dead) return; var amount=Math.floor(v);if(window.AFK_CARD_COMBAT)amount=window.AFK_CARD_COMBAT.damage(owner||window.AFK_CARD_COMBAT.currentActor(),m,amount,{kind:'true'});m.curHp -= amount; /* card-combat:arts-settle */ m.justHit = 'magic'; try { if (typeof mobWake === 'function') mobWake(m); } catch (e) {} };
   var quiet = function (fn) { outDepth++; try { fn(); } catch (e) {} finally { outDepth--; } };
   // 攻速提到 0.1 秒（面板顯示）：實際 1 秒一擊、傷害 ×10
   var fast = function (p, t) {
@@ -380,7 +380,7 @@
       }
       if (normal && (m._afkWound || 0) > tk()) mult *= 1.2;   // 致命創傷（任何隊員的物理攻擊）
       var plus = Math.floor(lost * (mult - 1) + extra);
-      if (plus > 0) { hurtMob(m, plus); total += plus; }
+      if (plus > 0) { hurtMob(m, plus, actor) /* card-combat:arts-extra */; total += plus; }
       total += lost;
     });
     if (normal && fs && actor !== p) actor._afkFastAt = tk();
@@ -390,10 +390,10 @@
         var s = st(actor), per = s.desp ? 500 : (s.fate ? 200 : 100);
         if (isDragon(prim)) per *= 10;
         if (dreamOn()) per *= 2;
-        var el = Math.floor(per * 4 * (fs ? fs.mult : 1) * f); hurtMob(prim, el); total += el;
+        var el = Math.floor(per * 4 * (fs ? fs.mult : 1) * f); hurtMob(prim, el, actor) /* card-combat:arts-element */; total += el;
       }
       var k = kings();
-      if (k > 0) { var kv = wpnMax(actor) * k; hurtMob(prim, kv); }
+      if (k > 0) { var kv = wpnMax(actor) * k; hurtMob(prim, kv, actor) /* card-combat:arts-flat */; }
       if (a === 'n_heine' && inHeine() && prim.curHp > 0 && Math.random() < 0.5 * f) { prim.curHp = 0; log(tag('海音守護者', '#38bdf8') + nm(actor) + '以守護者之力一擊抹殺了 ' + (prim.n || '敵人') + '！'); }
       if (a === 'r_sword') heal(actor, total * 0.3 * f);
       if (a === 'k_doom') heal(actor, total * f);
@@ -413,7 +413,7 @@
     var ms = MS(); if (!ms) return;
     var str = Math.max(1, Math.floor((actor.d && actor.d.str) || 1)), r3 = function () { return 1 + Math.floor(Math.random() * str); };
     log(tag('龍的一擊', '#fca5a5') + nm(actor) + '的劍中龍魂咆哮，衝擊貫穿了所有敵人！');
-    ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (r3() + r3() + r3() + 30) * (1 + F(actor)) * (typeof fragileMult === 'function' ? fragileMult(m) : 1)); });   // 百般武藝傷害 ×2
+    ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (r3() + r3() + r3() + 30) * (1 + F(actor)) * (typeof fragileMult === 'function' ? fragileMult(m) : 1), actor) /* card-combat:arts-dragon */; });   // 百般武藝傷害 ×2
   };
   var rallyMinions = function () {
     var p = P(), t = (typeof getTarget === 'function') ? getTarget() : null; if (!t || t.curHp <= 0) return;
@@ -593,7 +593,7 @@
       });
     } else {
       var d = actor.d || {}, base = ((Number(d.int) || 0) + (Number(d.wis) || 0) + (Number(d.magicDmg) || 0)) * 8 * 1.5 * mult * 0.5 * F(actor);
-      ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, base * 3 * eles.length * (typeof mrMult === 'function' ? mrMult(m.mr || 0) : 1)); });
+      ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, base * 3 * eles.length * (typeof mrMult === 'function' ? mrMult(m.mr || 0) : 1), actor) /* card-combat:arts-ally-spell */; });
     }
     reap();
   };
@@ -631,7 +631,7 @@
         if (!s.athFired && t - s.athSince >= 600) {
           s.athFired = true;
           var ms = MS();
-          (ms.mobs || []).forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (m.hp || m.curHp) * 0.2); });
+          (ms.mobs || []).forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (m.hp || m.curHp) * 0.2, p) /* card-combat:arts-timed */; });
           log(tag('無神論者', '#e879f9') + nm(p) + '否定了神——所有敵人失去 20% 生命！之後陷入虛弱（5 分鐘）。');
           s.athOff = t + 3000; s.athSince = null; reap(); refresh(p);
         }

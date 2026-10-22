@@ -240,9 +240,13 @@ function playSpellFx(skn, mob, caster) {
                     let elapsed = _now() - t0, t = Math.min(1, elapsed / dur);
                     if (_arFallback && first.naturalWidth && first.naturalHeight) { _arFallback = false; _computeGeom(); }   // 🩹 解碼後校正尺寸(採真原生像素)
                     let px = ox + (ax - ox) * t, py = oy + (ay - oy) * t;
-                    el.style.width = fxW + 'px'; el.style.height = fxH + 'px';
-                    el.style.left = (px - fxW * axf) + 'px'; el.style.top = (py - fxH * ayf) + 'px';
-                    let fi = Math.floor(elapsed / frameDur) % cfg.n; if (frames[fi]) el.src = frames[fi].src;   // 途中循環幀
+                    let fi = Math.floor(elapsed / frameDur) % cfg.n;
+                    // AFK_DISPLAY_PROJECTILE: same path/time, compositor-friendly motion.
+                    if (!(typeof window.__afkProjectileFrame === 'function' && window.__afkProjectileFrame(el, px - fxW * axf, py - fxH * ayf, fxW, fxH, _flipX, frames[fi] && frames[fi].src))) {
+                        el.style.width = fxW + 'px'; el.style.height = fxH + 'px';
+                        el.style.left = (px - fxW * axf) + 'px'; el.style.top = (py - fxH * ayf) + 'px';
+                        if (frames[fi]) el.src = frames[fi].src;
+                    }
                     if (t < 1) requestAnimationFrame(raf);
                     else { el.remove(); delete _spellFxActive[fxKey]; }
                 } catch (e) { try { el.remove(); } catch (_) {} delete _spellFxActive[fxKey]; }

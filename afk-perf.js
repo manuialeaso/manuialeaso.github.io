@@ -48,11 +48,17 @@
       el.insertAdjacentHTML('beforeend', batch.join(''));
       var extra = el.children.length - max;
       while (extra-- > 0 && el.children.length > 1) el.removeChild(el.firstChild);
-      if (!q.locked()) el.scrollTop = el.scrollHeight;                     // 整批只排版一次
+      return q.locked() ? null : el;
     };
     var flushAll = function () {
       scheduled = false;
-      for (var id in queues) { try { flushOne(id); } catch (e) {} }
+      var scroll = [];
+      // Finish every channel's DOM writes before reading any layout. Otherwise
+      // combat's scrollHeight flushes layout, then system/world invalidate it
+      // again. Keep the same nodes, trimming, lock checks and flush timing.
+      for (var id in queues) { try { var el = flushOne(id); if (el) scroll.push({ el: el }); } catch (e) {} }
+      for (var i = 0; i < scroll.length; i++) { try { scroll[i].top = scroll[i].el.scrollHeight; scroll[i].ready = true; } catch (e) {} }
+      for (var j = 0; j < scroll.length; j++) { if (scroll[j].ready) { try { scroll[j].el.scrollTop = scroll[j].top; } catch (e) {} } }
     };
     var schedule = function () {
       if (scheduled) return;

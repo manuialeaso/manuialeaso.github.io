@@ -165,6 +165,10 @@
     return _castleEntry[mapName] || '';
   }
   function itemNameOf(id) { return (DB.items[id] && DB.items[id].n) ? DB.items[id].n : id; }
+  function itemAcquireOf(id) {
+    var e=window.AFK_EXTRA;if(!e)return null;
+    return e.itemAcquireOf?e.itemAcquireOf(id):(e.itemAcquire&&e.itemAcquire[id]);
+  }
   // 職業限定掉落附註:試煉/兌換道具(TRIAL_ITEM_CLASS)僅該職業擊殺才掉,標「🔒僅X」讓所有職業都看得到是誰限定;非限定道具(書板/鎖鏈劍/印記等全職可掉)不在表內→回 null 不附註。
   var _CLS_CN = { knight: '騎士', mage: '法師', elf: '妖精', dark: '黑暗妖精', illusion: '幻術士', dragon: '龍騎士', warrior: '戰士', royal: '王族' };
   function trialClassOf(id) {
@@ -179,6 +183,7 @@
 
   // ----- 預先建索引(只跑一次) ---------------------------------------------
   function buildIndexes() {
+    INDEX = [];
     DROPPED_SET = {};
     var mobToMaps = {};
     for (var mid in DB.maps) (DB.maps[mid] || []).forEach(function (mob) { (mobToMaps[mob] = mobToMaps[mob] || []).push(mid); });
@@ -240,17 +245,15 @@
   var ITEM_INDEX = [];
   function buildItemIndex() {
     ITEM_INDEX = [];
-    var shopSet = {};
-    if (typeof SHOP_LISTS !== 'undefined' && SHOP_LISTS) {
-      for (var k in SHOP_LISTS) (SHOP_LISTS[k] || []).forEach(function (sid) { shopSet[sid] = true; });
-    }
+    if (_shopIndex === null) buildShopIndex();
+    var shopSet = _shopIndex;
     if (_craftIndex === null) buildCraftIndex();   // ⑥ 需要「可製作」當收錄條件之一(下方)
     for (var id in DB.items) {
       var d = DB.items[id];
-      if (!d || !d.n) continue;
+      if (!d || !d.n || d.gmOnly) continue;
       var isEquip = (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc');
       // ③ 有手動「取得方式」(itemAcquire)的:如龍騎士書板(skillbk、非商店、無怪掉)→ 兌換取得,收進來才搜得到
-      var hasAcq = !!(window.AFK_EXTRA && AFK_EXTRA.itemAcquire && AFK_EXTRA.itemAcquire[id]);
+      var hasAcq = !!itemAcquireOf(id);
       // ④ 會在潘朵拉黑市上架的(gachaWeight>0=上架權重):雖無固定來源,但確實買得到 → 也收進來,搜得到名字、詳情卡自動標「目前沒有固定取得途徑」
       //    (避免「明明拿得到卻完全查無」的死角;真正純內部用、gachaWeight=0 又無任何來源的維持排除、不灌爆搜尋)
       var inGacha = (d.gachaWeight > 0);
@@ -397,14 +400,17 @@
 
   // ----- 製作資訊:讀遊戲 CRAFT_RECIPES(物品→在哪個 NPC、要什麼材料);作者加新配方自動出現 ------
   var _craftIndex = null;   // itemId -> [{npcId, req, yield}]
+  var _craftUses = null;    // materialId -> actual recipes that consume it
   var _npcInfo = null;      // npcId -> {name, town}
   function buildCraftIndex() {
     _craftIndex = {};
+    _craftUses = {};
     if (typeof CRAFT_RECIPES === 'undefined' || !CRAFT_RECIPES) return;
     for (var npcId in CRAFT_RECIPES) {
       (CRAFT_RECIPES[npcId] || []).forEach(function (r) {
         if (!r || !r.result) return;
-        (_craftIndex[r.result] = _craftIndex[r.result] || []).push({ npcId: npcId, req: r.req || [], yield: r.yield || 1 });
+        var out=DB.items[r.result],plain=out&&['wpn','arm','acc'].indexOf(out.type)>=0;
+        (_craftIndex[r.result] = _craftIndex[r.result] || []).push({ npcId: npcId, req: r.req || [], yield: r.yield || 1, note:r.ttmiRecipeKind?'工坊金幣需求包含工資。'+(plain?'成品為 +0，無詞綴。':''):'' });
       });
     }
     // 👑 惡魔王武器:炎魔之影客製製作(消耗 +11 以上指定惡魔武器 + 素材,不在 CRAFT_RECIPES 裡,要另外補)
@@ -441,6 +447,7 @@
         (_craftIndex[r.result] = _craftIndex[r.result] || []).push({ npcId: 'npc_zeus_golem', req: req, yield: 1, note: '另需消耗 +7 以上的「抗魔法鏈甲」×1；成品為 +0 白板' });
       });
     }
+    Object.keys(_craftIndex).forEach(function(result){_craftIndex[result].forEach(function(r){r.req.forEach(function(m){if(m.id&&m.id!=='gold')(_craftUses[m.id]=_craftUses[m.id]||[]).push({result:result,npcId:r.npcId,count:m.cnt,yield:r.yield});});});});
   }
   function buildNpcInfo() {
     _npcInfo = {};
@@ -473,6 +480,14 @@
     }).join('');
     return '<div class="m-dex-craft"><div class="m-dex-craft-h">🔨 製作</div>' + blocks + '</div>';
   }
+  function craftUsesHTML(id){
+    if(_craftIndex===null)buildCraftIndex();if(_npcInfo===null)buildNpcInfo();
+    var uses=_craftUses[id];if(!uses||!uses.length)return '';
+    function line(u){var npc=_npcInfo[u.npcId]||{name:u.npcId,town:''};return '<div class="m-dex-craft-mats">消耗 '+fmt(u.count)+' 個 → <span class="m-dex-iname" data-id="'+esc(u.result)+'">'+esc(itemNameOf(u.result))+'</span> ×'+fmt(u.yield)+'（'+esc(npc.name)+(npc.town?'・'+esc(npc.town):'')+'）</div>';}
+    var h=uses.slice(0,8).map(line).join('');
+    if(uses.length>8)h+='<details><summary>另有 '+(uses.length-8)+' 條製作用途</summary>'+uses.slice(8).map(line).join('')+'</details>';
+    return '<div class="m-dex-craft"><div class="m-dex-craft-h">🧰 製作用途</div>'+h+'</div>';
+  }
 
   // ----- 商店販售:讀遊戲 SHOP_LISTS(NPC→販售物品)+ DB.towns(NPC→村莊) ------------
   //   潘朵拉黑市是 type:"exchange"、不在 SHOP_LISTS,故自然不列入(使用者要求不列)。
@@ -497,6 +512,13 @@
     (SHOP_LISTS.default || []).forEach(function (id) {
       (_shopIndex[id] = _shopIndex[id] || { specific: [], general: false }).general = true;
     });
+    var tt=window.AFK_TTMI_ITEMS;
+    if(tt&&tt.shopStock&&tt.acquisition)tt.shopStock().forEach(function(id){
+      var d=DB.items[id],src=tt.acquisition(id),s=src&&src.shop;if(!d||d.gmOnly||!s)return;
+      var npc=_npcInfo[s.npcId]||{name:s.npcId,town:mapNameOf(s.townId)};
+      var e=(_shopIndex[id]=_shopIndex[id]||{specific:[],general:false});
+      e.specific.push({name:npc.name,town:npc.town});e.customPrice=s.price;e.discount=s.discount;
+    });
   }
   // 箭/銀箭/肉:商店以「1000 個一組」的固定價賣,不是用 d.p(對齊遊戲 renderShopItems 的特例);其餘用定價 d.p。
   var SHOP_BUNDLE_PRICE = {
@@ -516,8 +538,8 @@
     });
     if (e.general) lines.push('<div class="m-dex-craft-where">各村莊雜貨商人皆有販售</div>');
     if (!lines.length) return '';
-    var pr = shopBuyPrice(id);
-    var priceLine = pr ? '<div class="m-dex-craft-mats">售價：' + pr.base.toLocaleString() + ' 金幣' + (pr.unit ? '（' + pr.unit + '）' : '') + '；攻城獲勝期間 8 折</div>' : '';
+    var pr = e.customPrice!=null?{base:e.customPrice,unit:''}:shopBuyPrice(id);
+    var priceLine = pr ? '<div class="m-dex-craft-mats">售價：' + pr.base.toLocaleString() + ' 金幣' + (pr.unit ? '（' + pr.unit + '）' : '') + (e.discount===false?'；古物商人固定售價':'；攻城獲勝期間 8 折') + '</div>' : '';
     return '<div class="m-dex-craft"><div class="m-dex-craft-h">🏪 商店販售</div>' + priceLine + lines.join('') + '</div>';
   }
 
@@ -530,7 +552,7 @@
     if (_craftIndex[id]) return true;                                         // 可製作
     if (_shopIndex === null) buildShopIndex();
     if (_shopIndex[id]) return true;                                          // 商店販售
-    var acq = (window.AFK_EXTRA && AFK_EXTRA.itemAcquire) ? AFK_EXTRA.itemAcquire[id] : null;
+    var acq = itemAcquireOf(id);
     if (acq && acq.short) return true;                                        // 手動補的取得方式(兌換/試煉/喚回…)
     var bt = boxTiersOf(id); if (bt && bt.length) return true;                // 歐西里斯寶箱開出(底比斯武器)
     return !!trialSourceOf(id);                                               // 各職業試煉/兌換結構成品(50級試煉/希蓮恩/多文/普洛凱爾/尤麗婭/黑暗試煉)
@@ -598,7 +620,7 @@
     var parts = [];
     var _tc = trialClassOf(id);
     if (_tc) parts.push('<div class="m-dex-craft"><div class="m-dex-craft-h">🔒 職業限定</div><div class="m-dex-craft-mats">只有 <b>' + _tc.join('／') + '</b> 擊殺對應怪物才會掉落（其他職業打同一隻怪不會掉、掉落查詢也標「🔒僅' + _tc.join('／') + '」）。</div></div>');
-    var exa = (window.AFK_EXTRA && AFK_EXTRA.itemAcquire) ? AFK_EXTRA.itemAcquire[id] : null;
+    var exa = itemAcquireOf(id);
     if (exa && exa.short) parts.push('<div class="m-dex-craft"><div class="m-dex-craft-h">🔑 取得方式</div><div class="m-dex-craft-mats">' + esc(exa.short) + '</div></div>');
     parts.push(craftInfoHTML(id));
     parts.push(shopInfoHTML(id));
@@ -619,7 +641,8 @@
     if (body) return body;
     return '<div class="m-dex-craft"><div class="m-dex-craft-mats" style="color:#94a3b8;">目前沒有固定取得途徑</div></div>';
   }
-  window.AFK_DEX_API = { acquireHTML: acquireHTML, itemDetailHTML: itemDetailHTML, goto: gotoDex, close: closeForNav, isOpen: _isModalClosable, searchSummary: searchSummary };   // goto({q}) 通用跨頁前往掉落查詢;close/isOpen 供跨頁切換(關閉來源、接手歷史層);searchSummary 供小百科統一搜尋
+  function refreshIndexes(){_craftIndex=null;_craftUses=null;_npcInfo=null;_shopIndex=null;_dropBy=null;_boxBy=null;_trialBy=null;buildIndexes();buildItemIndex();}
+  window.AFK_DEX_API = { acquireHTML: acquireHTML, itemDetailHTML: itemDetailHTML, goto: gotoDex, close: closeForNav, isOpen: _isModalClosable, searchSummary: searchSummary, refresh:refreshIndexes };   // goto({q}) 通用跨頁前往掉落查詢;close/isOpen 供跨頁切換(關閉來源、接手歷史層);searchSummary 供小百科統一搜尋
 
   // ----- 物品詳情彈窗(點掉落物名字 → 顯示遊戲內數值與圖示) ------------------
   var IT_TYPE = { wpn: '武器', arm: '防具', acc: '飾品', pot: '藥水', scroll: '卷軸', skillbk: '魔法書', misc: '道具', etc: '道具' };
@@ -667,7 +690,7 @@
     else if (bm && bm.deny) bmLine = '<div class="m-dex-craft-mats" style="color:#94a3b8;">黑市成交價：不可指定收購</div>';
     // 取得方式:手動補(itemAcquire)/ 歐西里斯寶箱 / 中性句;製作、商店、查掉落鈕沿用
     var acq = '';
-    var exAcq = (window.AFK_EXTRA && AFK_EXTRA.itemAcquire) ? AFK_EXTRA.itemAcquire[id] : null;
+    var exAcq = itemAcquireOf(id);
     var tiers = boxTiersOf(id);
     if (exAcq && exAcq.short) acq += '<div class="m-dex-craft"><div class="m-dex-craft-h">🔑 取得方式</div><div class="m-dex-craft-mats">' + esc(exAcq.short) + '</div></div>';
     if (tiers && tiers.length) acq += '<div class="m-dex-craft"><div class="m-dex-craft-h">🎁 寶箱開出</div><div class="m-dex-craft-mats">開「' + tiers.map(esc).join('／') + '」隨機獲得（每開消耗 1 顆 龜裂之核）</div></div>';
@@ -691,7 +714,7 @@
         (dl.length > DROP_LIST_CAP ? '<div class="m-dex-craft-mats" style="margin-top:4px;">…等 ' + dl.length + ' 種怪物</div>' : '') + '</div>';
     }
     var tail = dl.length ? '<button class="m-dex-pop-search" data-item="' + esc(d.n) + '">🔍 查有哪些怪會掉這件</button>' : '';
-    return head + typeLine + trialLine + body + spdLine + priceLine + bmLine + craftInfoHTML(id) + shopInfoHTML(id) + acq + dropList + tail;
+    return head + typeLine + trialLine + body + spdLine + priceLine + bmLine + craftInfoHTML(id) + craftUsesHTML(id) + shopInfoHTML(id) + acq + dropList + tail;
   }
   function openItemPop(id) {
     var pop = document.getElementById('m-dex-itempop'); if (!pop) return;
@@ -896,7 +919,18 @@
     { id: 'relic', title: '🏺 遺物（各怪專屬的極稀有裝備）', keys: ['遺物', 'relic', '遺物收集冊'], lines: [
       '<b>每隻怪物各有一件專屬遺物</b>，擊殺時 <b>0.0001%</b>（百萬分之一）機率掉落——搜怪物名，該怪的掉落表就會列出那件遺物',
       '機率<b>會吃掉落倍率</b>：席琳的世界 <b>×3</b>、瘋狂的席琳世界 <b>×5</b>、恩賜怪 <b>×10</b>',
-      '遺物<b>無法強化</b>，也<b>不會</b>帶祝福／詛咒、屬性／遠古詞綴或席琳套裝效果——數值永遠固定',
+      function () {
+        var on = !window.AFK_TOGGLES || AFK_TOGGLES.enabled('relicplus');
+        return on && window.__afkRelicPlus
+          ? '遺物不使用一般強化卷軸。前往<b>燃柳村的哈瑪大師</b>合成：武器／防具最高 +15，飾品最高 +10；之後依條件進入<b>昇華支配</b>。+5、+10 與昇華階段的專屬效果，以物品說明為準。'
+          : '遺物不使用一般強化卷軸；<b>遺物合成功能目前停用</b>。已持有的強化遺物與收藏仍會保留。';
+      },
+      function () {
+        var on = !window.AFK_TOGGLES || AFK_TOGGLES.enabled('relicaffix');
+        return on && typeof window.__afkRelicAffix === 'function'
+          ? '首次取得的遺物維持基本版本；已收錄後再次取得時，<b>祝福</b>與<b>遠古系詞綴</b>各有 50% 機會，武器另有 50% 機會附上<b>屬性詞綴</b>，三者各自判定。遺物布告欄交付基本版本。'
+          : '<b>重複遺物詞綴功能目前停用</b>，新取得的遺物不會因此附上祝福、遠古系或屬性詞綴；已持有的詞綴保留。';
+      },
       '<b>第二種取得途徑：潘朵拉黑市的「遺物布告欄」</b>——在黑市的收購輸入框打「遺物」，花 <b>100 顆龍之鑽石</b>指定武器／防具／飾品類，'
       + '系統會挑一件<b>你目前沒有的</b>遺物並開出 3 樣委託材料，交齊即可拿到（3 個欄位共用、每欄完成或取消後冷卻 24 小時）。玩法詳見小百科「遺物市場」分頁',
       '遺物本身不會出現在黑市的一般陳列商品裡；能給哪些職業用，以裝備卡上標示的職業為準',
@@ -916,7 +950,7 @@
   function specialPanelHTML() {
     var body = SPECIAL_BLOCKS.map(function (b) {
       return '<details class="m-dex-sp-item" data-spid="' + b.id + '"><summary class="m-dex-sp-h">' + b.title + '</summary>' +
-        '<ul>' + b.lines.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul></details>';
+        '<ul>' + b.lines.map(function (l) { return '<li>' + (typeof l === 'function' ? l() : l) + '</li>'; }).join('') + '</ul></details>';
     }).join('');
     return '<details id="m-dex-special">' +
       '<summary><span class="m-dex-sp-label">📋 全域特殊掉落規則（依條件觸發，不列在各怪掉落表內）</span></summary>' +
@@ -984,6 +1018,15 @@
   //   嚴格比對 true:按鈕 onclick 會把 MouseEvent 當參數傳進來,不可當 adopt
   function openModal(adopt) {
     var m = document.getElementById('m-dex-modal'); if (!m) return;
+    // Keep feature-dependent rules current after a toggle changes on this page.
+    var oldRules = document.getElementById('m-dex-special');
+    if (oldRules) {
+      var wasExpanded = oldRules.open;
+      var expanded = Array.prototype.map.call(oldRules.querySelectorAll('details[open][data-spid]'), function (d) { return d.getAttribute('data-spid'); });
+      oldRules.outerHTML = specialPanelHTML();
+      var newRules = document.getElementById('m-dex-special'); newRules.open = wasExpanded;
+      expanded.forEach(function (id) { var d = newRules.querySelector('[data-spid="' + id + '"]'); if (d) d.open = true; });
+    }
     var wasOpen = m.classList.contains('open');
     m.classList.add('open');
     var i = document.getElementById('m-dex-input'); if (i) i.focus();

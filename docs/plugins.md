@@ -2,6 +2,8 @@
 
 > 查表用。規則本身在 `CLAUDE.md`;這裡只放「有哪些東西、各自幹嘛」。
 
+下方「13 組／20 處」及「74 支」保留早期歷史表的原始計數，**不是目前專案總數**。本輪新增與調整見「2026-10-22 整合索引」；實際載入順序以 [外掛載入清單](../scripts/afk-plugin-block.html) 為準，補丁是否就位以 `node scripts/apply-core-patches.mjs --check` 為準。
+
 ## 核心補丁(13 組·20 處錨點;`scripts/apply-core-patches.mjs`)
 
 `--check` 印的數字(20)是錨點處數,不是補丁組數。
@@ -101,6 +103,61 @@
 | `afk-syncinfo.js` | 首頁顯示原作者連結+原版同步時間(讀 version.json 的 buildAt) |
 | `afk-analytics.js` | Cloudflare Web Analytics(只在正式站注入) |
 | `afk-skin.js` | 首頁外掛入口收納(桌機🔌鈕/手機依原版按鈕樣式;固定最後載,MutationObserver 等入口到齊) |
+
+## 2026-10-22 整合索引
+
+以下補充本輪新增或延伸的模組，不取代上方歷史表。資料定義與遊戲效果的開關分開處理：遺物衍生 ID、卡片與古物定義在停用時仍須保留，避免原生讀檔清掉已持有道具；實際取得、使用、能力與介面則遵守相應開關。
+
+### 模組、開關與相依關係
+
+| 模組 | 開關 | 本輪功能 |
+| --- | --- | --- |
+| `afk-relic-catalog.js` | 資料本身不另設開關 | 250 件遺物的設計理念、版本方向及階段索引；不直接執行戰鬥效果 |
+| `afk-relic-weapons.js`、`afk-relic-defense.js` | `relicfx` | 131 件武器及 119 件防具／飾品的分階設定與玩家說明，接入 +5、+10、昇華支配、昇華支配 +5 |
+| `afk-relic-runtime.js` | `relicfx` | 同源效果、觸發事件、屬性印記、毒／出血帳本、治療冷卻、護盾及傷害結算；關閉時不執行新增效果 |
+| `afk-relic-weapon-bridge.js`、`afk-relic-defense-bridge.js` | `relicfx` | 把分階設定接到原生普攻、技能、受擊與防具處理，保留原生死亡及掉落流程 |
+| `afk-relic-companions.js` | `relicfx` | 寵物、召喚物與傭兵的來源歸屬、傷害、恢復及保護效果 |
+| `afk-relic-gm.js` | 效果從屬 `relicfx`；沒有一般玩家取得開關 | 固定昇華支配 +5 的 99999 武器與 99998 防具，各投射全部 250 件遺物效果；99998 再啟用 57 組套裝。同源不重複，兩件都不可再升級，也不加入商店、掉落或抽獎池 |
+| `afk-relic-integration.js` | `relicfx` | 管理完整攻擊／施法的事件範圍、免費觸發、結算及遺物治療，避免遞迴追擊與反射重複結算 |
+| `afk-relicplus.js`（既有模組延伸） | `relicplus` | 武器／防具最高 +15、飾品最高 +10 與昇華流程；衍生物品資料登錄獨立於合成功能開關 |
+| `afk-cardplus.js`（既有模組延伸） | `cardplus` | 白金／鑽石資料及既有卡片取得；停用重載仍保留卡片、幻化券與哈瑪定義，重新開啟可用 |
+| `afk-card-forms.js` | 戰鬥依 `card-ascension`；外觀依 `card-aura` | 原生怪物鑽石形態與 14 神話、3 天上、3 時空形態；`card-aura` 是 `card-ascension` 子項，只控制光環外觀 |
+| `afk-card-ascension.js` | `card-ascension`，父項 `cardplus` | 永久收藏、鑽石變身使用條件、三階合成／保底／補償、自選券與碎片、存檔失敗回復。關閉父項或本項會清除當前卡片變身，但保留收藏與道具 |
+| `afk-card-combat.js` | `card-ascension` | 三階屬性、抗性、爆擊、有效首傷與時空副本光環；同一怪物整條變身鏈共用首傷，時空另有角色共用 30 秒冷卻 |
+| `afk-ttmi-items-data.js`、`afk-ttmi-items.js` | `ttmi-items` | 正式載入新增 2,219 件物品、893 條工坊配方、11 件裂痕補給；停用撤下入口與新增掉落，既有背包／倉庫定義保留 |
+| `afk-dex.js`、`afk-extradata.js`（既有模組延伸） | `dex` | 掉落查詢同步實際商店價格、工坊配方、材料用途、卡片補償及裂痕來源；遺物升級說明跟隨開關 |
+| `afk-game-guide.js` | 百科入口沿用 `wiki` | 小百科增加「遺物進階」「鑽石變身」「冒險規則」，從目前模組讀取階段說明、名單、機率、成本及開關狀態；自身不修改角色 |
+| `afk-readability.js` | `readability` | 統一說明字級、操作區與長文捲動，補上對話框的鍵盤焦點與手機／平板版面 |
+| `afk-display.js` | `perf-render`，父項 `perf` | 投射物用 transform 移動並避免重寫相同影格／尺寸；保留原生位置、時間與碰撞，停用即回原生繪製路徑 |
+
+### 載入與核心補丁
+
+遺物資料與 runtime 放在 `afk-relicplus.js` 前；武器／防具掛接、同伴、GM 與整合層在相關玩法就緒後載入。透視鏡資料先於 `afk-ttmi-items.js`；卡片順序為 `forms → ascension → combat`，之後才載入動態百科與文字整理。`afk-display.js` 接在 `afk-perf.js` 後，使用既有畫面重繪開關。
+
+以下六個補丁模組均由 [核心補丁入口](../scripts/apply-core-patches.mjs) 依序呼叫；同步上游後執行同一入口，檢查模式不寫入核心檔案。
+
+| 補丁模組 | 主要掛接範圍 |
+| --- | --- |
+| `scripts/apply-relic-runtime-patches.mjs` | 遺物事件／傷害／恢復、護盾與反射、GM 套裝、毒血來源；透視鏡角色與寵物經驗倍率、屬性及藥水使用者歸屬 |
+| `scripts/apply-relic-weapon-bridge-patches.mjs` | 武器特效的物理／魔法傷害、連擊、穿透及原生觸發路徑 |
+| `scripts/apply-relic-companion-patches.mjs` | 原生寵物／召喚物與同伴結算、來源連結及真實裝備重量 |
+| `scripts/apply-relic-defense-patches.mjs` | 防具受擊與行動效果，連接技能資源成本與防禦處理 |
+| `scripts/apply-display-patches.mjs` | `js/09-vfx-render.js` 投射物影格的可回退繪製鉤子 |
+| `scripts/apply-card-combat-patches.mjs` | 原生扣血結算、六屬性與爆擊、時空脈衝，以及怪物變身後繼承首傷身分 |
+
+### 文件、產生器與驗證入口
+
+| 主題 | 文件與資料 | 重建／驗證 |
+| --- | --- | --- |
+| 純遺物設計清單 | [250 件＋GM 清單](relic-design-catalog.md) | `node scripts/build-relic-design-catalog.mjs`；加 `--check` 只比對現行資料 |
+| 遺物規則與平衡 | [規則與範圍](relic-rules-and-balance.md)、[實測評估](relic-balance-review.md)、[合成規格](relic-ascension-spec.md) | `test-relic-runtime-browser.mjs`、`test-relic-weapon-browser.mjs`、`test-relic-balance.mjs`、`test-relic-environment.mjs`、`test-relic-dreamcost.mjs` 等均在 `scripts/` |
+| 卡片、變身、合成 | [完整規則](card-ascension.md)、[合成與存檔結果](card-ascension-results.json)、[33 組戰鬥結果](card-combat-results.json)、[四龍反射結果](card-reflection-results.json) | `node scripts/test-card-ascension.mjs`、`node scripts/test-card-combat.mjs`、`node scripts/test-card-reflection.mjs`、`node scripts/test-card-visuals.mjs` |
+| 透視鏡物品與來源覆蓋 | [物品實裝及經濟邊界](ttmi-items.md)、[既有地圖匯入](ttmi-content.md)、[逐項覆蓋資料](../data/ttmi-items-coverage.json)、[整合結果](../data/ttmi-items-integration.json) | `scripts/fetch-ttmi-items.py`、`scripts/fetch-ttmi-item-details.py`、`scripts/export-ttmi-baseline.mjs`、`scripts/build-ttmi-items.py`；流程與參數見物品文件 |
+| 透視鏡動作與經濟 | [逐配方／容器現金核對](../data/ttmi-economy-audit.json) | `node scripts/test-ttmi-items.mjs`、`node scripts/test-ttmi-discovery.mjs --write-report`、`node scripts/audit-ttmi-economy.mjs --write-report` |
+| 遺物與畫面效能 | [遺物效能結果](relic-performance-results.json) | `node scripts/test-relic-performance.mjs`、`node scripts/test-relic-dispatch-cache.mjs`、`node scripts/test-display-rendering.mjs` |
+| 夢艷與治療相容性 | [夢艷規則](dream-hell.md)、[遺物治療與轉生藥水](relic-rules-and-balance.md) | `node scripts/test-relic-environment.mjs`、`node scripts/test-relic-dreamcost.mjs` |
+
+原生瀏覽器測試使用隔離角色與本機服務，不接觸既有玩家資料。經濟核對是靜態計算，不替代長期玩家進度、不同配裝或每小時收益測量。
 
 ## 獨立頁與跨頁連結(dex↔wiki)
 

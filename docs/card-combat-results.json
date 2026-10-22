@@ -1,0 +1,468 @@
+{
+  "results": [
+    {
+      "name": "mythic early attributes, derived HP/MP, resistances and first damage",
+      "hp": 4532.875,
+      "mp": 1090
+    },
+    {
+      "name": "celestial early attributes, derived HP/MP, resistances and first damage",
+      "hp": 4904.125,
+      "mp": 1585
+    },
+    {
+      "name": "spacetime early attributes, derived HP/MP, resistances and first damage",
+      "hp": 5293.9375,
+      "mp": 2575
+    },
+    {
+      "name": "ordinary 100 total attribute cap preserves source and effective values",
+      "before": {
+        "panel": 80,
+        "raw": 80,
+        "hp": 3382,
+        "mp": 100
+      },
+      "after": {
+        "panel": 100,
+        "raw": 130,
+        "hp": 5293.9375,
+        "mp": 2575
+      },
+      "sourceBonus": 50,
+      "effectivePanelBonus": 20
+    },
+    {
+      "name": "reborn 200 total attribute cap preserves source and effective values",
+      "before": {
+        "panel": 192,
+        "raw": 192,
+        "hp": 6883.5,
+        "mp": 249
+      },
+      "after": {
+        "panel": 200,
+        "raw": 242,
+        "hp": 11018.25,
+        "mp": 3974
+      },
+      "sourceBonus": 50,
+      "effectivePanelBonus": 8
+    },
+    {
+      "name": "ownership, expiry, set override, ordinary diamond and persistent first-hit ledger"
+    },
+    {
+      "name": "native set and weapon equip/unequip immediately remove and restore card-derived stats",
+      "before": {
+        "con": 49,
+        "hp": 4532.875,
+        "mp": 1090
+      },
+      "forced": {
+        "con": 29,
+        "hp": 3382,
+        "mp": 100
+      }
+    },
+    {
+      "name": "spacetime 30-second owner cooldown and spent enemy opportunity"
+    },
+    {
+      "name": "mythic native seven-phase dragon shares one first hit; unrelated spawns retain independent eligibility",
+      "phases": [
+        {
+          "stage": 1,
+          "damage": 500
+        },
+        {
+          "stage": 2,
+          "damage": 100
+        },
+        {
+          "stage": 3,
+          "damage": 100
+        },
+        {
+          "stage": 4,
+          "damage": 100
+        },
+        {
+          "stage": 5,
+          "damage": 100
+        },
+        {
+          "stage": 6,
+          "damage": 100
+        },
+        {
+          "stage": 7,
+          "damage": 100
+        }
+      ],
+      "respawnDamage": 500,
+      "duringCooldown": null
+    },
+    {
+      "name": "spacetime native seven-phase dragon shares one first hit; unrelated spawns retain independent eligibility",
+      "phases": [
+        {
+          "stage": 1,
+          "damage": 1500
+        },
+        {
+          "stage": 2,
+          "damage": 100
+        },
+        {
+          "stage": 3,
+          "damage": 100
+        },
+        {
+          "stage": 4,
+          "damage": 100
+        },
+        {
+          "stage": 5,
+          "damage": 100
+        },
+        {
+          "stage": 6,
+          "damage": 100
+        },
+        {
+          "stage": 7,
+          "damage": 100
+        }
+      ],
+      "respawnDamage": 1500,
+      "duringCooldown": 100
+    },
+    {
+      "name": "zero, reflection and transferred damage do not consume the first hit"
+    },
+    {
+      "name": "mythic native ordinary attack applies its multiplier once",
+      "first": 360,
+      "next": 72
+    },
+    {
+      "name": "celestial native ordinary attack applies its multiplier once",
+      "first": 790,
+      "next": 79
+    },
+    {
+      "name": "spacetime native ordinary attack applies its multiplier once",
+      "first": 1260,
+      "next": 84
+    },
+    {
+      "name": "native terror immunity refunds damage without consuming the first hit"
+    },
+    {
+      "name": "first-hit eligibility follows actual native immunity and pursuit settlement paths",
+      "first": 360,
+      "next": 72
+    },
+    {
+      "name": "native triggered spell applies first-hit multiplier once",
+      "first": 1840,
+      "next": 184
+    },
+    {
+      "name": "native paid spell includes card damage in its actual settlement",
+      "first": 1345,
+      "next": 269
+    },
+    {
+      "name": "wpn_priest_wand native magic burst inherits first-hit damage exactly once",
+      "hits": [
+        {
+          "target": "card-22",
+          "base": 143,
+          "settled": 715,
+          "inherited": false
+        },
+        {
+          "target": "card-22",
+          "base": 107,
+          "settled": 107,
+          "inherited": true
+        },
+        {
+          "target": "card-burst-22",
+          "base": 107,
+          "settled": 107,
+          "inherited": true
+        }
+      ]
+    },
+    {
+      "name": "relic_frostdeath_breath native magic burst inherits first-hit damage exactly once",
+      "hits": [
+        {
+          "target": "card-23",
+          "base": 180,
+          "settled": 900,
+          "inherited": false
+        },
+        {
+          "target": "card-23",
+          "base": 135,
+          "settled": 135,
+          "inherited": true
+        },
+        {
+          "target": "card-burst-23",
+          "base": 135,
+          "settled": 135,
+          "inherited": true
+        }
+      ]
+    },
+    {
+      "name": "runtime piercing does not compound first-hit multipliers",
+      "hits": [
+        {
+          "target": "card-24",
+          "base": 79,
+          "settled": 395,
+          "inherited": false
+        },
+        {
+          "target": "card-pierce-c",
+          "base": 79,
+          "settled": 395,
+          "inherited": false
+        },
+        {
+          "target": "card-pierce-b",
+          "base": 79,
+          "settled": 395,
+          "inherited": false
+        }
+      ]
+    },
+    {
+      "name": "native piercing after immune primary does not compound first-hit multipliers",
+      "hits": [
+        {
+          "target": "card-25",
+          "base": 79,
+          "settled": 79,
+          "inherited": false
+        },
+        {
+          "target": "card-pierce-b",
+          "base": 79,
+          "settled": 395,
+          "inherited": false
+        },
+        {
+          "target": "card-pierce-c",
+          "base": 79,
+          "settled": 395,
+          "inherited": false
+        }
+      ]
+    },
+    {
+      "name": "native independent sub-multiplier piercing does not compound first-hit multipliers",
+      "hits": [
+        {
+          "target": "card-26",
+          "base": 122,
+          "settled": 610,
+          "inherited": false
+        },
+        {
+          "target": "card-pierce-b",
+          "base": 84,
+          "settled": 420,
+          "inherited": false
+        },
+        {
+          "target": "card-pierce-c",
+          "base": 84,
+          "settled": 420,
+          "inherited": false
+        }
+      ]
+    },
+    {
+      "name": "native AOE uses independent enemy opportunities without compounding shared base damage",
+      "first": [
+        3155,
+        3155,
+        3155
+      ],
+      "next": [
+        631,
+        631,
+        631
+      ]
+    },
+    {
+      "name": "native ranged attacks and their rapidfire chain share one first opportunity",
+      "hits": [
+        {
+          "base": 66,
+          "settled": 330,
+          "kind": "ranged"
+        }
+      ]
+    },
+    {
+      "name": "native poison and ascended relic DOT share owner ledger and preserve their own cap rules"
+    },
+    {
+      "name": "native pet damage shares the owner first-hit ledger",
+      "first": 165,
+      "next": 33
+    },
+    {
+      "name": "native summon damage shares the owner first-hit ledger",
+      "first": 450,
+      "next": 90
+    },
+    {
+      "name": "native ally has an independent first-hit ledger",
+      "first": 360,
+      "next": 72
+    },
+    {
+      "name": "ordinary diamond zero-cast forms use the native minimum tick",
+      "monster": "妖魔"
+    },
+    {
+      "name": "spacetime dungeon aura: 7500 first, then 500 per second, no duplicate tick"
+    },
+    {
+      "name": "all four dragon lairs classified as dungeons; ordinary hunting and tower layers excluded",
+      "maps": [
+        "antharas_lair",
+        "cr_fafurion_lair",
+        "cr_valakas_lair",
+        "cr_lindvior_lair"
+      ]
+    },
+    {
+      "name": "card bonuses are independent of relic equipment and relic toggle"
+    }
+  ],
+  "dungeons": [
+    {
+      "id": "king_baranka_room",
+      "name": "魔獸君王之室"
+    },
+    {
+      "id": "law_king_room",
+      "name": "法令君王之室"
+    },
+    {
+      "id": "necro_king_room",
+      "name": "冥法君王之室"
+    },
+    {
+      "id": "assassin_king_room",
+      "name": "暗殺君王之室"
+    },
+    {
+      "id": "thebes_temple",
+      "name": "底比斯 歐西里斯祭壇"
+    },
+    {
+      "id": "tikal_altar",
+      "name": "提卡爾 庫庫爾坎祭壇"
+    },
+    {
+      "id": "antaras_lair",
+      "name": "安塔瑞斯棲息地"
+    },
+    {
+      "id": "fafurion_lair",
+      "name": "法利昂洞穴"
+    },
+    {
+      "id": "valakas_lair",
+      "name": "巴拉卡斯巢穴"
+    },
+    {
+      "id": "cursed_dark_elf_sanctuary",
+      "name": "受詛咒的黑暗妖精聖地"
+    },
+    {
+      "id": "collapsed_elder_council_hall",
+      "name": "崩壞的長老會議廳"
+    },
+    {
+      "id": "antharas_nest_1",
+      "name": "侵蝕的安塔瑞斯巢穴入口"
+    },
+    {
+      "id": "antharas_nest_2",
+      "name": "侵蝕的安塔瑞斯巢穴通道"
+    },
+    {
+      "id": "antharas_nest_3",
+      "name": "侵蝕的安塔瑞斯巢穴深處"
+    },
+    {
+      "id": "antharas_lair",
+      "name": "侵蝕的安塔瑞斯棲息地"
+    },
+    {
+      "id": "cr_fafurion_nest_1",
+      "name": "破滅的法利昂巢穴入口"
+    },
+    {
+      "id": "cr_fafurion_nest_2",
+      "name": "破滅的法利昂巢穴通道"
+    },
+    {
+      "id": "cr_fafurion_nest_3",
+      "name": "破滅的法利昂巢穴深處"
+    },
+    {
+      "id": "cr_fafurion_lair",
+      "name": "破滅的法利昂棲息地"
+    },
+    {
+      "id": "cr_valakas_nest_1",
+      "name": "深淵的巴拉卡斯巢穴入口"
+    },
+    {
+      "id": "cr_valakas_nest_2",
+      "name": "深淵的巴拉卡斯巢穴通道"
+    },
+    {
+      "id": "cr_valakas_nest_3",
+      "name": "深淵的巴拉卡斯巢穴深處"
+    },
+    {
+      "id": "cr_valakas_lair",
+      "name": "深淵的巴拉卡斯棲息地"
+    },
+    {
+      "id": "cr_lindvior_nest_1",
+      "name": "災厄的林德拜爾巢穴入口"
+    },
+    {
+      "id": "cr_lindvior_nest_2",
+      "name": "災厄的林德拜爾巢穴通道"
+    },
+    {
+      "id": "cr_lindvior_nest_3",
+      "name": "災厄的林德拜爾巢穴深處"
+    },
+    {
+      "id": "cr_lindvior_lair",
+      "name": "災厄的林德拜爾棲息地"
+    }
+  ],
+  "catalog": {
+    "mythic": 14,
+    "celestial": 3,
+    "spacetime": 3
+  }
+}

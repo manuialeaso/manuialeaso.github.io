@@ -36,7 +36,7 @@ const server = createServer(async (req, res) => {
 });
 await new Promise((r) => server.listen(PORT, r));
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH, args: ['--no-sandbox', '--disable-dev-shm-usage'] } : {});
 const logs = [];
 // 「檔案沒載完」與「外掛沒掛上」看起來一模一樣(都是那支外掛沒印 hooks OK),但要修的地方完全不同。
 // 每頁都收 pageerror / requestfailed,失敗時先印這兩份 → 不必再靠重跑猜是不是假紅。
@@ -74,6 +74,21 @@ await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'domcontentl
 const _deadline = Date.now() + 20000;   // 最多等 20 秒讓全部外掛初始化(CI 較慢)
 while (Date.now() < _deadline && !seen(need)) await page.waitForTimeout(200);
 await page.waitForTimeout(300);   // 緩衝:讓 hooks 之後的索引(dex/wiki)與 AFK_EXTRA 建好,再做地圖翻譯檢查
+
+// New expansion modules expose stable APIs instead of startup log messages.
+// Read-only checks catch a lost script entry or renamed native dialog anchor
+// before upstream synchronization can publish an apparently working page.
+const needRuntime = ['AFK_RELIC_RUNTIME', 'AFK_RELIC_INTEGRATION', 'AFK_RELIC_WEAPONS', 'AFK_RELIC_DEFENSE', 'AFK_RELIC_GM', 'AFK_CARD_FORMS', 'AFK_CARD_ASCENSION', 'AFK_CARD_COMBAT', 'AFK_TTMI_ITEMS', 'AFK_GAME_GUIDE', '__afkRelicData', '__afkProjectileFrame'];
+const expansionProblems = await page.evaluate((keys) => {
+  const bad = keys.filter((key) => !window[key]).map((key) => '缺少模組入口 ' + key);
+  for (const id of ['item-modal', 'modal-item-desc', 'modal-actions', 'town-interaction-container', 'interaction-content', 'card-book-body', 'relic-book-body']) {
+    if (!document.getElementById(id)) bad.push('缺少遺物／卡片介面掛點 #' + id);
+  }
+  if (!document.getElementById('afk-readability-style')) bad.push('文字與對話框樣式沒有載入');
+  if (!window.AFK_RELIC_CATALOG || AFK_RELIC_CATALOG.length !== 250) bad.push('遺物目錄不是 250 件');
+  if (!DB.items['99999'] || !DB.items['99998']) bad.push('GM 固定終階道具定義缺失');
+  return bad;
+}, needRuntime);
 
 // 🚫 只迴避指定頭目(afk-bossavoid):驗「沒挑到的王真的不會觸發瞬移逃離」。
 //   為什麼非驗不可:這支的作法是在 autoActions 跑之前,把玩家沒挑到的 BOSS 實例暫時標上 noAutoTeleport,
@@ -434,6 +449,12 @@ if (bossAvoidProblems.length) {
   console.error('  判準:afk-bossavoid 是在 autoActions 之前把「沒挑到的 BOSS」暫時標成 noAutoTeleport,');
   console.error('       借上游自己那行 some(m => m.boss && !m.noAutoTeleport) 少看到牠們;');
   console.error('       上游一旦改掉那行的判斷方式,這支就會安靜失效(hooks OK 照印、無錯誤訊息)。');
+  die();
+}
+
+if (expansionProblems.length) {
+  console.error('冒煙測試失敗:遺物、卡片、古物或對話框掛點不完整:');
+  for (const p of expansionProblems) console.error('  ' + p);
   die();
 }
 

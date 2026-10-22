@@ -587,7 +587,8 @@ function maybeSpawnMobs() {
     }
 function tick() {
     if(!state.running || player.dead) return;
-    state.ticks++;
+    state.ticks++; if(window.AFK_CARD_COMBAT)window.AFK_CARD_COMBAT.tick(); /* card-combat:aura-tick */
+    if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.tick(); /* relic-runtime:runtime-tick */
     // 🪄 吉爾塔斯魔杖：擊殺增益到期即重算，避免額外魔法點數停留在衍生能力中。
     // 🏺 v3.7.52 同型到期重算：_golemMrDebuffUntil（高崙印記 MR-100）／_fangFuryUntil（邪惡利牙攻速+30%）／_spellbladeUntil（魔劍士之刀施法增益）
     let _giltasWandExpired = [];
@@ -607,7 +608,7 @@ function tick() {
     let canAct = true;
     for(let k in player.statuses) {
         if (player.statuses[k] > 0 && k !== 'poisonDmg' && k !== 'poisonTick' && k !== 'burnDmg' && k !== 'burnTick' && k !== 'scaldDmg' && k !== 'scaldTick' && k !== 'bleedDmg' && k !== 'bleedTick' && k !== 'armorBreakPct') {   // 😤 v3.6.20 armorBreakPct＝伴隨值（%數）非時長，不遞減
-            player.statuses[k]--;
+            player.statuses[k]--; if(player.statuses[k]===0&&window.AFK_RELIC_DEFENSE_BRIDGE) window.AFK_RELIC_DEFENSE_BRIDGE.statusEnded(player,k,'natural'); /* relic-defense:player-status-expiry */
             if(k === 'cleave' && player.statuses.cleave === 0) calcStats();   // 🔧 切割到期：重算攻速
             if(k === 'evilAura' && player.statuses.evilAura === 0) calcStats();   // 🔧 邪靈之氣到期：還原 AC/ER
             if(k === 'stun' || k === 'freeze' || k === 'stone' || k === 'paralyze' || k === 'sleep') canAct = false;
@@ -639,12 +640,20 @@ function tick() {
         if (player.buffs && player.buffs.sk_dark_poisonres > 0) _pdmg = Math.max(1, Math.floor(_pdmg / 2));   // 🔧 毒性抵抗：中毒傷害減半
         if (player.d && player.d.poisonHealMult > 0) {
             // 🏺 遺物 毒液化身：受到毒性 DoT 時恢復所受傷害×倍率的 HP（先受傷再治癒·淨效果為回血·倍率>1 不可能致死）
-            let _pheal = Math.max(1, Math.floor(_pdmg * player.d.poisonHealMult));
-            player.hp = Math.min(player.mhp, player.hp - _pdmg + _pheal);
-            logCombat(`毒液化身汲取毒素：受到劇毒傷害 ${_pdmg} 點，恢復 ${_pheal} 點HP。`, 'player');
+            if (window.AFK_RELIC_RUNTIME && window.AFK_RELIC_RUNTIME.enabled()) {
+                const before = player.hp, rd = window.AFK_RELIC_RUNTIME.incoming(player,_pdmg,null,{kind:'dot',dotKind:'poison',direct:false});
+                player.hp -= rd; window.AFK_RELIC_RUNTIME.afterIncoming(player,rd,null);
+                const gained = Math.max(0,player.hp-before);
+                if(gained>0)logCombat('毒液化身汲取毒素，恢復 '+gained+' 點HP。','player');
+                if(player.hp<=0){killPlayer();return;}
+            } else {
+                let _pheal = Math.max(1,Math.floor(_pdmg*player.d.poisonHealMult));
+                player.hp = Math.min(player.mhp,player.hp-_pdmg+_pheal);
+                logCombat('毒液化身汲取毒素：受到劇毒傷害 '+_pdmg+' 點，恢復 '+_pheal+' 點HP。','player');
+            } /* relic-defense:base-poison-conversion */
             updateUI();
         } else {
-            player.hp -= _pdmg;
+            { let rd=_pdmg; if (window.AFK_RELIC_RUNTIME) rd=window.AFK_RELIC_RUNTIME.incoming(player,rd,null,{kind:'dot',dotKind:'poison',direct:false}); player.hp-=rd; if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.afterIncoming(player,rd,null); } /* relic-runtime:hurt-player-poison */
             if (typeof dotMpRefundTo === 'function') dotMpRefundTo(player, _pdmg);   // 🏺 v3.7.52 受困幽魂的淚滴：DoT 損血回 MP
             logCombat(`你受到劇毒傷害 ${_pdmg} 點。`, 'enemy');
             if(player.hp <= 0) { killPlayer(); return; }
@@ -652,21 +661,21 @@ function tick() {
         }
     }
     if(player.statuses.burn > 0 && state.ticks % player.statuses.burnTick === 0 && !inAbsBarrier()) {
-        player.hp -= player.statuses.burnDmg;
+        { let rd=player.statuses.burnDmg; if (window.AFK_RELIC_RUNTIME) rd=window.AFK_RELIC_RUNTIME.incoming(player,rd,null,{kind:'dot',dotKind:'burn',direct:false}); player.hp-=rd; if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.afterIncoming(player,rd,null); } /* relic-runtime:hurt-player-dot-burn */
         if (typeof dotMpRefundTo === 'function') dotMpRefundTo(player, player.statuses.burnDmg);   // 🏺 v3.7.52 淚滴
         logCombat(`你受到灼燒傷害 ${player.statuses.burnDmg} 點。`, 'enemy');
         if(player.hp <= 0) { killPlayer(); return; }
         updateUI();
     }
     if(player.statuses.scald > 0 && state.ticks % player.statuses.scaldTick === 0 && !inAbsBarrier()) {
-        player.hp -= player.statuses.scaldDmg;
+        { let rd=player.statuses.scaldDmg; if (window.AFK_RELIC_RUNTIME) rd=window.AFK_RELIC_RUNTIME.incoming(player,rd,null,{kind:'dot',dotKind:'scald',direct:false}); player.hp-=rd; if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.afterIncoming(player,rd,null); } /* relic-runtime:hurt-player-dot-scald */
         if (typeof dotMpRefundTo === 'function') dotMpRefundTo(player, player.statuses.scaldDmg);   // 🏺 v3.7.52 淚滴
         logCombat(`你受到燙傷傷害 ${player.statuses.scaldDmg} 點。`, 'enemy');
         if(player.hp <= 0) { killPlayer(); return; }
         updateUI();
     }
     if(player.statuses.bleed > 0 && state.ticks % player.statuses.bleedTick === 0 && !inAbsBarrier()) {
-        player.hp -= player.statuses.bleedDmg;
+        { let rd=player.statuses.bleedDmg; if (window.AFK_RELIC_RUNTIME) rd=window.AFK_RELIC_RUNTIME.incoming(player,rd,null,{kind:'dot',dotKind:'bleed',direct:false}); player.hp-=rd; if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.afterIncoming(player,rd,null); } /* relic-runtime:hurt-player-dot-bleed */
         if (typeof dotMpRefundTo === 'function') dotMpRefundTo(player, player.statuses.bleedDmg);   // 🏺 v3.7.52 淚滴
         logCombat(`你受到出血傷害 ${player.statuses.bleedDmg} 點。`, 'enemy');
         if(player.hp <= 0) { killPlayer(); return; }
@@ -852,7 +861,7 @@ function tick() {
         let slowAdd = (m.st && m.st.slow > 0) ? 10 : 0; // 緩速：攻擊間隔 +1 秒
         if(m._atkCd <= 0) {
             _dpsReactWrap(() => enemyAttackChooseVictim(m, i));   // 🤝 Phase 3：一般物理攻擊可能改打非倒地傭兵（加權隨機）；魔法/狀態仍只打玩家；🎯 DPS：受擊反應(反擊/居合/反射/荊棘/爆彈/受傷施法)歸玩家，傭兵反應由 _allyDamageMob/_dpsAllyReact 扣除
-            m._atkCd = Math.max(1, Math.floor(m.atkSpd * 10)) + slowAdd;
+            m._atkCd = Math.max(1, Math.floor(m.atkSpd * 10)) + slowAdd; if(window.AFK_RELIC_RUNTIME) m._atkCd=Math.ceil(m._atkCd/(1-Math.min(.9,window.AFK_RELIC_RUNTIME.statusValue(m,'attackSlow')))); /* relic-runtime:relic-attack-slow */
             m._bluntDelayed = false;   // 攻擊後重置鈍擊延遲標記，下一週期可再被延遲一次
         }
 
@@ -944,7 +953,8 @@ function _regenHP() {
         let baseHpRegen = player.d.hpRegenMax > 0 ? roll(1, player.d.hpRegenMax) : 0;
         // 使用 Number() 強制轉換為數字，避免 10 + '1' = 101 的字串相加 Bug
         let totalHpRegen = Number(baseHpRegen) + Number(player.d.hpR || 0);
-        if (totalHpRegen > 0) {
+        if (window.AFK_RELIC_COMPANIONS) totalHpRegen=window.AFK_RELIC_COMPANIONS.regenAmount(player,totalHpRegen,'hp');
+        if (totalHpRegen > 0) /* relic-companion:regen-hp */ {
             player.hp = Math.min(player.mhp, player.hp + totalHpRegen);
         }
     }
@@ -956,7 +966,8 @@ function _regenMP() {
         // 同樣加上 Number() 保護
         let totalMpRegen = Number(player.d.mpR || 0);
         if (player.d.lowMpRegenBonus && player.mp < player.mmp * 0.15) totalMpRegen += player.d.lowMpRegenBonus;   // 🐍 蛇神的凝視：MP<15% 時 MP自然恢復量額外 +N
-        if (totalMpRegen > 0) {
+        if (window.AFK_RELIC_COMPANIONS) totalMpRegen=window.AFK_RELIC_COMPANIONS.regenAmount(player,totalMpRegen,'mp');
+        if (totalMpRegen > 0) /* relic-companion:regen-mp */ {
             player.mp = Math.min(player.mmp, player.mp + totalMpRegen);
         }
     }
@@ -2086,7 +2097,7 @@ function spawnMob(idx) {
        && DB.mobs[player.tracking.mob] && !DB.mobs[player.tracking.mob].boss) {
         let _trkRate = 0.5;
         try { for (let _k in player.eq) { let _e = player.eq[_k]; if (_e && DB.items[_e.id] && DB.items[_e.id].trackBoost) { _trkRate = 0.7; break; } } } catch (e) {}
-        if (Math.random() < _trkRate) mobId = player.tracking.mob;
+        if (Math.random() < (window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.trackingChance(_trkRate):_trkRate)) /* relic-companion:tracking-rate */ mobId = player.tracking.mob;
     }
     // 🔧 卡瑞（BOSS）：身上「同時」攜帶 飛龍的爪子/蜥蜴的角/水晶球/妖魔戰士護身符 時，
     //    於龍之谷地監6樓 1% 機率出現（場上無其他 BOSS 時才出現，且同時最多一隻）
@@ -2133,7 +2144,7 @@ function spawnMob(idx) {
     if (mapState._trollSpawn && (!DB.mobs[mobId] || !DB.mobs[mobId].trollPlayer)) delete mapState._trollSpawn;
     let base = DB.mobs[mobId];
     if(!base) return;
-    mapState.mobs[idx] = { ...base, curHp: base.hp, uid: uid(), _born: ++_mobBornSeq, _magCd: {}, justHit: false, st: newMobStatus(), _bornMs: Date.now() };   // 🏛️ _bornMs：生成時間（長老之室 BOSS 3 分鐘節流用）；_born：出生序（鎖定最早出生用）
+    mapState.mobs[idx] = { ...base, mobId: mobId, curHp: base.hp, uid: uid(), /* relic-companion:tracking-identity */ _born: ++_mobBornSeq, _magCd: {}, justHit: false, st: newMobStatus(), _bornMs: Date.now() };   // 🏛️ _bornMs：生成時間（長老之室 BOSS 3 分鐘節流用）；_born：出生序（鎖定最早出生用）
     // 弓：場上原本沒有任何敵人時，第一個出現的敵人不論主動/被動，都強制視為被動（搭配弓攻擊3秒延遲，可先手放風箏）
     if(!base.boss && player.eq.wpn && DB.items[player.eq.wpn.id] && DB.items[player.eq.wpn.id].isBow && !mapState.mobs.some((m, j) => m && j !== idx)) {
         mapState.mobs[idx].beh = '被動';   // 頭目除外，維持主動
@@ -2314,7 +2325,7 @@ function getPhysicalDmg(diceStr, target, wpn, arrowData, forceHeavy, forceHit, f
     //   與同函式 _swingId(下方) 及 wpnEnFinalMult(wpnInst||主手) 同源，也與傭兵側 allyStrikeRoll 的 opts.wpnInst 對齊。
     let _cw = (wpnInst && DB.items[wpnInst.id]) || (player.eq.wpn && DB.items[player.eq.wpn.id]);
     let isCrush = !!(_cw && _cw.eff === 'crush');
-    let rollHit = roll(1, 20);
+    let rollHit = roll(1, 20); if (window.AFK_RELIC_WEAPON_BRIDGE) rollHit=window.AFK_RELIC_WEAPON_BRIDGE.hitRoll(rollHit,wpn); /* relic-weapon-bridge:heavy-rolls */
     let hit = false, heavy = false, graze = false, crush = false;
     if (forceGraze) { hit = true; graze = true; }   // 🏺 水精靈王的撫摸：原本未命中時依機率改判為 50% 擦傷
     else if (forceHeavy) { hit = true; heavy = true; }   // 魔擊：必定命中且必定重擊
@@ -2335,18 +2346,19 @@ function getPhysicalDmg(diceStr, target, wpn, arrowData, forceHeavy, forceHit, f
 
     // 爆擊判定（依遠/近距離爆擊率；🔧 迴避精通：forceCrit 必定爆擊）
     let isCrit = !!forceCrit || (Math.random() * 100 < critRate);
-    if (graze) isCrit = false;   // 擦傷不會爆擊
+    if (window.AFK_RELIC_WEAPON_BRIDGE) heavy=heavy||window.AFK_RELIC_WEAPON_BRIDGE.grazeHeavy(graze,wpn);
+    if (graze) isCrit = false; /* relic-weapon-bridge:graze-heavy */   // 擦傷不會爆擊
     if (target && !probe) { if (isCrit) target._vfxBig = 'crit'; else if (heavy) target._vfxBig = 'heavy'; }   // ✨ VFX：玩家物理命中→爆擊大紅／重擊大金（唯一樞紐 getPhysicalDmg·🔎 探測不標特效——波及目標實吃主目標平砍傷害·標爆擊會名實不符）
     let critMult = isCrit ? (1 + critDmg / 100) : 1;  // 爆擊係數 = 1 + 爆擊傷害%
 
     // 武器傷害（重擊必定取最大值；🔧 烈焰之魂：持續內近距離一般攻擊武器擲骰必定最大值）
     let _flameSoulMax = (!isRanged && player.buffs && player.buffs.sk_elf_flamesoul > 0);
-    let weaponRoll = (heavy || _flameSoulMax) ? diceStr : roll(1, diceStr);
+    let weaponRoll = (heavy || _flameSoulMax) ? diceStr : roll(1, diceStr); if (window.AFK_RELIC_WEAPON_BRIDGE) weaponRoll=window.AFK_RELIC_WEAPON_BRIDGE.weaponRoll(weaponRoll,heavy,wpn); /* relic-weapon-bridge:heavy-weapon-roll */
 
     // [（遠/近距離傷害 x 爆擊係數） + 額外傷害 - 敵人傷害減免]，計算過程最低為1
     let nearFar = weaponRoll + dmgBonus;
     let _ignHard = !!(_cw && _cw.ignHardSkin);   // 🗡️ 貫穿（暗黑十字弓）：攻擊無視硬皮額外減傷（主攻擊與連射皆走本函式 → 一併涵蓋）
-    let inner = Math.floor(nearFar * critMult) + player.d.extraDmg - ((target.dr || 0) + (_ignHard ? 0 : mobHardSkin(target)) + ((target._siegeDrEnd > state.ticks) ? (target._siegeDrVal || 0) : 0));   // 堅固防護：怪物傷害減免；🔧 硬皮：額外物理減傷（貫穿時不扣）
+    let inner = Math.floor(nearFar * critMult) + player.d.extraDmg - (window.AFK_RELIC_WEAPON_BRIDGE ? window.AFK_RELIC_WEAPON_BRIDGE.flatReduction(target,wpn,((target.dr || 0) + (_ignHard ? 0 : mobHardSkin(target)) + ((target._siegeDrEnd > state.ticks) ? (target._siegeDrVal || 0) : 0))) : ((target.dr || 0) + (_ignHard ? 0 : mobHardSkin(target)) + ((target._siegeDrEnd > state.ticks) ? (target._siegeDrVal || 0) : 0))) /* relic-weapon-bridge:true-flat-reduction */;   // 堅固防護：怪物傷害減免；🔧 硬皮：額外物理減傷（貫穿時不扣）
     inner = Math.max(1, inner);
     if (target._trauma && target._trauma.until > state.ticks) inner += (target._trauma.dmg || 5) * (target._trauma.s || 1);   // 🏺 v3.7.20 創傷（戰士的漆黑之劍）：目標受到的所有物理傷害 +5×層數（玩家物理樞紐·傭兵側 allyStrikeRoll 另掛）
 
@@ -2355,7 +2367,7 @@ function getPhysicalDmg(diceStr, target, wpn, arrowData, forceHeavy, forceHit, f
 
     // 0. 屬性詞綴（v3.0.77 五階制）：額外傷害/魔法點數已改走 recompute（d.extraDmg/d.extraMp·見 js/02），此處只取屬性供剋制倍率（下方 _outDmg ×1.4/×0.6）
     let _attrInst = (wpnInst && wpnInst.attr) ? wpnInst : player.eq.wpn;   // ⚔️ 指定揮擊武器（副手＝offwpn）自身有屬性詞綴則用其屬性，否則沿用主武器（純加成、不減損既有行為）
-    let _wAff = getAttrAffix(_attrInst && _attrInst.attr);
+    let _wAff = getAttrAffix(_attrInst && _attrInst.attr); if (window.AFK_RELIC_WEAPON_BRIDGE) _wAff=window.AFK_RELIC_WEAPON_BRIDGE.affix(_wAff); /* relic-weapon-bridge:dynamic-element */
 
 
     // 先判定武器/箭矢本身是否帶「對不死/狼人」加成 (unBonus)
@@ -2387,7 +2399,7 @@ function getPhysicalDmg(diceStr, target, wpn, arrowData, forceHeavy, forceHit, f
     { let _ecm = elementCounterMult(_wAff ? _wAff.ele : getWpnEle(null, DB.items[_swingId]), target.e);
       if (wpn && wpn.counterAllEle && target.e && target.e !== 'none') _ecm = Math.max(_ecm, 1.4);   // 🏺 不定形的變幻劍：一般攻擊剋制地/水/火/風一切屬性之敵（強制 ≥×1.4）
       if (wpn && wpn.counterEles && target.e && wpn.counterEles.includes(target.e)) _ecm = Math.max(_ecm, 1.4);   // 🌑 v3.4.67 冥皇執行劍：一般攻擊對指定屬性(地/風)敵人 ×1.4（與屬性剋制取大）
-      _outDmg = Math.max(1, Math.floor(_outDmg * _ecm)); }   // ⚔️ 屬性剋制：屬性詞綴優先，否則取揮擊武器基底 ele（「一般攻擊轉為X屬性」遺物·與傭兵路徑 js/06 getWpnEle 對齊·v3.1.33 稽核修）剋怪 ×1.4、被剋 ×0.6（無屬性→×1）
+      if (window.AFK_RELIC_WEAPON_BRIDGE) _ecm=window.AFK_RELIC_WEAPON_BRIDGE.counterElementMult(wpn,target,_ecm); _outDmg = Math.max(1, Math.floor(_outDmg * _ecm)); } /* relic-weapon-bridge:counter-element */   // ⚔️ 屬性剋制：屬性詞綴優先，否則取揮擊武器基底 ele（「一般攻擊轉為X屬性」遺物·與傭兵路徑 js/06 getWpnEle 對齊·v3.1.33 稽核修）剋怪 ×1.4、被剋 ×0.6（無屬性→×1）
     _outDmg = Math.max(1, Math.floor(_outDmg * (probe ? 1 : consumeWetMult(target, _wAff ? _wAff.ele : getWpnEle(null, DB.items[_swingId])))));   // 🏺 海洋水晶球：潮濕目標受風屬性物理傷害 ×2 並解除（🔎 探測不白耗潮濕狀態）
     if (target && target._fireVulnUntil > state.ticks && (_wAff ? _wAff.ele : getWpnEle(null, DB.items[_swingId])) === 'fire') _outDmg = Math.max(1, Math.floor(_outDmg * 1.3));   // 🏺 遺物 灼熱蜥蜴長舌：目標帶火屬性弱點時受火屬性攻擊 +30%
     if (_natRoll && player.d.eleWpnMult && (_wAff ? _wAff.ele : getWpnEle(null, DB.items[_swingId])) === player.d.eleWpnMult.ele) _outDmg = Math.max(1, Math.floor(_outDmg * player.d.eleWpnMult.mult));   // 🏺 v3.1.80 四之牙臂甲：裝備對應屬性武器時一般攻擊傷害 ×1.2（僅自然骰＝一般攻擊/雙擊/連射/穿透·屬性詞綴優先於基底 ele）
@@ -2488,7 +2500,10 @@ function procLightArrow(t) {
     if (typeof equipSkillDmgMult === 'function') d = Math.max(1, Math.floor(d * equipSkillDmgMult(sk, 'sk_lightarrow')));   // 🏺 v3.2.42 稽核修：共鳴光箭也吃技能傷害倍率遺物（光束強化魔杖 skillDmgMult 自身 proc 原本不生效）
     d = Math.max(1, Math.floor(d * rlFuryMult()));   // 🔮 紅獅5/5＋😡狂怒5/5：最終傷害
     d = illusionMagicDmg(d, false);   // 🔮 共鳴本身已有回魔，不觸發幻覺2/5與5/5
-    t.curHp -= d;
+    if (window.AFK_RELIC_WEAPON_BRIDGE) d=window.AFK_RELIC_WEAPON_BRIDGE.nativeSpellHit(t,d,sk,{skillId:'sk_lightarrow',origin:'resonance'});
+    t.curHp -= (d=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,d,{nativeRefund:'terror',kind:'magic'}):d)); /* card-combat:refund-procLightArrow */ /* card-combat:settle-procLightArrow */
+    if (window.AFK_RELIC_WEAPON_BRIDGE) window.AFK_RELIC_WEAPON_BRIDGE.nativeSpellAfter(t,d,'magic');
+    if (player.dead) return; /* relic-weapon-bridge:spell-procLightArrow */
     if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, d, 'magic');   // 🌅 巨大骷髏：共鳴光箭視為魔法
     t.justHit = 'magic';
     if (t.st && t.st.mrhalf > 0) t.st.mrhalf = 0;
@@ -2522,7 +2537,10 @@ function procMoonburst(t) {
     mbDmg = Math.max(1, Math.floor(mbDmg * enhanceWpnFinalMult(en, wpn)));   // 🔧 武器強化 +11~+20：最終傷害倍率
     mbDmg = Math.max(1, Math.floor(mbDmg * rlFuryMult()));   // 🔮 紅獅5/5＋😡狂怒5/5：最終傷害
     if (t.st && t.st.mrhalf > 0) t.st.mrhalf = 0;   // 消耗破魔（比照冰矛圍籬/紅惡靈）
-    t.curHp -= mbDmg;
+    if (window.AFK_RELIC_WEAPON_BRIDGE) mbDmg=window.AFK_RELIC_WEAPON_BRIDGE.nativeSpellHit(t,mbDmg,{ele:'wind',n:'月光爆裂'},{origin:'proc'});
+    t.curHp -= (mbDmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,mbDmg,{nativeRefund:'terror',kind:'magic'}):mbDmg)); /* card-combat:refund-procMoonburst */ /* card-combat:settle-procMoonburst */
+    if (window.AFK_RELIC_WEAPON_BRIDGE) window.AFK_RELIC_WEAPON_BRIDGE.nativeSpellAfter(t,mbDmg,'magic');
+    if (player.dead) return; /* relic-weapon-bridge:spell-procMoonburst */
     if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, mbDmg, 'magic');   // 🌅 巨大骷髏：月光爆裂視為魔法
     t.justHit = 'wind';
     logCombat(`<span class="font-bold" style="color:#67e8f9;text-shadow:0 0 6px #06b6d4;">【月光爆裂】</span>對 <span class="${getMobColor(t.lv)}">${t.n}</span> 造成 ${mbDmg} 點風屬性傷害！${counterTxt}`, 'player-special');
@@ -2553,7 +2571,7 @@ function procMagicStrike(t, isSpread) {
     let wpn = player.eq.wpn ? DB.items[player.eq.wpn.id] : null;
     let dice = wpn ? (t.s === 'L' ? wpn.dmgL : wpn.dmgS) : 2;
     let res = getPhysicalDmg(dice, t, wpn, null, true);   // forceHeavy=true：必定命中＋重擊
-    t.curHp -= res.dmg;
+    t.curHp -= (res.dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,res.dmg,{kind:'melee'}):res.dmg)); /* card-combat:settle-procMagicStrike */
     t.justHit = getWpnEle(player.eq.wpn, wpn);
     mobWake(t);
     // 🗑️ v3.5.87 移除死呼叫 wearHardSkin(t, null, true, false)：魔擊不削減硬皮（「重擊額外削減」機制已於 2026-06 移除·wpnId=null 時 dec 恆 0）
@@ -2599,8 +2617,8 @@ function relicAuraTick() {
         let names = [];
         mapState.mobs.forEach(m => {
             if (!m || m.curHp <= 0 || m._dead) return;
-            m.curHp -= dmg; m.justHit = (a.ele && a.ele !== 'none') ? a.ele : 'magic'; mobWake(m);
-            names.push(`<span class="${getMobColor(m.lv)}">${m.n}</span> ${dmg}`);
+            let _cardAura=window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(window.AFK_CARD_COMBAT.ownerOfEquipment(_s.eq),m,dmg,{kind:'dot'}):dmg; m.curHp -= _cardAura; m.justHit /* card-combat:native-aura */ = (a.ele && a.ele !== 'none') ? a.ele : 'magic'; mobWake(m);
+            names.push(`<span class="${getMobColor(m.lv)}">${m.n}</span> ${_cardAura} /* card-combat:native-aura-log */`);
         });
         if (names.length) logCombat(`<span class="font-bold" style="color:#a3e635;text-shadow:0 0 6px #65a30d;">【${_s.tag}${d.n}】</span>${names.join('、')}`, 'dot');
         // 擊殺結算：uid 快照後逐一 killMob（避免 killMob 改動索引造成位移/漏殺）
@@ -2653,7 +2671,7 @@ function rapidfireProc(arrowData, forceProc, classicOk) {
         if (wpn.rapidArrowPct) _rfMult = Math.max(_rfMult, wpn.rapidArrowPct / 100);   /* 🔌 加掛版補丁:遺物強化特效 */   // 30%；🏅連射精通50%；🔮疾風5/5 80%；兩者兼具100%
         let _rfDmg = Math.max(1, Math.floor(_res.dmg * _rfMult));
         if (wpn.rapidTrue) _rfDmg = Math.max(_rfDmg, Math.floor(((_t.s === 'L' ? wpn.dmgL : wpn.dmgS) + (wpn.dmgBonus || 0) + ((player.d && player.d.rangedDmg) || 0)) * _rfMult));   /* 🔌 加掛版補丁:連射真實傷害 */
-        _t.curHp -= _rfDmg;
+        _t.curHp -= (_rfDmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,_t,_rfDmg,{nativeRefund:'terror',kind:'ranged'}):_rfDmg)); /* card-combat:refund-rapidfireProc */ /* card-combat:settle-rapidfireProc */
         if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(_t, _rfDmg, 'ranged');   // 🌅 巨大骷髏：連射視為遠距離
         if (wpn.bonespike && _t.curHp > 0) _t._bonespike = Math.min(10, (_t._bonespike || 0) + 1);   // 🏺 骸骨意志之弓：連射額外箭矢命中→累積 1 層骨刺（上限 10·普攻引爆）
         _t.justHit = getWpnEle(player.eq.wpn, wpn);
@@ -2688,7 +2706,7 @@ function procCounter(t) {
     let dmg = Math.max(1, Math.floor(res.dmg * (hasMastery('k_counter') ? 0.65 : 0.50)));   // 傷害 50%（🏅 反擊精通：+30% → 65%）
     if (player.buffs.sk_counter_barrier > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('單手劍')) dmg = Math.max(1, Math.floor(dmg * 2));   // 🔧 反擊屏障：原生反擊(單手劍)武器最終傷害×2
     if (player.buffs.sk_counter_barrier > 0 && wpn && wpn.counterBarrierX2) dmg = Math.max(1, Math.floor(dmg * 2));   // 🏺 資深殘兵的重型劍：反擊屏障觸發的反擊傷害×2（雙手劍靠此旗標·非單手劍原生）
-    t.curHp -= dmg;
+    t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,dmg,{kind:window.AFK_CARD_COMBAT.physicalKind(player)}):dmg)); /* card-combat:settle-procCounter */
     t.justHit = getWpnEle(player.eq.wpn, wpn);
     mobWake(t);
     if (t.curHp > 0 && hasMastery('k_counter')) wearHardSkin(t, null, false, false, true);   // 🏅 反擊精通：反擊命中削減 1 硬皮值
@@ -2707,7 +2725,7 @@ function procIai(t) {
     let res = getPhysicalDmg(dice, t, wpn, null, false, false, true, hasMastery('k_counter') || !!(wpn && wpn.iaiCrit));   // forceLand=true：必定命中、可重擊；🏅 反擊精通／🌅 遺物 鐮鼬的尾刃 iaiCrit：必定爆擊
     if (hasMastery('k_counter')) res.dmg = Math.max(1, Math.floor(res.dmg * 1.3));   // 🏅 反擊精通：居合傷害 +30%
     if (player.buffs.sk_counter_barrier > 0 && player.eq.wpn && getWeaponTags(player.eq.wpn.id).includes('武士刀')) res.dmg = Math.max(1, Math.floor(res.dmg * 2));   // 🔧 反擊屏障：原生居合(武士刀)武器最終傷害×2
-    t.curHp -= res.dmg;
+    t.curHp -= (res.dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,res.dmg,{kind:window.AFK_CARD_COMBAT.physicalKind(player)}):res.dmg)); /* card-combat:settle-procIai */
     t.justHit = getWpnEle(player.eq.wpn, wpn);
     mobWake(t);
     wearHardSkin(t, null, res.heavy, false, hasMastery('k_counter'));   // 🔧 居合重擊 -2；🏅 反擊精通：居合命中再削減 1 硬皮值（與重擊 -2 疊加）
@@ -2762,9 +2780,9 @@ function dragonExtraAttackProc(target) {
         let res = getPhysicalDmg(dice, t, wpn, null, false, false, false);
         if (!res.hit) { if (typeof vfxMiss === 'function') vfxMiss(t); logCombat(`<span class="font-bold" style="color:#fbbf24;">【額外攻擊】</span>對 <span class="${getMobColor(t.lv)}">${t.n}</span> 未命中。`, 'miss'); continue; }
         // 🏅 鎖刃精通：「每層弱點曝光最終傷害+10%」僅屠宰者生效，額外攻擊不套用
-        t.curHp -= res.dmg; t.justHit = getWpnEle(player.eq.wpn, wpn); mobWake(t);
+        t.curHp -= (res.dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,res.dmg,{kind:'melee'}):res.dmg)); /* card-combat:settle-dragonExtraAttackProc */ t.justHit = getWpnEle(player.eq.wpn, wpn); mobWake(t);
         if (t.curHp > 0) { wearHardSkin(t, player.eq.wpn ? player.eq.wpn.id : null, res.heavy, false, true, player.classicMode); applyPlayerWeakExpose(t); }
-        if (wpn.vampPct && res.dmg > 0) player.hp = Math.min(player.mhp, player.hp + Math.floor(res.dmg * wpn.vampPct));
+        if (wpn.vampPct && res.dmg > 0) (window.AFK_RELIC_WEAPON_BRIDGE ? window.AFK_RELIC_WEAPON_BRIDGE.procHeal(player,Math.floor(res.dmg * wpn.vampPct),wpn) : (player.hp = Math.min(player.mhp, player.hp + Math.floor(res.dmg * wpn.vampPct)))) /* relic-weapon-bridge:source-heal-8 */;
         let mark = (res.heavy && res.crit) ? '會心一擊' : (res.crit ? '爆擊' : (res.heavy ? '重擊' : ''));
         logCombat(`<span class="font-bold" style="color:#fbbf24;text-shadow:0 0 6px #d97706;">【額外攻擊】</span>追擊 <span class="${getMobColor(t.lv)}">${t.n}</span>，造成 ${res.dmg} 點傷害${mark ? '（' + mark + '!）' : ''}。`, 'player');
         let idx = mapState.mobs.findIndex(m => m && m.uid === t.uid);
@@ -2790,7 +2808,7 @@ function procCombo(t, fullDmg) {
         }
     }
     let dmg = Math.max(1, Math.floor(_cdmg * (fullDmg ? (player._setShadow5 ? 2.0 : 1.0) : (player._setShadow5 ? 1.0 : 0.5))));   // 🔧 雙擊(fullDmg)：完整一般攻擊·暗影5/5傷害加倍(×2)；爆擊精通額外攻擊(legacy)：×0.5·暗影5/5×1.0
-    t.curHp -= dmg;
+    t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,dmg,{nativeRefund:'terror',kind:window.AFK_CARD_COMBAT.physicalKind(player)}):dmg)); /* card-combat:refund-procCombo */ /* card-combat:settle-procCombo */
     if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, dmg, 'melee');   // 🌅 巨大骷髏：雙擊視為近距離
     t.justHit = getWpnEle(player.eq.wpn, wpn);
     mobWake(t);
@@ -2835,7 +2853,7 @@ function dualWieldOffhandAttack(t) {
     if (player.skills.includes('sk_warrior_berserk') && Math.random() < 0.05) dmg *= 2;   // ⚔️ 狂暴：副手亦為一般攻擊
     if (typeof offhandDmgMods === 'function') dmg = offhandDmgMods(owpn, t, dmg);   // ⚔️ v3.5.97 副手扣血前的傷害修飾（selfBreakProc／eleBonusDmg）
     dmg = Math.max(1, dmg);
-    t.curHp -= dmg; if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, dmg, 'melee'); t.justHit = getWpnEle(player.eq.offwpn, owpn); mobWake(t);   // 🌅 巨大骷髏：副手視為近距離
+    t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,dmg,{nativeRefund:'terror',kind:'melee'}):dmg)); /* card-combat:refund-dualWieldOffhandAttack */ /* card-combat:settle-dualWieldOffhandAttack */ if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, dmg, 'melee'); t.justHit = getWpnEle(player.eq.offwpn, owpn); mobWake(t);   // 🌅 巨大骷髏：副手視為近距離
     if (t.curHp > 0) wearHardSkin(t, player.eq.offwpn.id, res.heavy, false, true, player.classicMode);
     if (typeof offhandAfterHit === 'function') offhandAfterHit(player.eq.offwpn, owpn, t, dmg);   // ⚔️ v3.5.97 副手扣血後的 proc（procHealFlat／procBurn／onHitEleDmg）
     let mark = (res.heavy && res.crit) ? '會心一擊' : (res.crit ? '爆擊' : (res.heavy ? '重擊' : ''));
@@ -2867,7 +2885,7 @@ function reboundExtraAttack(mob) {
             let dmg = res.dmg;
             if (player.skills.includes('sk_warrior_berserk') && Math.random() < 0.05) dmg *= 2;
             dmg = Math.max(1, dmg);
-            mob.curHp -= dmg; mob.justHit = getWpnEle(player.eq.wpn, wpn); mobWake(mob);
+            mob.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,mob,dmg,{kind:'melee'}):dmg)); /* card-combat:settle-reboundExtraAttack */ mob.justHit = getWpnEle(player.eq.wpn, wpn); mobWake(mob);
             if (mob.curHp > 0) wearHardSkin(mob, player.eq.wpn.id, res.heavy, false, true, player.classicMode);
             logCombat(`<span class="font-bold" style="color:#d6d3d1;text-shadow:0 0 6px #78716c;">【反彈】</span>反擊追打 <span class="${getMobColor(mob.lv)}">${mob.n}</span>，造成 ${dmg} 點傷害。`, 'player');
         } else { if (typeof vfxMiss === 'function') vfxMiss(mob); logCombat(`<span class="font-bold" style="color:#d6d3d1;">【反彈】</span>反擊追打未命中。`, 'miss'); }
@@ -2903,7 +2921,7 @@ function witchIceLance() {
     dmg = Math.max(1, Math.floor(dmg * rlFuryMult()));   // 🔮 紅獅5/5＋😡狂怒5/5（攻擊技能）
     dmg = Math.max(1, Math.floor(dmg * fragileMult(t)));
     dmg = Math.max(1, Math.floor(dmg * wpnEnFinalMult(player.eq.wpn)));   // 🔧 武器強化 +11~+20 最終倍率：補上（與共鳴光箭/傭兵魔女冰矛一致·統一武器特效公式）
-    t.curHp -= dmg;
+    t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,dmg,{kind:'magic'}):dmg)); /* card-combat:settle-witchIceLance */
     t.justHit = 'water';
     if (t.st && t.st.mrhalf > 0) t.st.mrhalf = 0;
     mobWake(t);
@@ -2947,21 +2965,22 @@ function illuLvMult(a){ return 1; }   // 🔧 幻術士等級加成 (1+等級/50
 function qiguPlayerAttack(target, wpn) {
     let d = player.d;
     if (target.curHp === target.hp && target.beh === '被動') target._delayTicks = 30;   // 命中滿血被動怪：3秒延遲（同魔法攻擊）
-    if (wpn && wpn.procInstakill) { let _pk = wpn.procInstakill; let _thp = target.hp || 1; if ((!_pk.maxLv || target.lv <= _pk.maxLv) && tryInstakill(target, { p: _pk.p, tag: _pk.tag || null }, wpn.n, mapState.targetIdx)) { if (_pk.healPct) { player.hp = Math.min(player.mhp, player.hp + Math.max(1, Math.floor(_thp * _pk.healPct))); updateUI(); } return; } }   // 🏺 遺物 曼陀羅之靈：奇古獸即死 proc（playerAttack 的 procInstakill 早退在 qigu 分支前→此處補上·傭兵版走 allyWeaponProcs 已含）；🐍 阿茲特獻祭亡靈 healPct：即死恢復被消滅敵人 HP%
+    if (wpn && wpn.procInstakill) { let _pk = wpn.procInstakill; let _thp = target.hp || 1; if ((!_pk.maxLv || target.lv <= _pk.maxLv) && tryInstakill(target, { p: _pk.p, tag: _pk.tag || null }, wpn.n, mapState.targetIdx)) { if (_pk.healPct) { (window.AFK_RELIC_WEAPON_BRIDGE ? window.AFK_RELIC_WEAPON_BRIDGE.procHeal(player,Math.max(1, Math.floor(_thp * _pk.healPct)),wpn) : (player.hp = Math.min(player.mhp, player.hp + Math.max(1, Math.floor(_thp * _pk.healPct))))) /* relic-weapon-bridge:source-heal-7 */; updateUI(); } return; } }   // 🏺 遺物 曼陀羅之靈：奇古獸即死 proc（playerAttack 的 procInstakill 早退在 qigu 分支前→此處補上·傭兵版走 allyWeaponProcs 已含）；🐍 阿茲特獻祭亡靈 healPct：即死恢復被消滅敵人 HP%
     if (player.d.instakillFull && target.curHp === target.hp && tryInstakill(target, { p: player.d.instakillFull, tag: null }, '隱蔽的死亡草葉', mapState.targetIdx)) return;   // 🏺 遺物 隱蔽的死亡草葉：奇古獸普攻命中滿血怪即死（斗篷 req:all·幻術士亦可穿）
     let dice = (target.s === 'L') ? wpn.dmgL : wpn.dmgS;
     let ele = 'none';
     { let _qa = player.eq.wpn && getAttrAffix(player.eq.wpn.attr); if (_qa) ele = _qa.ele; }   // 🔥 getAttrAffix：相容舊12代碼
-    let raw = magicBaseDamage(roll(1, dice), d, d.extraDmg || 0, true) * weaponMagicDamageCoef(d, wpn, target, ele);
-    let effMr = (target.st && target.st.mrhalf > 0) ? (target.mr / 2) : target.mr;
+    let raw = magicBaseDamage(window.AFK_RELIC_WEAPON_BRIDGE?window.AFK_RELIC_WEAPON_BRIDGE.qiguRoll(player,target,wpn,dice):roll(1,dice),d,d.extraDmg||0,true) /* relic-weapon-bridge:qigu-forced-roll-qiguPlayerAttack */ * (window.AFK_RELIC_WEAPON_BRIDGE?window.AFK_RELIC_WEAPON_BRIDGE.qiguCoef(player,wpn,target,ele):weaponMagicDamageCoef(d,wpn,target,ele)) /* relic-weapon-bridge:qigu-true-attr-qiguPlayerAttack */;
+    if(window.AFK_RELIC_WEAPON_BRIDGE)raw*=window.AFK_RELIC_WEAPON_BRIDGE.qiguCritMult(player,target,wpn);
+    let effMr = /* relic-weapon-bridge:qigu-critical-qiguPlayerAttack */ (target.st && target.st.mrhalf > 0) ? (target.mr / 2) : target.mr;
     if (target.st && (target.st.confuse > 0 || target.st.panic > 0)) effMr = Math.max(0, effMr - 10);   // 🔮 混亂/恐慌：MR-10（下限0，與其他魔法路徑 mrMult(Math.max(0,...)) 一致）
     let ignoreMr = ((typeof _afkM === 'function' ? _afkM(player, 'i_qigu') : player.mastery === 'i_qigu') && wpn.qigu);   // 🔮 奇古獸精通：裝備奇古獸時無視魔抗
-    let dmg = Math.max(1, Math.floor(raw * (ignoreMr ? 1 : mrMult(effMr))));
+    let dmg = Math.max(1,Math.floor(raw*(ignoreMr?1:mrMult(window.AFK_RELIC_WEAPON_BRIDGE?window.AFK_RELIC_WEAPON_BRIDGE.spellMr(player,wpn,'@qigu',effMr):effMr)))); /* relic-weapon-bridge:qigu-true-mr-qiguPlayerAttack */
     dmg = Math.max(1, Math.floor(dmg * elementCounterMult(ele, target.e)));   // ⚔️ 屬性剋制 ×1.4(剋)/×0.6(被剋)（取代舊 +6）
     dmg = Math.max(1, Math.floor(dmg * wpnEnFinalMult(player.eq.wpn)));   // 武器強化 +11~+20 最終倍率
     dmg = Math.max(1, Math.floor(dmg * rlFuryMult()));   // 🔮 紅獅5/5＋😡狂怒5/5
     dmg = Math.max(1, Math.floor(dmg * fragileMult(target) * illuLvMult(player)));   // 🔮 脆弱/破甲；🔮 幻術士等級加成 ×(1+等級/50)
-    target.curHp -= dmg;
+    if (window.AFK_RELIC_RUNTIME) dmg=window.AFK_RELIC_RUNTIME.spellDamage(player,target,dmg,{ele:wpn.ele||'none'},{main:true,origin:'normal'}); target.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,target,dmg,{nativeRefund:'full',kind:'magic'}):dmg)); /* card-combat:refund-qiguPlayerAttack */ /* card-combat:settle-qiguPlayerAttack */
     target.justHit = (ele !== 'none') ? ele : 'magic';
     if (typeof moonShatterOnDamage === 'function') moonShatterOnDamage(player, target, dmg);
     if (target.st && target.st.mrhalf > 0) target.st.mrhalf = 0;
@@ -2982,6 +3001,8 @@ function qiguPlayerAttack(target, wpn) {
     weaponSpellProc(target);            // 附魔施放：spellProc/procSkill/procPoison/procStatusSkill（巴風特魔杖/冰之女王魔杖/死亡之指等）
 }
 // 奇古獸武器特效（隨強化提升機率）：共鳴=幻影衝擊(80~160無屬性固定)、寒冰=心靈破壞(玩家最大MP5%、不耗MP)
+/* relic-runtime:spell-qiguPlayerAttack */
+
 function qiguWeaponProc(target, wpn) {
     if (!wpn || !wpn.qiguProc || !target || target.curHp <= 0) return;
     let en = capWpnEn((player.eq.wpn && player.eq.wpn.en) || 0);
@@ -2997,7 +3018,7 @@ function qiguWeaponProc(target, wpn) {
         label = '心靈破壞';
     } else return;
     dmg = Math.max(1, Math.floor(dmg * fragileMult(target) * illuLvMult(player) * enhanceWpnFinalMult(en, wpn)));   // 🔮 幻術士等級加成 ×(1+等級/50)；🔧 武器強化 +11~+20 最終倍率
-    dmg = (typeof window.__afkIlluWpnFix === 'function' && window.__afkIlluWpnFix()) ? illusionMagicDmg(dmg, true) : dmg;   /* 🔌 加掛版補丁:奇古獸內建魔法(幻影衝擊/心靈破壞)補上幻覺套裝 2/5 件 */ target.curHp -= dmg; if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(target, dmg, 'magic'); target.justHit = 'magic'; mobWake(target);   // 🌅 巨大骷髏：奇古獸觸發法術視為魔法
+    dmg = (typeof window.__afkIlluWpnFix === 'function' && window.__afkIlluWpnFix()) ? illusionMagicDmg(dmg, true) : dmg;   /* 🔌 加掛版補丁:奇古獸內建魔法(幻影衝擊/心靈破壞)補上幻覺套裝 2/5 件 */ target.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,target,dmg,{nativeRefund:'terror',kind:'magic'}):dmg)); /* card-combat:refund-qiguWeaponProc */ /* card-combat:settle-qiguWeaponProc */ if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(target, dmg, 'magic'); target.justHit = 'magic'; mobWake(target);   // 🌅 巨大骷髏：奇古獸觸發法術視為魔法
     logCombat(`<span class="font-bold" style="color:#a78bfa;text-shadow:0 0 6px #7c3aed;">【${label}】</span>對 <span class="${getMobColor(target.lv)}">${target.n}</span> 造成 ${dmg} 點傷害！`, cls);
     if (target.curHp <= 0) killMob(mapState.targetIdx); else renderMobs();
 }

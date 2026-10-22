@@ -1,0 +1,382 @@
+{
+  "passed": 8,
+  "pageErrors": [],
+  "cases": [
+    {
+      "case": "all imported items searchable with live prices, all recipes and material uses, fixed collection indexes",
+      "items": 2219,
+      "shop": 2208,
+      "rift": 11,
+      "recipes": 893,
+      "materials": 398,
+      "dropMobs": 307,
+      "dropItems": 186,
+      "equipmentBook": 1094,
+      "miscBook": 1115,
+      "remapped": [
+        {
+          "source": 859,
+          "n": "法利昂之眼",
+          "id": "mat_fafurion_eye",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 863,
+          "n": "巴拉卡斯之眼",
+          "id": "mat_valakas_eye",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 865,
+          "n": "林德拜爾之眼",
+          "id": "mat_lindvior_eye",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 867,
+          "n": "法利昂之牙",
+          "id": "mat_fafurion_fang",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 871,
+          "n": "巴拉卡斯之牙",
+          "id": "mat_valakas_fang",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 873,
+          "n": "林德拜爾之牙",
+          "id": "mat_lindvior_fang",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 875,
+          "n": "法利昂之心",
+          "id": "mat_fafurion_heart",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 879,
+          "n": "巴拉卡斯之心",
+          "id": "mat_valakas_heart",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 881,
+          "n": "林德拜爾之心",
+          "id": "mat_lindvior_heart",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 883,
+          "n": "法利昂之爪",
+          "id": "mat_fafurion_claw",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 887,
+          "n": "巴拉卡斯之爪",
+          "id": "mat_valakas_claw",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 889,
+          "n": "林德拜爾之爪",
+          "id": "mat_lindvior_claw",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 891,
+          "n": "法利昂之鱗",
+          "id": "mat_fafurion_scale",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 895,
+          "n": "巴拉卡斯之鱗",
+          "id": "mat_valakas_scale",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 897,
+          "n": "林德拜爾之鱗",
+          "id": "mat_lindvior_scale",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 899,
+          "n": "法利昂之骨",
+          "id": "mat_fafurion_bone",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 903,
+          "n": "巴拉卡斯之骨",
+          "id": "mat_valakas_bone",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 905,
+          "n": "林德拜爾之骨",
+          "id": "mat_lindvior_bone",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 907,
+          "n": "法利昂之血",
+          "id": "mat_fafurion_blood",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 911,
+          "n": "巴拉卡斯之血",
+          "id": "mat_valakas_blood",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 913,
+          "n": "林德拜爾之血",
+          "id": "mat_lindvior_blood",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 915,
+          "n": "法利昂之肉",
+          "id": "mat_fafurion_flesh",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 919,
+          "n": "巴拉卡斯之肉",
+          "id": "mat_valakas_flesh",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        },
+        {
+          "source": 921,
+          "n": "林德拜爾之肉",
+          "id": "mat_lindvior_flesh",
+          "found": true,
+          "drop": true,
+          "uses": true,
+          "book": true
+        }
+      ],
+      "miss": [],
+      "wrongShop": [],
+      "wrongRift": [],
+      "missingRecipes": [],
+      "missingUses": [],
+      "missingBook": [],
+      "gm": []
+    },
+    {
+      "case": "native merchant purchase and workshop material/gold consumption",
+      "id": "ttmi_622",
+      "name": "空的魔法卷軸(等級1)",
+      "recipe": {
+        "result": "ttmi_7102",
+        "req": [
+          {
+            "id": "ttmi_622",
+            "cnt": 10
+          },
+          {
+            "id": "gold",
+            "cnt": 100
+          }
+        ],
+        "yield": 1,
+        "ttmiRecipeKind": "refine",
+        "ttmiServiceFee": 0
+      },
+      "index": 357,
+      "cost": 5000,
+      "bought": true,
+      "crafted": true,
+      "gold": 1000000,
+      "afterBuy": 950000,
+      "after": 949900,
+      "left": 0,
+      "result": 1,
+      "bookStable": true,
+      "registered": true
+    },
+    {
+      "case": "actual search results open material details and ESC closes both navigation layers",
+      "detailLayers": 2
+    },
+    {
+      "case": "all advanced card and compensation items share live acquisition rules",
+      "items": 23
+    },
+    {
+      "case": "actual special-drop rules update immediately for relic synthesis and affix toggles",
+      "enabled": "🏺 遺物（各怪專屬的極稀有裝備）每隻怪物各有一件專屬遺物，擊殺時 0.0001%（百萬分之一）機率掉落——搜怪物名，該怪的掉落表就會列出那件遺物機率會吃掉落倍率：席琳的世界 ×3、瘋狂的席琳世界 ×5、恩賜怪 ×10遺物不使用一般強化卷軸。前往燃柳村的哈瑪大師合成：武器／防具最高 +15，飾品最高 +10；之後依條件進入昇華支配。+5、+10 與昇華階段的專屬效果，以物品說明為準。首次取得的遺物維持基本版本；已收錄後再次取得時，祝福與遠古系詞綴各有 50% 機會，武器另有 50% 機會附上屬性詞綴，三者各自判定。遺物布告欄交付基本版本。第二種取得途徑：潘朵拉黑市的「遺物布告欄」——在黑市的收購輸入框打「遺物」，花 100 顆龍之鑽石指定武器／防具／飾品類，系統會挑一件你目前沒有的遺物並開出 3 樣委託材料，交齊即可拿到（3 個欄位共用、每欄完成或取消後冷卻 24 小時）。玩法詳見小百科「遺物市場」分頁遺物本身不會出現在黑市的一般陳列商品裡；能給哪些職業用，以裝備卡上標示的職業為準取得任何遺物會登錄「遺物收集冊」（遊戲內「收藏」面板第 4 本；進度依一般／經典兩種模式各自一份、與倉庫同規則；只記錄進度、無全收集加成）自動賣出預設保護遺物不賣（可在自動賣出設定關閉；對單件設「永遠販賣」則照賣）",
+      "disabled": "🏺 遺物（各怪專屬的極稀有裝備）每隻怪物各有一件專屬遺物，擊殺時 0.0001%（百萬分之一）機率掉落——搜怪物名，該怪的掉落表就會列出那件遺物機率會吃掉落倍率：席琳的世界 ×3、瘋狂的席琳世界 ×5、恩賜怪 ×10遺物不使用一般強化卷軸；遺物合成功能目前停用。已持有的強化遺物與收藏仍會保留。重複遺物詞綴功能目前停用，新取得的遺物不會因此附上祝福、遠古系或屬性詞綴；已持有的詞綴保留。第二種取得途徑：潘朵拉黑市的「遺物布告欄」——在黑市的收購輸入框打「遺物」，花 100 顆龍之鑽石指定武器／防具／飾品類，系統會挑一件你目前沒有的遺物並開出 3 樣委託材料，交齊即可拿到（3 個欄位共用、每欄完成或取消後冷卻 24 小時）。玩法詳見小百科「遺物市場」分頁遺物本身不會出現在黑市的一般陳列商品裡；能給哪些職業用，以裝備卡上標示的職業為準取得任何遺物會登錄「遺物收集冊」（遊戲內「收藏」面板第 4 本；進度依一般／經典兩種模式各自一份、與倉庫同規則；只記錄進度、無全收集加成）自動賣出預設保護遺物不賣（可在自動賣出設定關閉；對單件設「永遠販賣」則照賣）"
+    },
+    {
+      "case": "native rift entry, mobile supply dialog, exact purchase, native heal, ESC/back, toggle and evacuation cleanup",
+      "entered": {
+        "before": 1,
+        "after": 0,
+        "active": true,
+        "credits": 10,
+        "depth": 0
+      },
+      "modal": {
+        "role": "dialog",
+        "modal": "true",
+        "depth": 1,
+        "seq": 4,
+        "top": 66,
+        "bottom": 832,
+        "left": 12,
+        "right": 378,
+        "width": 390,
+        "height": 844,
+        "bannerBottom": 52,
+        "headerStationary": true,
+        "scroll": 300,
+        "overflow": "auto"
+      },
+      "bought": {
+        "count": 1,
+        "credits": 9,
+        "depth": 1,
+        "seq": 4,
+        "registered": true
+      },
+      "riftToggle": {
+        "before": 9,
+        "after": 9,
+        "hidden": true,
+        "kept": true,
+        "restored": true
+      },
+      "exited": {
+        "healed": true,
+        "active": false,
+        "modal": false,
+        "depth": 0,
+        "remaining": 0,
+        "registered": true,
+        "creditRegistered": true
+      }
+    },
+    {
+      "case": "card dialog navigation and native collection/save reload stability",
+      "cardModal": {
+        "base": 0,
+        "depth": 1,
+        "modal": "true",
+        "top": 66,
+        "bottom": 832,
+        "width": 366,
+        "height": 844,
+        "bannerBottom": 52
+      },
+      "materialRegistered": true,
+      "riftCollectionRetained": true
+    },
+    {
+      "case": "all TTMI definitions and native inventory/warehouse survive disabled reload; acquisition is disabled and resumes once",
+      "protected": 8,
+      "definitions": 2219,
+      "off": {
+        "drops": 0,
+        "npcs": 0,
+        "recipes": 0
+      },
+      "on": {
+        "enabled": true,
+        "npcs": 2,
+        "drops": 697,
+        "recipes": 893,
+        "bought": true,
+        "afterBuy": 6,
+        "afterUse": 5,
+        "healed": true,
+        "stored": {
+          "ttmi_1315": 1,
+          "ttmi_1573": 2,
+          "ttmi_2127": 3,
+          "potion_heal_ttmi_123": 4,
+          "ttmi_61": 5,
+          "ttmi_473": 6,
+          "ttmi_4064": 7,
+          "ttmi_622": 8
+        }
+      }
+    }
+  ]
+}

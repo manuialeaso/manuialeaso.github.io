@@ -1,0 +1,32 @@
+[
+  {
+    "viewport": "desktop",
+    "tabs": 37,
+    "passed": true,
+    "errors": 0
+  },
+  {
+    "viewport": "phone",
+    "tabs": 37,
+    "passed": true,
+    "errors": 0
+  },
+  {
+    "viewport": "tablet",
+    "tabs": 37,
+    "passed": true,
+    "errors": 0
+  },
+  {
+    "viewport": "phone-mobile-off",
+    "tabs": 37,
+    "passed": true,
+    "errors": 0
+  },
+  {
+    "viewport": "landscape",
+    "tabs": 37,
+    "passed": true,
+    "errors": 0
+  }
+]

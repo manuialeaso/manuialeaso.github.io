@@ -15,6 +15,12 @@
  * 用法：node scripts/apply-core-patches.mjs        （--check 只驗證是否已全部補上、不寫檔）
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { applyRelicRuntimePatches } from './apply-relic-runtime-patches.mjs';
+import { applyRelicWeaponBridgePatches } from './apply-relic-weapon-bridge-patches.mjs';
+import { applyRelicCompanionPatches } from './apply-relic-companion-patches.mjs';
+import { applyRelicDefensePatches } from './apply-relic-defense-patches.mjs';
+import { applyDisplayPatches } from './apply-display-patches.mjs';
+import { applyCardCombatPatches } from './apply-card-combat-patches.mjs';
 
 const CHECK = process.argv.includes('--check');
 let changed = 0, already = 0;
@@ -928,6 +934,11 @@ function patchRelicFx() {
   const files = {};
   for (const [FILE, A, B] of edits) {
     let s = files[FILE] != null ? files[FILE] : readFileSync(FILE, 'utf8');
+    // The complete runtime extends this exact hook with result metadata and
+    // moves its post-hit event after reflection. Recognize that replacement
+    // without inserting the old pre-reflection hook a second time.
+    if (A.includes('target.curHp -= result.dmg') && s.includes('/* relic-runtime:main-result-context */') && s.includes('window.__afkRelicDmg(player, target, result.dmg, wpn, result)') && s.includes('window.__afkRelicHit(player,target,result.dmg,wpn)')) { files[FILE]=s; continue; }
+    if (A.includes('t.curHp -= dmg; t.justHit') && s.includes('/* relic-runtime:ally-result-context */') && s.includes('window.__afkRelicDmg(ally, t, dmg, wpn,') && s.includes('window.__afkRelicHit(ally,t,dmg,wpn)')) { files[FILE]=s; continue; }
     if (s.includes(B)) { files[FILE] = s; continue; }
     const n = s.split(A).length - 1;
     if (n !== 1) throw new Error(`[${FILE}] 遺物強化特效錨點應出現 1 次，實際 ${n} 次：${A.slice(0, 60)}`);
@@ -952,6 +963,12 @@ const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAni
 
 try {
   for (const p of PATCHES) p();
+  applyRelicRuntimePatches(CHECK);
+  applyRelicWeaponBridgePatches(CHECK);
+  applyRelicCompanionPatches(CHECK);
+  applyRelicDefensePatches(CHECK);
+  applyDisplayPatches(CHECK);
+  applyCardCombatPatches(CHECK);
 } catch (e) {
   console.error('❌ apply-core-patches 失敗：' + e.message);
   process.exit(1);

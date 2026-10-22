@@ -552,15 +552,15 @@
 
     <script src="js/anim-manifest.js?v=8168f3d2c7.8.12-necro-relics"></script>
     <script src="js/00-data.js?v=2f8dce5aab.8.34-merc-trial-class-loot"></script>
-<script src="js/01-drops-config.js?v=11fb6b34b3.8.26-flywing-relics"></script>
-<script src="js/02-stats-recompute.js?v=b335f2af79.8.26-flywing-relics"></script>
-    <script src="js/03-combat-core.js?v=427e6ef986.8.26-flywing-relics"></script>
-    <script src="js/04-combat-attack.js?v=33b5a3b14f.8.26-flywing-relics"></script>
-<script src="js/05-kill-progression.js?v=4bd7aa3fff.8.34-merc-trial-class-loot"></script>
-    <script src="js/06-status-allies.js?v=acf26b9623.8.34-merc-trial-class-loot"></script>
-    <script src="js/07-skills-cast.js?v=462a22aa0a.8.26-flywing-relics"></script>
-<script src="js/08-items-equip.js?v=cb30782084.8.16-wis-regen-interval"></script>
-<script src="js/09-vfx-render.js?v=1d2db72192.8.32-merc-vfx-origin"></script>
+<script src="js/01-drops-config.js?v=c0e7eff123.8.26-flywing-relics"></script>
+<script src="js/02-stats-recompute.js?v=052be04957.8.26-flywing-relics"></script>
+    <script src="js/03-combat-core.js?v=e362d75447.8.26-flywing-relics"></script>
+    <script src="js/04-combat-attack.js?v=781d8c2307.8.26-flywing-relics"></script>
+<script src="js/05-kill-progression.js?v=2730af3fc7.8.34-merc-trial-class-loot"></script>
+    <script src="js/06-status-allies.js?v=9457d6c20b.8.34-merc-trial-class-loot"></script>
+    <script src="js/07-skills-cast.js?v=dca115decf.8.26-flywing-relics"></script>
+<script src="js/08-items-equip.js?v=6456857a76.8.16-wis-regen-interval"></script>
+<script src="js/09-vfx-render.js?v=733f30f684.8.32-merc-vfx-origin"></script>
     <script src="js/10-ui-tabs.js?v=5b4f0e4985.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=4aec7f82ff.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=c0155e520d.8.34-merc-trial-class-loot"></script>
@@ -573,15 +573,15 @@
 <script src="js/19-equipment-window.js?v=3d33f8f53d.7.57"></script>
 <script src="js/20-warehouse-window.js?v=f0ce1aeb02.5.100-audit-tail"></script>
 <script src="js/21-relic-book.js?v=7d118874fb.8.15-legacy-import-smooth"></script>
-    <script src="js/23-summons.js?v=a0751f3e2b.8.23-sherine-set-rework"></script>
-    <script src="js/22-pets.js?v=a65be40069.8.23-sherine-set-rework"></script>
+    <script src="js/23-summons.js?v=8d151fe252.8.23-sherine-set-rework"></script>
+    <script src="js/22-pets.js?v=263f297743.8.23-sherine-set-rework"></script>
     <script src="js/24-pandora-relic-market.js?v=ecc8c9803e.7.70"></script>
     <script src="js/25-clan-system.js?v=c78fb35df2.8.7-social-private"></script>
     <script src="js/26-world-channel.js?v=9f45eaff51.8.13-private-bond"></script>
 <script src="js/28-pvp-arena.js?v=3448feb9f9.7.89-stage33-host-sign"></script>
 <script src="js/29-siege-v2-data.js?v=eae6887df7.7.63-siege-v2"></script>
 <script src="js/30-siege-v2.js?v=cb81540f3a.7.89-castle-ring-layout"></script>
-<script src="js/31-castle-guards.js?v=91544fd42d.8.23-sherine-set-rework"></script>
+<script src="js/31-castle-guards.js?v=f48d5049d8.8.23-sherine-set-rework"></script>
 <script src="js/32-threat.js?v=f113c09abd.8.23-sherine-set-rework"></script>
     <!-- ═══════════ 加掛版外掛層（核心永遠是原作者原版；我們的功能全部是外掛疊上去） ═══════════ -->
     <!-- 此區塊由 scripts/sync-upstream.mjs 於「拉上游 index.html 後」自動注入到 </body> 之前。?v= 由 stamp-code-versions 補。 -->
@@ -590,23 +590,24 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=60bac63eb4"></script>
+    <script src="afk-toggles.js?v=80da0822f1"></script>
     <!-- afk-banner：非官方轉載橫幅讓位（基礎設施、無開關；不可掛在 afk-mobile 裡，玩家關掉手機版面就會整個頂端被蓋住） -->
-    <script src="afk-banner.js?v=29fa2d5746"></script>
+    <script src="afk-banner.js?v=b1b512677f"></script>
     <!-- afk-nobanner：隱藏非官方橫幅（預設關；只藏不刪＝不跟 gameLoop 的重掛打架，確認過才生效） -->
     <script src="afk-nobanner.js?v=07adf6960c"></script>
     <!-- 存檔解壓快取：必須排在所有會讀 localStorage 的外掛之前（核心每殺一隻怪都重解壓一次血盟狀態） -->
     <script src="afk-lzcache.js?v=1b86b3d102"></script>
     <!-- afk-perf：卡頓修正（日誌批次寫入／背包分頁按需重建）。必須排在 afk-toast（包 logSys）與 afk-itemsearch（包 renderTabs）之前 -->
-    <script src="afk-perf.js?v=142fc5b65f"></script>
+    <script src="afk-perf.js?v=2f111cfb6e"></script>
+    <script src="afk-display.js?v=4d29ace3d3"></script>
     <!-- afk-mapsync：地圖下拉自我校正（回城／出發後地區/地圖下拉與所在地不符時自動校正） -->
     <script src="afk-mapsync.js?v=f0c11680ea"></script>
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->
     <script src="afk-autoreload.js?v=e421ce7024"></script>
     <!-- afk-dreamhell：瘋狂席琳夢艷地獄模式（需核心補丁 18）；排在 afk-droplog／afk-dropcount 之前，讓它們看得到新掉落 -->
-    <script src="afk-dreamhell.js?v=eaf36310a5"></script>
+    <script src="afk-dreamhell.js?v=c11400ff6b"></script>
     <!-- afk-cardplus：白金／鑽石卡、圖鑑全滿夢艷 ×3、鑽白金幻化（需核心補丁 20）；排在 afk-dropcount 之前，讓掉落統計數得到白金／鑽石卡 -->
-    <script src="afk-cardplus.js?v=75aaec4969"></script>
+    <script src="afk-cardplus.js?v=cacc70c107"></script>
     <!-- afk-droplog：短暫卡頓補跑中的擊殺／掉落照常顯示（原版 <3 秒補跑完全不印） -->
     <script src="afk-droplog.js?v=2c6ae01cc4"></script>
     <!-- afk-dropcount：統計分頁「本圖掉落物品」標上實際打到的數量（×N，離開地圖清除） -->
@@ -633,7 +634,7 @@
     <script src="afk-allyslim.js?v=6b4a8e1e98"></script>
     <!-- 共用基礎：自製彈窗/確認、dex/wiki 共用資料表（其他外掛依賴，排前面） -->
     <script src="afk-ui.js?v=e832474894"></script>
-    <script src="afk-extradata.js?v=0d4508266e"></script>
+    <script src="afk-extradata.js?v=1dc979bd11"></script>
     <!-- 離線快速結算（自己 monkey-patch 包核心 saveGame/loadGame/changeMap/killMob/gainItem；搭配 maybeSpawnMobs 補丁） -->
     <script src="afk-offline.js?v=b3e169d4f8"></script>
     <!-- 手機版面 / 返回鍵 -->
@@ -649,8 +650,8 @@
     <!-- 資訊頁 / 查詢頁 -->
     <script src="afk-slotinfo.js?v=903bcf7681"></script>
     <script src="afk-loadslots.js?v=c92d1db069"></script>
-    <script src="afk-dex.js?v=25851583f8"></script>
-    <script src="afk-wiki.js?v=2eb74f7ae6"></script>
+    <script src="afk-dex.js?v=3085d388ef"></script>
+    <script src="afk-wiki.js?v=34bcb17ab0"></script>
     <!-- 設定選單 / 存檔 / 診斷 / 離線紀錄 -->
     <script src="afk-storage.js?v=302890a0df"></script>
     <!-- 整包備份／還原（本機檔案）：入口掛在 afk-storage 的設定選單裡，必須排在它之後 -->
@@ -662,7 +663,7 @@
     <script src="afk-history.js?v=06586ebde4"></script>
     <script src="afk-reissueid.js?v=b6195567f1"></script>
     <script src="afk-diag.js?v=5a937fd41b"></script>
-    <script src="afk-powersave.js?v=5d2ab6441e"></script>
+    <script src="afk-powersave.js?v=dc8c882489"></script>
     <!-- 遊戲內小工具 -->
     <script src="afk-statpts.js?v=4e96609d8d"></script>
     <!-- 能力分頁條列式：拿掉背景圖改大字卡片(純 CSS,DOM/updateUI 不動) -->
@@ -682,21 +683,26 @@
     <!-- 遺物整理：重複的遺物一次清掉（賣金幣／回收換龍鑽）；每個遺物 id 自動保留最好的 1 件。排在 afk-relicaffix 之後＝在最外層包 renderRelicBook -->
     <script src="afk-relicbatch.js?v=f416463210"></script>
     <!-- afk-stackdot：可疊層中毒／灼燒（上限 20 層；供遺物特效使用） -->
-    <script src="afk-stackdot.js?v=62b605458d"></script>
+    <script src="afk-stackdot.js?v=e6e7263f25"></script>
     <!-- afk-relicplus：遺物合成（武器 +1～+15，需核心補丁 15 的出血加成）；排在 afk-relicbatch 之後 -->
     <!-- afk-relicfx：遺物特效隨強化成長（玩家的遺物特殊效果清單；需核心補丁 35；必須排在 afk-relicplus 之前） -->
     <script src="afk-relicfx.js?v=17b56022a3"></script>
-    <script src="afk-relicplus.js?v=85ccf6e474"></script>
+    <!-- 完整遺物階段與事件規則；資料與設定先於遺物合成載入。 -->
+    <script src="afk-relic-catalog.js?v=eb5d9e5fb9"></script>
+    <script src="afk-relic-weapons.js?v=ba7b6f2248"></script>
+    <script src="afk-relic-defense.js?v=656035632e"></script>
+    <script src="afk-relic-runtime.js?v=8fded21dfb"></script>
+    <script src="afk-relicplus.js?v=770f6cd855"></script>
     <!-- afk-dreamstar：暗夢星迴（單機版）；需 afk-dreamhell、afk-relicplus，排在 afk-relicplus 之後 -->
     <script src="afk-dreamstar.js?v=831ffd5a66"></script>
     <!-- afk-corrupt：侵蝕的法利昂／巴拉卡斯／林德拜爾巢穴（複製安塔瑞斯副本；需核心補丁 23） -->
-    <script src="afk-corrupt.js?v=14850d7390"></script>
+    <script src="afk-corrupt.js?v=eb50136213"></script>
     <!-- afk-relicsell：夢艷地獄遺物詞條、商人收遺物（龍鑽）、昇華支配分解；排在 afk-relicaffix／relicplus／dreamhell 之後 -->
     <script src="afk-relicsell.js?v=58731caa84"></script>
     <!-- afk-rebirth：輪迴轉生（需核心補丁 20；裝備不限職業沿用 afk-anyclass） -->
-    <script src="afk-rebirth.js?v=a1c816f483"></script>
+    <script src="afk-rebirth.js?v=55cc453d0d"></script>
     <!-- afk-arts：轉生技藝（奧拉奇里亞；需 afk-rebirth，排在它之後） -->
-    <script src="afk-arts.js?v=3206141a42"></script>
+    <script src="afk-arts.js?v=e6efef3c63"></script>
     <!-- afk-uifix：切換地區優先飛到村莊 -->
     <script src="afk-uifix.js?v=4af6b2c419"></script>
     <!-- afk-castlewar：七城攻城、城堡收成、宣戰與統一伺服器（需核心補丁 27；排在 afk-dreamhell／afk-arts 之後） -->
@@ -760,8 +766,8 @@
     <script src="afk-analytics.js?v=25e209371f"></script>
     <script src="afk-skin.js?v=a066812f39"></script>
     <!-- afk-sets：套裝補齊（天堂透視鏡；需核心補丁 34）、afk-polys：變身補齊 -->
-    <script src="afk-sets.js?v=760f891a9a"></script>
-    <script src="afk-polys.js?v=a049fff2d4"></script>
+    <script src="afk-sets.js?v=323d19c788"></script>
+    <script src="afk-polys.js?v=00454501e6"></script>
     <!-- afk-maps：地圖補齊（天堂透視鏡；資料 afk-maps-data.js 由 scripts/build-ttmi-maps.mjs 產生） -->
     <script src="afk-maps-data.js?v=f9fe7c5718"></script>
     <script src="afk-maps.js?v=e4b1fac6b4"></script>
@@ -772,11 +778,27 @@
     <!-- afk-resist：屬性抗性查表、無屬性抗性減物理傷害（需核心補丁 31） -->
     <script src="afk-resist.js?v=54485b91b0"></script>
     <!-- afk-dreamcost：夢艷地獄的死亡詛咒、轉生夢艷技能／復活代價、寵物 MP 恢復吃玩家面板（需 afk-dreamhell） -->
-    <script src="afk-dreamcost.js?v=b5b982fb9d"></script>
+    <script src="afk-dreamcost.js?v=b5d62fac98"></script>
     <!-- afk-healstat：本圖效率統計的恢復統計、面板 HP恢復量完整算式（需 afk-arts） -->
     <script src="afk-healstat.js?v=b4c1c43178"></script>
     <!-- afk-stun：鈍擊＝暈眩（頭目有抗性）、連暈 10 秒→完全停擺 15 秒；包 tick 必須在最外層，所以排最後 -->
     <script src="afk-stun.js?v=d6653c0fff"></script>
+    <!-- 天堂透視鏡已核對物品；套裝與地圖資料就緒後加入配方與裂痕補給。 -->
+    <script src="afk-ttmi-items-data.js?v=b793e1894f"></script>
+    <script src="afk-ttmi-items.js?v=19b440be56"></script>
+    <!-- 遺物戰鬥掛接、同伴與固定終階 GM 測試道具。 -->
+    <script src="afk-relic-weapon-bridge.js?v=d372f29b3b"></script>
+    <script src="afk-relic-companions.js?v=ab11bf7ae5"></script>
+    <script src="afk-relic-defense-bridge.js?v=e95df2897e"></script>
+    <script src="afk-relic-gm.js?v=7ff70236ed"></script>
+    <script src="afk-relic-integration.js?v=0f83cd1482"></script>
+    <!-- 鑽石卡變身與神話／天上／時空合成；保留原生變形卷軸入口。 -->
+    <script src="afk-card-forms.js?v=70c14b60fa"></script>
+    <script src="afk-card-ascension.js?v=e12ad0ec83"></script>
+    <script src="afk-card-combat.js?v=19564a5a41"></script>
+    <!-- 小百科從目前物品與變身資料生成分階說明。 -->
+    <script src="afk-game-guide.js?v=13c8eaebe3"></script>
+    <script src="afk-readability.js?v=fccbd2ca1e"></script>
     <!-- ═══════════ 加掛版外掛層 END ═══════════ -->
 </body>
 </html>

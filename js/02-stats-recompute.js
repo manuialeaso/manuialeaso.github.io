@@ -122,14 +122,15 @@ function recomputeStats() {
     // ❄️ 套裝「屬性」加成提前套用：力量/體質須在 Phase 2 換算近傷/HP 之前計入，才會實際吃進戰鬥與 HP；其餘 flat 加成（AC/HP+100/恢復/抗性）仍於 Phase 3 套裝段套用。
     { let _setEarly = {}, _ssEarly = {};
       for (let _k in p.eq) { let _e = p.eq[_k]; if (!_e || _k === 'wpn' || _k === 'offwpn') continue; let _ed = DB.items[_e.id]; if (_ed && _ed.set && !_ssEarly[_e.id]) { _ssEarly[_e.id] = true; _setEarly[_ed.set] = (_setEarly[_ed.set] || 0) + 1; } }
-      if (_setEarly['icequeen_charm'] >= 3) { d.str += 2; d.cha += 2; }   // 冰之女王魅力：力量+2/魅力+2（提前→力量實際吃近距傷害/命中/爆擊）
+      if (typeof window.__afkGmSetCount === 'function') window.__afkGmSetCount(p,_setEarly);
+      if (_setEarly['icequeen_charm'] >= 3) /* relic-runtime:gm-early-sets */ { d.str += 2; d.cha += 2; }   // 冰之女王魅力：力量+2/魅力+2（提前→力量實際吃近距傷害/命中/爆擊）
       if (_setEarly['frost'] >= 3) { d.con += 3; }                         // 寒冰：體質+3（提前→實際吃 HP 與 HP 自然恢復上限）
       if (_setEarly['orin'] >= 2) { d.str += 1; d.dex += 1; d.con += 1; d.int += 1; d.wis += 1; d.cha += 1; }   // 🔱 歐林西瑪：全六屬性+1（提前→實際吃進 AC/MR/HP/MP/近遠傷害/命中/爆擊等衍生值，否則只改顯示數字不入戰鬥）
       if (_setEarly['darkelf'] >= 3) { d.str -= 2; d.dex += 2; }   // 🏝️ 黑暗妖精：力量-2/敏捷+2（提前→敏捷實際吃 AC/迴避/遠距傷害命中、力量實際吃近距傷害命中，否則只改顯示數字不入戰鬥）
       if (_setEarly['bluepirate'] >= 4) { d.int += 1; }   // 🏴‍☠️ 藍海賊套裝：智力+1（提前→吃進 MP/魔法；AC-1/HP+10 flat 於 Phase 3 套裝段）
     }
     // 🦻 詛咒耳環套裝：淨化之耳環 + 對應色詛咒耳環 同時裝備 → 屬性提前套用（吃進近/遠/魔/HP/MP 等衍生值）
-    { let _eqHas = id => Object.values(p.eq).some(e => e && e.id === id);
+    { let _eqHas = id => window.AFK_RELIC_GM ? window.AFK_RELIC_GM.hasMember(p,id) : Object.values(p.eq).some(e => e && e.id === id); /* relic-runtime:gm-earring-sets */
       if (_eqHas('acc_purify_earring')) {
           if (_eqHas('acc_curse_red'))   { d.str += 2; d.con -= 2; }
           if (_eqHas('acc_curse_blue'))  { d.int += 2; d.wis -= 2; }
@@ -490,7 +491,7 @@ d.mr += (baseMr + bonusMr);
     // 🌑 v3.4.0 受詛咒的真．冥皇執行劍：裝備時變身 死亡騎士（走 _setPoly 管線＝卸下即消失·速度覆蓋沿 POLY_TIERS 死亡騎士；套裝變身優先於本劍故加 !p._setPoly 守衛）
     if(!p._setPoly && p.eq && p.eq.wpn && p.eq.wpn.id === 'wpn_cursed_emperor_blade') { let _ceb = findPolyForm('死亡騎士'); if(_ceb) p._setPoly = makePolyState(_ceb.form, _ceb.color); }
     // 🌑 v3.4.67 解除詛咒的真死亡騎士．冥皇執行劍：裝備時變身 真死亡騎士 冥皇丹特斯（equip-only·per-weapon APM 攻速·套裝變身優先故加 !p._setPoly 守衛）
-    if(!p._setPoly && p.eq && p.eq.wpn && p.eq.wpn.id === 'wpn_uncursed_emperor_blade') { p._setPoly = Object.assign({}, DANTES_POLY_FORM); }
+    if(!p._setPoly && p.eq && p.eq.wpn && (DB.items[p.eq.wpn.id] && DB.items[p.eq.wpn.id].relicBase || p.eq.wpn.id) === 'wpn_uncursed_emperor_blade' /* card-combat:emperor-morph-base */) { p._setPoly = Object.assign({}, DANTES_POLY_FORM); }
     // 🔥 v3.7.52 烈焰的死亡騎士之劍（flameDkMorph）：裝備時變身 烈焰的死亡騎士（形態既存於變身表·含 per-weapon APM/動態/音效；套裝變身優先故加 !p._setPoly 守衛）
     if(!p._setPoly && p.eq && p.eq.wpn) { let _fdw = DB.items[p.eq.wpn.id]; if (_fdw && _fdw.flameDkMorph) { let _fdk = findPolyForm('烈焰的死亡騎士'); if (_fdk) p._setPoly = makePolyState(_fdk.form, _fdk.color); } }
 
@@ -503,7 +504,8 @@ d.mr += (baseMr + bonusMr);
         let e = p.eq && p.eq[_r.id];
         if (e && e.seteff) { let g = e.seteff.slice(0, 2); _shSets[g] = (_shSets[g] || 0) + 1; }   // 計件＝帶該套裝名的「遺骸部位數」（8 格各算一件·部位天然不重複）
     }
-    let _shN = (g) => (_shSets[g] || 0);
+    if(window.AFK_RELIC_GM) window.AFK_RELIC_GM.sherine(p,_shSets);
+    let _shN = (g) => (_shSets[g] || 0); /* relic-runtime:gm-sherine */
     p._sherineSetCnt = {};   // 🔮 各組件數（部位數）：供狀態面板（n/5 徽章）與裝備欄底色判定使用
     for (let g in _shSets) p._sherineSetCnt[g] = _shSets[g];
     if (_shN('紅獅') >= 2) { d.extraDmg += 5; d.extraMp += 3; }
@@ -563,7 +565,7 @@ d.mr += (baseMr + bonusMr);
     if(p.buffs.brave > 0 || (_mercPots && ['knight','dragon','warrior','royal'].includes(p.cls))) spdMult *= (1/1.33);   // 勇敢藥水：攻速+33%（🔧 v3.5.37 1/1.33）；可用職業傭兵常駐
     if(p.buffs.elfcookie > 0 || (_mercPots && p.cls === 'elf')) spdMult *= (1/1.15); // 精靈餅乾：攻速+15%（🔧 v3.5.37 1/1.15·取代舊 0.85＝實際+17.6%）；妖精傭兵常駐
     if(p.buffs.sk_dark_walkhaste > 0) spdMult *= (1/1.15); // 🔧 行走加速：攻速+15%（v3.5.37 1/1.15）（與加速術等相乘疊加）
-    { let _clvW = p.eq.wpn ? DB.items[p.eq.wpn.id] : null; let _clvOn = !p.classicMode && ((p.statuses && p.statuses.cleave > 0) || ((typeof _afkM === 'function' ? _afkM(p, 'k_cleave') : p.mastery === 'k_cleave') && _clvW && _clvW.eff === 'cleave')); if(_clvOn) spdMult *= ((typeof _afkM === 'function' ? _afkM(p, 'k_cleave') : p.mastery === 'k_cleave') ? (1/1.5) : (1/1.2)); }   // 切割：攻速+20%（🏅 切割精通：+50%・持切割武器常駐），與其他加速相乘疊加；🎮 經典模式停用
+    { let _clvW = p.eq.wpn ? DB.items[p.eq.wpn.id] : null; let _clvOn = !p.classicMode && ((p.statuses && p.statuses.cleave > 0) || ((typeof _afkM === 'function' ? _afkM(p, 'k_cleave') : p.mastery === 'k_cleave') && _clvW && _clvW.eff === 'cleave')); if(_clvOn) spdMult *= (window.AFK_RELIC_WEAPON_BRIDGE ? window.AFK_RELIC_WEAPON_BRIDGE.cleaveSpeed(_clvW,((typeof _afkM === 'function' ? _afkM(p, 'k_cleave') : p.mastery === 'k_cleave') ? (1/1.5) : (1/1.2))) : ((typeof _afkM === 'function' ? _afkM(p, 'k_cleave') : p.mastery === 'k_cleave') ? (1/1.5) : (1/1.2))); /* relic-weapon-bridge:cleave-speed */ }   // 切割：攻速+20%（🏅 切割精通：+50%・持切割武器常駐），與其他加速相乘疊加；🎮 經典模式停用
     if (typeof player !== 'undefined' && p === player && !p._allyName && (p._crushFuryUntil || 0) > state.ticks) spdMult *= (1/1.2);   // 🔨 v3.6.47 重裝戰士的粉碎鎚：即死觸發攻速+20%（8秒·js/04 授予·js/03 到期重算·經典亦生效比照即死本體；傭兵版走 _crushFuryTicks 於 js/06 攻擊間隔）
     { let _ffOn = typeof player !== 'undefined' && p === player && !p._allyName && (p._fangFuryUntil || 0) > state.ticks; let _ffw = p.eq.wpn && DB.items[p.eq.wpn.id]; spdMult *= critFurySpeedMultiplier(_ffOn, _ffw && _ffw.critFuryHaste && _ffw.critFuryHaste.pct); }   // 🏺 v3.7.52 邪惡利牙：爆擊觸發攻速+30%（5秒·js/04 授予·js/03 到期重算；傭兵版走 _fangFuryTicks 於 js/06 攻擊間隔）
     { let _swMelee = p.eq.wpn ? DB.items[p.eq.wpn.id] : null; if((typeof _afkM === 'function' ? _afkM(p, 'e_sword') : p.mastery === 'e_sword') && _swMelee && !_swMelee.w2h && !_swMelee.isBow && !_swMelee.ranged) spdMult *= (1/1.5); }   // 🏅 劍術精通：持單手近戰武器攻速+50%（與加速/勇敢/餅乾/變身相乘疊加）
@@ -629,7 +631,8 @@ d.mr += (baseMr + bonusMr);
     // 此正規化對玩家與傭兵換身重算皆執行（player 為可換身全域·buildAlly/_allyLevelRecompute 期間指向傭兵）。
     if(p.poly && p.buffs.poly > 0 && !polyFormMatchesEquippedWeapon(p.poly)) p.poly = getPolyState();
     // 變身：套裝變身（_setPoly，僅穿著套裝時生效、卸下立即消失）優先於藥水變身（buffs.poly 計時）
-    let _polyForm = p._setPoly || ((p.buffs.poly > 0 && p.poly) ? p.poly : null);
+    if(window.AFK_RELIC_GM) window.AFK_RELIC_GM.mergeForms(p);
+    let _polyForm = p._setPoly /* relic-runtime:gm-form */ || ((p.buffs.poly > 0 && p.poly) ? p.poly : null);
     if(_polyForm) {
         let pf = _polyForm;
         // 🆕 v3.0.28 速度覆蓋（凡有 atk 者皆套用）：POLY_TIERS 速度型變身、及套裝變身 SET_POLY_FORMS（現在也帶 atk/wlk/cast/stun）。
@@ -670,7 +673,8 @@ d.mr += (baseMr + bonusMr);
     }
     if (d.hitstunReduce > 0) d.hitstun = Math.max(0, (d.hitstun || 0) - d.hitstunReduce);   // 🏺 不動的鋼鐵堅壁：硬直減免統一套用點（置於變身速度覆蓋後→變身形態的 pf.stun 也吃減免·夾下限 0）
 
-    if(p.buffs.sk_soul_up > 0) { p.mhp = Math.floor(p.mhp * 1.2); p.mmp = Math.floor(p.mmp * 1.2); }
+    if (typeof window.__afkTtmiStats === 'function') window.__afkTtmiStats(p,d);
+    if(p.buffs.sk_soul_up > 0) /* relic-runtime:ttmi-stats */ { p.mhp = Math.floor(p.mhp * 1.2); p.mmp = Math.floor(p.mmp * 1.2); }
     if (player.skills.includes('sk_warrior_armorbody')) d.dr += Math.floor((10 - d.ac) / (hasMastery('k_tough') ? 5 : 10));   // ⚔️ 護甲身軀：傷害減免 +[(10-AC)/10]；🏅 堅韌精通改 /5
     if (p.buffs.sk_warrior_endurance > 0) p.mhp = Math.floor(p.mhp * (1 + (p.lv / 2) / 100));   // ⚔️ 體能強化：HP上限 +(等級/2)%
     if (_shN('狂怒') >= 3) p.mhp = Math.floor(p.mhp * 1.2);   // 😡 狂怒 3/5：最大HP +20%（於各 flat HP 加成後套用）
@@ -752,13 +756,14 @@ d.mr += (baseMr + bonusMr);
         let _wbase = (Math.floor((3 * d.str + 2 * d.con) / 5) + 1) * 50;
         let _cap = 0, _cur = 0;
         for (let _k of WEIGHT_COUNT_SLOTS) {
-            let _it = p.eq && p.eq[_k]; if (!_it) continue;
+            let _eq = window.AFK_RELIC_GM ? window.AFK_RELIC_GM.realEquipment(p) : p.eq; let _it = _eq && _eq[_k]; /* relic-companion:weight-real-equipment */ if (!_it) continue;
             let _ed = DB.items[_it.id]; if (!_ed) continue;
-            _cur += (ITEM_WEIGHTS[_ed.n] || 0);
+            _cur += window.AFK_RELIC_COMPANIONS?window.AFK_RELIC_COMPANIONS.itemWeight(_ed):(ITEM_WEIGHTS[_ed.n]||0); /* relic-companion:weight-canonical */
             if (_ed.weightCap) _cap += _ed.weightCap;
             if (_ed.slot === 'belt') _cap += Math.min(_it.en || 0, 5) * 20;   // 🔧 腰帶強化：每+1 負重上限+20
         }
-        if (p.buffs && p.buffs.sk_load_up > 0) _cap += 50;   // 負重強化增益：負重上限 +50
+        if (window.AFK_RELIC_COMPANIONS) _cap=window.AFK_RELIC_COMPANIONS.equipmentCapacity(p,_cap);
+        if (p.buffs && p.buffs.sk_load_up > 0) _cap += 50; /* relic-companion:weight-source-capacity */   // 負重強化增益：負重上限 +50
         if (d._cardWeightBonus) _cap += d._cardWeightBonus;   // 🎴 卡片收集：風木/奇岩完成 → 負重上限加成
         if (d._equipWeightBonus) _cap += d._equipWeightBonus;   // 🗡️ 裝備收集冊：單手/雙手鈍器/臂甲/腰帶部位全收集 → 負重上限加成
         if (d._miscWeightBonus) _cap += d._miscWeightBonus;   // 🧰 道具收集冊：藥水/卷軸類全收集 → 負重上限加成
@@ -766,7 +771,7 @@ d.mr += (baseMr + bonusMr);
         let _limit = _wbase + _cap;
         let _pct = _limit > 0 ? Math.floor(_cur / _limit * 100) : 999;
         let _tier = _pct <= 49 ? 0 : (_pct <= 81 ? 1 : (_pct <= 99 ? 2 : 3));
-        d.weightPct = _pct; d.loadTier = _tier;
+        d.weightPct = _pct; d.loadTier = _tier; d.equippedWeight = _cur; d.weightCapacity = _limit; /* relic-companion:weight-values */
         if (_tier === 2) d.aspd = d.aspd * 2;        // 82~99%：攻擊速度 -100%（間隔×2）
         else if (_tier === 3) d.aspd = d.aspd * 3;   // 100%+：攻擊速度 -200%（間隔×3）
     }
@@ -783,7 +788,8 @@ d.mr += (baseMr + bonusMr);
         if (_mApm > 0 && _oApm > 0) d.aspdOff = d.aspd * (_mApm / _oApm);
     }
     if (typeof window.__afkMaxAdd === 'function') { try { window.__afkMaxAdd(p); } catch (e) {} }   /* 🔌 加掛版補丁:上限加成在夾 HP 之前 */
-    p.hp = Math.min(p.hp, p.mhp);
+    if (window.AFK_RELIC_RUNTIME) window.AFK_RELIC_RUNTIME.stats(p,d);
+    p.hp = Math.min(p.hp, p.mhp); /* relic-runtime:relic-stats-final */
     p.mp = Math.min(p.mp, p.mmp);
 }
 

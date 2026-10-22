@@ -1,0 +1,137 @@
+--- a/afk-relic-runtime.js
++++ b/afk-relic-runtime.js
+@@ -44,10 +44,13 @@
+   function sourceList(actor) {
+     if (!enabled() || !actor || !actor.eq || typeof DB === 'undefined') return [];
+     if(action&&action.gm&&action.actor===actor&&action.gmSources)return action.gmSources;
+-    var sig = revision + '|' + Object.keys(actor.eq).sort().map(function (k) { var v = actor.eq[k]; return k + ':' + (v && v.id || ''); }).join('|');
+-    var old = caches.get(actor); if (old && old.sig === sig) return old.sources;
++    // Equipment mutates in place, so object identity alone is not sufficient.
++    // Compare the same slot/id information as the former sorted string, without
++    // allocating/sorting/joining a new signature on every hot-path query.
++    var keys=Object.keys(actor.eq),old=caches.get(actor),same=!!(old&&old.revision===revision&&old.count===keys.length);
++    if(same){for(var at=0;at<keys.length;at++){var entry=actor.eq[keys[at]];if(old.ids[keys[at]]!==String(entry&&entry.id||'')){same=false;break;}}if(same)return old.sources;}
+     var selected = {};
+-    Object.keys(actor.eq).forEach(function (k) {
++    keys.forEach(function (k) {
+       var e = actor.eq[k]; if (!e || e._relicVirtual) return;
+       var d = DB.items[e.id]; if (!d && W.__afkRelicPlus) { W.__afkRelicPlus.ensure(e.id); d = DB.items[e.id]; }
+       var s = sourceInfo(e.id, d, e); if (s && (!selected[s.key] || selected[s.key].stage < s.stage || selected[s.key].n < s.n)) selected[s.key] = s;
+@@ -56,7 +59,8 @@
+       var d = ultimate(c.key); if (d) selected[c.key] = sourceInfo(c.key, d, { id: c.key, en: 0, _relicProjection: true });
+     });
+     var list = Object.keys(selected).map(function (k) { return selected[k]; }).sort(function (a, b) { return a.catalogId - b.catalogId; });
+-    caches.set(actor, { sig: sig, sources: list }); return list;
++    var ids=Object.create(null);for(var ix=0;ix<keys.length;ix++){var e=actor.eq[keys[ix]];ids[keys[ix]]=String(e&&e.id||'');}
++    caches.set(actor, { revision:revision,count:keys.length,ids:ids,sources:list }); return list;
+   }
+   var ultimateCache = {};
+   function ultimate(key) {
+@@ -76,26 +80,43 @@
+     ultimateCache[key] = d; return d;
+   }
+   var aliasesWeapon = { afterHit: 'hit', afterHurt: 'hurt', beforeCast: 'beforeCastCost', onKill: 'kill', onMarkConsume: 'markConsumed' };
++  // Equipment source vectors are immutable until sourceList replaces the cache.
++  // Index their dispatch views once, including each GM weapon channel. This only
++  // removes repeated filtering; callback order and GM armor deduplication remain
++  // exactly the same, including callbacks whose current stage has no effect.
++  var dispatchViews = new WeakMap();
++  var channelEvents = {beforeAttack:1,beforeHit:1,afterHit:1,miss:1,counter:1,beforeCounter:1,beforeSkill:1,skill:1,resonance:1,magicStrike:1,combo:1,doubleBlade:1,pierce:1,elementHit:1,directHit:1};
++  var gmOnceEvents = {afterHit:1,miss:1,onCast:1};
++  function dispatchList(list, module, channel) {
++    var view=dispatchViews.get(list);
++    if(!view){view={all:list,weapon:[],defense:[],channels:Object.create(null)};for(var i=0;i<list.length;i++){var s=list[i];if(s&&s.def)(s.catalogId<=131?view.weapon:view.defense).push(s);}dispatchViews.set(list,view);}
++    if(module==='defense')return view.defense;
++    if(!channel)return module==='weapon'?view.weapon:view.all;
++    var selected=view.channels[channel];
++    if(!selected){selected={weapon:[],all:[]};for(var j=0;j<list.length;j++){var x=list[j];if(!x||!x.def)continue;if(x.catalogId>131)selected.all.push(x);else if(x.key===channel){selected.weapon.push(x);selected.all.push(x);}}view.channels[channel]=selected;}
++    return module==='weapon'?selected.weapon:selected.all;
++  }
+   function dispatch(event, ctx, only) {
+     if (!enabled() || !ctx || !ctx.actor || depth > 16) return ctx;
+     ctx.now = now(); ctx.actionId = ctx.actionId || (action && action.id) || ++seq; ctx.battleId = battle;
+     ctx.inBattle = typeof mapState !== 'undefined' && !/^town_/.test(mapState.current || '') && targets().length > 0;
+     var movement = stateOf(ctx.actor, '_movement'); ctx.stationaryFor = Math.max(0, now() - (movement.last || 0)); ctx.movingFor = movement.movingFor || 0; ctx.moving = !!movement.moving;
+     var list = only ? [only] : sourceList(ctx.actor), prior = active;
++    list=dispatchList(list,ctx._module,channelEvents[event]&&ctx.channelKey);
++    var weaponModule=W.AFK_RELIC_WEAPONS,defenseModule=W.AFK_RELIC_DEFENSE,weaponEvent=aliasesWeapon[event]||event,once=gmOnceEvents[event];
+     depth++;
+     try {
+-      list.forEach(function (s) {
+-        if (!s || !s.def ||ctx._module==='weapon'&&s.catalogId>131||ctx._module==='defense'&&s.catalogId<=131) return;
+-        if (ctx.channelKey && s.catalogId <= 131 && ['beforeAttack','beforeHit','afterHit','miss','counter','beforeCounter','beforeSkill','skill','resonance','magicStrike','combo','doubleBlade','pierce','elementHit','directHit'].indexOf(event) >= 0 && s.key !== ctx.channelKey) return;
+-        if (action && action.gm && s.catalogId > 131 && ['afterHit','miss','onCast'].indexOf(event) >= 0) {
++      for(var ix=0,length=list.length;ix<length;ix++) {
++        var s=list[ix];if(!s||!s.def)continue;
++        if (action && action.gm && s.catalogId > 131 && once) {
+           var uk = event + ':' + s.key + ':' + (ctx.target && ctx.target.uid || '');
+-          if (action.seen[uk]) return; action.seen[uk] = true;
++          if (action.seen[uk]) continue; action.seen[uk] = true;
+         }
+         ctx.source = ctx.item = s.def; ctx.sourceId = s.key; ctx.catalogId = s.catalogId; ctx.stage = s.stage; ctx.n = s.n; ctx.asc = s.asc; ctx.api = api;
+         active = ctx;
+-        var mod = s.catalogId <= 131 ? W.AFK_RELIC_WEAPONS : W.AFK_RELIC_DEFENSE;
+-        if (mod && typeof mod.dispatch === 'function') mod.dispatch(s.catalogId <= 131 ? aliasesWeapon[event] || event : event, ctx, api);
+-      });
++        var weapon=s.catalogId<=131,mod=weapon?weaponModule:defenseModule;
++        if (mod && typeof mod.dispatch === 'function') mod.dispatch(weapon?weaponEvent:event, ctx, api);
++      }
+     } finally { depth--; active = prior; }
+     return ctx;
+   }
+
+--- a/afk-relic-defense.js
++++ b/afk-relic-defense.js
+@@ -116,10 +116,17 @@
+     return true;
+   }
+ 
++  var HANDLED_EVENTS=Object.create(null);
++  'battleStart move onStats beforeAttack miss afterHit beforeHurt afterHurt beforeDeath beforeStatus onStatusAttempt onStatusApplied onStatusEnd onKill tick beforeCast onCast beforeHeal onHeal onPotion beforeDot afterDot shieldBreak onMarkConsume onCompanionStats beforePetSkillCost petHit petHurt petRevive summonLimit petSlots trackingChance trackingHit threat knockback regen beforeAllyHurt'.split(' ').forEach(function(event){HANDLED_EVENTS[event]=true;});
++  var NARROW_EVENTS={onCompanionStats:{152:1,189:1,241:1,245:1},beforeAllyHurt:{155:1,186:1},threat:{153:1,154:1,184:1},beforeDot:{139:1},afterDot:{143:1}};
+   function dispatch(event, c, api) {
++    // The runtime still delivers every callback. Events without a handler need
++    // no per-source closures or native stat queries.
++    if(!HANDLED_EVENTS[event])return;
+     api = api || c.api;
+     var id = Number(c.catalogId || (c.source && c.source.relicCatalogId) || (c.item && c.item.relicCatalogId));
+     if (!byId[id] || !api) return;
++    if(NARROW_EVENTS[event]&&!NARROW_EVENTS[event][id])return;
+     var s = c.stage != null ? c.stage : tier(c.n || 0, c.asc), p = c.actor;
+     if (!p) return;
+     var src = c.sourceId || byId[id].key;
+@@ -187,13 +194,16 @@
+     var undead = function(x){return !!(x&&(x.undead||/不死|骷髏|殭屍|亡靈/.test(x.race||'')));};
+     var eleWeak = function(x,e){return api.weakTo?api.weakTo(x,e):!!(x&&({water:'fire',wind:'water',earth:'wind',fire:'earth'})[e]===x.e);};
+     var normal = main && c.origin!=='relic' && c.origin!=='reflection' && c.origin!=='self' && !c.skillId;
+-    var weapon = (c.weapon || (p.eq&&p.eq.wpn&&db&&db.items[p.eq.wpn.id])) || {};
+-    var weaponId=p.eq&&p.eq.wpn&&p.eq.wpn.id, tags=typeof global.getWeaponTags==='function'?global.getWeaponTags(weaponId)||[]:[];
+-    var sword = !(weapon.isBow||weapon.ranged||weapon.isWand||weapon.qigu||weapon.chainsword) && (tags.indexOf('單手劍')>=0||tags.indexOf('雙手劍')>=0||weapon.eff==='cleave'||weapon.sword||weapon.weaponType==='sword');
++    // Only the swordguard reads weapon tags. In a GM packet this function is
++    // called for every relic and event; querying them for the other 118 sources
++    // caused repeated native tag scans with no consumer.
++    var needsSword=id===137&&(event==='onStats'||event==='beforeAttack'||event==='afterHit');
++    var weapon,sword=false;
++    if(needsSword){var weaponId=p.eq&&p.eq.wpn&&p.eq.wpn.id,tags=typeof global.getWeaponTags==='function'?global.getWeaponTags(weaponId)||[]:[];weapon=(c.weapon||(weaponId&&db&&db.items[weaponId]))||{};sword=!(weapon.isBow||weapon.ranged||weapon.isWand||weapon.qigu||weapon.chainsword)&&(tags.indexOf('單手劍')>=0||tags.indexOf('雙手劍')>=0||weapon.eff==='cleave'||weapon.sword||weapon.weaponType==='sword');}
+     var poly = !!(c.transformed || p._setPoly || p.transform || p.buffs&&((p.buffs.poly>0&&p.poly)||p.buffs.polymorph>0));
+     var still = Number(c.stationaryFor) || 0;
+     var moving = !!c.moving;
+-    var lowBack = hp(p)<1000 || pct(p)<=0.25 || active('duelInvuln');
++    var lowBack = id===172&&(event==='beforeAttack'||event==='afterHit')&&(hp(p)<1000 || pct(p)<=0.25 || active('duelInvuln'));
+     var sourceState = function(x){return api.state(x,src);};
+     var cleanseSome = function(x,n){var keys=['poison','bleed','burn','slow','blind','silence','paralyze','stone','freeze','stun','fear','root'];for(var z=0;z<keys.length&&n>0;z++){if(has(x,keys[z])){cleanse(x,keys[z]);n--;}}};
+     var healSpell = function(x,sk,m,opts){var amount=api.healSpellAmount?api.healSpellAmount(x,sk,p):0;if(!amount&&db&&db.skills&&typeof global.rollHealingSpell==='function')amount=global.rollHealingSpell(db.skills[sk],p.d,p,x);return heal(x,amount*m,opts);};
+
+--- a/afk-relic-weapons.js
++++ b/afk-relic-weapons.js
+@@ -299,7 +299,10 @@
+     d.d='【遺物】'+m.lore+'\n'+m.texts[s];
+     return true;
+   }
++  var HANDLED_EVENTS=Object.create(null);
++  'onStats battleEnd battleStart beforeAttack beforeHit hit beforeCastCost beforeSkill skill resonance magicStrike counter beforeCounter beforeHurt hurt kill tick markConsumed elementHit pierce combo doubleBlade shieldBreak petHit directHit'.split(' ').forEach(function(event){HANDLED_EVENTS[event]=true;});
+   function dispatch(event,c,api){
++    if(!HANDLED_EVENTS[event])return;
+     var item=c.item||c.source||{},m=BY_KEY[c.sourceId||item.relicSourceId||item.relicBase]||BY_ID[c.catalogId||item.relicCatalogId];
+     if(!m)return;
+     var id=m.id,s=c.stage==null?(item.relicWeaponStage==null?tier(c.n||item.relicPlus||0,c.asc==null?item.relicAsc:c.asc):item.relicWeaponStage):c.stage;
