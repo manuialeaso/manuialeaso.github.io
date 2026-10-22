@@ -188,7 +188,33 @@
   // This read/identity API is infrastructure, even when crafting is disabled.
   // It is intentionally separate from __afkRelicPlus, which signals availability
   // to the encyclopedia and other feature UIs.
-  window.__afkRelicData = { ensure: ensure, buildDef: buildDef, makeId: makeId, parseId: parseId, scanAll: scanAll, refresh: refreshData, enabled: enabled };
+  // 舊存檔：遺物本體帶著一般強化值（en>0，例如測試工具或舊版留下的「+15」），改成遺物合成等級，才能套用分階特效（玩家 2026-10-23）
+  function migrateEn(items) {
+    var n = 0;
+    (items || []).forEach(function (it) {
+      if (!it || !it.id || String(it.id).indexOf('~') >= 0) return;
+      var d = DB.items[it.id], en = Math.floor(Number(it.en) || 0);
+      if (en <= 0 || !KIND_OK(d)) return;
+      var lv = Math.min(en, maxOf(it.id)), id = makeId(it.id, lv);
+      ensure(id); if (!DB.items[id]) return;
+      it.id = id; it.en = 0; n++;
+    });
+    return n;
+  }
+  function migrateActor(actor) {
+    if (!actor) return 0;
+    var n = 0;
+    [actor].concat(actor.allies || []).forEach(function (p) { if (!p) return; n += migrateEn(p.inv); n += migrateEn(Object.keys(p.eq || {}).map(function (k) { return p.eq[k]; })); });
+    return n;
+  }
+  var migrateNow = function () {
+    try {
+      var p = (typeof player !== 'undefined' && player && player.cls) ? player : null; if (!p) return;
+      if (migrateActor(p) > 0) { try { calcStats(); } catch (e) {} try { updateUI(); } catch (e) {} try { if (typeof saveGame === 'function') saveGame(); } catch (e) {} }
+    } catch (e) {}
+  };
+  setInterval(migrateNow, 3000);
+  window.__afkRelicData = { migrateEn: migrateEn, migrateNow: migrateNow, ensure: ensure, buildDef: buildDef, makeId: makeId, parseId: parseId, scanAll: scanAll, refresh: refreshData, enabled: enabled };
   scanAll();
   // 讀檔／招募傭兵／載入倉庫之前再補一次（匯入其他電腦的存檔時用得到）
   ['loadGame', 'toggleAlly'].forEach(function (fn) {
@@ -197,7 +223,7 @@
   });
   if (typeof window.loadWarehouse === 'function') {
     var oWh = window.loadWarehouse;
-    window.loadWarehouse = function () { var w = oWh.apply(this, arguments); try { ensureItems(w && w.items); } catch (e) {} return w; };
+    window.loadWarehouse = function () { var w = oWh.apply(this, arguments); try { migrateEn(w && w.items); ensureItems(w && w.items); } catch (e) {} return w; };
   }
   if (typeof window.purgeOrphanItems === 'function') {
     var oPurge = window.purgeOrphanItems;
