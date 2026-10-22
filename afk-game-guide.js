@@ -93,7 +93,7 @@
   function marks(){
     var names={fire:'火',water:'水',wind:'風',earth:'地',none:'無屬性'},defs=W.AFK_RELIC_RUNTIME&&AFK_RELIC_RUNTIME.marks;
     if(!defs)return '';
-    return card('屬性印記・以另一種力量破開弱點',table(['印記','附加來源','持續','下一次命中'],Object.keys(defs).map(function(k){var m=defs[k];return [m.name,names[k],'10 秒',(m.by==='*'?'任一四屬性':names[m.by])+'傷害 ×'+m.mult];}))+desc('一般印記以 20% 機率附加；保證潮濕及遺物指定的觸發率，依各件效果處理。命中對應屬性後消耗印記。')+desc('破綻可與對應屬性印記一起消耗：×1.5 與 ×2 相乘，該次傷害合計 ×3。'));
+    return card('屬性印記・以另一種力量破開弱點',table(['印記','附加來源','持續','下一次命中'],Object.keys(defs).map(function(k){var m=defs[k];return [m.name,names[k],'10 秒',(m.by==='*'?'任一四屬性':names[m.by])+'傷害 ×'+m.mult];}))+desc('一般印記以 20% 機率附加；保證潮濕及遺物指定的觸發率，依各件效果處理。命中對應屬性後消耗印記。')+desc('蝕刻可與對應屬性印記一起消耗：×1.5 與 ×2 相乘，該次傷害合計 ×3。'));
   }
   function healing(){return card('回復與冷卻',table(['來源','規則'],[
     ['遺物附帶的生命回復','每名角色、每件原始遺物共用至少 10 秒冷卻；較長的原冷卻保留。'],

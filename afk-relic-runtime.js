@@ -182,7 +182,7 @@
       if (s.amount <= 0) { delete bag[k]; dispatch('shieldBreak', Object.assign({}, context, { actor: actor, shieldSource: k, damage: v, main: false })); if(s.onBreakHeal)heal(actor,s.onBreakHeal,{owner:s.owner,source:k,prepaid:s.healPrepaid}); }
     }); return damage;
   }
-  var markDefs = { water: { key: '_wetUntil', name: '潮濕', by: 'wind', mult: 2 }, fire: { key: '_afkScorch', name: '灼熱', by: 'water', mult: 2 }, earth: { key: '_afkMud', name: '泥濘', by: 'fire', mult: 2 }, wind: { key: '_afkErode', name: '風化', by: 'earth', mult: 2 }, none: { key: '_afkExpose', name: '破綻', by: '*', mult: 1.5 } };
+  var markDefs = { water: { key: '_wetUntil', name: '潮濕', by: 'wind', mult: 2 }, fire: { key: '_afkScorch', name: '灼熱', by: 'water', mult: 2 }, earth: { key: '_afkMud', name: '泥濘', by: 'fire', mult: 2 }, wind: { key: '_afkErode', name: '風化', by: 'earth', mult: 2 }, none: { key: '_afkExpose', name: '蝕刻', by: '*', mult: 1.5 } };
   function markDef(kind) { var aliases={wet:'water',scorch:'fire',scorched:'fire',muddy:'earth',eroded:'wind',exposed:'none',breach:'none'};return markDefs[aliases[kind]||kind] || Object.values(markDefs).find(function (m) { return m.name === kind || m.key === kind; }); }
   function mark(target, kind, duration, opt) { var m = markDef(kind); if (!m || !target || hp(target) <= 0) return false; target[m.key] = Math.max(target[m.key] || 0, Math.round((now() + (duration || 10)) * 10)); var owners=stateOf(target,'_marks');owners[m.key]=opt&&opt.source||active&&active.sourceId;return true; }
   function consumeMark(target, element) {
