@@ -130,6 +130,7 @@
 
   // ── 聖結界：免疫直接傷害（包 reflectWallOnDamage，所有直擊點都會經過）與持續傷害（包 __afkDotCap）──
   var holy = function (m) { return !!(m && m._dsHolyUntil && (S().ticks || 0) <= m._dsHolyUntil); };
+  window.__afkDsHoly = holy;   // 給 afk-relic-runtime 的持續傷害上限用（它會在載入後換掉 __afkDotCap）
   var oRW = window.reflectWallOnDamage;
   if (typeof oRW === 'function') {
     window.reflectWallOnDamage = function (mob, dmg) {

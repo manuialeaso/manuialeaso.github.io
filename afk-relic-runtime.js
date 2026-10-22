@@ -480,7 +480,7 @@
   function init() {
     catalog.forEach(function (c) { var d = DB.items[c.key]; if (!d) throw new Error('Missing relic: ' + c.key); if (!baseDefs[c.key]) baseDefs[c.key] = clone(d); configure(d, baseDefs[c.key], 0, null); });
     // This source-aware budget supersedes the old target-wide ascended exemption.
-    W.__afkDotCap = function (m, damage, source) { return enabled() ? dotCap(m, damage, source) : damage; };
+    W.__afkDotCap = function (m, damage, source) { if (typeof W.__afkDsHoly === 'function' && W.__afkDsHoly(m)) return 0; return enabled() ? dotCap(m, damage, source) : damage; };   // 暗夢星迴聖結界：持續傷害也擋（afk-dreamstar）
     revision++;
   }
   R.init = init;
