@@ -26,7 +26,7 @@
   var ARTS = {
     r_sword:     { cls: 'royal',    n: '魔劍技藝',   d: '勇猛意志發動率提升到 50%（傷害 ×1.5 不變），發動時同時施放吸血鬼之吻（效果 ×2）；一般攻擊吸取 30% 傷害轉為 HP。' },
     r_rally:     { cls: 'royal',    n: '呼喊夥伴',   d: '你每次一般攻擊，寵物與召喚物各追加一次攻擊。全隊（玩家、傭兵、寵物、召喚物、護衛）受到的物理傷害 −50%（可與聖結界疊加，合計上限 75%，屬性傷害不算）。持有者本人在所有減傷算完後再 −50%。' },
-    w_fate:      { cls: 'knight',   n: '命運迴響',   d: '造成的傷害 ×2。所有回復 +100%、HP 自然恢復 ×3、HP +5000；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
+    w_fate:      { cls: 'knight',   n: '命運迴響',   d: '造成的傷害 ×2。所有回復 +100%、HP 自然恢復 ×10 且每 4 秒一次、HP +5000、傷害減免 +50、五種屬性抗性 +200；每 5 秒一次受到的傷害減半（真傷、物理、魔法、屬性都算）。HP<50% 觸發不屈命運：HP 全滿、效果 ×2；HP<30% 觸發絕望身軀：HP 全滿、效果 ×3，並獲得每場戰鬥一次的免死。敵人優先攻擊你，你額外減傷 10%。' },
     w_arms:      { cls: 'knight',   n: '百般武藝',   d: '造成的傷害 ×2。切菜：無視目標硬皮。龍的一擊（屠龍劍特效）：一般攻擊 80% 機率對全場敵人造成 3D(力量)+30 必中固定傷害。粉身碎骨：目標沒有硬皮時，重擊傷害 ×2。致命創傷：命中後目標 5 秒內受到的物理傷害 +20%；近距離命中 +50。' },
     m_shilen:    { cls: 'mage',     n: '席林眷屬',   d: '召喚術數量上限 20；寵物與召喚物命中、魔防、每次攻擊的傷害、每次受擊的減免都 +(WIS+INT)×1.2，且不會死亡（HP 最低 1）。召滿 20 隻時融合成一隻融合魔獸（傷害 ×20），每 3 秒隨機施放雷霆風暴／龍捲風／極光雷電／燃燒的火球（法師公式）。' },
     m_atheist:   { cls: 'mage',     n: '無神論者',   d: '狀態中：無法一般攻擊、魔法傷害與命中 +100，每 5 秒自動施放一次屬性魔法武器效果（四屬性輪流，威力 ×3，不耗 MP；傭兵 10 秒一次、效果減半）。進入戰鬥 1 分鐘時，所有敵人扣最大 HP 20%，之後陷入虛弱（回到一般狀態、可以攻擊），5 分鐘後再次進入無神狀態。' },
@@ -132,6 +132,10 @@
       var p = P(), a = art(p); if (!a || !p.d) return r;
       var d = p.d, f = F(p), s = st(p);
       if (a === 'w_arms') add(d, 'meleeHit', 50 * f);
+      else if (a === 'w_fate') {   // 命運迴響（玩家 2026-10-22）：HP 自然恢復每 4 秒一次、減傷 +50、五種屬性抗性 +200
+        d.hpRegenFaster = Math.max(Number(d.hpRegenFaster) || 0, 12);
+        add(d, 'dr', 50 * f); RES4.concat(['resNone']).forEach(function (k) { add(d, k, 200 * f); });
+      }
       else if (a === 'm_atheist' && athActive(p)) { add(d, 'magicDmg', 100 * f); add(d, 'magicHit', 100 * f); }
       else if (a === 'e_ruler') {
         scanSkills(); grant(p, elfEleSkills);
@@ -164,7 +168,7 @@
   var healMult = function (p, regen) {
     var a = art(p); if (!a) return 1;
     var f = F(p), s = st(p);
-    if (a === 'w_fate') return 1 + (regen ? 2 : 1) * s.mode * f;
+    if (a === 'w_fate') return 1 + (regen ? 9 : 1) * s.mode * f;   // 自然恢復 ×10（不屈／絕望再 ×2／×3），其他回復 +100%
     if (a === 'k_doom') return 1 + 5 * f;
     if (a === 'k_dark') return 1 - 0.5 * f;
     if (a === 'n_heine' && regen && inHeine()) return 1 + 4 * f;
@@ -565,7 +569,7 @@
     if (!a || a._downed || (a.curHp || 0) <= 0 || (a.curHp || 0) >= (a.mhp || 0)) return;
     var ok = REGEN_ARTS[art(a)] || REGEN_MAS.some(function (m) { return typeof _afkM === 'function' ? _afkM(a, m) : a.mastery === m; });
     if (!ok) return;
-    var iv = (a.buffs && (a.buffs.sk_heal_energy_storm || 0) > 0) ? 30 : 160;
+    var iv = (a.buffs && (a.buffs.sk_heal_energy_storm || 0) > 0) ? 30 : (art(a) === 'w_fate' ? 40 : 160);
     if (tk() % iv !== 0) return;
     var mx = (a.d && a.d.hpRegenMax) || 0, v = Math.max(1, (mx > 0 ? 1 + Math.floor(Math.random() * mx) : 0) + ((a.d && a.d.hpR) || 0));
     heal(a, v * healMult(a, true));
