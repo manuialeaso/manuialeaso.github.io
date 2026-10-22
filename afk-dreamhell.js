@@ -17,7 +17,7 @@
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
  *     有轉生狀態者（2026-10-22）：解除限制，場上 5 隻、王在場照樣出小怪；
- *     但王登場時先對全隊（你＋傭兵）造成最大 HP 10% 的真實傷害
+ *     但王自然登場時先對全隊（你＋傭兵＋寵物＋召喚物）造成最大 HP 10% 的真實傷害；用傳送控制戒指找來的王不會
  * 報酬
  *   ‧經驗 0、金幣 0；每殺一隻 0.1% 機率掉龍之鑽石（掉的時候一半是 1～499 隨機、一半是 500）
  *   ‧掉落機率 ×50（恩賜 ×10 × 5）；裝備掉落 100% 祝福；席琳結晶掉率 ×5
@@ -149,6 +149,25 @@
         var d = Math.max(1, Math.floor((x.mhp || x.curHp || 1) * 0.1)); x.curHp -= d; hit.push((x._allyName || '傭兵') + ' ' + d);
         if (x.curHp <= 0) { x.curHp = 0; x._downed = true; x._reviveCd = 150; }
       });
+      // 寵物
+      try {
+        (typeof petsOutList === 'function' ? petsOutList() : []).forEach(function (pt) {
+          if (!pt || pt._downed || !(pt.hp > 0)) return;
+          var mh = typeof petMhpEff === 'function' ? petMhpEff(pt) : (pt.mhp || pt.hp);
+          var d = Math.max(1, Math.floor(mh * 0.1)); pt.hp -= d; hit.push('寵物' + pt.form + ' ' + d);
+          if (pt.hp <= 0 && typeof _petDown === 'function') _petDown(pt, nm.n + '降臨的衝擊');
+        });
+        if (typeof petMarkDirty === 'function') petMarkDirty();
+      } catch (e) {}
+      // 召喚物（召喚術／造屍術／屬性精靈）
+      try {
+        (player.summonsV2 || []).forEach(function (sm) {
+          if (!sm || sm._downed || !(sm.hp > 0)) return;
+          var d = Math.max(1, Math.floor((sm.mhp || sm.hp) * 0.1)); sm.hp -= d; hit.push('召喚' + sm.form + ' ' + d);
+          if (sm.hp <= 0) { sm.hp = 0; sm._downed = true; sm._diedAt = Date.now(); }
+        });
+        if (!state.ff && typeof renderSummonPanel === 'function') renderSummonPanel();
+      } catch (e) {}
       if (!state.ff) logCombat('<span class="text-fuchsia-300 font-bold">🌙 ' + nm.n + ' 降臨的衝擊席捲全隊！</span>最大 HP 10% 真實傷害（' + hit.join('、') + '）', 'enemy');
     } catch (e) {}
   };
@@ -163,9 +182,9 @@
     window.spawnMob = function (idx) {
       if (!dreamOn() || siege()) return oSpawn.apply(this, arguments);
       if (reborn()) {   // 轉生者：場上限制解除（5 隻、王在場也出小怪），王登場先放全隊 10% 真實傷害
-        var ms0 = mapState.mobs, had = ms0[idx] && live(ms0[idx]) && ms0[idx].boss;
+        var ms0 = mapState.mobs, had = ms0[idx] && live(ms0[idx]) && ms0[idx].boss, ringBoss = !!mapState.forceBoss;   // 傳送控制戒指找來的王不放衝擊
         var r0 = oSpawn.apply(this, arguments);
-        var nm0 = ms0[idx]; if (nm0 && nm0.boss && live(nm0) && !had && !nm0._afkEntryBlast) { nm0._afkEntryBlast = true; bossEntryBlast(nm0); }
+        var nm0 = ms0[idx]; if (nm0 && nm0.boss && live(nm0) && !had && !ringBoss && !nm0._afkEntryBlast) { nm0._afkEntryBlast = true; bossEntryBlast(nm0); }
         return r0;
       }
       if (typeof window.__afkWantHostile === 'function' && window.__afkWantHostile(idx)) return oSpawn.apply(this, arguments);   // 宣戰：王在場也會出敵對血盟 NPC（afk-castlewar）
