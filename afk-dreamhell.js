@@ -16,7 +16,7 @@
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
- *     2026-10-22：場上的王保持 1 隻；用傳送控制戒指找來的王一次出 3 隻同名王（三隻同時登場只算一次衝擊）。
+ *     2026-10-22：場上的王保持 1 隻；用傳送控制戒指找來的王一次出 3 隻同名王（每隻登場、每次變身都各打一次衝擊）。
  *     傲慢之塔（含支配者傲慢之塔）與時空裂痕不限制；副本（王房、四大龍副本）維持舊規則
  *     有轉生狀態者（2026-10-22）：解除限制，場上 5 隻、王在場照樣出小怪；
  *     但王登場時（不論怎麼出現：自然出怪、傳送控制戒指、王房、變身成下一階都算）先對全隊
@@ -186,6 +186,10 @@
       }
     } catch (e) {}
   };
+  if (typeof window.doMobTransform === 'function') {   // 變身當下就算登場（同一 tick 連續變身也每階各打一次）
+    var oTf = window.doMobTransform;
+    window.doMobTransform = function () { var r = oTf.apply(this, arguments); if (dreamOn() && reborn()) scanBossEntry(); return r; };
+  }
   if (typeof window.tick === 'function') {
     var oTickE = window.tick;
     window.tick = function () { var r = oTickE.apply(this, arguments); if (dreamOn() && reborn()) scanBossEntry(); return r; };
@@ -231,7 +235,7 @@
       for (var q = 0; q < order.length && made < want; q++) {
         var s = order[q], seq = 0;
         try { seq = ++_mobBornSeq; } catch (e) { seq = Date.now(); }
-        ms[s] = Object.assign({}, base, { curHp: base.hp, uid: (typeof uid === 'function' ? uid() : 'c' + Math.random()), _born: seq, _bornMs: Date.now(), _magCd: {}, justHit: false, st: newMobStatus(), _afkRingTrio: true, _afkEntryBlast: true });   // 三隻同時登場只算一次衝擊
+        ms[s] = Object.assign({}, base, { curHp: base.hp, uid: (typeof uid === 'function' ? uid() : 'c' + Math.random()), _born: seq, _bornMs: Date.now(), _magCd: {}, justHit: false, st: newMobStatus(), _afkRingTrio: true });   // 每隻各算一次衝擊（玩家 2026-10-22）
         try { applySherineBuff(s); } catch (e) {}
         try { if (ms[s].hard && typeof initHardSkin === 'function') initHardSkin(ms[s]); } catch (e) {}
         made++;
