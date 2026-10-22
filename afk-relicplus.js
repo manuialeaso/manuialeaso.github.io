@@ -253,6 +253,8 @@
     // 上限 +5 的飾品（戒指、耳環、項鍊、腰帶…）：每次要 3 個同款同強化值、龍鑽與金幣 ×3，另外消耗席琳結晶 500 顆
     //   例：+0→+1＝3 個 +0、1,500 龍鑽、1.5 億金幣、席琳結晶 500 顆
     if (base && DB.items[base] && DB.items[base].type === 'acc') { c.need = 3; c.dia *= 3; c.gold *= 3; c.crystal = 500; }
+    // 飾品 +6～+10：改成 2 個同款同強化值合成，成功率 50%；失敗時兩件都還在，只扣龍鑽、金幣、結晶（玩家 2026-10-23）
+    if (base && DB.items[base] && DB.items[base].type === 'acc' && target >= 6) { c.need = 2; c.rate = 0.5; }
     return c;
   }
   var crystals = function () { var p = P(); return p ? (p.inv || []).reduce(function (s, i) { return s + (i && i.id === CRYSTAL && !i.lock ? Math.max(1, Math.floor(Number(i.cnt) || 1)) : 0); }, 0) : 0; };
@@ -341,7 +343,7 @@
     var gold0 = p.gold; p.gold = gold0 - c.gold;
     var undoCrystal = null;
     if (c.crystal) { undoCrystal = takeCrystals(c.crystal); if (!undoCrystal) { p.gold = gold0; adjustDia(c.dia); return { ok: false, msg: '席琳結晶不足。' }; } }
-    var success = c.merge ? true : (Math.random() < c.rate);
+    var success = (c.merge && !(c.rate < 1)) ? true : (Math.random() < c.rate);
     var tk = null;
     if (success) {
       tk = take(g, c.need);
@@ -748,7 +750,7 @@
     m.innerHTML = '<div class="rp-box" role="dialog" aria-modal="true" aria-label="哈瑪大師・遺物強化"><div class="rp-head">🔨 哈瑪大師・遺物強化<span class="rp-bal" id="rp-bal"></span><button class="rp-x" type="button" id="rp-x" aria-label="關閉遺物強化">✕</button></div>'
       + '<div class="rp-content"><details class="rp-rule"><summary>合成、昇華與費用說明</summary>'
       + '<p><b>武器、防具最高 +15。</b>合成 +1～+10 要 2 件同款、同階遺物。做出 +1～+6，每次 500 龍鑽＋5,000 萬金幣；+7～+10 每高一階，費用再加 100 龍鑽＋1,000 萬金幣。+11～+15 改用單件，每次 5 萬龍鑽、成功率 10%，失敗保留遺物。</p>'
-      + '<p><b>戒指、耳環、項鍊、腰帶等飾品最高 +10。</b>每階要 3 件同款、同階遺物，龍鑽和金幣為上述費用的 3 倍，另需席琳結晶 500 顆。</p>'
+      + '<p><b>戒指、耳環、項鍊、腰帶等飾品最高 +10。</b>+1～+5 每階要 3 件同款、同階遺物；+6～+10 改為 2 件，成功率 50%，失敗時遺物都還在。龍鑽和金幣為上述費用的 3 倍，另需席琳結晶 500 顆。</p>'
       + '<p><b>能力成長：</b>武器一般每 +1 增加小型／大型傷害各 1，每 +3 增加原有能力各 1；防具、飾品每 +1 防禦 −1、魔法防禦 +1，每 +3 遠距迴避 +1，每 +5 傷害減免 +1。各件的專屬階段數值優先，完整效果可查「遺物進階」。</p>'
       + '<p><b>+10 第二詞綴：</b>隨機抽取同部位另一件遺物，繼承其原始特效中的未重複欄位；沒有可繼承效果時，改給四屬性抗性各 +10。</p>'
       + '<p><b>昇華支配：</b>武器、防具達 +15，飾品達 +10 後開放。昇華每 +1，武器大小型傷害各 +10、原有能力各 +5；防具、飾品六項能力各 +1，防禦 −1、魔法防禦／遠距迴避／減傷各 +1，四屬性抗性各 +10。防具另加生命、魔力自然恢復各 50。</p>'
@@ -829,7 +831,7 @@
       } else {
         var enough = g.cnt >= c.need && diamonds() >= c.dia && gold() >= c.gold && (!c.crystal || crystals() >= c.crystal);
         btn = '<button class="rp-go" type="button" data-k="' + esc(g.key) + '"' + (enough ? '' : ' disabled') + '>'
-          + (c.merge ? '合成 +' + t : '強化 +' + t + '（10%）') + '<br><span style="font-weight:600;font-size:13px">' + c.dia.toLocaleString() + ' 鑽' + (c.gold ? '＋' + (c.gold / 10000).toLocaleString() + ' 萬' : '') + (c.crystal ? '＋結晶 ' + c.crystal : '') + (c.need > 2 ? '（' + c.need + ' 個）' : '') + '</span></button>';
+          + (c.merge ? '合成 +' + t + (c.rate < 1 ? '（' + Math.round(c.rate * 100) + '%）' : '') : '強化 +' + t + '（10%）') + '<br><span style="font-weight:600;font-size:13px">' + c.dia.toLocaleString() + ' 鑽' + (c.gold ? '＋' + (c.gold / 10000).toLocaleString() + ' 萬' : '') + (c.crystal ? '＋結晶 ' + c.crystal : '') + (c.need > 2 ? '（' + c.need + ' 個）' : '') + '</span></button>';
       }
       var nextTxt = '';
       if (c) { var nid = makeId(g.base, t, g.fx); var nd = DB.items[nid] || buildDef(g.base, t, g.fx); nextTxt = '下一級：' + pretty(statLine(nd, g.base)) + (t === 10 && !g.fx && mx >= 10 ? '、獲得第二詞綴（隨機同部位遺物特效）' : ''); }
@@ -844,7 +846,7 @@
     var g = groups().filter(function (x) { return x.key === key; })[0]; if (!g) return render();
     var t = g.n + 1, c = costOf(t, g.base), nm = DB.items[g.base].n;
     var msg = c.merge
-      ? '用 ' + c.need + ' 個 ' + (g.n ? '+' + g.n + ' ' : '') + nm + ' 合成 +' + t + '，花費 ' + c.dia.toLocaleString() + ' 龍鑽＋' + c.gold.toLocaleString() + ' 金幣' + (c.crystal ? '＋席琳結晶 ' + c.crystal + ' 顆' : '') + '。' + (t === 10 ? '\n+10 會隨機繼承一種同部位遺物的特效。' : '')
+      ? '用 ' + c.need + ' 個 ' + (g.n ? '+' + g.n + ' ' : '') + nm + ' 合成 +' + t + '，花費 ' + c.dia.toLocaleString() + ' 龍鑽＋' + c.gold.toLocaleString() + ' 金幣' + (c.crystal ? '＋席琳結晶 ' + c.crystal + ' 顆' : '') + '。' + (c.rate < 1 ? '\n成功率 ' + Math.round(c.rate * 100) + '%，失敗時遺物都還在，費用會扣掉。' : '') + (t === 10 ? '\n+10 會隨機繼承一種同部位遺物的特效。' : '')
       : '強化 +' + g.n + ' ' + nm + ' → +' + t + '，花費 ' + c.dia.toLocaleString() + ' 龍鑽，成功率 10%。\n失敗時龍鑽會扣掉，遺物不會消失。';
     var go = function () { var r = upgrade(key); render(); if (!r.ok) { try { logSys('<span class="text-red-400">' + esc(r.msg) + '</span>'); } catch (e) {} } };
     if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '遺物合成', message: msg, okText: '確定', cancelText: '取消', onOk: go });
