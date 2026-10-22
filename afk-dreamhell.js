@@ -13,7 +13,7 @@
  *   ‧一般攻擊與技能傷害：一般怪 再 ×2、頭目 再 ×5（瘋狂席琳的 ×3 之外）；怪物施加的持續傷害 再 ×5
  *   ‧全部隨時處於狂暴狀態（同吉爾塔斯：命中與傷害 ×1.2）
  *   ‧一般怪出生時隨機免疫「物理」或「魔法」傷害 10 秒（血壁空間型免疫；持續傷害、寵物、召喚不受影響）
- *     60 級以上的一般怪出生時同時反射另一類傷害（魔法免疫＋物理反射／物理免疫＋魔法反射），反射只維持 1 秒
+ *     60 級以上的一般怪出生時同時反射另一類傷害（魔法免疫＋物理反射／物理免疫＋魔法反射），反射只維持 1 秒、而且只反射一次
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
@@ -301,6 +301,7 @@
         if (state.ticks > rf.until) { mob._afkDreamReflect = null; return r; }
         if (rf.kind !== kind && !(rf.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))) return r;
         if (mob._dead || !(mob.curHp > 0)) return r;
+        mob._afkDreamReflect = null;   // 只反射一次（玩家 2026-10-22：連續反射會暴斃）
         var k = rf.kind === 'phys' ? '物理' : '魔法', mn = '<span class="' + getMobColor(mob.lv) + '">' + mob.n + '</span>';
         if (ally) {
           if (ally._downed) return r;
