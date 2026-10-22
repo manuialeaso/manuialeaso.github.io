@@ -80,9 +80,11 @@
       var st = a.status(p).tiers.filter(function (x) { return x.tier === 'samsara'; })[0];
       h += '<h3 style="color:#fcd34d">輪迴變身（星座聖衣）</h3>';
       if (!st || !st.unlocked) h += '<p>收集全部時空變身後開放（封印的也算）。</p>';
-      else zs.forEach(function (row) {
+      if (st && st.unlocked) { var cd = a.samsaraCd ? a.samsaraCd(p) : 0, ft = Math.floor(((p.cardAscension && p.cardAscension.samsaraFight) || 0) / 600);
+        h += '<p>缺點：沒回安全區（村莊）連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘，冷卻中不能用輪迴變身。' + (cd > 0 ? '<b style="color:#f87171">冷卻中，剩 ' + Math.ceil(cd / 60000) + ' 分鐘</b>' : '目前連續戰鬥 ' + ft + '/30 分鐘') + '</p>'; }
+      if (st && st.unlocked) zs.forEach(function (row) {
         var on = a.owned(row.id, p), se = on && a.sealed(row.id, p);
-        h += '<div class="afk-ca-tier" style="opacity:' + (on ? 1 : .55) + '"><strong>' + esc(row.n) + '</strong><span style="color:' + (on ? (se ? '#fca5a5' : '#fde047') : '#64748b') + '">' + (!on ? '未取得' : se ? '封印聖衣' : '已解除封印') + '</span><small>特殊能力：' + esc(row.special || '') + '（解除封印後生效；副本內無效果）</small></div>';
+        h += '<div class="afk-ca-tier" style="opacity:' + (on ? 1 : .55) + '"><strong>' + esc(row.n) + '</strong><span style="color:' + (on ? (se ? '#fca5a5' : '#fde047') : '#64748b') + '">' + (!on ? '未取得' : se ? '封印聖衣' : '已解除封印') + '</span><small>特殊能力：' + esc(row.special || '') + '（解除封印後生效；副本內回到封印型態、沒有特殊能力）</small></div>';
       });
     }
     box.innerHTML = h; host.appendChild(box);

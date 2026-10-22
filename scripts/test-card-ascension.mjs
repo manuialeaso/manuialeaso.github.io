@@ -140,8 +140,8 @@ try {
       assert.equal(pity.results[10].success,true);assert.equal(pity.results[10].guaranteed,true);assert.equal(pity.results[10].reward.kind,'unlock');
       assert.equal(pity.attempts[tier],11);assert.equal(pity.counters[tier],0);
       pity.other.forEach((t,i)=>assert.equal(pity.counters[t],i+2));
-      /* 失敗補償（玩家 2026-10-23）：神話沒有；天上 1 枚鑽石卡碎片；時空 +5% 成功率、1 枚時空變身碎片與 1 張未收藏鑽石卡（全收藏時改給隨機鑽石卡）；成功後加成歸零 */
-      assert.equal(pity.diamonds,tier==='spacetime'?10:0);assert.equal(pity.dshards,tier==='celestial'?10:0);assert.equal(pity.stshards,tier==='spacetime'?10:0);assert.equal(pity.bonus,0);assert.equal(pity.ordinary,9);assert.equal(pity.dexUnchanged,true);
+      /* 失敗補償（玩家 2026-10-23）：神話沒有；天上 1 枚鑽石卡碎片；時空 +5% 成功率與 1 枚時空變身碎片（不再給鑽石卡）；成功後加成歸零 */
+      assert.equal(pity.diamonds,0);assert.equal(pity.dshards,tier==='celestial'?10:0);assert.equal(pity.stshards,tier==='spacetime'?10:0);assert.equal(pity.bonus,0);assert.equal(pity.ordinary,9);assert.equal(pity.dexUnchanged,true);
       assert.equal(pity.fragments,0);assert.equal(pity.choices,0);
       reports.push({case:'independent pity and conserved refunds',...pity});
     }
@@ -297,7 +297,7 @@ try {
       openCardBook();
       return {tiers:root.querySelectorAll('[data-ascend-tier]').length,words:root.textContent,collection:!!document.getElementById('afk-card-ascension-open')};
     });
-    assert.equal(nativeUI.tiers,4);assert.equal(nativeUI.collection,true);assert.match(nativeUI.words,/第 11 次必定成功/);assert.match(nativeUI.words,/尚未收藏鑽石卡/);
+    assert.equal(nativeUI.tiers,4);assert.equal(nativeUI.collection,true);assert.match(nativeUI.words,/第 11 次必定成功/);assert.match(nativeUI.words,/尚未收藏的鑽石卡/);
     reports.push({case:'native synthesis and card-book entry points',tiers:nativeUI.tiers,collection:nativeUI.collection});
 
     // Save a real card form, then disable its parent without rewriting that

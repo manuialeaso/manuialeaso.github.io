@@ -61,18 +61,18 @@
   var catalog = {mythic:[],celestial:[],spacetime:[],samsara:[]};
   // 輪迴變身：十二星座聖衣（玩家 2026-10-23）。時空變身收集滿才開放；第一次取得是封印型態，第二次取得解除封印。副本內無效果。
   var ZODIAC = [
-    { key:'aries', z:'白羊座', base:'真夏納', sp:'星屑護壁：受到攻擊時 15% 機率完全抵銷該次傷害', bonus:{mr:50} },
-    { key:'taurus', z:'金牛座', base:'黃金死亡騎士', sp:'巨角衝擊：近距離傷害 +30、傷害減免 +30', bonus:{meleeDmg:30,dr:30} },
-    { key:'gemini', z:'雙子座', base:'闇黑死亡騎士', sp:'異次元：對每隻怪物的首次傷害改為 ×30', bonus:{} },
+    { key:'aries', z:'白羊座', base:'真夏納', sp:'星屑護壁：受到攻擊時 15% 機率完全抵銷該次傷害，之後 10 秒魔法防禦 +50、AC -50、迴避 +10', bonus:{} },
+    { key:'taurus', z:'金牛座', base:'黃金死亡騎士', sp:'巨角之鎧：AC -50、魔法防禦 +50、五屬性抗性各 +50、傷害減免 +30', bonus:{ac:-50,mr:50,resFire:50,resWater:50,resWind:50,resEarth:50,resNone:50,dr:30} },
+    { key:'gemini', z:'雙子座', base:'闇黑死亡騎士', sp:'異次元：對每隻怪物的前兩次傷害都改為 ×30', bonus:{} },
     { key:'cancer', z:'巨蟹座', base:'特羅斯', sp:'冥界之息：造成傷害的 3% 轉為自己的 HP', bonus:{} },
     { key:'leo', z:'獅子座', base:'雷霆死亡騎士', sp:'光速連擊：每次造成傷害 10% 機率變成 3 倍', bonus:{} },
-    { key:'virgo', z:'處女座', base:'伊詩蒂', sp:'天舞：魔法傷害 +30、MP 自然恢復 +30、魔法防禦 +50', bonus:{magicDmg:30,mpR:30,mr:50} },
-    { key:'libra', z:'天秤座', base:'喬', sp:'十二武器：近距離、遠距離、魔法傷害與命中各 +15', bonus:{meleeDmg:15,rangedDmg:15,magicDmg:15,meleeHit:15,rangedHit:15,magicHit:15} },
+    { key:'virgo', z:'處女座', base:'伊詩蒂', sp:'天舞：魔法傷害 +30、額外魔法點數 +30、魔法爆擊率 +5%、魔法爆擊傷害 +50%', bonus:{magicDmg:30,extraMp:30,magicCrit:5,magicCritDmg:50} },
+    { key:'libra', z:'天秤座', base:'喬', sp:'十二武器：近距離、遠距離、魔法的傷害、命中與爆擊傷害各 +50', bonus:{meleeDmg:50,rangedDmg:50,magicDmg:50,meleeHit:50,rangedHit:50,magicHit:50,meleeCritDmg:50,rangedCritDmg:50,magicCritDmg:50} },
     { key:'scorpio', z:'天蠍座', base:'忍者', sp:'赤針：對同一隻怪物每第 15 次命中，傷害 ×15', bonus:{} },
     { key:'sagittarius', z:'射手座', base:'莉絲安', sp:'黃金之箭：遠距離傷害 +30、遠距離爆擊率 +20%', bonus:{rangedDmg:30,rangedCrit:20} },
     { key:'capricorn', z:'摩羯座', base:'格利特', sp:'聖劍：近距離爆擊率 +20%、近距離爆擊傷害 +100%', bonus:{meleeCrit:20,meleeCritDmg:100} },
-    { key:'aquarius', z:'寶瓶座', base:'陰陽師', sp:'絕對零度：直接擊殺 HP 低於 20% 的非首領怪物', bonus:{} },
-    { key:'pisces', z:'雙魚座', base:'絲莉安', sp:'玫瑰之癒：每秒恢復 2% 最大 HP', bonus:{} }
+    { key:'aquarius', z:'水瓶座', base:'陰陽師', sp:'絕對零度：直接擊殺 HP 低於 20% 的非首領怪物', bonus:{} },
+    { key:'pisces', z:'雙魚座', base:'絲莉安', sp:'玫瑰之癒：每秒恢復自己 2% 最大 HP；每 10 秒全體隊友（傭兵、寵物、召喚物）恢復 2% 最大 HP', bonus:{} },
   ];
   function description(tier) {
     var t=tiers[tier],s='對每隻怪物的首次傷害 ×'+t.mult+'；六項能力各 +'+t.stat+'，火、水、風、地、無屬性抗性各 +'+t.resist+'。';
@@ -120,7 +120,7 @@
     form.n=n;form.c=t.className;form.cardAscensionId=id;form.cardAscensionTier='samsara';form.cardVisualBase=z.base;form.cardNativeLevel=found.form.lv;
     delete form.controlOnly;
     catalog.samsara.push({id:id,n:n,tier:'samsara',form:form,prototype:z.base,role:'星座聖衣',lore:t.lore,zodiac:z.key,special:z.sp,specialBonus:copy(z.bonus),
-      desc:'封印型態：效果同時空變身，另有最終減傷 +100。解除封印（第二次取得）：六項能力各 +100、五屬性抗性各 +500、最終減傷 +500，並得到特殊能力「'+z.sp+'」。副本內沒有效果。'});
+      desc:'封印型態：效果同時空變身，另有最終減傷 +100。解除封印（第二次取得）：六項能力各 +100、五屬性抗性各 +500、最終減傷 +500，並得到特殊能力「'+z.sp+'」。副本內一律回到封印型態、沒有特殊能力。缺點：沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘（期間不能用輪迴變身）。'});
     if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS[z.base]||z.base;
   });
   function monsterForm(name) {

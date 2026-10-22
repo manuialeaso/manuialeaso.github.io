@@ -18,8 +18,8 @@
   var RULES = {
     mythic:{n:'神話',rate:.5,color:'#fb923c',mat:'變身金卡',fail:'材料：5 張變身金卡。失敗什麼都沒有。'},
     celestial:{n:'天上',rate:.3,color:'#fde68a',mat:'怪物白金卡',fail:'材料：5 張怪物白金卡。失敗得到 1 枚鑽石卡碎片（5 枚換 1 張尚未收藏的鑽石卡）。'},
-    spacetime:{n:'時空',rate:.1,color:'#c4b5fd',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗：下次時空合成成功率 +5%（最高 50%），再得到 1 枚時空變身碎片與 1 張隨機的尚未收藏鑽石卡。'},
-    samsara:{n:'輪迴',rate:.05,color:'#fcd34d',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗得到 1 枚時空變身碎片。第一次取得是封印聖衣，再取得同一件解除封印。'}
+    spacetime:{n:'時空',rate:.1,color:'#c4b5fd',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗：下次時空合成成功率 +5%（可累加，最高 50%），再得到 1 枚時空變身碎片。'},
+    samsara:{n:'輪迴',rate:.05,color:'#fcd34d',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗得到 1 枚時空變身碎片。第一次取得是封印聖衣，再取得同一件解除封印。沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘。'}
   };
   // 玩家 2026-10-23：天上失敗給鑽石卡碎片；時空失敗累加成功率、給時空變身碎片與鑽石卡；碎片 30 枚指定時空變身（封印型態），10 枚解除封印
   var DSHARD = 'afk_card_diamond_shard', STSHARD = 'afk_card_spacetime_shard', ST_BONUS = .05, ST_CAP = .5, DSHARD_COST = 5, ST_PICK = 30, ST_UNSEAL = 10;
@@ -62,6 +62,21 @@
     return Number(dex[name]) >= 10000;
   }
   function owned(id, actor) { return !!(byId[id] && (data(actor).owned || {})[id]); }
+  // 輪迴缺點（玩家 2026-10-23）：沒回安全區連續戰鬥 30 分鐘解除變身，冷卻 30 分鐘（存檔用真實時間）
+  var SAMSARA_FIGHT = 18000, SAMSARA_CD = 30 * 60 * 1000;
+  function samsaraCd(actor) { var s = data(actor); return Math.max(0, (Number(s && s.samsaraCdUntil) || 0) - Date.now()); }
+  function samsaraTick(actor, step, safe) {
+    actor = actor || player; if (!actor || !actor.cardAscension) return false;
+    var s = actor.cardAscension, f = actor.poly, on = !!(f && f.cardAscensionTier === 'samsara' && actor.buffs && actor.buffs.poly > 0);
+    if (safe || !on) { if (s.samsaraFight) s.samsaraFight = 0; return false; }
+    s.samsaraFight = (Number(s.samsaraFight) || 0) + step;
+    if (s.samsaraFight < SAMSARA_FIGHT) return false;
+    s.samsaraFight = 0; s.samsaraCdUntil = Date.now() + SAMSARA_CD;
+    actor.poly = null; actor.buffs.poly = 0;
+    say('連續戰鬥 30 分鐘，輪迴聖衣的力量耗盡，變身解除（冷卻 30 分鐘，期間只能用其他變身）。');
+    try { if (typeof calcStats === 'function') calcStats(); } catch (e) {}
+    return true;
+  }
   function sealed(id, actor) { return owned(id, actor) && !!(data(actor).sealed || {})[id]; }
   function rateOf(tier, actor) { var b = tier === 'spacetime' ? Math.max(0, Number((data(actor).bonus || {}).spacetime) || 0) : 0; return Math.min(tier === 'spacetime' ? ST_CAP : 1, RULES[tier].rate + b); }
   function listOwned(actor) { return TIERS.reduce(function (out,t) { return out.concat(catalog[t].filter(function (r) { return owned(r.id,actor); })); },[]); }
@@ -237,8 +252,6 @@
       var reward=null;
       if(success){
         var rows=catalog[tier];
-        // 輪迴：優先抽還沒解除封印的聖衣，避免浪費
-        if(tier==='samsara'){var open=rows.filter(function(r){return !owned(r.id,player)||sealed(r.id,player);});if(open.length)rows=open;}
         reward=grant(rows[Math.floor(rng(player,tier,seq,'card')*rows.length)]);
         if(tier==='spacetime')s.bonus.spacetime=0;
       }
@@ -246,8 +259,7 @@
       else if(tier==='celestial'){gainItem(DSHARD,1,true,true);reward={kind:'item',id:DSHARD,n:'鑽石卡碎片'};}
       else if(tier==='spacetime'){
         s.bonus.spacetime=Math.min(ST_CAP-RULES.spacetime.rate,(Number(s.bonus.spacetime)||0)+ST_BONUS);
-        gainItem(STSHARD,1,true,true);var dm=randomMissingDiamond(tier,'failure');
-        reward={kind:'multi',list:[{n:'時空變身碎片'},dm],n:'時空變身碎片」與「'+dm.n};
+        gainItem(STSHARD,1,true,true);reward={kind:'item',id:STSHARD,n:'時空變身碎片'};
       }
       else if(tier==='samsara'){gainItem(STSHARD,1,true,true);reward={kind:'item',id:STSHARD,n:'時空變身碎片'};}
       return {ok:true,tier:tier,success:success,guaranteed:pity,spent:5,failures:s.failures[tier],reward:reward};
@@ -337,6 +349,7 @@
       if(form.n&&form.n!==row.form.n)return false;
       // 神話擴到 32 種後不再限 Lv70 以上（玩家 2026-10-23）；等級資料被改過的變身仍不承認
       if(form.cardNativeLevel!=null&&Number(form.cardNativeLevel)!==Number(row.form.cardNativeLevel))return false;
+      if(row.tier==='samsara'&&samsaraCd(actor)>0)return false;   // 輪迴冷卻中只能用其他變身
       return owned(row.id,actor);
     }
     var nm=form.cardMonster||form.n;if(isMonster(nm))return diamondOwned(nm,actor);
@@ -591,6 +604,6 @@
   }
   var style=document.createElement('style');style.textContent='.afk-ca-panel{padding:14px;border-top:1px solid #334155;color:#e2e8f0}.afk-ca-panel h3,.afk-ca-dialog h3{font-weight:700;margin:8px 0}.afk-ca-panel p,.afk-ca-dialog p{font-size:12px;color:#94a3b8;margin:8px 0}.afk-ca-tier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #334155;background:#0f172a;padding:10px;border-radius:8px;margin:8px 0}.afk-ca-tier small{flex-basis:100%;color:#94a3b8;font-size:12px}.afk-ca-tier .btn{margin-left:auto}.afk-ca-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.afk-ca-overlay{position:fixed;inset:0;z-index:10001;background:#020617cf;display:flex;align-items:center;justify-content:center;padding:14px 12px 12px;box-sizing:border-box}.afk-ca-dialog{width:min(620px,100%);max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #64748b;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px}#afk-card-ascension-body{min-height:0;overflow:auto;overscroll-behavior:contain}.afk-ca-dialog header{flex-shrink:0;padding-bottom:8px}.afk-ca-dialog header{display:flex;justify-content:space-between;align-items:center;gap:12px}.afk-ca-dialog header button{padding:6px 10px;color:#cbd5e1}.afk-ca-form{display:flex;flex-direction:column;text-align:left;padding:10px!important;white-space:normal;margin:3px 0;width:100%}.afk-ca-form span{font-size:11px;color:#94a3b8;margin-top:4px}.afk-ca-search{background:#020617;color:#e2e8f0;border:1px solid #475569;padding:8px;margin:0 0 10px;border-radius:6px}.afk-ca-panel button:disabled{opacity:.45;cursor:not-allowed}';document.head.appendChild(style);
   var publicRules={};TIERS.forEach(function(t){publicRules[t]=Object.freeze(Object.assign({},RULES[t]));});Object.freeze(publicRules);
-  window.AFK_CARD_ASCENSION={matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,exchangeDiamondShards:exchangeDiamondShards,chooseSpacetime:chooseSpacetime,unsealSpacetime:unsealSpacetime,openSpacetimePick:openSpacetimePick,sealed:sealed,rateOf:rateOf,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE,diamondShard:DSHARD,spacetimeShard:STSHARD}};
+  window.AFK_CARD_ASCENSION={matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,exchangeDiamondShards:exchangeDiamondShards,chooseSpacetime:chooseSpacetime,unsealSpacetime:unsealSpacetime,openSpacetimePick:openSpacetimePick,sealed:sealed,rateOf:rateOf,samsaraCd:samsaraCd,samsaraTick:samsaraTick,samsaraFightMax:SAMSARA_FIGHT,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE,diamondShard:DSHARD,spacetimeShard:STSHARD}};
   if(forms()&&forms().catalog)registerCatalog(forms().catalog);
 })();

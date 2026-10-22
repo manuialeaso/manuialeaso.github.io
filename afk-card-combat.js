@@ -17,11 +17,11 @@
   // 封印的時空變身（碎片換得）效果減半
   function ruleFor(row,actor){
     var A=W.AFK_CARD_ASCENSION,se=!!(A&&A.sealed&&A.sealed(row.id,actor));
-    if(row.tier==='samsara')return se?RULES.samsara:RULES.samsaraOpen;
+    if(row.tier==='samsara')return se||inDungeon()?RULES.samsara:RULES.samsaraOpen;   // 副本內一律回到封印型態
     var r=RULES[row.tier];if(!se)return r;
     var h={};Object.keys(r).forEach(function(k){h[k]=r[k]/2;});h.half=true;return h;
   }
-  function special(row,actor){var A=W.AFK_CARD_ASCENSION;return row&&row.tier==='samsara'&&!(A.sealed&&A.sealed(row.id,actor))?row.zodiac:null;}
+  function special(row,actor){var A=W.AFK_CARD_ASCENSION;return row&&row.tier==='samsara'&&!(A.sealed&&A.sealed(row.id,actor))&&!inDungeon()?row.zodiac:null;}
   var playerNow=function(){return typeof player!=='undefined'?player:null;};
   var ticks=function(){return typeof state!=='undefined'?Number(state.ticks)||0:0;};
   var runtime=function(){return W.AFK_RELIC_RUNTIME;};
@@ -33,7 +33,6 @@
     if(!enabled())return null;
     var row=W.AFK_CARD_ASCENSION.active(actor);
     if(!row||!RULES[row.tier])return null;
-    if(row.tier==='samsara'&&inDungeon())return null;   // 輪迴聖衣：副本內沒有效果
     // Read the registered definition, never a caller-supplied tier or level.
     // 神話擴到 32 種後不再限 Lv70 以上（玩家 2026-10-23）
     return row;
@@ -96,7 +95,11 @@
     var s=memory(actor),identity=targetIdentity(target),first=!s.seen.has(identity);
     var row0=active(actor),zs=special(row0,actor);
     if(zs&&!(opt.dotCapped)){var base=Number(amount);amount=zodiacHit(actor,target,base,zs,opt);if(amount!==base)noteSettlement(actor,target,base,amount,opt);}
-    if(!first)return amount;
+    if(!first){
+      // 雙子座：每隻怪物的第二次傷害也 ×30
+      if(zs==='gemini'&&gemini.get(identity)===1){gemini.set(identity,2);var v2=Number(amount)*30;noteSettlement(actor,target,Number(amount),v2,opt);return v2;}
+      return amount;
+    }
     // Mark only a real, positive settlement. An ordinary-form first hit also
     // spends this enemy's opportunity, so changing form cannot renew it.
     s.seen.add(identity);
@@ -106,6 +109,7 @@
       if(ticks()<s.nextAt)return amount;
       s.nextAt=ticks()+300;
     }
+    if(zs==='gemini')gemini.set(identity,1);
     var value=Number(amount)*(zs==='gemini'?30:ruleFor(row,actor).mult);
     if(opt.dotCapped){
       // The ordinary poison/bleed budget has already paid for amount. Only
@@ -120,7 +124,7 @@
     return value;
   }
   // 解除封印的星座特殊能力（每次傷害結算）
-  var stings=new WeakMap();
+  var stings=new WeakMap(),gemini=new WeakMap();
   function zodiacHit(actor,target,amount,z,opt){
     var v=amount;
     if(z==='leo'&&Math.random()<.1)v*=3;
@@ -131,7 +135,13 @@
   }
   // 最終減傷（真實減傷）：所有減傷算完、被打的數值最後再扣（afk-arts 受傷補算時呼叫）
   function finalDR(actor){var row=active(actor);if(!row)return 0;var r=ruleFor(row,actor);return Number(r.finalDR)||0;}
-  function finalBlock(actor){var row=active(actor);return special(row,actor)==='aries'&&Math.random()<.15;}
+  function finalBlock(actor){
+    var row=active(actor);if(special(row,actor)!=='aries'||!(Math.random()<.15))return false;
+    // 白羊座：抵銷後 10 秒魔法防禦 +50、AC -50、迴避 +10
+    var was=Number(actor._ariesUntil)>ticks();actor._ariesUntil=ticks()+100;
+    if(!was&&actor===playerNow())try{if(typeof W.calcStats==='function')W.calcStats();}catch(e){}
+    return true;
+  }
   function withScope(actor,fn,self,args){
     var previous=scope();if(previous&&previous.actor===actor)return fn.apply(self,args);
     scopes.push({id:++sequence,actor:actor,boosted:new WeakSet(),inherited:false});
@@ -167,6 +177,7 @@
     CRIT.forEach(function(k){d[k]=(Number(d[k])||0)+rule.crit;});CRIT_DAMAGE.forEach(function(k){d[k]=(Number(d[k])||0)+rule.critDamage;});
     if(row.bonus)Object.keys(row.bonus).forEach(function(k){d[k]=(Number(d[k])||0)+Math.floor(row.bonus[k]*half);});   // 每個變身的專屬效果（afk-card-forms）；封印減半
     if(rule.finalDR)d.finalDR=rule.finalDR;
+    if(special(row,actor)==='aries'&&Number(actor._ariesUntil)>ticks()){d.mr=(Number(d.mr)||0)+50;d.ac=(Number(d.ac)||0)-50;d.er=(Number(d.er)||0)+10;}
     if(special(row,actor)&&row.specialBonus)Object.keys(row.specialBonus).forEach(function(k){d[k]=(Number(d[k])||0)+row.specialBonus[k];});
   }
   function monsterActive(actor){
@@ -194,19 +205,30 @@
     return Math.min(before,amount);
   }
   var wasDungeon=null;
+  function partyHeal(pct){
+    var p=playerNow();if(!p)return;
+    (p.allies||[]).forEach(function(a){if(a&&!a._downed&&a.mhp>0&&a.curHp>0)a.curHp=Math.min(a.mhp,a.curHp+Math.ceil(a.mhp*pct));});
+    try{(typeof W.petsOutList==='function'?W.petsOutList():[]).forEach(function(x){if(x&&!x._downed&&x.mhp>0&&x.hp>0)x.hp=Math.min(x.mhp,x.hp+Math.ceil(x.mhp*pct));});}catch(e){}
+    (p.summonsV2||[]).forEach(function(x){if(x&&!x._downed&&x.mhp>0&&x.hp>0)x.hp=Math.min(x.mhp,x.hp+Math.ceil(x.mhp*pct));});
+  }
   function tick(){
     var now=ticks();if(lastTick===now)return;lastTick=now;
     if(!enabled()||!state.running||now%10)return;
-    var dg=inDungeon();
+    var dg=inDungeon(),pl=playerNow(),A=W.AFK_CARD_ASCENSION;
+    // 輪迴：沒回安全區（村莊）連續戰鬥 30 分鐘解除變身
+    try{if(pl&&A&&A.samsaraTick)A.samsaraTick(pl,10,/^town_/.test(mapState.current||''));}catch(e){}
+    if(pl&&pl._ariesUntil&&now>=pl._ariesUntil){pl._ariesUntil=0;try{W.calcStats();}catch(e){}}
     if(wasDungeon!==null&&dg!==wasDungeon&&members().some(function(a){var f=a.poly;return f&&f.cardAscensionTier==='samsara';})){try{if(typeof W.calcStats==='function')W.calcStats();}catch(e){}}
     wasDungeon=dg;
     if(!dg){
       // 雙魚座：副本外每秒恢復 2% 最大 HP
-      members().forEach(function(a){if(special(active(a),a)!=='pisces')return;if(a===playerNow()){var mx=Number(a.mhp)||0;if(mx)a.hp=Math.min(mx,a.hp+Math.ceil(mx*.02));}else if(a.mhp)a.curHp=Math.min(a.mhp,a.curHp+Math.ceil(a.mhp*.02));});
+      members().forEach(function(a){if(special(active(a),a)!=='pisces')return;
+        if(now%100===0)partyHeal(.02);   // 雙魚座：每 10 秒全體隊友恢復 2%
+        if(a===playerNow()){var mx=Number(a.mhp)||0;if(mx)a.hp=Math.min(mx,a.hp+Math.ceil(mx*.02));}else if(a.mhp)a.curHp=Math.min(a.mhp,a.curHp+Math.ceil(a.mhp*.02));});
       return;
     }
     var originalMap=mapState.current;
-    members().forEach(function(actor){var row=active(actor);if(!row||row.tier!=='spacetime')return;mapState.mobs.slice().forEach(function(m){if(mapState.current===originalMap&&live(actor))aura(actor,m);});});
+    members().forEach(function(actor){var row=active(actor);if(!row||(row.tier!=='spacetime'&&row.tier!=='samsara'))return;mapState.mobs.slice().forEach(function(m){if(mapState.current===originalMap&&live(actor))aura(actor,m);});});
   }
   function wrap(name,actorOf){var old=W[name];if(typeof old!=='function')return;W[name]=function(){return withScope(actorOf.apply(this,arguments),old,this,arguments);};}
   ['playerAttack','dualWieldOffhandAttack','castSkill','procFreeMagicSkill','procWeaponSpell','stormBuffTick','cubeTick','petAttackOnce','petCastSkill'].forEach(function(name){wrap(name,playerNow);});
