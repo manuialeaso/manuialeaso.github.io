@@ -113,7 +113,48 @@
   // 火焰之影（暗影神殿 3 樓首領）掉火焰之影素材
   try { [['afk_mat_yh_head', 20], ['afk_mat_yh_tail', 20], ['afk_mat_yh_spine', 30], ['afk_mat_yh_wing', 50], ['afk_mat_yh_nail', 50]].forEach(function (r) { if (!DB.items[r[0]]) return; var a = MOB_DROPS['火焰之影'] = MOB_DROPS['火焰之影'] || []; if (!a.some(function (x) { return x[0] === r[0]; })) a.push(r); }); } catch (e) {}
 
-  window.__afkMaps = { maps: addedMaps, newMobs: made, missingTpl: missingTpl };
+  // ── 卡片收集：新地圖依所在地區各成一個收集地區「XX（新地圖）」，不影響原本地區的完成度 ──
+  var cardRegions = [];
+  try {
+    if (typeof CARD_REGIONS !== 'undefined' && typeof CARD_MOB_INFO !== 'undefined' && typeof cardId === 'function') {
+      var byRegion = {};
+      Object.keys(DATA).forEach(function (mapId) { if (mapId[0] === '_' || !DB.maps[mapId] || !DATA[mapId].region) return; (byRegion[DATA[mapId].region] = byRegion[DATA[mapId].region] || []).push(mapId); });
+      // 套裝首領（afk-sets）：反王肯恩、賽尼斯(首領) 在傲慢之塔 41~60 樓
+      var extra = { tower: ['afk_boss_kenrauhel', 'afk_boss_cerenis'] };
+      var label = {}; MAP_REGIONS.forEach(function (r) { label[r.key] = r.label; });
+      var baseStat = {}, baseReg = {}; CARD_REGIONS.forEach(function (r) { baseStat[r.key] = r.stat; baseReg[r.key] = r; });
+      Object.keys(byRegion).concat(Object.keys(extra)).forEach(function (rk) {
+        var key = 'ttmi_' + rk; if (CARD_REGIONS.some(function (r) { return r.key === key; })) return;
+        var maps = byRegion[rk] || [], names = [];
+        var reg = function (id, mk) {
+          var mob = DB.mobs[id]; if (!mob || !mob.n || mob.race === '血盟' || mob.race === '建築') return; var n = mob.n;
+          if (names.indexOf(n) < 0) names.push(n);
+          if (!CARD_MOB_INFO[n]) CARD_MOB_INFO[n] = { id: id, mob: mob };
+          (CARD_MOB_REGIONS[n] = CARD_MOB_REGIONS[n] || []); if (CARD_MOB_REGIONS[n].indexOf(key) < 0) CARD_MOB_REGIONS[n].push(key);
+          (CARD_MOB_MAPS[n] = CARD_MOB_MAPS[n] || []); if (CARD_MOB_MAPS[n].indexOf(mk) < 0) CARD_MOB_MAPS[n].push(mk);
+        };
+        maps.forEach(function (mk) { (DB.maps[mk] || []).forEach(function (id) { reg(id, mk); }); try { _CARD_MAP_NAMES[mk] = DATA[mk].t; } catch (e) {} });
+        (extra[rk] || []).forEach(function (id) { if (DB.mobs[id]) reg(id, 'pride_41_50'); });
+        if (!names.length) return;
+        var nr = { key: key, name: (label[rk] || rk) + '（新地圖）', stat: baseStat[rk] || 'mhp', maps: maps.length ? maps : ['pride_41_50', 'pride_51_60'] };
+        // 加成數值跟原地區同一組（含其他模組追加的白金／鑽石階），隨時讀原地區最新值
+        (function (b) { Object.defineProperty(nr, 'vals', { enumerable: true, get: function () { return (b && b.vals) || [3, 5, 10, 15, 20]; } }); })(baseReg[rk]);
+        CARD_REGIONS.push(nr);
+        names.sort(function (a, b) { return (CARD_MOB_INFO[a].mob.lv || 0) - (CARD_MOB_INFO[b].mob.lv || 0); });
+        CARD_REGION_MOBS[key] = names;
+        names.forEach(function (n) {
+          CARD_TIERS.forEach(function (ct) {
+            var id = cardId(n, ct.t); if (DB.items[id]) return;
+            DB.items[id] = { n: n + ' 的' + ct.sfx, type: 'misc', eff: 'card', cardTier: ct.t, cardMob: n, c: ct.col, img: ct.img, p: ct.price, gachaWeight: ct.weight,
+              d: '怪物卡片。使用以在卡片收集冊中登錄「' + n + '」（' + ct.sfx + '效果）。' };
+          });
+        });
+        cardRegions.push(key + ':' + names.length);
+      });
+    }
+  } catch (e) { console.warn('[AFK-maps] 卡片', e); }
+
+  window.__afkMaps = { cardRegions: cardRegions, maps: addedMaps, newMobs: made, missingTpl: missingTpl };
   if (missingTpl.length) console.warn('[AFK-maps] 找不到樣板：', missingTpl.join('、'));
   console.log('[AFK-maps] 已啟用：新增 ' + addedMaps.length + ' 張地圖、' + made + ' 種怪物');
 })();

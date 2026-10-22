@@ -390,6 +390,7 @@
     if (!g) return { ok: false, msg: '找不到這個遺物。' };
     if (g.n !== maxOf(g.base)) return { ok: false, msg: '需要先強化到 +' + maxOf(g.base) + '。' };
     var A = g.asc == null ? 0 : g.asc + 1;
+    if (g.asc != null && typeof window.__afkRelicNoUp === 'function' && window.__afkRelicNoUp(makeId(g.base, g.n, g.fx, g.asc))) return { ok: false, msg: '這件遺物昇華支配後無法再強化。' };
     if (A > 5) return { ok: false, msg: '已經是昇華支配 +5（最高）。' };
     var c = ascCost(A), miss;
     if (useStone) {
@@ -457,6 +458,7 @@
     var g = groups().filter(function (x) { return x.key === key; })[0];
     if (!g) return { ok: false, msg: '找不到這個遺物。' };
     if (g.asc !== 5 || g.evo != null) return { ok: false, msg: '只有「+5 昇華支配」才能進化。' };
+    if (typeof window.__afkRelicNoUp === 'function' && window.__afkRelicNoUp(makeId(g.base, g.n, g.fx, g.asc))) return { ok: false, msg: '這件遺物無法進化。' };
     var miss = TS_MATS.filter(function (id) { return invCnt(id) < 1; });
     if (miss.length) return { ok: false, msg: '材料不足：' + miss.map(function (id) { return (DB.items[id] || {}).n || id; }).join('、') };
     var bd = DB.items[g.base], evo;
@@ -883,9 +885,11 @@
 
   // （2026-10-22：取消「疊滿 20 層持續 30 秒」；+10 以上出血改為最多 50 層、持續時間照原本，由 afk-relicfx 處理）
   // ── 持續傷害上限：中毒＋出血對同一隻怪，每秒最多扣牠最大 HP 的 1%（核心補丁 17 呼叫；玩家 2026-10-21 選定）──
+  //    2026-10-22：被昇華支配遺物打過的怪（_afkAscDot）不受這個上限
   window.__afkDotCap = function (m, dmg) {
     try {
       if (!m || !(dmg > 0)) return dmg;
+      if (m._afkAscDot) return dmg;   // 2026-10-22：昇華支配遺物造成的持續傷害不受上限
       var sec = Math.floor(((typeof state !== 'undefined' && state && state.ticks) || 0) / 10);
       if (m._dotSec !== sec) { m._dotSec = sec; m._dotUsed = 0; }
       var cap = Math.max(1, Math.floor((Number(m.hp) || Number(m.curHp) || 0) * 0.01));

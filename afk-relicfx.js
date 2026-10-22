@@ -49,6 +49,7 @@
     },
     relic_mage_dagger: function (d, n, asc) {   // 法師的護身短刀
       if (d.castOnHurt) d.castOnHurt.rate = n >= 10 ? 30 : n >= 5 ? 25 : 20;
+      if (n >= 5) fx(d).castMult = n >= 10 ? 1.5 : 1.1;
       if (A5(asc)) fx(d).castEvery = 50; else if (A(asc)) fx(d).castEvery = 150;
     },
     relic_kaira_fang: function (d, n, asc) {   // 艾庫卡伊拉的毒牙
@@ -104,40 +105,48 @@
     relic_icefield_pick: function (d, n, asc) {   // 冰原十字鎬
       if (d.procStatusSkill) d.procStatusSkill.rate = n >= 10 ? 10 : n >= 5 ? 5 : 1;
       if (n >= 5) hit(d, { t: 'status', rate: n >= 10 ? 10 : 5, kind: 'slow', dur: 6 });
+      fx(d).bluntSec = A5(asc) ? 2 : n >= 10 ? 1.5 : n >= 5 ? 1.2 : null;
       if (A5(asc)) hit(d, { t: 'cast', rate: 30, skId: 'sk_blizzard' }); else if (A(asc)) hit(d, { t: 'cast', rate: 15, skId: 'sk_blizzard' });
     },
     relic_husky_bone: function (d, n, asc) {   // 哈士奇的骨棒
       var v = A(asc) ? 30 : n >= 10 ? 15 : n >= 5 ? 10 : 6;
       d.partnerHit = { '哈士奇': v };
       if (n >= 5) d.partnerDmg = { '哈士奇': v };
-      if (A5(asc)) { d.petHitAll = (Number(d.petHitAll) || 0) + 30; d.petDmgAll = (Number(d.petDmgAll) || 0) + 30; }
+      fx(d).bluntSec = n >= 10 ? 1.5 : n >= 5 ? 1.2 : null;
+      if (A(asc)) fx(d).petBuff = [{ only: '哈士奇', hit: 30, dmg: 30, dr: 30, hp: 1000 }].concat(A5(asc) ? [{ hit: 30, dmg: 30, dr: 30, hp: 1000 }] : []);
     },
     relic_summoner_whip: function (d, n, asc) {   // 喚獸師的訓練鞭
       if (n >= 10 || A(asc)) { d.petDmgAll = 30; d.petHitAll = 30; d.summonDmg = 30; d.summonHit = 30; }
       else if (n >= 5) { d.petDmgAll = 16; d.petHitAll = 13; d.summonDmg = 13; d.summonHit = 16; }
-      if (A(asc)) { d.petDmgAll += 30; d.petHitAll += 30; d.summonDmg += 30; d.summonHit += 30; }
-      if (A5(asc)) { fx(d).dmg.heavyMax = 2; d.petDmgMult = 2; }
+      fx(d).bluntSec = n >= 10 ? 1.5 : n >= 5 ? 1.2 : null;
+      if (A(asc)) { d.petDmgAll += 30; d.petHitAll += 30; d.summonDmg += 30; d.summonHit += 30; d.petHpAll = (Number(d.petHpAll) || 0) + 1000; }
+      if (A5(asc)) { fx(d).dmg.heavyMax = 2; fx(d).petDmgMult = 2; fx(d).petImmortal = true; }
     },
     relic_gremlin_club: function (d, n, asc) {   // 地靈的木棍
       if (n >= 10) R4(d, 10); else if (n >= 5) R4(d, 5);
       if (d.procStatusSkill) d.procStatusSkill.rate = A5(asc) ? 50 : A(asc) ? 10 : 1;
+      if (A(asc)) fx(d).bluntSec = 1.5;
+      if (A5(asc)) { d.dmgS = 1; d.dmgL = 1; ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(function (k) { d[k] = (Number(d[k]) || 0) - 50; }); d.hit = (Number(d.hit) || 0) - 50; fx(d).fixedAspd = 0.5; d.w2h = true; }
     },
     relic_strong_femur: function (d, n, asc) {   // 強韌的大腿骨
       if (d.procInstakill) d.procInstakill.p = n >= 10 ? 0.6 : n >= 5 ? 0.4 : 0.2;
+      fx(d).bluntSec = n >= 10 ? 1.5 : n >= 5 ? 1.2 : null;
       if (A(asc)) { R4(d, A5(asc) ? 50 : 20); d.con = (Number(d.con) || 0) + 20; d.mhp = (Number(d.mhp) || 0) + 1000; fx(d).deathSave = true; }
     },
     relic_dark_metal_club: function (d, n, asc) {   // 暗黑的金屬棍棒
       if (d.eleBonusDmg) d.eleBonusDmg.add = n >= 10 ? 100 : n >= 5 ? 50 : 10;
+      fx(d).bluntSec = A5(asc) ? 2 : A(asc) ? 1.5 : null;
       if (A5(asc)) { hit(d, { t: 'cast', rate: 30, skId: 'sk_elf_muddywater' }); hit(d, { t: 'status', rate: 30, kind: 'slow', dur: 8, label: '風之枷鎖' }); }
       else if (A(asc)) hit(d, { t: 'cast', rate: 15, skId: 'sk_elf_muddywater' });
     },
     relic_hellfire_hammer: function (d, n, asc) {   // 業火鍛造鎚
       if (n >= 5) hit(d, { t: 'flat', rate: A5(asc) ? 55 : n >= 10 ? 35 : 15, dmg: 100, ele: 'fire' });
-      if (A(asc)) fx(d).dmg.heavyMax = A5(asc) ? 2 : 1;
+      if (A(asc)) { fx(d).dmg.heavyMax = A5(asc) ? 2 : 1; fx(d).dmg.heavyFire = true; }
+      if (n >= 10) fx(d).bluntSec = 1.2;
     },
     relic_healer_wand: function (d, n, asc) {   // 治癒者的恢復魔棒
       if (n >= 10) { d.mpR = 100; R4(d, 20); } else if (n >= 5) { d.mpR = 50; R4(d, 10); }
-      if (A(asc)) hit(d, { t: 'groupHeal', rate: 100, count: 2, spring: A5(asc), cd: 30 });
+      if (A(asc)) hit(d, { t: 'groupHeal', rate: 100, count: 2, spring: A5(asc), cd: 100 });
     },
     relic_lava_fists: function (d, n, asc) {   // 熔岩灼燒的雙拳
       fx(d).dmg.unDice = n >= 10 ? [3, 20] : n >= 5 ? [2, 20] : null;
@@ -147,16 +156,19 @@
     },
     relic_ash_fist: function (d, n, asc) {   // 燃燒殆盡的灰燼之拳
       d.atkSpdPct = n >= 10 ? 80 : n >= 5 ? 50 : 30;
+      if (n >= 5 && n < 10) fx(d).bluntSec = 1.2;
       if (n >= 5 && !A5(asc)) hit(d, { t: 'flat', rate: n >= 10 ? 25 : 15, dmg: 50, ele: 'fire' });
       if (A(asc)) { fx(d).fixedAspd = 0.5; hit(d, { t: 'burn', rate: 100, dmg: 500, forever: true }); if (!A5(asc)) fx(d).selfBurn = 200; }
       if (A5(asc)) hit(d, { t: 'flat', rate: 100, dmg: 100, ele: 'fire' });
     },
     relic_minotaur_flail: function (d, n, asc) {   // 牛頭人的流星鎚（清單：+5 攻速 -50%、+10 -100%）
       if (n >= 10) d.atkSpdPct = (Number(d.atkSpdPct) || 0) - 100; else if (n >= 5) d.atkSpdPct = (Number(d.atkSpdPct) || 0) - 50;
+      fx(d).bluntSec = n >= 10 ? 5 : n >= 5 ? 3 : null;
       if (A(asc)) hit(d, { t: 'status', rate: A5(asc) ? 15 : 5, kind: 'stun', dur: 1, label: '鈍擊' });
     },
     relic_werewolf_mace: function (d, n, asc) {   // 狼人的釘錘
       d.str = n >= 10 ? 10 : n >= 5 ? 5 : 1;
+      fx(d).bluntSec = n >= 10 ? 1.5 : n >= 5 ? 1.2 : null;
       if (A5(asc)) hit(d, { t: 'bleed', rate: 100, layers: 1, pct: 0.5, forever: true });
       else if (A(asc)) hit(d, { t: 'bleed', rate: 100, layers: 5, pct: 0.2, dur: 80 });
     },
@@ -168,7 +180,8 @@
     },
     relic_teo_hammer: function (d, n, asc) {   // 薩德提歐的玩具鎚
       if (n >= 10) { d.atkSpdPct = 100; fx(d).dmg.weak = { ele: 'wind', mult: 1.5 }; } else if (n >= 5) { d.atkSpdPct = 50; fx(d).dmg.weak = { ele: 'wind', mult: 1.2 }; }
-      if (A(asc)) { fx(d).trueDice = [d.dmgS, d.dmgL]; d.dmgS = 1; d.dmgL = 1; }
+      if (n >= 5 && n < 10) fx(d).bluntSec = 0.5;
+      if (A(asc)) { fx(d).trueDice = [d.dmgS, d.dmgL]; d.dmgS = 1; d.dmgL = 1; d.noAscUp = true; }
     },
     relic_executor_axe: function (d, n, asc) {   // 處刑人的護身斧
       if (n >= 5 && d.procHealFlat) { d.procHealFlat.rate = 5; d.procHealFlat.hp = 200; }
@@ -179,14 +192,14 @@
     relic_medusa_stinger: function (d, n, asc) {   // 蛇妖的無慈悲尾刺
       if (n >= 5) hit(d, { t: 'cast', rate: 100, skId: 'sk_mummy_curse', cd: 30 });
       if (n >= 10) fx(d).stoneKillHeal = 200;
-      if (A(asc)) { d.comboRate = Math.max(Number(d.comboRate) || 0, 30); d.cleaveOnHeavy = true; }
+      if (A(asc)) { hit(d, { t: 'extra', rate: 30, mult: 1, label: '連擊' }); hit(d, { t: 'cleave', rate: 20 }); }
       if (A5(asc)) fx(d).killSessho = true;
     },
     relic_aruba_haste: function (d, n, asc) {   // 阿魯巴的加速棍棒
       d.atkSpdPct = n >= 10 ? 100 : n >= 5 ? 50 : 20;
       if (n >= 5) hit(d, { t: 'cast', rate: n >= 10 ? 25 : 15, skId: 'sk_slow' });
       if (A(asc)) fx(d).dmg.heavyMax = 1;
-      if (A5(asc)) fx(d).selfBuffs = ['sk_berserk', 'sk_greater_haste'];
+      if (A5(asc)) { fx(d).selfBuffs = ['sk_berserk', 'sk_greater_haste']; fx(d).bluntSec = 1.5; }
     },
     relic_mandra_spirit: function (d, n, asc) {   // 曼陀羅之靈
       if (n >= 10) { d.int = 10; d.mpR = 40; d.extraMp = 30; } else if (n >= 5) { d.int = 5; d.mpR = 25; d.extraMp = 15; }
@@ -195,7 +208,7 @@
     relic_ska_soul: function (d, n, asc) {   // 阿茲特獻祭亡靈
       if (n >= 10) { if (d.procInstakill) d.procInstakill.p = 0.5; d.con = -20; d.int = 20; d.mpR = 20; d.extraMp = 50; }
       else if (n >= 5) { if (d.procInstakill) d.procInstakill.p = 0.15; d.con = -10; d.int = 10; d.mpR = 20; d.extraMp = 25; }
-      if (A(asc)) d.eff = d.eff || 'magicstrike';
+      if (A(asc)) fx(d).qiguMagicStrike = 20;
       if (A5(asc)) d.magicCrit = (Number(d.magicCrit) || 0) + 5;
     },
     relic_jack_sling: function (d, n, asc) {   // 傑克的彈弓
@@ -223,6 +236,7 @@
       else if (h.t === 'burn') s.push('灼燒每秒 ' + h.dmg + (h.forever ? '（直到死亡）' : ''));
       else if (h.t === 'status') s.push(p + (h.label || h.kind));
       else if (h.t === 'trueRand') s.push('千變萬化：追加 1～999 真實傷害');
+      else if (h.t === 'cleave') s.push(p + '切割（攻速 +20%，2 秒）');
       else if (h.t === 'groupHeal') s.push('攻擊時團體治癒 ×2（' + h.count + ' 次）' + (h.spring ? '＋生命之泉' : ''));
     });
     var g = r.dmg || {};
@@ -240,6 +254,13 @@
     if (r.trueDice) s.push('武器傷害改為真實傷害');
     if (r.selfBuffs) s.push('對自己施放狂暴術＋強力加速術');
     if (r.killSessho) s.push('對殺生石 100% 秒殺');
+    if (r.castMult) s.push('護身反擊傷害 ×' + r.castMult);
+    if (r.bluntSec) s.push('鈍擊暈眩 ' + r.bluntSec + ' 秒');
+    (r.petBuff || []).forEach(function (b) { s.push((b.only ? b.only : '全體寵物') + '：命中 +' + b.hit + '、傷害 +' + b.dmg + '、減傷 +' + b.dr + '、HP +' + b.hp); });
+    if (r.petDmgMult) s.push('寵物與召喚物傷害 ×' + r.petDmgMult);
+    if (r.petImmortal) s.push('寵物與召喚物不會倒下（離開戰鬥前）');
+    if (r.qiguMagicStrike) s.push(r.qiguMagicStrike + '% 觸發魔擊');
+    if (g.heavyFire) s.push('重擊的最大傷害以火焰計算');
     if (r.stoneKillHeal) s.push('斬殺石化敵人時全隊恢復 200 HP');
     return s.length ? '〔強化特效：' + s.join('／') + '〕' : '';
   };
@@ -269,7 +290,10 @@
       if (g.giantDice && t.race === '巨人') dmg += Math.max(0, roll(g.giantDice[0], g.giantDice[1]) - 10);
       if (g.hasteAdd && actor.buffs && actor.buffs.haste > 0) dmg += g.hasteAdd;
       if (g.lvAdd) dmg += (actor.lv || 1) * g.lvAdd; else if (g.lv5Add) dmg += Math.floor((actor.lv || 1) / 5) * g.lv5Add;
+      if (wpn.relicAsc != null) t._afkAscDot = true;   // 昇華支配遺物造成的持續傷害不受每秒 1% 上限
+      if (g.heavyRolls > 1 && !g.heavyMax) { for (var hr = 1; hr < g.heavyRolls; hr++) if (Math.random() < 0.15) { dmg = Math.max(dmg, Math.floor(((t.s === 'L' ? wpn.dmgL : wpn.dmgS) || 1) + (wpn.dmgBonus || 0))); break; } }
       if (g.heavyMax) dmg = Math.max(dmg, Math.floor(((t.s === 'L' ? wpn.dmgL : wpn.dmgS) || 1) * g.heavyMax + (wpn.dmgBonus || 0)));
+      if (g.heavyFire && typeof elementCounterMult === 'function') { dmg = Math.floor(dmg * elementCounterMult('fire', t.e)); t.justHit = 'fire'; }
       if (g.weak && weakTo(g.weak.ele, t)) dmg = Math.floor(dmg * g.weak.mult);
       if (g.eleMult && t.e === g.eleMult.ele) dmg = Math.floor(dmg * g.eleMult.mult);
       if (g.vsBleed && t.bleeds && t.bleeds.length) dmg = Math.floor(dmg * (1 + g.vsBleed));
@@ -298,21 +322,133 @@
         else if (h.t === 'burn') t._burnDot = { left: h.forever ? 1e9 : 60, dmg: h.dmg, tick: 10 };
         else if (h.t === 'status') { if (!t.st) t.st = newMobStatus(); if (!(t.boss && (h.kind === 'stun'))) t.st[h.kind] = Math.max(t.st[h.kind] || 0, (h.dur || 3) * 10); }
         else if (h.t === 'trueRand') t.curHp -= roll(1, h.max);
+        else if (h.t === 'cleave' && actor.statuses) { var wc = actor.statuses.cleave > 0; actor.statuses.cleave = 20; if (!wc && isPlayer(actor)) try { calcStats(); } catch (e) {} }
         else if (h.t === 'cast' && isPlayer(actor) && typeof procFreeMagicSkill === 'function') {
           for (var c = 0; c < 1 + (h.count || 0); c++) if (t.curHp > 0) procFreeMagicSkill(t, h.skId, 0, false, wpn);
         }
         else if (h.t === 'castAuto' && isPlayer(actor) && typeof procFreeMagicSkill === 'function') {
-          var el = document.getElementById('sel-atk-skill'), sk = el && el.value; if (sk && DB.skills[sk] && DB.skills[sk].dmgType !== 'physical' && t.curHp > 0) procFreeMagicSkill(t, sk, 0, false, wpn);
+          var el = document.getElementById('sel-atk-skill'), sk = el && el.value; if (sk && DB.skills[sk] && DB.skills[sk].dmgType !== 'physical' && t.curHp > 0) withMult(h.mult || 1, function () { procFreeMagicSkill(t, sk, 0, false, wpn); });
         }
         else if (h.t === 'groupHeal') {
           var team = [player].concat((player.allies || []).filter(function (a) { return a && !a._downed; }));
           for (var gh = 0; gh < h.count; gh++) team.forEach(function (a) { var mh = a.mhp || 1, amt = Math.floor(mh * 0.05 * 2) + (h.spring ? Math.floor(mh * 0.05) : 0); if (a === player) player.hp = Math.min(player.mhp, player.hp + amt); else a.curHp = Math.min(a.mhp || 1, (a.curHp || 0) + amt); });
         }
       });
+      if (wpn.relicAsc != null) t._afkAscDot = true;
       if (r.stoneKillHeal && t.curHp <= 0 && t.st && t.st.stone > 0) { player.hp = Math.min(player.mhp, player.hp + r.stoneKillHeal); (player.allies || []).forEach(function (a) { if (a && !a._downed) a.curHp = Math.min(a.mhp || 1, (a.curHp || 0) + r.stoneKillHeal); }); }
       if (r.killSessho && t.curHp > 0 && /殺生石/.test(t.n || '')) t.curHp = 0;
     } catch (e) {}
   };
+
+  // ── 屬性印記（比照海洋水晶球「潮濕」：維持 10 秒，受到剋制屬性的下一次傷害 ×2 並解除）──
+  //   潮濕（水）→ 風 ×2（原本就有）　灼熱（火）→ 水 ×2　泥濘（地）→ 火 ×2　風化（風）→ 地 ×2
+  //   破綻（無屬性）→ 下一次任何四屬性傷害 ×1.5
+  //   施加：遺物武器的一般攻擊命中時 20% 依武器屬性施加（海洋水晶球維持 100% 潮濕）
+  var MARK = { fire: { k: '_afkScorch', n: '灼熱', by: 'water' }, earth: { k: '_afkMud', n: '泥濘', by: 'fire' }, wind: { k: '_afkErode', n: '風化', by: 'earth' }, none: { k: '_afkExpose', n: '破綻', by: '*' } };
+  window.__afkMarks = MARK;
+  var applyMark = function (t, wpn) {
+    if (!wpn || !wpn.relic || wpn.onHitWet || !t || t.curHp <= 0) return;
+    if (Math.random() >= 0.2) return;
+    var ele = wpn.ele || 'none', m = MARK[ele]; if (!m) return;
+    t[m.k] = S().ticks + 100;
+  };
+  if (typeof window.consumeWetMult === 'function') {
+    var oWet = window.consumeWetMult;
+    window.consumeWetMult = function (t, ele) {
+      var r = oWet.apply(this, arguments);
+      try {
+        if (!t || !ele || ele === 'none') return r;
+        var now = S().ticks;
+        Object.keys(MARK).forEach(function (src) {
+          var m = MARK[src]; if ((t[m.k] || 0) <= now) return;
+          if (m.by === ele) { t[m.k] = 0; r *= 2; log('<span class="font-bold" style="color:#fbbf24;">【' + m.n + '】</span>' + t.n + ' 受到' + ({ water: '水', fire: '火', wind: '風', earth: '地' })[ele] + '屬性傷害 ×2！'); }
+          else if (m.by === '*') { t[m.k] = 0; r *= 1.5; }
+        });
+      } catch (e) {}
+      return r;
+    };
+  }
+  var oPost = post;
+  post = function (actor, t, dmg, wpn) { oPost(actor, t, dmg, wpn); try { applyMark(t, wpn); } catch (e) {} };
+
+  // ── 免費施法傷害倍率（護身短刀的護身反擊、毒蠍尾刺的追加施法）──
+  var castMult = 1;
+  if (typeof window.procFreeMagicSkill === 'function') {
+    var oPF = window.procFreeMagicSkill;
+    window.procFreeMagicSkill = function () {
+      if (!(castMult > 1)) return oPF.apply(this, arguments);
+      var snap = alive().map(function (m) { return [m, m.curHp]; }), r = oPF.apply(this, arguments);
+      try { snap.forEach(function (x) { var lost = x[1] - x[0].curHp; if (lost > 0 && x[0].curHp > 0) x[0].curHp -= Math.floor(lost * (castMult - 1)); }); } catch (e) {}
+      return r;
+    };
+  }
+  var withMult = function (m, fn) { var k = castMult; castMult = m; try { return fn(); } finally { castMult = k; } };
+  if (typeof window._relicOnHurtCast === 'function') {
+    var oHC = window._relicOnHurtCast;
+    window._relicOnHurtCast = function () { var w = wpnOf(player), self = this, args = arguments; return withMult((w && w.rfx && w.rfx.castMult) || 1, function () { return oHC.apply(self, args); }); };
+  }
+  window.__afkRelicCastMult = withMult;
+
+  // ── 寵物／召喚物 ──
+  var petBuffs = function (p) {
+    var w = wpnOf(player), out = { hit: 0, dmg: 0, dr: 0, hp: 0 }; if (!w || !w.rfx || !w.rfx.petBuff) return out;
+    var form = String((p && p.form) || '');
+    w.rfx.petBuff.forEach(function (b) { if (b.only && form.replace(/^高等/, '') !== b.only) return; out.hit += b.hit || 0; out.dmg += b.dmg || 0; out.dr += b.dr || 0; out.hp += b.hp || 0; });
+    return out;
+  };
+  var playerRfx = function () { var w = wpnOf(player); return (w && w.rfx) || {}; };
+  var setupPets = function () {
+    if (typeof window.petDerive === 'function' && !window.petDerive.__afkRfx) {
+      var oPD = window.petDerive;
+      window.petDerive = function (p) {
+        var d = oPD.apply(this, arguments);
+        try { if (d) { var b = petBuffs(p); d.hit += b.hit; d.flat += b.dmg; d.dr += b.dr; var m = playerRfx().petDmgMult; if (m) { d.damageMult *= m; d.magicMult = (d.magicMult || 1) * m; } } } catch (e) {}
+        return d;
+      };
+      window.petDerive.__afkRfx = true;
+    }
+    if (typeof window.petMhpEff === 'function' && !window.petMhpEff.__afkRfx) {
+      var oMH = window.petMhpEff;
+      window.petMhpEff = function (p) { return oMH.apply(this, arguments) + petBuffs(p).hp; };
+      window.petMhpEff.__afkRfx = true;
+    }
+    if (typeof window._petDown === 'function' && !window._petDown.__afkRfx) {
+      var oPDn = window._petDown;
+      window._petDown = function (p) { if (playerRfx().petImmortal && p && (mapState.current || '').indexOf('town_') !== 0) { p.hp = 1; return; } return oPDn.apply(this, arguments); };
+      window._petDown.__afkRfx = true;
+    }
+    ['summonV2AttackOnce', 'spiritAttackOnce'].forEach(function (fn) {
+      var o = window[fn]; if (typeof o !== 'function' || o.__afkRfx) return;
+      window[fn] = function () {
+        var m = playerRfx().petDmgMult; if (!(m > 1)) return o.apply(this, arguments);
+        var snap = alive().map(function (x) { return [x, x.curHp]; }), r = o.apply(this, arguments);
+        try { snap.forEach(function (x) { var lost = x[1] - x[0].curHp; if (lost > 0 && x[0].curHp > 0) x[0].curHp -= Math.floor(lost * (m - 1)); }); } catch (e) {}
+        settle(); return r;
+      };
+      window[fn].__afkRfx = true;
+    });
+    // 曼陀羅之靈 昇華支配：奇古獸攻擊無視魔抗（借奇古獸精通的判定）
+    if (typeof window._afkM === 'function' && !window._afkM.__afkRfx) {
+      var oM = window._afkM;
+      window._afkM = function (p, k) { if (k === 'i_qigu') { var w = wpnOf(p); if (w && w.qiguIgnoreMr) return true; } return oM.apply(this, arguments); };
+      window._afkM.__afkRfx = true;
+    }
+    // 阿茲特獻祭亡靈 昇華支配：奇古獸攻擊觸發魔擊
+    if (typeof window.qiguPlayerAttack === 'function' && !window.qiguPlayerAttack.__afkRfx) {
+      var oQ = window.qiguPlayerAttack;
+      window.qiguPlayerAttack = function (t) {
+        var r = oQ.apply(this, arguments);
+        try { var w = wpnOf(player), q = w && w.rfx && w.rfx.qiguMagicStrike; if (q && t && t.curHp > 0 && Math.random() * 100 < q && typeof procMagicStrike === 'function') procMagicStrike(t); settle(); } catch (e) {}
+        return r;
+      };
+      window.qiguPlayerAttack.__afkRfx = true;
+    }
+  };
+  setupPets(); setTimeout(setupPets, 0);   // 部分函式在後面的檔案才定義／被包，載入完成後再補一次
+  // 鈍擊暈眩秒數（afk-stun 讀）
+  window.__afkBluntTicks = function () { var b = playerRfx().bluntSec; return b ? Math.round(b * 10) : 0; };
+  // 昇華支配後不能再強化／進化的遺物（afk-relicplus 讀）
+  window.__afkRelicNoUp = function (id) { try { if (!DB.items[id] && window.__afkRelicPlus) window.__afkRelicPlus.ensure(id); } catch (e) {} var d = DB.items[id]; return !!(d && d.noAscUp); };
   window.__afkRelicDmg = function (actor, t, dmg, wpn) { return pre(actor, t, dmg, wpn); };
   window.__afkRelicHit = function (actor, t, dmg, wpn) { post(actor, t, dmg, wpn); };
   // 一般攻擊結束後：被追加傷害打死的怪補結算

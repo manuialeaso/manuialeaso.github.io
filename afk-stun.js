@@ -25,7 +25,7 @@
   var bluntStun = function (m) {
     if (!m.st && typeof newMobStatus === 'function') m.st = newMobStatus();
     if (!m.st) return;
-    var dur = BLUNT;
+    var dur = (typeof window.__afkBluntTicks === 'function' && window.__afkBluntTicks()) || BLUNT;   // 遺物強化可延長鈍擊（afk-relicfx）
     if (m.boss) {
       if (Math.random() < 0.5) return;               // 50% 免疫
       if (Math.random() < 0.5) dur *= 0.5;          // 50% 時間 -50%

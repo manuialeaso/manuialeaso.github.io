@@ -2652,6 +2652,7 @@ function rapidfireProc(arrowData, forceProc, classicOk) {
         let _rfMult = player._setGale5 ? (hasMastery('e_rapid') ? 1.00 : 0.80) : (hasMastery('e_rapid') ? 0.50 : 0.30);
         if (wpn.rapidArrowPct) _rfMult = Math.max(_rfMult, wpn.rapidArrowPct / 100);   /* 🔌 加掛版補丁:遺物強化特效 */   // 30%；🏅連射精通50%；🔮疾風5/5 80%；兩者兼具100%
         let _rfDmg = Math.max(1, Math.floor(_res.dmg * _rfMult));
+        if (wpn.rapidTrue) _rfDmg = Math.max(_rfDmg, Math.floor(((_t.s === 'L' ? wpn.dmgL : wpn.dmgS) + (wpn.dmgBonus || 0) + ((player.d && player.d.rangedDmg) || 0)) * _rfMult));   /* 🔌 加掛版補丁:連射真實傷害 */
         _t.curHp -= _rfDmg;
         if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(_t, _rfDmg, 'ranged');   // 🌅 巨大骷髏：連射視為遠距離
         if (wpn.bonespike && _t.curHp > 0) _t._bonespike = Math.min(10, (_t._bonespike || 0) + 1);   // 🏺 骸骨意志之弓：連射額外箭矢命中→累積 1 層骨刺（上限 10·普攻引爆）

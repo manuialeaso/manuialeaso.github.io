@@ -936,7 +936,19 @@ function patchRelicFx() {
   if (any) { if (!CHECK) for (const f in files) writeFileSync(f, files[f]); changed++; console.log('[patch] 遺物強化特效'); } else already++;
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun, patchSetLate, patchRelicFx];
+// 36. 傑克的彈弓 昇華支配 +5：連射每箭改為真實傷害（不吃防禦；以武器傷害＋遠距離傷害計）
+function patchRapidTrue() {
+  const FILE = 'js/03-combat-core.js', MARK = '/* 🔌 加掛版補丁:連射真實傷害 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const A = "        let _rfDmg = Math.max(1, Math.floor(_res.dmg * _rfMult));\n";
+  if (s.split(A).length - 1 !== 1) throw new Error(`[${FILE}] 連射真實傷害錨點應出現 1 次`);
+  s = s.replace(A, A + "        if (wpn.rapidTrue) _rfDmg = Math.max(_rfDmg, Math.floor(((_t.s === 'L' ? wpn.dmgL : wpn.dmgS) + (wpn.dmgBonus || 0) + ((player.d && player.d.rangedDmg) || 0)) * _rfMult));   " + MARK + "\n");
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 連射真實傷害');
+}
+
+const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun, patchSetLate, patchRelicFx, patchRapidTrue];
 
 try {
   for (const p of PATCHES) p();
