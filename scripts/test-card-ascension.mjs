@@ -169,8 +169,8 @@ try {
       const a=A.synthesize('mythic'),b=A.synthesize('mythic');
       return {a,b,remaining:__allDiamondCount(),owned:A.listOwned(player).length,failures:player.cardAscension.failures.mythic};
     });
-    assert.equal(duplicate.a.success,true);assert.equal(duplicate.a.reward.kind,'unlock');assert.equal(duplicate.b.success,true);assert.equal(duplicate.b.reward.kind,'duplicate');assert.equal(duplicate.owned,1);assert.equal(duplicate.remaining,1);assert.equal(duplicate.failures,0);
-    reports.push({case:'duplicate mythic yields exactly one ordinary diamond',...duplicate});
+    assert.equal(duplicate.a.success,true);assert.equal(duplicate.a.reward.kind,'unlock');assert.equal(duplicate.b.success,true);assert.equal(duplicate.b.reward.kind,'star');assert.equal(duplicate.b.reward.stars,1);assert.equal(duplicate.owned,1);assert.equal(duplicate.remaining,0);   /* 卡冊：重複取得改為升星（滿 7 星後才返還鑽石卡） */assert.equal(duplicate.failures,0);
+    reports.push({case:'duplicate mythic adds one codex star',...duplicate});
 
     await fixture();
     const choiceStart=await page.evaluate(()=>{
@@ -213,8 +213,8 @@ try {
         return {tier:t,delta:__allDiamondCount()-before,left:__cardCount(row.itemId),owned:A.owned(row.id,player)};
       });
     });
-    for(const r of otherDuplicates){assert.equal(r.delta,1);assert.equal(r.left,0);assert.equal(r.owned,true);}
-    reports.push({case:'native celestial and spacetime duplicates each refund one diamond',results:otherDuplicates});
+    for(const r of otherDuplicates){assert.equal(r.delta,0);assert.equal(r.left,0);assert.equal(r.owned,true);}
+    reports.push({case:'native celestial and spacetime duplicates each add one codex star',results:otherDuplicates});
 
     await fixture();
     const saved=await page.evaluate(()=>{
@@ -291,7 +291,7 @@ try {
     reports.push({case:'native stale-role save rejection preserves other character and materials',...stale});
 
     const nativeUI=await page.evaluate(()=>{
-      const root=document.createElement('div');root.id='card-asc-test-panel';document.body.appendChild(root);renderCardSynth(root);
+      const root=document.createElement('div');root.id='card-asc-test-panel';document.body.appendChild(root);AFK_CARD_CODEX.openNpc(root);   /* 合成改由燃柳村至幻者負責 */
       openCardBook();
       return {tiers:root.querySelectorAll('[data-ascend-tier]').length,words:root.textContent,collection:!!document.getElementById('afk-card-ascension-open')};
     });

@@ -112,6 +112,7 @@
     try { renderTabs(true);updateUI(); } catch(e){}
     var p=document.getElementById('afk-card-ascension-synth');if(p)renderSynth(p.parentElement);
     if(document.getElementById('afk-card-ascension-collection'))drawCollection();
+    try{var cx=document.getElementById('afk-codex');if(cx&&window.AFK_CARD_CODEX)AFK_CARD_CODEX.renderBook(cx.parentElement);}catch(e){}   // 變身卡冊（afk-card-codex）跟著更新
   }
   function transaction(action) {
     var error=ready();if(error)return {ok:false,msg:error};
@@ -164,13 +165,26 @@
     acquireCard(n,5,1);
     return {kind:'diamond',id:cardId(n,5),n:n+' 的鑽石卡'};
   }
+  // 變身卡冊（玩家 2026-10-23）：第一次取得＝點亮；之後每取得一次升 1 星，最多 7 星（共 8 次）；滿星後再取得才返還鑽石卡
+  var MAX_COPIES=8;
+  function copiesOf(id,actor){var s=data(actor);if(!(s.owned||{})[id])return 0;return Math.max(1,Math.min(MAX_COPIES,integer((s.copies||{})[id])||1));}
+  function starsOf(id,actor){return Math.max(0,copiesOf(id,actor)-1);}
   function grant(row) {
-    var s=data(player,true);
+    var s=data(player,true);if(!s.copies||typeof s.copies!=='object')s.copies={};
     if((s.owned||{})[row.id]) {
+      var c=copiesOf(row.id,player);
+      if(c<MAX_COPIES){s.copies[row.id]=c+1;return {kind:'star',id:row.id,n:row.n,stars:c};}
       var duplicate=randomDiamond(row.tier,'duplicate');duplicate.kind='duplicate';duplicate.cardId=row.id;return duplicate;
     }
-    s.owned[row.id]=true;
+    s.owned[row.id]=true;s.copies[row.id]=1;
     return {kind:'unlock',id:row.id,n:row.n};
+  }
+  function rewardText(r,tierName){
+    if(!r)return '';
+    if(r.kind==='star')return '「'+r.n+'」在卡冊升到 '+r.stars+' 星'+(r.stars>=7?'（滿星）':'')+'。';
+    if(r.kind==='duplicate')return '「'+(byId[r.cardId]?byId[r.cardId].n:'這張卡')+'」已滿 7 星，返還「'+r.n+'」。';
+    if(r.kind==='unlock')return '點亮卡冊「'+r.n+'」，已永久解鎖變身。';
+    return '取得「'+r.n+'」。';
   }
   function status(actor) {
     actor=actor||player;var s=data(actor),ns=monsterNames();
@@ -192,7 +206,7 @@
       else if(tier==='spacetime'){gainItem(FRAGMENT,1,true,true);reward={kind:'fragment',id:FRAGMENT,n:'天上自選碎片'};}
       return {ok:true,tier:tier,success:success,guaranteed:pity,spent:5,failures:s.failures[tier],reward:reward};
     });
-    if(result.ok){say(result.success?(result.reward.kind==='duplicate'?'獲得重複的'+RULES[tier].n+'卡，返還「'+result.reward.n+'」。':'取得「'+result.reward.n+'」，已永久解鎖變身。'):'合成失敗'+(result.reward?'，取得「'+result.reward.n+'」。':'，消耗 5 張多餘鑽石卡。'));}
+    if(result.ok){say(result.success?rewardText(result.reward):'合成失敗'+(result.reward?'，取得「'+result.reward.n+'」。':'，消耗 5 張多餘鑽石卡。'));}
     else if(result.msg)say(result.msg);
     return result;
   }
@@ -214,7 +228,7 @@
       if(!row || row.tier!=='celestial')return {ok:false,msg:'請選擇一張天上卡。'};
       take([it],1);return {ok:true,reward:grant(row)};
     });
-    say(result.ok?(result.reward.kind==='duplicate'?'此卡已解鎖，返還「'+result.reward.n+'」。':'已永久解鎖「'+result.reward.n+'」。'):result.msg);
+    say(result.ok?rewardText(result.reward):result.msg);
     if(result.ok)closeCollection();return result;
   }
   function chooseDiamondReward(uid,name) {
@@ -439,7 +453,7 @@
     var ex=document.createElement('button');ex.type='button';ex.className='btn';ex.textContent='碎片 '+s.fragments+'/10 · 兌換天上自選';ex.disabled=s.fragments<10;ex.onclick=exchangeFragments;bottom.appendChild(ex);box.appendChild(bottom);div.appendChild(box);
   }
   if(typeof window.renderCardSynth==='function'){
-    var oldSynth=window.renderCardSynth;window.renderCardSynth=function(div){var r=oldSynth.apply(this,arguments);if(enabled())renderSynth(div);return r;};
+    /* 高階變身卡合成改由燃柳村 NPC「至幻者」負責（afk-card-codex，玩家 2026-10-23）；這裡不再掛到卡片合成分頁 */
   }
   function hideCollection(){var m=document.getElementById('afk-card-ascension-modal');if(m)m.remove();modalLayer=null;}
   function closeCollection(){var layer=modalLayer;modalLayer=null;if(layer&&window.AFK_UI)AFK_UI.closeLayer(layer);hideCollection();}
@@ -455,7 +469,7 @@
   function drawCollection(){
     var host=document.getElementById('afk-card-ascension-collection');if(!host)return;host.innerHTML='';
     TIERS.forEach(function(t){var h=document.createElement('h3');h.textContent=RULES[t].n+'卡';h.style.color=RULES[t].color;host.appendChild(h);
-      catalog[t].forEach(function(row){var el=document.createElement('div');el.className='afk-ca-tier';el.innerHTML='<strong>'+escape(row.n)+' · '+(owned(row.id,player)?'已解鎖':'尚未取得')+'</strong><small>'+escape(row.desc)+'</small>';host.appendChild(el);});
+      catalog[t].forEach(function(row){var el=document.createElement('div');el.className='afk-ca-tier';el.innerHTML='<strong>'+escape(row.n)+' · '+(owned(row.id,player)?'★'+starsOf(row.id,player)+'/7':'未點亮')+'</strong><small>'+escape(row.desc)+'</small>';host.appendChild(el);});
     });
   }
   function openCollection(){
@@ -465,8 +479,8 @@
     host.querySelector('[data-poly]').onclick=function(){var it=player.inv.find(function(x){return x.id==='scroll_poly'&&count(x)>0;});if(!it){say('請先準備變形卷軸。');return;}closeCollection();useItem(it.uid);};drawCollection();
   }
   function openChoice(uid){
-    var host=createModal('天上卡自選');host.innerHTML='<p>選擇已擁有的天上卡，會換成 1 張隨機一般鑽石卡。</p>';
-    catalog.celestial.forEach(function(row){var b=document.createElement('button');b.type='button';b.className='btn afk-ca-form';b.dataset.choiceCard=row.id;b.innerHTML='<strong>'+escape(row.n)+(owned(row.id,player)?' · 已解鎖':'')+'</strong><span>'+escape(row.desc)+'</span>';b.onclick=function(){chooseReward(uid,row.id);};host.appendChild(b);});
+    var host=createModal('天上卡自選');host.innerHTML='<p>選一張天上卡：沒有的會點亮卡冊，已有的升 1 星（最多 7 星）。</p>';
+    catalog.celestial.forEach(function(row){var b=document.createElement('button');b.type='button';b.className='btn afk-ca-form';b.dataset.choiceCard=row.id;b.innerHTML='<strong>'+escape(row.n)+(owned(row.id,player)?' · '+(starsOf(row.id,player)>=7?'已滿 7 星':starsOf(row.id,player)+' 星'):' · 未點亮')+'</strong><span>'+escape(row.desc)+'</span>';b.onclick=function(){chooseReward(uid,row.id);};host.appendChild(b);});
   }
   function openDiamondChoice(uid){
     var ns=monsterNames().filter(function(n){return !diamondOwned(n,player);});
@@ -481,6 +495,6 @@
   }
   var style=document.createElement('style');style.textContent='.afk-ca-panel{padding:14px;border-top:1px solid #334155;color:#e2e8f0}.afk-ca-panel h3,.afk-ca-dialog h3{font-weight:700;margin:8px 0}.afk-ca-panel p,.afk-ca-dialog p{font-size:12px;color:#94a3b8;margin:8px 0}.afk-ca-tier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #334155;background:#0f172a;padding:10px;border-radius:8px;margin:8px 0}.afk-ca-tier small{flex-basis:100%;color:#94a3b8;font-size:12px}.afk-ca-tier .btn{margin-left:auto}.afk-ca-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.afk-ca-overlay{position:fixed;inset:0;z-index:10001;background:#020617cf;display:flex;align-items:center;justify-content:center;padding:14px 12px 12px;box-sizing:border-box}.afk-ca-dialog{width:min(620px,100%);max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #64748b;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px}#afk-card-ascension-body{min-height:0;overflow:auto;overscroll-behavior:contain}.afk-ca-dialog header{flex-shrink:0;padding-bottom:8px}.afk-ca-dialog header{display:flex;justify-content:space-between;align-items:center;gap:12px}.afk-ca-dialog header button{padding:6px 10px;color:#cbd5e1}.afk-ca-form{display:flex;flex-direction:column;text-align:left;padding:10px!important;white-space:normal;margin:3px 0;width:100%}.afk-ca-form span{font-size:11px;color:#94a3b8;margin-top:4px}.afk-ca-search{background:#020617;color:#e2e8f0;border:1px solid #475569;padding:8px;margin:0 0 10px;border-radius:6px}.afk-ca-panel button:disabled{opacity:.45;cursor:not-allowed}';document.head.appendChild(style);
   var publicRules={};TIERS.forEach(function(t){publicRules[t]=Object.freeze(Object.assign({},RULES[t]));});Object.freeze(publicRules);
-  window.AFK_CARD_ASCENSION={rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE}};
+  window.AFK_CARD_ASCENSION={copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE}};
   if(forms()&&forms().catalog)registerCatalog(forms().catalog);
 })();
