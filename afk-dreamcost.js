@@ -2,8 +2,8 @@
  * afk-dreamcost.js — 夢艷地獄的代價（玩家 2026-10-22 指定）；開關沿用 dreamhell
  *
  * 一、夢艷地獄（不論是否轉生、任何地區）
- *   ‧一般怪死亡：全隊（你＋傭兵＋寵物＋召喚物）受到最大 HP 5% 真實傷害
- *   ‧王死亡：全隊受到最大 HP 10% 真實傷害，並吸走你與傭兵當前 MP 的 10%
+ *   ‧一般怪死亡：全隊（你＋傭兵＋寵物＋召喚物）受到「當前 HP」5% 真實傷害（越扣越少，詛咒本身不會致死；玩家 2026-10-22 改）
+ *   ‧王死亡：全隊受到當前 HP 10% 真實傷害，並吸走你與傭兵當前 MP 的 10%
  *
  * 二、轉生後進入夢艷地獄
  *   ‧所有技能的 MP／HP 消耗 ×2（你與傭兵都一樣）
@@ -35,19 +35,19 @@
     var hit = [];
     try {
       if (!player.dead) {
-        var d0 = Math.max(1, Math.floor((player.mhp || 1) * pct)); player.hp -= d0; hit.push('你 ' + d0);
+        var d0 = Math.floor(Math.max(0, player.hp || 0) * pct); if (d0 > 0) { player.hp -= d0; hit.push('你 ' + d0); }
         if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer();
       }
       (player.allies || []).forEach(function (x) {
         if (!x || x._downed || !(x.curHp > 0)) return;
-        var d = Math.max(1, Math.floor((x.mhp || x.curHp || 1) * pct)); x.curHp -= d; hit.push((x._allyName || '傭兵') + ' ' + d);
+        var d = Math.floor(Math.max(0, x.curHp || 0) * pct); if (d <= 0) return; x.curHp -= d; hit.push((x._allyName || '傭兵') + ' ' + d);
         if (x.curHp <= 0) { x.curHp = 0; x._downed = true; x._reviveCd = 150; }
       });
       try {
         (typeof petsOutList === 'function' ? petsOutList() : []).forEach(function (pt) {
           if (!pt || pt._downed || !(pt.hp > 0)) return;
           var mh = typeof petMhpEff === 'function' ? petMhpEff(pt) : (pt.mhp || pt.hp);
-          var d = Math.max(1, Math.floor(mh * pct)); pt.hp -= d; hit.push('寵物' + pt.form + ' ' + d);
+          var d = Math.floor(Math.max(0, pt.hp || 0) * pct); if (d <= 0) return; pt.hp -= d; hit.push('寵物' + pt.form + ' ' + d);
           if (pt.hp <= 0 && typeof _petDown === 'function') _petDown(pt, why);
         });
         if (typeof petMarkDirty === 'function') petMarkDirty();
@@ -55,7 +55,7 @@
       try {
         (player.summonsV2 || []).forEach(function (sm) {
           if (!sm || sm._downed || !(sm.hp > 0)) return;
-          var d = Math.max(1, Math.floor((sm.mhp || sm.hp) * pct)); sm.hp -= d; hit.push('召喚' + sm.form + ' ' + d);
+          var d = Math.floor(Math.max(0, sm.hp || 0) * pct); if (d <= 0) return; sm.hp -= d; hit.push('召喚' + sm.form + ' ' + d);
           if (sm.hp <= 0) { sm.hp = 0; sm._downed = true; sm._diedAt = Date.now(); }
         });
       } catch (e) {}
@@ -75,10 +75,10 @@
           var hit = teamHit(0.10, m.n + '的死亡詛咒'), mp = [];
           var d0 = Math.floor((player.mp || 0) * 0.1); if (d0 > 0 && !player.dead) { player.mp -= d0; mp.push('你 ' + d0); }
           (player.allies || []).forEach(function (x) { if (!x || x._downed) return; var d = Math.floor((x.mp || 0) * 0.1); if (d > 0) { x.mp -= d; mp.push((x._allyName || '傭兵') + ' ' + d); } });
-          clog('<span class="text-fuchsia-300 font-bold">🌙 ' + m.n + ' 倒下時的死亡詛咒！</span>全隊最大 HP 10% 真實傷害（' + hit.join('、') + '）' + (mp.length ? '，並吸走 MP 10%（' + mp.join('、') + '）' : ''));
+          clog('<span class="text-fuchsia-300 font-bold">🌙 ' + m.n + ' 倒下時的死亡詛咒！</span>全隊當前 HP 10% 真實傷害（' + hit.join('、') + '）' + (mp.length ? '，並吸走 MP 10%（' + mp.join('、') + '）' : ''));
         } else {
           var hit2 = teamHit(0.05, m.n + '的死亡詛咒');
-          if (hit2.length) clog('<span class="text-fuchsia-300">🌙 ' + m.n + ' 的死亡詛咒：全隊最大 HP 5% 真實傷害（' + hit2.join('、') + '）</span>');
+          if (hit2.length) clog('<span class="text-fuchsia-300">🌙 ' + m.n + ' 的死亡詛咒：全隊當前 HP 5% 真實傷害（' + hit2.join('、') + '）</span>');
         }
       }
     } catch (e) {}
