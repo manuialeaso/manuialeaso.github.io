@@ -192,10 +192,17 @@
   function migrateEn(items) {
     var n = 0;
     (items || []).forEach(function (it) {
-      if (!it || !it.id || String(it.id).indexOf('~') >= 0) return;
+      if (!it || !it.id) return;
+      if (String(it.id).indexOf('~') >= 0) {   // 已是合成等級但 +10 以上沒有第二詞綴（前一版轉換留下的）→ 補抽
+        var pp = parseId(it.id);
+        if (pp && pp.n >= 10 && !pp.fx && maxOf(pp.base) >= 10) { var dd = donorsFor(pp.base); if (dd.length) { var nid = makeId(pp.base, pp.n, dd[Math.floor(Math.random() * dd.length)], pp.asc, pp.evo); ensure(nid); if (DB.items[nid]) { it.id = nid; n++; } } }
+        return;
+      }
       var d = DB.items[it.id], en = Math.floor(Number(it.en) || 0);
       if (en <= 0 || !KIND_OK(d)) return;
-      var lv = Math.min(en, maxOf(it.id)), id = makeId(it.id, lv);
+      var lv = Math.min(en, maxOf(it.id)), fx = null;
+      if (lv >= 10) { var ds = donorsFor(it.id); fx = ds.length ? ds[Math.floor(Math.random() * ds.length)] : null; }   // 跟正常合成一樣：到 +10 抽第二詞綴
+      var id = makeId(it.id, lv, fx);
       ensure(id); if (!DB.items[id]) return;
       it.id = id; it.en = 0; n++;
     });
