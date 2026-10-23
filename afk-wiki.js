@@ -3255,7 +3255,7 @@
         return ['<span class="' + (f.c || '') + '">' + esc(f.n) + '</span>', 'Lv' + f.lv, apm(f.castApm), apm(f.supportCastApm), polyWlk(f)];
       }));
       h += wDesc('這兩個型態只能用<b>變形控制戒指</b>指定，<b>變形卷軸不會抽到</b>。<b>攻擊施法與輔助施法速度分開算</b>——輔助放得比攻擊快。');
-      h += wDesc('<b>夏納</b>保留你原本的職業外觀；<b>真夏納</b>各職業性別都有專屬動態，普攻速度另依「職業性別 × 手上武器」查表。');
+      h += wDesc('<b>夏納</b>與<b>真夏納</b>都穿真夏納的職業性別專屬動態（夏納速度較慢）；<b>真夏納</b>，普攻速度另依「職業性別 × 手上武器」查表。');
     }
     if (typeof SET_POLY_FORMS !== 'undefined') {
       h += '<div class="m-wiki-sub">🛡️ 套裝專屬變身</div>';

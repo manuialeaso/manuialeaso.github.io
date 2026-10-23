@@ -11,7 +11,7 @@
  *
  * 速度表換算：攻＝每分鐘攻擊次數（依武器）；走＝每分鐘移動格數（→ 1440÷走）；
  *   有向施法＝每分鐘攻擊施法次數（→ 600÷值 tick）；硬＝受擊硬直秒數（→ ×10 tick，取單手劍欄）
- * 戰鬥動畫：死騎四種借用烈焰的死亡騎士、絲莉安借用莉絲安；其他保留職業外觀
+ * 戰鬥動畫：死騎四種借用烈焰的死亡騎士、絲莉安借用莉絲安；其他沒有專屬圖的借用氣質相近的變身（見 BORROW），夏納穿真夏納的圖
  * ========================================================================== */
 (function () {
   'use strict';
@@ -69,7 +69,32 @@
     MORPH_BATTLE_ALIAS['闇黑死亡騎士'] = MORPH_BATTLE_ALIAS['雷霆死亡騎士'] = MORPH_BATTLE_ALIAS['黃金死亡騎士'] = MORPH_BATTLE_ALIAS['焚焰死亡騎士'] = '烈焰的死亡騎士';
     MORPH_BATTLE_ALIAS['絲莉安'] = '莉絲安';
   } catch (e) {}
+  // 沒有專屬圖的形態：借用氣質相近的變身動畫（玩家 2026-10-24：沒有專屬變身圖的形態先找圖補上）
+  //   日出之國＝刺客／黑騎／重甲領主／女弓手／法衣術士；90 級＝白金騎士、克特、賽尼斯、馬庫爾；
+  //   長老三人＝長老／黑暗巡守／黑長者；生日慶祝妖精＝黃金套裝三型（近攻騎士、遠攻巡守、魔法法師）
+  var BORROW = {
+    '忍者': '黑暗妖精刺客', '侍': '黑暗騎士', '大名': '騎士范德', '姬武者': '艾莉絲', '陰陽師': '西瑪',
+    '格利特': '白金騎士', '特羅斯': '克特', '伊詩蒂': '賽尼斯', '喬': '馬庫爾',
+    '拉曼斯': '長老', '安迪斯': '黑暗巡守', '艾迪爾': '黑長者',
+    '亞克騎士': '黑騎士', '墮落的司祭': '卡士柏', '歐姆裝甲兵': '重裝歐姆',
+    '生日慶祝妖精(近攻型)': '黃金騎士', '生日慶祝妖精(遠攻型)': '黃金巡守', '生日慶祝妖精(魔法型)': '黃金法師'
+  };
+  var borrowed = [];
+  try { Object.keys(BORROW).forEach(function (n) { if (!MORPH_BATTLE_ALIAS[n] && MORPH_BATTLE_ANIM.has(BORROW[n])) { MORPH_BATTLE_ALIAS[n] = BORROW[n]; borrowed.push(n); } }); } catch (e) {}
+  // 夏納：原本維持職業外觀，改穿真夏納的職業式變身圖（速度仍是夏納自己的）
+  try {
+    if (typeof window._actorBattleForm === 'function' && typeof TRUE_SHANNA_ANIM_SETS !== 'undefined') {
+      var oABF = window._actorBattleForm;
+      window._actorBattleForm = function (actor, allyGrp) {
+        try {
+          var pf = actor && (actor._setPoly || ((actor.buffs && actor.buffs.poly > 0 && actor.poly) ? actor.poly : null));
+          if (pf && pf.n === '夏納' && actor.avatar && TRUE_SHANNA_ANIM_SETS[actor.avatar]) { var cf = _classForm(actor, !!allyGrp, '真夏納'); if (cf) return cf; }
+        } catch (e) {}
+        return oABF.apply(this, arguments);
+      };
+    }
+  } catch (e) {}
 
-  window.__afkPolys = { added: added };
+  window.__afkPolys = { added: added, borrowed: borrowed, BORROW: BORROW };
   console.log('[AFK-polys] 已啟用：新增 ' + added.length + ' 種變身');
 })();

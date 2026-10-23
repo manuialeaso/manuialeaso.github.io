@@ -172,7 +172,7 @@
       var pl = typeof player !== 'undefined' ? player : null, fd = typeof findPolyForm === 'function' ? findPolyForm(name) : null, form = fd && fd.form || { n: name };
       if (pl && typeof _actorBattleForm === 'function') {
         var bf = _actorBattleForm({ avatar: pl.avatar, cls: pl.cls, eq: pl.eq, _faceD: 5, buffs: { poly: 1 }, poly: form }, false);
-        if (bf && bf.base && (!/^class:/.test(bf.key || '') || form.classMorph)) { if (bf.wpn) pre.push(bf.base + bf.wpn + '_idle_0.png'); pre.push(bf.base + 'idle_0.png'); }
+        if (bf && bf.base && (!/^class:/.test(bf.key || '') || form.classMorph || form.n === '夏納')) { if (bf.wpn) pre.push(bf.base + bf.wpn + '_idle_0.png'); pre.push(bf.base + 'idle_0.png'); }
       }
     } catch (e) {}
     // 沒有變身動畫的形態：借同名角色／怪物的圖；再沒有就用自己職業的模樣（戰場上看到的也是這個）
