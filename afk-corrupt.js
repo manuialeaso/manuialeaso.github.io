@@ -240,15 +240,15 @@
   // ── 入場 ──
   window.afkCorruptEnter = function (key) {
     var C = DRAGONS[key]; if (!C) return;
-    if (S().antharas) { logSys('你已身在龍之巢穴之中。'); return; }
+    if (S().antharas) { logSys('你早已身在龍之巢穴。'); return; }
     if (typeof mercenaryRoleBattleBlocked === 'function' && mercenaryRoleBattleBlocked(areasOf[key][0])) return;
     if (player.statuses && (player.statuses.stone > 0 || player.statuses.paralyze > 0 || player.statuses.freeze > 0 || player.statuses.stun > 0 || player.statuses.sleep > 0)) {
-      logSys('你目前無法行動（石化／麻痺／冰凍／暈眩），無法進入。'); return;
+      logSys('你的身軀不聽使喚（石化／麻痺／冰凍／暈眩），踏不進巢穴。'); return;
     }
     var used = withCtx(key, function () { return antharasPartyUsedToday(); });
     if (used.length) { logSys('<span class="text-amber-300">隊伍中的 ' + used.map(function (r) { return r.name; }).join('、') + ' 今日已通關' + C.pre + '的' + C.dragon + '巢穴；請更換或解散已使用次數的傭兵後再進入（UTC+8 凌晨 12 點重置）。</span>'); return; }
     var s = S(); s.antharas = 1; s._antAdvance = false; s._afkDragon = key;
-    logSys('<span class="font-bold" style="color:' + C.color + '">🐉 你踏入了' + C.pre + '的' + C.dragon + '巢穴……</span><span class="text-amber-200"> 區內無法選擇地圖，也無法使用傳送術與瞬間移動卷軸；擊敗各區頭目將自動深入。巢穴裡瀰漫著' + ELE_N[C.ele] + '屬性的侵蝕之力（每秒受到屬性傷害）。</span>');
+    logSys('<span class="font-bold" style="color:' + C.color + '">你踏入了' + C.pre + '的' + C.dragon + '巢穴，空氣裡滿是龍息的灼熱。</span><span class="text-amber-200"> 區內無法選擇地圖，也無法使用傳送術與瞬間移動卷軸；擊敗各區頭目將自動深入。巢穴裡瀰漫著' + ELE_N[C.ele] + '屬性的侵蝕之力（每秒受到屬性傷害）。</span>');
     enterOblivionMap(areasOf[key][0]);
     try { if (!document.getElementById('item-modal').classList.contains('hidden')) closeModal(); } catch (e) {}
     try { updateUI(); saveGame(); } catch (e) {}
@@ -261,14 +261,14 @@
     var C = DRAGONS[key], s = S();
     if (bossName === finals[key]) {
       s.antharas = 0; s._antAdvance = false; s._afkDragon = null;
-      logSys('<span class="font-bold" style="color:' + C.color + '">🏆 你擊敗了' + finals[key] + '，淨化了巢穴！</span>主戰角色與本次出戰傭兵的今日通關次數均已消耗，自動返回威頓村。');
+      logSys('<span class="font-bold" style="color:' + C.color + '">' + finals[key] + '轟然倒地，巢穴的瘴氣隨之散去。</span>你與同行的傭兵帶著今日的戰果，回到了威頓村。');
       setMapSelectors('town_witon'); changeMap(true);
       if (!s.ff) saveGame();
       return;
     }
     var next = Math.min(4, (s.antharas || 1) + 1); s.antharas = next;
     var mp = areasOf[key][next - 1];
-    logSys('<span class="font-bold" style="color:' + C.color + '">🐉 頭目倒下，你繼續深入——' + ANTHARAS_AREA_NAMES[mp] + '。</span>');
+    logSys('<span class="font-bold" style="color:' + C.color + '">守護者倒下了。你踏著龍血，走向更深處——' + ANTHARAS_AREA_NAMES[mp] + '。</span>');
     enterOblivionMap(mp);
     if (!s.ff) saveGame();
   };
@@ -303,7 +303,7 @@
     }
     if (DB.items.afk_card_pick && Math.random() < 0.0001) {
       gainItem('afk_card_pick', 1);
-      try { logSys('<span class="c-card-diamond font-bold">💎 ' + m.n + ' 掉落了鑽白金幻化！</span>'); } catch (e) {}
+      try { logSys('<span class="c-card-diamond font-bold">' + m.n + ' 的殘骸中，一張鑽白金幻化閃著冷光。</span>'); } catch (e) {}
     }
   };
   // 棲息地：中央＝最終龍、其餘＝第三種小怪（同安塔瑞斯棲息地）
@@ -351,7 +351,7 @@
     var oRoll = window.rollHealingSpell;
     window.rollHealingSpell = function (sk, dStats, caster, target) {
       var v = oRoll.apply(this, arguments);
-      if (v > 0 && has(target, 'heal')) { hurt(target, v); try { if (!S().ff) logCombat('<span class="text-red-400 font-bold">【死亡治療】</span>治癒魔法反噬，造成 ' + Math.floor(v) + ' 點傷害！', 'enemy'); } catch (e) {} return 0; }
+      if (v > 0 && has(target, 'heal')) { hurt(target, v); try { if (!S().ff) logCombat('<span class="text-red-400 font-bold">【死亡治療】</span>治癒之光化為腐蝕，反噬 ' + Math.floor(v) + ' 點。', 'enemy'); } catch (e) {} return 0; }
       return v;
     };
   }
@@ -361,7 +361,7 @@
     var it = has(player, 'pot') ? player.inv.find(function (i) { return i.uid === u; }) : null;
     if (!it || !HEAL_POT(it.id)) return oUse.apply(this, arguments);
     var h0 = player.hp, r = oUse.apply(this, arguments), gain = player.hp - h0;
-    if (gain > 0) { player.hp = h0; hurt(player, gain); try { if (!S().ff) logCombat('<span class="text-red-400 font-bold">【死亡藥水】</span>藥水變成了毒藥，你受到 ' + Math.floor(gain) + ' 點傷害！', 'enemy'); } catch (e) {} }
+    if (gain > 0) { player.hp = h0; hurt(player, gain); try { if (!S().ff) logCombat('<span class="text-red-400 font-bold">【死亡藥水】</span>入喉的藥水化作毒液，你受到 ' + Math.floor(gain) + ' 點傷害。', 'enemy'); } catch (e) {} }
     return r;
   };
   if (typeof window.allyTryPotion === 'function') {
@@ -386,12 +386,12 @@
       if (x === player) { player.hp = Math.max(1, player.hp - Math.floor((player.mhp || 0) * 0.2)); player.mp = Math.max(0, player.mp - Math.floor((player.mmp || 0) * 0.8)); }
       else { x.curHp = Math.max(1, (x.curHp || 0) - Math.floor((x.mhp || 0) * 0.2)); x.mp = Math.max(0, (x.mp || 0) - Math.floor((x.mmp || 0) * 0.8)); }
     });
-    dlog('<span class="font-bold" style="color:#c084fc">【龍魂吸取】</span>' + m.n + ' 倒下前吸走了全隊 20% 的 HP 與 80% 的 MP！');
+    dlog('<span class="font-bold" style="color:#c084fc">【龍魂吸取】</span>' + m.n + ' 臨死前張口一吸，全隊的 20% 生命與 80% 魔力被捲入龍喉。');
   };
   var startLock = function (m) {
     if (m._afkLockUntil) return;
     m._afkLockUntil = (S().ticks || 0) + 100; m.curHp = 1;
-    dlog('<span class="font-bold" style="color:#f87171">【不滅龍心】</span>' + m.n + ' 承受了致命一擊，以 1 點 HP 硬撐 10 秒！');
+    dlog('<span class="font-bold" style="color:#f87171">【不滅龍心】</span>' + m.n + ' 的龍心仍在跳動——以 1 點 HP 撐住 10 秒。');
   };
   var dragonTick = function () {
     var t = S().ticks || 0;
@@ -410,13 +410,13 @@
       if (window.__afkHalted && window.__afkHalted(m)) { m._afkRefAt = t; m._afkBornT++; return; }   // 連暈停擺：不回血、不反射、不放定時技（60 秒計時也暫停）
       if (!m._afkHealed && t - m._afkBornT >= 600 && m.curHp > 0 && m.curHp < m.hp) {
         m._afkHealed = true; m.curHp = m.hp;
-        dlog('<span class="font-bold" style="color:#4ade80">【龍之再生】</span>60 秒內沒能擊倒 ' + m.n + '，牠的 HP 回滿了！');
+        dlog('<span class="font-bold" style="color:#4ade80">【龍之再生】</span>六十秒過去，' + m.n + ' 的傷口盡數癒合，生命回到頂峰。');
       }
       if (t - m._afkRefAt >= 50) {
         m._afkRefAt = t;
         var kind = Math.random() < 0.5 ? 'phys' : 'magic';
         m._reflectWall = { kind: kind, until: t + 20 };
-        dlog('<span class="font-bold" style="color:#fb7185">【龍鱗反射】</span>' + m.n + ' 張開了' + (kind === 'phys' ? '物理' : '魔法') + '反射（2 秒）！');
+        dlog('<span class="font-bold" style="color:#fb7185">【龍鱗反射】</span>' + m.n + ' 的龍鱗泛起異光，2 秒內' + (kind === 'phys' ? '刀劍' : '咒文') + '將被彈回。');
       }
     });
   };
@@ -451,7 +451,7 @@
       lastDeb = t;
       var pick = DEB[Math.floor(Math.random() * DEB.length)];
       team().forEach(function (x) { var d = debuff.get(x) || {}; d[pick[0]] = t + 100; debuff.set(x, d); });
-      try { if (!s.ff) logCombat('<span class="font-bold" style="color:' + C.color + '">【' + pick[1] + '】</span>' + C.pre + '之龍的詛咒籠罩全隊：' + pick[2] + '（10 秒）！', 'enemy'); } catch (e) {}
+      try { if (!s.ff) logCombat('<span class="font-bold" style="color:' + C.color + '">【' + pick[1] + '】</span>' + C.pre + '之龍的詛咒壓在全隊身上：' + pick[2] + '（10 秒）。', 'enemy'); } catch (e) {}
     }
     if (!boss) lastDeb = t - 100;   // 王一出現 10 秒後施放第一次
   };
@@ -526,7 +526,7 @@
     var pts = antPointsGet();
     var cost = { relic: 1000, stone: 500, asc: 5000 }[kind];
     if (!cost) return;
-    if (pts < cost) { logSys('<span class="text-red-400">積分不足（需要 ' + cost + ' 分）。</span>'); return; }
+    if (pts < cost) { logSys('<span class="text-red-400">你的積分還不夠（需要 ' + cost + ' 分）。</span>'); return; }
     var got = null;
     withAnc(function () {
       if (kind === 'relic') {
@@ -539,9 +539,9 @@
         if (got) gainItem(got, 1, true, true);
       }
     });
-    if (!got) { logSys('<span class="text-red-400">兌換失敗，積分沒有扣除。</span>'); return; }
+    if (!got) { logSys('<span class="text-red-400">兌換沒有成功，積分分毫未動。</span>'); return; }
     ptsSet(pts - cost);
-    logSys('<span class="text-yellow-300 font-bold">📦 萊利的輔佐官：</span>花費 ' + cost + ' 積分，獲得 <span class="text-amber-200">' + ((DB.items[got] || {}).n || got) + '</span>！');
+    logSys('<span class="text-yellow-300 font-bold">萊利的輔佐官</span>收下 ' + cost + ' 積分，遞給你 <span class="text-amber-200">' + ((DB.items[got] || {}).n || got) + '</span>。');
     rileyRefresh();
   };
   if (typeof window.renderRileyAide === 'function') {

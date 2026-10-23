@@ -75,7 +75,7 @@
           var hit = teamHit(0.10, m.n + '的死亡詛咒'), mp = [];
           var d0 = Math.floor((player.mp || 0) * 0.1); if (d0 > 0 && !player.dead) { player.mp -= d0; mp.push('你 ' + d0); }
           (player.allies || []).forEach(function (x) { if (!x || x._downed) return; var d = Math.floor((x.mp || 0) * 0.1); if (d > 0) { x.mp -= d; mp.push((x._allyName || '傭兵') + ' ' + d); } });
-          clog('<span class="text-fuchsia-300 font-bold">🌙 ' + m.n + ' 倒下時的死亡詛咒！</span>全隊當前 HP 10% 真實傷害（' + hit.join('、') + '）' + (mp.length ? '，並吸走 MP 10%（' + mp.join('、') + '）' : ''));
+          clog('<span class="text-fuchsia-300 font-bold">' + m.n + ' 倒下時吐出最後的詛咒。</span>全隊當前 HP 10% 真實傷害（' + hit.join('、') + '）' + (mp.length ? '，並吸走 MP 10%（' + mp.join('、') + '）' : ''));
         }
       }
     } catch (e) {}
@@ -91,7 +91,7 @@
     if (!active()) return;
     deaths++;
     if (STEPS.indexOf(deaths) >= 0) {
-      clog('<span class="text-red-400 font-bold">💀 這場戰鬥已累積倒下 ' + deaths + ' 次！</span>復活與召喚的代價提升為 ×' + reviveMult() + '（復活卷軸 ' + reviveMult() + ' 張）' + (deaths >= 100 ? '，每次復活後 10 秒內不能再復活（寵物除外）' : '') + '。', 'enemy');
+      clog('<span class="text-red-400 font-bold">這場戰鬥已有 ' + deaths + ' 次倒下。</span>死者歸來的代價更沉重了： ×' + reviveMult() + '（復活卷軸 ' + reviveMult() + ' 張）' + (deaths >= 100 ? '，每次復活後 10 秒內不能再復活（寵物除外）' : '') + '。', 'enemy');
     }
   };
   var resetIfMoved = function () {
@@ -141,7 +141,7 @@
         if (active()) scanDowns();
         if (cdUntil && (S().ticks || 0) >= cdUntil) {   // 10 秒復活冷卻結束 → 死亡次數歸零重算
           cdUntil = 0; deaths = 0;
-          clog('<span class="text-emerald-300">夢艷地獄：復活冷卻結束，累積死亡次數歸零重新計算。</span>', 'system');
+          clog('<span class="text-emerald-300">死者之門重新敞開，倒下的次數重新起算。</span>', 'system');
         }
         applyCost();
       } catch (e) {} }
@@ -161,7 +161,7 @@
     return function () {
       if (!active()) return fn.apply(this, arguments);
       if (opt && opt.cd && onCd()) {
-        if (opt.say) clog('<span class="text-slate-400">夢艷地獄：復活冷卻中（還要 ' + Math.ceil((cdUntil - (S().ticks || 0)) / 10) + ' 秒）。</span>', 'system');
+        if (opt.say) clog('<span class="text-slate-400">死者之門尚未開啟（還要 ' + Math.ceil((cdUntil - (S().ticks || 0)) / 10) + ' 秒）。</span>', 'system');
         return false;
       }
       var need = reviveMult(), have = scrollCount(), hidden = [];
@@ -203,7 +203,7 @@
       try {
         if (active() && wasDead && !player.dead && scrollCount() < sc0) {
           player.hp = player.mhp; var d = Math.floor((player.mp || 0) * 0.1); player.mp -= d;
-          clog('<span class="text-yellow-300">復活卷軸（夢艷）：HP 全滿，代價是吸走 ' + d + ' MP。</span>', 'heal');
+          clog('<span class="text-yellow-300">卷軸燃盡，生命重新灌滿——夢魘取走了 ' + d + ' MP 作為代價。</span>', 'heal');
           try { updateUI(); } catch (e) {}
         }
       } catch (e) {}

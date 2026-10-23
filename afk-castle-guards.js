@@ -189,7 +189,7 @@
     var spec = CASTLE_GUARD_BOOK.aden_elite, p = P();
     if (!p || !canHire(spec)) return;
     var cur = castleGuardRosterActive();
-    if (cur && cur.city === 'aden_elite' && cur.fused) { logSys('<span class="text-amber-300">近衛已經融合。</span>'); return; }
+    if (cur && cur.city === 'aden_elite' && cur.fused) { logSys('<span class="text-amber-300">近衛早已合而為一。</span>'); return; }
     var have = (cur && cur.city === 'aden_elite') ? (cur.count || 0) : 0;
     var need = FUSE_N - have, cost = CASTLE_GUARD_COST * Math.max(0, need);
     if ((p.gold || 0) < cost) { red('金幣不足，補滿 8 名近衛還需要 ' + cost.toLocaleString() + ' 金幣。'); return; }
@@ -201,7 +201,7 @@
   };
   window.disbandCastleGuards = function (key) {
     var res = writeRoster(function (info) { if (!info.guards) return { commit: false }; info.guards = null; return {}; });
-    if (res.ok) logSys('<span class="text-slate-300">已遣散城堡護衛。</span>');
+    if (res.ok) logSys('<span class="text-slate-300">護衛們收起兵刃，返回了各自的城堡。</span>');
     var p = P(); if (p) p.guardsV2 = [];
     refresh(key);
   };

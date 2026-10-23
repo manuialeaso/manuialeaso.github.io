@@ -236,9 +236,9 @@
   function canUse(it,d,silent) {
     if(!playerReady()||!it||!d||it.lock||!(it.cnt>0))return false;
     if(player.dead|| (typeof inAbsBarrier==='function'&&inAbsBarrier()))return false;
-    if((d.ttmiMinLevel&&player.lv<d.ttmiMinLevel)||(d.ttmiMaxLevel&&player.lv>d.ttmiMaxLevel)){say('目前等級不符這件物品的使用條件。',silent);return false;}
-    if(d.ttmiRiftOnly&&!inRift()){say('這件補給只能在時空裂痕中使用。',silent);return false;}
-    if(typeof reqAllowsClass==='function'&&!reqAllowsClass(d,player.cls)){say('目前職業無法使用這件物品。',silent);return false;}
+    if((d.ttmiMinLevel&&player.lv<d.ttmiMinLevel)||(d.ttmiMaxLevel&&player.lv>d.ttmiMaxLevel)){say('你的等級與這件物品並不相合。',silent);return false;}
+    if(d.ttmiRiftOnly&&!inRift()){say('這件補給只在時空裂痕中才會回應你。',silent);return false;}
+    if(typeof reqAllowsClass==='function'&&!reqAllowsClass(d,player.cls)){say('你的職業駕馭不了這件物品。',silent);return false;}
     return true;
   }
   function rememberRiftBuff(k) {
@@ -273,7 +273,7 @@
     if(action==='mp'&&((player.cds.pot||0)>0||(player.ttmiPotionRemaining||0)>0))return false;
     if(action==='poly'){
       var f=d.ttmiPolyForm&&typeof findPolyForm==='function'?findPolyForm(d.ttmiPolyForm):null;
-      if(d.ttmiPolyForm&&(!f||player.lv<(f.form.lv||0))){say('尚未達到這個變身型態的開放等級。',silent);return false;}
+      if(d.ttmiPolyForm&&(!f||player.lv<(f.form.lv||0))){say('你的等級還承載不了這副形貌。',silent);return false;}
       if(d.ttmiRiftOnly)rememberRiftBuff('poly');
       player.poly=f?makePolyState(f.form,f.color):getPolyState();putBuff('poly',d.dur,d.ttmiRiftOnly);
     } else if(action==='scroll') {
@@ -293,10 +293,10 @@
       if(silent)return false;var row=rows[id],out=(row.contents||[]).filter(function(x){var dd=DB.items[resolve(x.sourceId)];return resolve(x.sourceId)&&!(dd&&(dd.ttmiRiftOnly||dd.gmOnly));});
       if(!out.length)return false;
       var ready=player.ttmiBoxes=player.ttmiBoxes||{};
-      if(d.ttmiBoxCooldown&&ready[id]>Date.now()){say('封印尚未重新凝聚，請等待冷卻結束。',silent);return false;}
+      if(d.ttmiBoxCooldown&&ready[id]>Date.now()){say('封印尚未重新凝聚，再等等吧。',silent);return false;}
       if(row.contentsMode==='random')out=[out[randomInt(0,out.length-1)]];
       out.forEach(function(x){give(resolve(x.sourceId),randomInt(x.min,x.max));});
-      if(d.ttmiBoxCooldown){ready[id]=Date.now()+d.ttmiBoxCooldown*1000;applyExtras(d,id);refresh();save();say('封印開啟，取得了其中的物品。',silent);return true;}
+      if(d.ttmiBoxCooldown){ready[id]=Date.now()+d.ttmiBoxCooldown*1000;applyExtras(d,id);refresh();save();say('封印鬆開，裡頭的物品落入你的掌中。',silent);return true;}
     } else if(['buff','mp','blue','thirdHaste','antidote'].indexOf(action)<0)return false;
     applyExtras(d,id);
     if(action==='mp'){
@@ -311,7 +311,7 @@
     if(!d)return old.apply(self,args);
     var hp=it.id.indexOf('potion_heal')>=0||it.id==='potion_strong'||it.id==='potion_ult'||it.id==='new_item_141';
     if(hp&&(player.ttmiPotionRemaining||0)>0)return;
-    if(d.ttmiRiftOnly&&!inRift()){say('這件補給只能在時空裂痕中使用。',args[1]);return;}
+    if(d.ttmiRiftOnly&&!inRift()){say('這件補給只在時空裂痕中才會回應你。',args[1]);return;}
     if(d.ttmiAction)return useCustom(it,d,args[1]);
     if(!d.ttmiSourceId){
       var q=it.cnt||1,normalHp=player.hp,normal=old.apply(self,args),left=player.inv.find(function(x){return x.uid===it.uid;});
@@ -412,7 +412,7 @@
   function openCatalogue(mode){if(!enabled()||!atTown())return;catalogue.mode=mode;catalogue.page=0;if(typeof openTownFloatWindow==='function')openTownFloatWindow(mode==='craft'?'工匠 薩克':'古物商人 洛依',mode==='craft'?'材料與古物製作':'古物與遠行補給',renderCatalogue);}
   function buy(id,qty){
     if(!enabled()||!atTown()||stock.indexOf(id)<0||DB.items[id].gmOnly||!Number.isInteger(qty)||qty<1||qty>100)return false;
-    var total=price(id)*qty;if(!Number.isSafeInteger(total)||total<=0||(player.gold||0)<total){say('金幣不足。');return false;}
+    var total=price(id)*qty;if(!Number.isSafeInteger(total)||total<=0||(player.gold||0)<total){say('你的金幣不夠。');return false;}
     player.gold-=total;give(id,qty);refresh();save();redrawCatalogue();return true;
   }
   function craft(idx){if(!enabled()||!atTown()||!Number.isInteger(idx)||!recipes[idx])return false;doCraft(WORKSHOP,idx,false);save();redrawCatalogue();return true;}
@@ -433,7 +433,7 @@
   }
   function beginRift(){
     if(!enabled()||!inRift())return;var run=String(state.riftStartMs||'active');if(player.ttmiRiftRunKey===run){riftButton();return;}
-    clearRift();player.ttmiRiftRunKey=run;give(creditId,10);say('裂痕守衛交付 10 枚戰勳。擊敗敵人可再取得戰勳，換取本場專用補給。');riftButton();
+    clearRift();player.ttmiRiftRunKey=run;give(creditId,10);say('裂痕守衛遞來 10 枚戰勳：「擊倒敵人還能再得，拿去換這一場的補給。」');riftButton();
   }
   function riftButton(){
     if(!enabled()||typeof document==='undefined'||!inRift())return;var host=document.getElementById('battle-view');if(!host||document.getElementById('ttmi-rift-button'))return;
@@ -456,7 +456,7 @@
     renderRiftSupplies();if(window.AFK_UI&&AFK_UI.openLayer)riftLayer=AFK_UI.openLayer(hideRiftSupplies);box.querySelector('[data-rift-close]').focus();
   }
   function riftBuy(id){
-    if(!enabled()||!inRift()||riftIds.indexOf(id)<0)return false;var d=DB.items[id];if(!d.ttmiCost||!take(creditId,d.ttmiCost)){say('裂痕戰勳不足。');return false;}
+    if(!enabled()||!inRift()||riftIds.indexOf(id)<0)return false;var d=DB.items[id];if(!d.ttmiCost||!take(creditId,d.ttmiCost)){say('你的裂痕戰勳不夠。');return false;}
     give(id,1);refresh();save();renderRiftSupplies();return true;
   }
   wrap('enterRiftMap',function(old,self,args){var r=old.apply(self,args);beginRift();return r;});

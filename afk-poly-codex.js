@@ -68,7 +68,7 @@
     var p = P(); if (!p || !byName[name]) return false;
     if (tierOf(name, p) !== t - 1) return false;
     dex(p)[name] = t; recalc();
-    if (!quiet) log('<span class="text-pink-300 font-bold">🃏 變身收集冊登錄「' + name + '」' + TIER_N[t - 1] + '卡！</span>' + (t === 3 && goldCount(p) === 5 ? '<span class="text-amber-300">（金卡滿 5 種，開放查看神話變身卡冊）</span>' : ''));
+    if (!quiet) log('<span class="text-pink-300 font-bold">收集冊上，「' + name + '」的' + TIER_N[t - 1] + '卡亮了起來。</span>' + (t === 3 && goldCount(p) === 5 ? '<span class="text-amber-300">（金卡滿 5 種，開放查看神話變身卡冊）</span>' : ''));
     return true;
   }
   // 使用卡片道具
@@ -97,7 +97,7 @@
     if (Math.random() >= RATE[t - 1] * mult) return;
     if (!goldDup && register(f.n, t)) return;
     try { if (typeof gainItem === 'function') gainItem(itemId(f.n, t), 1, true, true); } catch (e) {}
-    log('<span class="text-pink-200">🃏 得到「' + f.n + ' 變身' + TIER_N[t - 1] + '卡」。</span>');
+    log('<span class="text-pink-200">魔物消散前留下了一縷形貌：「' + f.n + ' 變身' + TIER_N[t - 1] + '卡」。</span>');
   }
   var oKill = window.killMob;
   window.killMob = function (idx) {

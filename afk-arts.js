@@ -96,17 +96,17 @@
     var sv = SAVES[a], s = st(p), hp = hpOf(p) || 0, mx = p.mhp || 1;
     if (sv && sv.fate && !s.fate && hp < mx * 0.5) {
       s.fate = true; s.mode = Math.max(s.mode, 2); refresh(p); setHp(p, p.mhp);
-      log(tag('不屈命運', '#fbbf24') + nm(p) + '的命運不容在此終結——HP 全滿！');
+      log(tag('不屈命運', '#fbbf24') + nm(p) + '的命運拒絕在此終結——生命重新灌滿全身。');
       return true;
     }
     if (sv && sv.desp && !s.desp && hp < mx * 0.3) {
       s.desp = true; s.mode = 3; refresh(p); setHp(p, p.mhp);
-      log(tag('絕望身軀', '#f87171') + nm(p) + '從絕望中站起——HP 全滿！');
+      log(tag('絕望身軀', '#f87171') + nm(p) + '自絕望的深淵中站起——生命重新灌滿全身。');
       return true;
     }
     if (lethal && a === 'w_fate' && s.desp && !s.imm && tk() >= (s.cdAt || 0)) {
       s.imm = true; s.cdAt = tk() + 300; setHp(p, 1);
-      log(tag('命運迴響', '#fbbf24') + nm(p) + '硬撐住了致命一擊！（本場戰鬥一次）');
+      log(tag('命運迴響', '#fbbf24') + nm(p) + '咬牙撐住了致命的一擊。（每場戰鬥一次）');
       return true;
     }
     return false;
@@ -420,7 +420,7 @@
       }
       var k = kings();
       if (k > 0) { var kv = wpnMax(actor) * k; hurtMob(prim, kv, actor) /* card-combat:arts-flat */; }
-      if (a === 'n_heine' && inHeine() && prim.curHp > 0 && Math.random() < 0.5 * f) { prim.curHp = 0; log(tag('海音守護者', '#38bdf8') + nm(actor) + '以守護者之力一擊抹殺了 ' + (prim.n || '敵人') + '！'); }
+      if (a === 'n_heine' && inHeine() && prim.curHp > 0 && Math.random() < 0.5 * f) { prim.curHp = 0; log(tag('海音守護者', '#38bdf8') + nm(actor) + '喚來海音的潮聲，' + (prim.n || '敵人') + ' 被一擊吞沒。'); }
       if (a === 'r_sword') heal(actor, total * 0.3 * f);
       if (a === 'k_doom') heal(actor, total * f);
       if (a === 'n_fafurion' && isFaf(prim) && tk() - lastLeech >= 50) {
@@ -438,7 +438,7 @@
   var dragonStrike = function (actor) {
     var ms = MS(); if (!ms) return;
     var str = Math.max(1, Math.floor((actor.d && actor.d.str) || 1)), r3 = function () { return 1 + Math.floor(Math.random() * str); };
-    log(tag('龍的一擊', '#fca5a5') + nm(actor) + '的劍中龍魂咆哮，衝擊貫穿了所有敵人！');
+    log(tag('龍的一擊', '#fca5a5') + nm(actor) + '劍中的龍魂咆哮而出，衝擊貫穿了所有敵人。');
     ms.mobs.forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (r3() + r3() + r3() + 30) * (1 + F(actor)) * (typeof fragileMult === 'function' ? fragileMult(m) : 1), actor) /* card-combat:arts-dragon */; });   // 百般武藝傷害 ×2
   };
   var rallyMinions = function () {
@@ -547,7 +547,7 @@
   if (typeof window.equipItem === 'function') {
     var oEq = window.equipItem;
     window.equipItem = function (item) {
-      try { var d = item && DB.items[item.id]; if (d && d.type === 'wpn' && art(P()) === 'k_doom') { logSys('<span class="text-amber-300">命定絕望者不能裝備武器。</span>'); return; } } catch (e) {}
+      try { var d = item && DB.items[item.id]; if (d && d.type === 'wpn' && art(P()) === 'k_doom') { logSys('<span class="text-amber-300">命定絕望者的雙手已不再握劍。</span>'); return; } } catch (e) {}
       return oEq.apply(this, arguments);
     };
   }
@@ -568,12 +568,12 @@
           var hp = 0; L.forEach(function (s) { hp += s.mhp || s.hp || 0; });
           var one = Object.assign({}, L[0], { hp: hp, mhp: hp, _afkFuse: L.length, _atkCd: 5 });
           p.summonsV2 = [one];
-          log(tag('融合魔獸', '#c084fc') + L.length + ' 隻 ' + (one.form || '召喚物') + ' 融合成一隻融合魔獸！');
+          log(tag('融合魔獸', '#c084fc') + L.length + ' 隻' + (one.form || '召喚物') + '的血肉交纏，化為一頭融合魔獸。');
           try { if (typeof renderSummonPanel === 'function') renderSummonPanel(true); } catch (e) {}
         }
         if (r && a === 'e_einhasad' && (skId === 'sk_elf_summon' || skId === 'sk_elf_summon2')) {
           L.forEach(function (s) { s.hp = (s.hp || 0) * 5; s.mhp = (s.mhp || 0) * 5; s._afkGod = 1; });
-          log(tag('元素神', '#fde047') + '殷海薩的祝福讓精靈化為元素神！');
+          log(tag('元素神', '#fde047') + '殷海薩的光芒落下，精靈升格為元素神。');
         }
       } catch (e) {}
       return r;
@@ -634,7 +634,7 @@
       if (doomDead(p)) {
         if (isLeader) { if (p.hp > 1) p.hp = 1; }
         else { p.curHp = 0; p._downed = true; p._reviveCd = Math.max(p._reviveCd || 0, 150); }
-        if (!s.doomLog) { s.doomLog = 1; log(tag('命定絕望者', '#f87171') + nm(p) + '的命運在此終結……（離開暗夢星迴才會恢復）', 'enemy'); }
+        if (!s.doomLog) { s.doomLog = 1; log(tag('命定絕望者', '#f87171') + nm(p) + '的命運在此斷絕……（離開暗夢星迴方能復原）', 'enemy'); }
       } else s.doomLog = 0;
       if (isLeader && p.eq && (p.eq.wpn || p.eq.offwpn) && !S().ff) stripWeapons(p);
     }
@@ -658,13 +658,13 @@
           s.athFired = true;
           var ms = MS();
           (ms.mobs || []).forEach(function (m) { if (m && m.curHp > 0 && !m._dead) hurtMob(m, (m.hp || m.curHp) * 0.2, p) /* card-combat:arts-timed */; });
-          log(tag('無神論者', '#e879f9') + nm(p) + '否定了神——所有敵人失去 20% 生命！之後陷入虛弱（5 分鐘）。');
+          log(tag('無神論者', '#e879f9') + nm(p) + '否定了諸神——所有敵人失去兩成生命，代價是之後 5 分鐘的虛弱。');
           s.athOff = t + 3000; s.athSince = null; reap(); refresh(p);
         }
       }
     }
     // 浴魔者：HP<30% 自動施放一輪四屬性五階五星魔法（每場一次）
-    if (a === 'd_magic' && !s.lowCast && inBattle() && (hpOf(p) || 0) < (p.mhp || 1) * 0.3) { s.lowCast = true; log(tag('浴魔者', '#818cf8') + nm(p) + '在瀕死中釋放了四屬性魔法！'); castAttr5(p, 1, ELE_ORDER); }
+    if (a === 'd_magic' && !s.lowCast && inBattle() && (hpOf(p) || 0) < (p.mhp || 1) * 0.3) { s.lowCast = true; log(tag('浴魔者', '#818cf8') + nm(p) + '在瀕死之際，地水火風四道咒文同時迸發。'); castAttr5(p, 1, ELE_ORDER); }
     // 傭兵攻速上限
     if (!isLeader) { var fs = fast(p); if (fs) { var gone = p._afkFastAt == null ? fs.t : t - p._afkFastAt; p._atkCd = Math.max(1, fs.t - gone); } }
   };
@@ -755,7 +755,7 @@
     p.rebirthArt = id;
     if (id === 'k_doom') stripWeapons(p);
     try { calcStats(); } catch (e) {}
-    try { logSys('<span class="text-fuchsia-300 font-bold">✨ 你向奧拉奇里亞學會了「' + ARTS[id].n + '」。</span>'); } catch (e) {}
+    try { logSys('<span class="text-fuchsia-300 font-bold">奧拉奇里亞將「' + ARTS[id].n + '」刻進了你的靈魂。</span>'); } catch (e) {}
     try { if (typeof saveGame === 'function') saveGame(); if (typeof renderTabs === 'function') renderTabs(true); } catch (e) {}
     active = true;
     return { ok: true };

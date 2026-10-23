@@ -119,7 +119,7 @@
         if (r.previous && d.castles.indexOf(r.previous) < 0 && d.castles.length < 7) d.castles.push(r.previous);
         save(d);
         var n = d.castles.length;
-        sys('<span class="text-yellow-300 font-bold">🏰 血盟目前持有 ' + n + ' 座城堡' + (n >= 7 ? '——統一伺服器！' : '') + '</span>' + (n >= 2 && n < 7 ? '（對你宣戰的血盟：' + ((n - 1) * 2) + ' 個）' : ''));
+        sys('<span class="text-yellow-300 font-bold">血盟的旗幟飄揚在 ' + n + ' 座城堡之上' + (n >= 7 ? '——天下歸一。' : '。') + '</span>' + (n >= 2 && n < 7 ? '（' + ((n - 1) * 2) + ' 個血盟向你宣戰）' : ''));
         if (r.previous && r.previous !== city) r.previous = null;   // 原本的城沒有放棄
         syncWar(true);
       }
@@ -284,7 +284,7 @@
           // 王族：5% 呼朋引伴
           if ((m._pvpAvatar === '王子' || m._pvpAvatar === '公主') && !window.__afkHostileCall() && Math.random() < 0.05) {
             call = { map: mapState.current, need: dream() ? 4 : 5, filled: false };
-            sys('<span class="text-red-400 font-bold">📯 ' + m.n + ' 呼朋引伴！敵對血盟的成員蜂擁而至！</span>');
+            sys('<span class="text-red-400 font-bold">' + m.n + ' 吹響號角，敵對血盟的成員蜂擁而至。</span>');
             setTimeout(fillCall, 0);
           }
         }
@@ -318,11 +318,11 @@
         if (war && m._dead) {
           var d = data(); d.kills++;
           var t0 = tierOf(d.kills - 1), t1 = tierOf(d.kills);
-          if (t1 && (!t0 || t0[0] !== t1[0])) sys('<span class="text-red-300 font-bold">⚔ 敵對血盟增援變強了：' + t1[3] + '（已擊殺 ' + d.kills + ' 名）</span>');
-          if (d.kills === 500 || d.kills === 1500) sys('<span class="text-red-300 font-bold">⚔ 敵對血盟改為一次 ' + groupSize(d.kills) + ' 人出擊！</span>');
+          if (t1 && (!t0 || t0[0] !== t1[0])) sys('<span class="text-red-300 font-bold">敵對血盟磨利了刀鋒：' + t1[3] + '（你已斬殺 ' + d.kills + ' 名）</span>');
+          if (d.kills === 500 || d.kills === 1500) sys('<span class="text-red-300 font-bold">敵對血盟不再單打獨鬥——此後一次 ' + groupSize(d.kills) + ' 人出擊。</span>');
           if (unified() && d.kills >= 10000 && !d.surrendered) {
             d.surrendered = true; save(d); syncWar(true);
-            sys('<span class="text-yellow-300 font-bold">👑 你擊敗了 10,000 名敵對血盟成員——全伺服器的血盟向你投降，宣戰結束！</span>');
+            sys('<span class="text-yellow-300 font-bold">第一萬名敵人倒下時，各血盟的旗幟紛紛垂落——全伺服器向你投降，戰火平息。</span>');
           } else save(d);
         }
       } catch (e) {}
@@ -338,7 +338,7 @@
       try {
         if (p && p.dead && !was) {
           var d = data();
-          if (d.kills > 0 && !d.surrendered) { var k = d.kills; d.kills = 0; save(d); sys('<span class="text-red-400">💀 你倒下了——連續擊殺敵對血盟 ' + k.toLocaleString() + ' 名的紀錄歸零。</span>'); }
+          if (d.kills > 0 && !d.surrendered) { var k = d.kills; d.kills = 0; save(d); sys('<span class="text-red-400">你倒下了。連斬 ' + k.toLocaleString() + ' 名敵對血盟的戰績，隨你的鮮血一同流盡。</span>'); }
         }
       } catch (e) {}
       return r;
@@ -370,7 +370,7 @@
     if (dia) { try { window.pandoraAdjustSharedDiamonds(dia); } catch (e) {} }
     if (cry && DB.items.sherine_crystal) { try { gainItem('sherine_crystal', cry, true, true); } catch (e) {} }
     d.lastPay += hrs * 3600000; save(d);
-    sys('<span class="text-yellow-300 font-bold">🏰 城堡收成（' + hrs + ' 小時・' + n + ' 座城）：</span>' + [gold ? gold.toLocaleString() + ' 天幣' : '', dia ? dia + ' 龍之鑽石' : '', cry ? cry + ' 席琳結晶' : ''].filter(Boolean).join('、'));
+    sys('<span class="text-yellow-300 font-bold">城堡的管家呈上了 ' + hrs + ' 小時的收成（' + n + ' 座城）：</span>' + [gold ? gold.toLocaleString() + ' 天幣' : '', dia ? dia + ' 龍之鑽石' : '', cry ? cry + ' 席琳結晶' : ''].filter(Boolean).join('、'));
     try { updateUI(); } catch (e) {}
   };
 
@@ -524,7 +524,7 @@
   var setHome = function (city) {
     var d = data(); if (held().indexOf(city) < 0) return false;
     d.home = city; save(d); titleCache.at = -1e9;
-    sys('<span class="text-amber-200">🏰 回城地點改為' + (SIEGE_CITY[city] ? SIEGE_CITY[city].castleName : city) + '。</span>');
+    sys('<span class="text-amber-200">此後歸鄉之路將通往' + (SIEGE_CITY[city] ? SIEGE_CITY[city].castleName : city) + '。</span>');
     return true;
   };
   var withHome = function (fn, self, args) {

@@ -164,7 +164,7 @@
       player.lv = 1; player.exp = 0;
       try { calcStats(); } catch (e) {}
       player.hp = player.mhp; player.mp = player.mmp;
-      try { logSys('<span class="c-sherine font-bold">♻️ 輪迴轉生！</span><span class="text-fuchsia-200">走過輪迴，再啟新生。你回到 Lv1，保留全部屬性；屬性上限提升至 200、裝備不限職業、所有武器皆可雙持、面板能力 +50，治療藥水的基礎補量變為 3 倍。</span>'); } catch (e) {}
+      try { logSys('<span class="c-sherine font-bold">輪迴已畢。</span><span class="text-fuchsia-200">你走過了死與生的邊界，再啟新生——回到 Lv1，保留全部屬性；屬性上限提升至 200、裝備不限職業、所有武器皆可雙持、面板能力 +50，治療藥水的基礎補量變為 3 倍。</span>'); } catch (e) {}
       try { updateUI(); renderTabs(true); saveGame(); } catch (e) {}
     };
     if (force) { go(); return { ok: true }; }

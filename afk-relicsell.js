@@ -58,7 +58,7 @@
       it.cnt = (it.cnt || 1) - n;
       if (it.cnt <= 0) { player.inv = player.inv.filter(function (i) { return i.uid !== uid; }); try { closeModal(); } catch (e) {} }
       else { try { openModal(it, false); } catch (e) {} }
-      logSys('賣出了 ' + n + ' 個 ' + d.n + '，獲得 <span class="text-cyan-300 font-bold">' + got + ' 龍之鑽石</span>。');
+      logSys('商人收下了 ' + n + ' 個' + d.n + '，付給你 <span class="text-cyan-300 font-bold">' + got + ' 龍之鑽石</span>。');
       try { renderTabs(); updateUI(); if (wasGrant) { calcStats(); renderSkillSelects(); } saveGame(); } catch (e) {}
     };
   }
@@ -74,7 +74,7 @@
     it.cnt = (it.cnt || 1) - 1;
     if (it.cnt <= 0) player.inv = player.inv.filter(function (i) { return i.uid !== uid; });
     gainItem(stone, 1, true, true);
-    logSys('<span class="text-fuchsia-300 font-bold">分解了 ' + (typeof getItemFullName === 'function' ? getItemFullName(it) : d.n) + '，獲得 ' + DB.items[stone].n + '。</span>');
+    logSys('<span class="text-fuchsia-300 font-bold">' + (typeof getItemFullName === 'function' ? getItemFullName(it) : d.n) + ' 在熔爐中瓦解，凝成了一顆' + DB.items[stone].n + '。</span>');
     try { closeModal(); renderTabs(true); updateUI(); saveGame(); } catch (e) {}
     return { ok: true };
   };

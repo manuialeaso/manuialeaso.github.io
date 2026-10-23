@@ -174,7 +174,7 @@
         });
         if (!state.ff && typeof renderSummonPanel === 'function') renderSummonPanel();
       } catch (e) {}
-      if (!state.ff) logCombat('<span class="text-fuchsia-300 font-bold">🌙 ' + nm.n + ' 降臨的衝擊席捲全隊！</span>最大 HP 10% 真實傷害（' + hit.join('、') + '）', 'enemy');
+      if (!state.ff) logCombat('<span class="text-fuchsia-300 font-bold">' + nm.n + ' 降臨的衝擊席捲全隊。</span>最大 HP 10% 真實傷害（' + hit.join('、') + '）', 'enemy');
     } catch (e) {}
   };
   // 不管用什麼方式出場（自然出怪、傳送控制戒指、王房、變身成下一階…），只要場上出現沒放過衝擊的王就放一次
@@ -243,7 +243,7 @@
         try { if (ms[s].hard && typeof initHardSkin === 'function') initHardSkin(ms[s]); } catch (e) {}
         made++;
       }
-      if (made) { try { logSys('<span class="text-fuchsia-300">🌙 傳送控制戒指引來了 ' + (made + 1) + ' 隻 ' + nm.n + '！（夢艷地獄）</span>'); } catch (e) {} if (!state.ff) { try { renderMobs(); } catch (e) {} } }
+      if (made) { try { logSys('<span class="text-fuchsia-300">戒指的符文一閃，' + (made + 1) + ' 隻' + nm.n + '自夢魘中同時現身。</span>'); } catch (e) {} if (!state.ff) { try { renderMobs(); } catch (e) {} } }
       return made;
     };
     var oldRule = function (idx, args) {   // 副本：舊規則
@@ -261,7 +261,7 @@
       for (var j = 0; j < ms.length; j++) if (j !== idx && live(ms[j]) && !ms[j].boss && !ms[j].trollPlayer) { ms[j] = null; gone++; }
       if (gone) {
         if (mapState.targetIdx >= 0 && !ms[mapState.targetIdx]) mapState.targetIdx = idx;
-        try { logSys('<span class="text-fuchsia-300">🌙 ' + nm.n + ' 降臨，周圍的怪物四散逃離……（夢艷地獄：有王時場上只有王）</span>'); } catch (e) {}
+        try { logSys('<span class="text-fuchsia-300">' + nm.n + ' 降臨，周遭的魔物畏懼地四散奔逃。（夢艷地獄：王在場時只有王）</span>'); } catch (e) {}
         if (!state.ff) { try { renderMobs(); } catch (e) {} }
       }
     };
@@ -310,12 +310,12 @@
         if (ally) {
           ally.curHp -= dmg;
           if (R) R.afterIncoming(actor, dmg, mob, context);
-          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 反彈了' + k + '傷害，協力·' + (ally._allyName || '傭兵') + ' 受到 ' + dmg + ' 點傷害！', 'enemy');
+          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 將' + k + '傷害折返，協力·' + (ally._allyName || '傭兵') + ' 受到 ' + dmg + ' 點傷害。', 'enemy');
           if (ally.curHp <= 0) { ally.curHp = 0; ally._downed = true; ally._reviveCd = 150; }
         } else {
           player.hp -= dmg;
           if (R) R.afterIncoming(actor, dmg, mob, context);
-          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 反彈了' + k + '傷害，你受到 ' + dmg + ' 點傷害！', 'enemy');
+          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 將' + k + '傷害折返，你受到 ' + dmg + ' 點傷害。', 'enemy');
           if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer();
         }
       } catch (e) {}
@@ -390,7 +390,7 @@
           } finally { try { _lootMobInfo = savedInfo; } catch (e) {} }
           if (Math.random() < 0.001) {
             var n = Math.random() < 0.5 ? 1 + Math.floor(Math.random() * 499) : 500;
-            if (addDia(n) && typeof logSys === 'function') logSys('<span class="text-cyan-300 font-bold">💎 ' + m.n + ' 掉落了龍之鑽石 × ' + n + '！</span>');
+            if (addDia(n) && typeof logSys === 'function') logSys('<span class="text-cyan-300 font-bold">' + m.n + ' 的殘骸裡散落著龍之鑽石 × ' + n + '。</span>');
           }
         }
       }
@@ -400,13 +400,13 @@
 
   // ── 席琳祈禱：第三個選項 ──
   var toggleDream = function () {
-    if ((player.lv || 1) < 40) { logSys('<span class="text-red-400">等級未達 40，席琳對你的祈禱沒有回應。</span>'); return; }
+    if ((player.lv || 1) < 40) { logSys('<span class="text-red-400">你的力量尚淺（需 Lv40），席琳對你的祈禱置若罔聞。</span>'); return; }
     player.sherineDream = !player.sherineDream;
     if (player.sherineDream) { player.sherineMad = true; player.sherineWorld = false; }
     try { applySherineTheme(); } catch (e) {}
     logSys(player.sherineDream
-      ? '<span class="c-sherine font-bold">【瘋狂席琳夢艷地獄】已開啟。</span><span class="text-fuchsia-300">妖豔的夢魘吞沒了世界……沒有經驗、沒有金幣，只有昇華支配的材料與無盡的試煉。</span>'
-      : '<span class="text-slate-300">【瘋狂席琳夢艷地獄】已關閉，回到瘋狂的席琳世界。</span>');
+      ? '<span class="c-sherine font-bold">席琳睜開了雙眼。</span><span class="text-fuchsia-300">妖豔的夢魘吞沒了世界——這裡沒有經驗、沒有金幣，只有昇華支配的材料與無盡的試煉。（瘋狂席琳夢艷地獄已開啟）</span>'
+      : '<span class="text-slate-300">夢魘退去，你回到瘋狂的席琳世界。（夢艷地獄已關閉）</span>');
     try { saveGame(); } catch (e) {}
     try { renderMobs(); } catch (e) {}
     var el = document.getElementById('interaction-content'); if (el) { try { renderSherinePray(el); } catch (e) {} }

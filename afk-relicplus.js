@@ -399,8 +399,8 @@
     try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
     var nm = (DB.items[g.base] || {}).n;
     var msg = success
-      ? '🔨 遺物合成成功：' + nm + ' +' + target + (target === fxAt(g.base) && fx ? '，繼承了「' + DB.items[fx].n + '」的特效' : '') + '。'
-      : '🔨 遺物強化失敗：' + nm + ' 仍是 +' + g.n + '（遺物沒有消失）。';
+      ? '哈瑪大師的鐵鎚落下最後一擊——' + nm + ' +' + target + '。' + (target === fxAt(g.base) && fx ? '「' + DB.items[fx].n + '」的力量也一併烙進了刃中。' : '')
+      : '火花熄滅，' + nm + ' 仍停在 +' + g.n + '。（遺物安然無損）';
     try { logSys('<span class="' + (success ? 'text-amber-300 font-bold' : 'text-slate-300') + '">' + msg + '</span>'); } catch (e) {}
     return { ok: true, success: success, msg: msg, id: success ? newId : null };
   }
@@ -510,8 +510,8 @@
     try { if (typeof renderTabs === 'function') renderTabs(true); } catch (e) {}
     try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
     var nm = (DB.items[g.base] || {}).n;
-    var msg = success ? '✨ 昇華支配成功：+' + A + ' ' + nm + '昇華支配' + (useStone ? '（使用昇華支配強化石）' : (dust ? '（使用夢域塵 ' + dust + ' 顆）' : '')) + '！'
-                      : '昇華支配失敗：' + nm + ' 維持原樣，材料已消耗（成功率 ' + Math.round(rate * 100) + '%）。';
+    var msg = success ? nm + '浸透了支配的黑光，昇華為 +' + A + '。' + (useStone ? '（使用昇華支配強化石）' : (dust ? '（使用夢域塵 ' + dust + ' 顆）' : ''))
+                      : '黑光退散，' + nm + ' 拒絕了支配；材料已化為灰燼。（成功率 ' + Math.round(rate * 100) + '%）';
     try { logSys('<span class="' + (success ? 'text-fuchsia-300 font-bold' : 'text-slate-300') + '">' + msg + '</span>'); } catch (e) {}
     return { ok: true, success: success, msg: msg, rate: rate, id: success ? newId : null };
   }
@@ -571,7 +571,7 @@
     pushResult(newId, tk.got[0]); remember(newId);
     if (!saveOk()) { undo(); try { saveGame(); } catch (e) {} return { ok: false, msg: '存檔失敗，什麼都沒有改變。' }; }
     try { if (typeof renderTabs === 'function') renderTabs(true); updateUI(); } catch (e) {}
-    var msg = '🌟 進化成功：' + bd.n + '至高的支配【' + EVO[evo] + '】！';
+    var msg = bd.n + '褪去凡鐵之軀，成為至高的支配【' + EVO[evo] + '】。';
     try { logSys('<span class="text-yellow-300 font-bold">' + msg + '</span>'); } catch (e) {}
     return { ok: true, id: newId, evo: evo, msg: msg };
   }
@@ -628,7 +628,7 @@
         if (equippedEvo().length >= EVO_MAX_EQUIP && t >= immortalAt && !player.dead) {
           immortalAt = t + 300;
           player.hp = Math.max(1, player.hp > 0 ? player.hp : 1);
-          try { logCombat('<span class="text-yellow-300 font-bold">【至暗支配・席琳的永生】</span>席琳的力量讓你免於死亡！（30 秒後可再次觸發）', 'heal'); } catch (e) {}
+          try { logCombat('<span class="text-yellow-300 font-bold">【至暗支配・席琳的永生】</span>席琳的手攫住了你將逝的靈魂，將它推回人間。（30 秒後可再次觸發）', 'heal'); } catch (e) {}
           try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
           return;
         }
@@ -701,7 +701,7 @@
     if (!enabled()) return;
     if (Math.random() * 100 >= 25) return;   // 5% × 5 星
     var cfg = ATTR5[proc.ele]; if (!cfg) return;
-    try { logCombat('<span class="font-bold" style="color:#f0abfc;text-shadow:0 0 6px #a21caf">【' + cfg.n + '】</span>昇華支配之力爆發！', 'player-special'); } catch (e) {}
+    try { logCombat('<span class="font-bold" style="color:#f0abfc;text-shadow:0 0 6px #a21caf">【' + cfg.n + '】</span>支配之力自遺物中奔湧而出。', 'player-special'); } catch (e) {}
     var prev = window.__afkSpellMult; window.__afkSpellMult = 1.5;
     try {
       for (var k = 0; k < 3; k++) cfg.sk.forEach(function (skId) {

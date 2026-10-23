@@ -76,7 +76,7 @@
     if (m.hard && typeof initHardSkin === 'function') initHardSkin(m);
     m._dreamStar = true; m._dsName = NAME; m._dsBorn = S().ticks || 0; m._dsRage = m.rageDmgMult || 1;
     m.exp = 0; m.goldMin = 0; m.goldMax = 0; m.noGold = true;
-    sys('<span class="font-bold" style="color:#c084fc;">🌌 時空的夢境裂開了——' + NAME + '（' + base.n + ' 的投影）降臨！</span>');
+    sys('<span class="font-bold" style="color:#c084fc;">夢境的裂縫無聲張開，' + NAME + '——' + base.n + '的投影——自星屑中走出。</span>');
     if (typeof vfxBossEntrance === 'function') { try { vfxBossEntrance(m); } catch (e) {} }
     if (!S().ff) { try { renderMobs(); } catch (e) {} }
   };
@@ -96,7 +96,7 @@
       if (player.hp <= 0 && typeof killPlayer === 'function') { killPlayer(); return true; }
     } else {
       t.curHp -= dmg;
-      if (t.curHp <= 0) { t.curHp = 0; t._downed = true; t._reviveCd = 150; log('<span class="text-amber-400 font-bold">協力傭兵 ' + t._allyName + ' 被' + why + '擊倒了！</span>'); }
+      if (t.curHp <= 0) { t.curHp = 0; t._downed = true; t._reviveCd = 150; log('<span class="text-amber-400 font-bold">協力傭兵 ' + t._allyName + ' 被' + why + '擊倒。</span>'); }
     }
     return false;
   };
@@ -105,7 +105,7 @@
     var kept = {};
     for (var k in (t.buffs || {})) { var d = DB.skills[k]; if (k === 'poly' || (d && d.summon)) kept[k] = t.buffs[k]; }
     t.buffs = kept;
-    log('<span class="text-fuchsia-300">' + NAME + '</span> 施放魔法相消術，驅散了 ' + nameOf(t) + ' 身上的增益狀態！');
+    log('<span class="text-fuchsia-300">' + NAME + '</span> 低誦相消之咒，' + nameOf(t) + ' 身上的祝福盡數剝落。');
   };
   var stun = function (m, t) {
     var sk = { type: 'stun', pbase: 250, skn: '衝擊之暈' };
@@ -137,7 +137,7 @@
       if (holy(mob) && dmg > 0 && !mob._dead) {
         mob.curHp = Math.min(mob.hp, mob.curHp + dmg);
         var now = Date.now();
-        if (!mob._dsHolyLog || now - mob._dsHolyLog >= 1000) { mob._dsHolyLog = now; log(tag('聖結界', '#fde68a') + NAME + ' 的聖結界擋下了所有傷害！（需要魔法相消術打破）'); }
+        if (!mob._dsHolyLog || now - mob._dsHolyLog >= 1000) { mob._dsHolyLog = now; log(tag('聖結界', '#fde68a') + NAME + ' 的聖結界吞沒了一切攻擊。（唯有魔法相消術能破）'); }
         return;
       }
       return oRW.apply(this, arguments);
@@ -157,7 +157,7 @@
     var hm = on() && kinds && kinds.indexOf(CANCEL_MARK) >= 0 ? holyMob() : null;
     if (hm) {
       hm._dsHolyUntil = 0;
-      log(tag('魔法相消術', '#86efac') + '聖結界被打破了！' + NAME + ' 再次可以受到傷害。');
+      log(tag('魔法相消術', '#86efac') + '聖結界應聲碎裂，' + NAME + ' 再度暴露於刀鋒之下。');
       return player;
     }
     return oClean.apply(this, arguments);
@@ -175,16 +175,16 @@
       var age = t - (m._dsBorn || t);
       var team = members(); if (!team.length) return;
       var pick = function () { return team[Math.floor(Math.random() * team.length)]; };
-      if (m._dsIllu && t > m._dsIllu) { m._dsIllu = 0; m.rageDmgMult = m._dsRage; log(NAME + ' 的全幻覺消散了。'); }
+      if (m._dsIllu && t > m._dsIllu) { m._dsIllu = 0; m.rageDmgMult = m._dsRage; log(NAME + ' 的幻影褪去，回歸本相。'); }
       if (every(age, 15)) dispel(m, pick());
       if (every(age, 30)) {
         stun(m, pick());
         if (!holy(m)) {
           m._dsHolyUntil = Infinity;
-          log(tag('聖結界', '#fde68a') + NAME + ' 張開了聖結界，免疫一切傷害！（需要魔法相消術打破）');
+          log(tag('聖結界', '#fde68a') + NAME + ' 張開聖結界，刀劍與咒文皆不得近身。（唯有魔法相消術能破）');
           if (invCnt('afk_cancel_scroll') > 0 && takeN('afk_cancel_scroll', 1)) {
             m._dsHolyUntil = 0;
-            log(tag('相消術卷軸', '#86efac') + '你自動撕開一張相消術卷軸，聖結界被打破了！（剩 ' + invCnt('afk_cancel_scroll') + ' 張）');
+            log(tag('相消術卷軸', '#86efac') + '你撕開一張相消術卷軸，聖結界應聲碎裂。（剩 ' + invCnt('afk_cancel_scroll') + ' 張）');
             try { if (typeof renderTabs === 'function' && !S().ff) renderTabs(true); } catch (e) {}
           }
         }
@@ -192,12 +192,12 @@
       if (every(age, 45)) {
         var k = ['melee', 'ranged', 'magic'][Math.floor(Math.random() * 3)];
         m._reflectWall = { kind: k, until: t + 3 * SEC };
-        log(tag('血壁空間', '#f87171') + NAME + ' 3 秒內反射' + { melee: '近距離', ranged: '遠距離', magic: '魔法' }[k] + '傷害！');
+        log(tag('血壁空間', '#f87171') + NAME + ' 周身血壁湧動，3 秒內' + { melee: '近距離', ranged: '遠距離', magic: '魔法' }[k] + '傷害將原路折返。');
       }
       if (every(age, 60)) { try { applyMobMagic(m, { type: 'self_buff', buffKind: 'guard', skn: '堅固防禦', drBase: 10, dr50: 12, drStep: 2 }); } catch (e) {} }
-      if (age === 180 * SEC) { m._dsIllu = t + 30 * SEC; m.rageDmgMult = m._dsRage * 1.5; log(tag('幻術・全幻覺', '#a78bfa') + NAME + ' 化身全幻覺，30 秒內傷害 ×1.5！'); }
-      if (age === 300 * SEC) { m._reflectWall = { kind: 'magic', until: t + 10 * SEC }; log(tag('鏡反射', '#93c5fd') + NAME + ' 10 秒內反射魔法傷害！'); }
-      if (age === 360 * SEC) { m._reflectWall = { kind: 'phys', until: t + 10 * SEC }; log(tag('疼痛歡愉', '#fca5a5') + NAME + ' 10 秒內反射物理傷害！'); }
+      if (age === 180 * SEC) { m._dsIllu = t + 30 * SEC; m.rageDmgMult = m._dsRage * 1.5; log(tag('幻術・全幻覺', '#a78bfa') + NAME + ' 化作千重幻影，30 秒內傷害 ×1.5。'); }
+      if (age === 300 * SEC) { m._reflectWall = { kind: 'magic', until: t + 10 * SEC }; log(tag('鏡反射', '#93c5fd') + NAME + ' 立起鏡面，10 秒內咒文將映回施術者。'); }
+      if (age === 360 * SEC) { m._reflectWall = { kind: 'phys', until: t + 10 * SEC }; log(tag('疼痛歡愉', '#fca5a5') + NAME + ' 沉醉於痛楚之中，10 秒內刀劍之傷將反噬其主。'); }
       if (age >= 420 * SEC && age % SEC === 0) {
         var dead = false;
         members().forEach(function (x) {
@@ -205,18 +205,18 @@
           var dm = ['earth', 'water', 'fire', 'wind'].reduce(function (a, e) { return a + 100 * effRes(x, e); }, 0);
           if (dm >= 1) dead = hurt(x, dm, '四屬性風暴');
         });
-        if (age % (10 * SEC) === 0) log(tag('四屬性風暴', '#fb923c') + '地、水、火、風四道洪流不斷沖刷全隊（每秒每屬性 100，吃屬性抗性）！');
+        if (age % (10 * SEC) === 0) log(tag('四屬性風暴', '#fb923c') + '地、水、火、風四道洪流席捲全隊（每秒各 100，受屬性抗性減免）。');
         if (dead) return;
       }
       if (age >= 600 * SEC && age <= 603 * SEC && age % SEC === 0) {
         var k4 = (age - 600 * SEC) / SEC, nm = ['流星雨', '冰雪颶風', '雷霆風暴', '大地崩裂'][k4], ele = ['fire', 'water', 'wind', 'earth'][k4];
-        log(tag('究極魔法・' + nm, '#f472b6') + NAME + ' 施放究極魔法！全隊受到最大 HP 20% 的傷害（吃屬性抗性，最少 10%）！');
+        log(tag('究極魔法・' + nm, '#f472b6') + NAME + ' 詠唱禁忌的究極魔法，全隊受到最大 HP 20% 的傷害（受屬性抗性減免，至少 10%）。');
         var dd = false;
         members().forEach(function (x) { if (dd) return; var mh = x.mhp || x.hp || x.curHp || 1; dd = hurt(x, Math.max(mh * 0.1, mh * 0.2 * effRes(x, ele)), '究極魔法'); });
         if (dd) return;
       }
       if (age >= 900 * SEC) {
-        sys('<span class="text-red-500 font-bold">💥 ' + NAME + ' 自爆了！夢境崩塌，全隊無一倖存……</span>');
+        sys('<span class="text-red-500 font-bold">' + NAME + ' 的身軀化為光焰炸裂，夢境隨之崩塌——無人生還。</span>');
         (player.allies || []).forEach(function (x) { if (x && !x._downed) { x.curHp = 0; x._downed = true; x._reviveCd = 150; } });
         m.curHp = 0; m._dsBlast = true;
         player.hp = 0; if (typeof killPlayer === 'function') killPlayer();
@@ -276,7 +276,7 @@
         if (addDia(5000)) got.push('龍之鑽石 5000');
         if (Math.random() < 0.5) { for (var q = 0; q < 3; q++) { var mat = pickW(MATS); if (DB.items[mat]) { gainItem(mat, 1); got.push(DB.items[mat].n); } } }
         if (Math.random() < 0.0001 && DB.items.afk_card_pick) { gainItem('afk_card_pick', 1); got.push(DB.items.afk_card_pick.n); }
-        sys('<span class="font-bold" style="color:#c084fc;">🌌 ' + NAME + ' 消散了。</span>' + (got.length ? '<span class="text-fuchsia-200">獲得：' + got.join('、') + '</span>' : '<span class="text-slate-400">這次什麼也沒留下。</span>'));
+        sys('<span class="font-bold" style="color:#c084fc;">' + NAME + ' 化作星屑散去。</span>' + (got.length ? '<span class="text-fuchsia-200">它遺下了：' + got.join('、') + '</span>' : '<span class="text-slate-400">夢境什麼也沒有留下。</span>'));
       } finally { try { _lootMobInfo = info; } catch (e) {} }
       // 跟四龍副本一樣：打倒一隻頭目就結束，回到時空裂痕入口（擊殺流程跑完再走，避免在怪物迴圈中途換圖）
       setTimeout(function () {
@@ -297,38 +297,38 @@
     var ds = !!(S().dreamStar && S().riftRun);
     var keep = player.riftRewardMs;
     var r = oEnd.apply(this, arguments);
-    if (ds) { player.riftRewardMs = keep; S().dreamStar = false; sys('<span class="text-fuchsia-300">🌌 你離開了暗夢星迴。</span>'); }
+    if (ds) { player.riftRewardMs = keep; S().dreamStar = false; sys('<span class="text-fuchsia-300">你自夢境中醒轉，離開了暗夢星迴。</span>'); }
     return r;
   };
 
   // ── 入口：單人 1000 顆龜裂之核；多人要境滅亡域鑰匙（連線尚未製作）──
   var SOLO_CORES = 1000;
   window.enterDreamStar = function (mode) {
-    if (mode === 'multi') { sys('<span class="text-amber-300">暗夢星迴多人模式（境滅亡域鑰匙）還在製作中，目前只開放單人模式。</span>'); return; }
-    if ((player.lv || 1) < 40) { sys('<span class="text-red-400">等級未達 40，無法進入暗夢星迴。</span>'); return; }
-    if (player.riftRewardMs != null) { sys('<span class="text-amber-300">請先在時空裂痕入口「領取獎勵」，才能進入暗夢星迴。</span>'); return; }
+    if (mode === 'multi') { sys('<span class="text-amber-300">境滅亡域的門扉尚未開啟（多人模式製作中），目前只能獨自入夢。</span>'); return; }
+    if ((player.lv || 1) < 40) { sys('<span class="text-red-400">你的力量尚淺（需 Lv40），夢境拒你於門外。</span>'); return; }
+    if (player.riftRewardMs != null) { sys('<span class="text-amber-300">請先在時空裂痕入口領取獎勵，再踏入暗夢星迴。</span>'); return; }
     var have = invCnt('mat_crack_core');
-    if (have < SOLO_CORES) { sys('<span class="text-red-400">單人暗夢星迴需要 ' + SOLO_CORES + ' 顆龜裂之核（目前 ' + have + ' 顆）。</span>'); return; }
+    if (have < SOLO_CORES) { sys('<span class="text-red-400">入夢需要 ' + SOLO_CORES + ' 顆龜裂之核（你只有 ' + have + ' 顆）。</span>'); return; }
     var p = player, snap = p.inv.slice(), cnts = p.inv.map(function (x) { return x && x.cnt; });
     takeN('mat_crack_core', SOLO_CORES - 1);   // 剩下 1 顆由 enterRift 自己扣
     S().dreamStar = true;
     try { window.enterRift(); } finally {
       if (!S().riftRun) { S().dreamStar = false; p.inv = snap; snap.forEach(function (x, j2) { if (x) x.cnt = cnts[j2]; }); }
     }
-    if (S().dreamStar) sys('<span class="font-bold" style="color:#c084fc;">🌌 你消耗了 ' + SOLO_CORES + ' 顆龜裂之核，潛入暗夢星迴……只有夢境者的投影在等著你。（15 分鐘內必須擊倒，否則它會自爆）</span>');
+    if (S().dreamStar) sys('<span class="font-bold" style="color:#c084fc;">' + SOLO_CORES + ' 顆龜裂之核在掌中碎裂，你沉入暗夢星迴。夢境者的投影已在等候——十五分鐘內未能擊倒，它將與夢境一同崩毀。</span>');
   };
   var hasAllTS = function () { return TS.every(function (id) { return invCnt(id) > 0; }); };
   // 冥王域＝輪迴轉生：集齊六種時空材料、Lv100 才能進入；進去後輪迴開始 → 等級回 1、回到說話之島（轉生內容見 afk-rebirth.js）
   window.enterHades = function () {
-    if (!hasAllTS()) { sys('<span class="text-red-400">需要集齊六種時空材料，冥王域的大門才會開啟。</span>'); return; }
-    if (player.rebirth > 0) { sys('<span class="text-slate-300">你已經走過一次輪迴，冥王域不再回應你。</span>'); return; }
-    if ((player.lv || 1) < 100) { sys('<span class="text-red-400">冥王域只接受 Lv100 的靈魂（目前 Lv' + (player.lv || 1) + '）。</span>'); return; }
-    if (S().riftRun) { sys('<span class="text-amber-300">請先離開時空裂痕再進入冥王域。</span>'); return; }
+    if (!hasAllTS()) { sys('<span class="text-red-400">六種時空材料未齊，冥王域的大門紋絲不動。</span>'); return; }
+    if (player.rebirth > 0) { sys('<span class="text-slate-300">你已走過一次輪迴，冥王域不再回應你的呼喚。</span>'); return; }
+    if ((player.lv || 1) < 100) { sys('<span class="text-red-400">冥王域只接納 Lv100 的靈魂（你目前 Lv' + (player.lv || 1) + '）。</span>'); return; }
+    if (S().riftRun) { sys('<span class="text-amber-300">你仍身在時空裂痕之中，先離開才能走向冥王域。</span>'); return; }
     var go = function () {
       player.hadesUnlocked = true;
       var r = (typeof window.doRebirth === 'function') ? window.doRebirth(true) : { ok: false, msg: '輪迴轉生未啟用。' };
       if (!r || !r.ok) { sys('<span class="text-red-400">' + ((r && r.msg) || '輪迴失敗') + '</span>'); return; }
-      sys('<span class="font-bold" style="color:#fda4af;">⚰️ 輪迴開始——冥王域吞沒了你的一切等級，你在說話之島重新睜開雙眼。</span>');
+      sys('<span class="font-bold" style="color:#fda4af;">冥王域吞沒了你半生的修為。黑暗退去時，你在說話之島的海風中重新睜開雙眼。</span>');
       try { setMapSelectors('town_talking'); changeMap(true); } catch (e) {}
       try { saveGame(); } catch (e) {}
     };

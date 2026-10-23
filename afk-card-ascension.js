@@ -74,7 +74,7 @@
     if (s.samsaraFight < SAMSARA_FIGHT) return false;
     s.samsaraFight = 0; s.samsaraCdUntil = Date.now() + SAMSARA_CD;
     actor.poly = null; actor.buffs.poly = 0;
-    say('連續戰鬥 30 分鐘，聖衣的力量耗盡，變身解除（冷卻 30 分鐘，期間只能用其他變身）。');
+    say('三十分鐘的鏖戰燃盡了聖衣的星光，聖衣自你身上剝離。（冷卻 30 分鐘，期間只能借用其他形貌）');
     try { if (typeof calcStats === 'function') calcStats(); } catch (e) {}
     return true;
   }
@@ -229,13 +229,13 @@
   }
   function rewardText(r,tierName){
     if(!r)return '';
-    if(r.kind==='star')return '「'+r.n+'」在卡冊升到 '+r.stars+' 星'+(r.stars>=7?'（滿星）':'')+'。';
+    if(r.kind==='star')return '「'+r.n+'」的魂影又凝實了一分（卡冊 '+r.stars+' 星'+(r.stars>=7?'·滿星':'')+'）。';
     if(r.kind==='duplicate')return '「'+(byId[r.cardId]?byId[r.cardId].n:'這張卡')+'」已'+(byId[r.cardId]&&byId[r.cardId].tier==='samsara'?'解除封印':'滿 7 星')+'，返還「'+r.n+'」。';
-    if(r.kind==='unlock')return '點亮卡冊「'+r.n+'」，已永久解鎖變身。';
-    if(r.kind==='sealed')return '取得封印型態的「'+r.n+'」（效果減半／封印聖衣），再取得一次即可解除封印。';
-    if(r.kind==='unseal')return '「'+r.n+'」解除封印，發揮完整力量！';
+    if(r.kind==='unlock')return '卡冊中「'+r.n+'」的一頁亮了起來——這副形貌從此屬於你。';
+    if(r.kind==='sealed')return '「'+r.n+'」降臨了，卻仍沉睡在封印之中（效果減半／封印聖衣）；再得一次，方能喚醒。';
+    if(r.kind==='unseal')return '封印碎裂，「'+r.n+'」睜開雙眼，完整的力量回到了它身上。';
     if(r.kind==='multi')return r.list.map(function(x){return '「'+x.n+'」';}).join('、');
-    return '取得「'+r.n+'」。';
+    return '你得到了「'+r.n+'」。';
   }
   function status(actor) {
     actor=actor||player;var s=data(actor),ns=monsterNames();
@@ -265,7 +265,7 @@
       else if(tier==='samsara'){gainItem(STSHARD,1,true,true);reward={kind:'item',id:STSHARD,n:'時空變身碎片'};}
       return {ok:true,tier:tier,success:success,guaranteed:pity,spent:5,failures:s.failures[tier],reward:reward};
     });
-    if(result.ok){say(result.success?rewardText(result.reward):'合成失敗'+(result.reward?'，取得「'+result.reward.n+'」。':'，消耗 5 張'+RULES[tier].mat+'。')+(tier==='spacetime'?'下次時空合成成功率 '+Math.round(rateOf('spacetime',player)*100)+'%。':''));}
+    if(result.ok){say(result.success?rewardText(result.reward):'光芒潰散，五張'+RULES[tier].mat+'在掌中化為塵埃'+(result.reward?'；餘燼裡留下了「'+result.reward.n+'」。':'。')+(tier==='spacetime'?'時空的縫隙又鬆動了些（下次成功率 '+Math.round(rateOf('spacetime',player)*100)+'%）。':''));}
     else if(result.msg)say(result.msg);
     return result;
   }
@@ -278,7 +278,7 @@
       if(!take(pool,10))return {ok:false,msg:'需要 10 枚未鎖定的天上自選碎片。'};
       gainItem(CHOICE,1,true,true);return {ok:true,spent:10,reward:{id:CHOICE,n:'天上卡自選'}};
     });
-    say(result.ok?'已用 10 枚碎片換取 1 張天上卡自選。':result.msg);return result;
+    say(result.ok?'十枚碎片拼回了一道天光，換得一張天上卡自選。':result.msg);return result;
   }
   function exchangeDiamondShards() {
     var result=transaction(function(){
@@ -286,7 +286,7 @@
       if(!take(pool,DSHARD_COST))return {ok:false,msg:'需要 '+DSHARD_COST+' 枚未鎖定的鑽石卡碎片。'};
       return {ok:true,spent:DSHARD_COST,reward:randomMissingDiamond('celestial','shard')};
     });
-    say(result.ok?'鑽石卡碎片合成「'+result.reward.n+'」。':result.msg);return result;
+    say(result.ok?'碎片相互吸引、熔為一體——「'+result.reward.n+'」。':result.msg);return result;
   }
   function chooseSpacetime(id) {
     var result=transaction(function(){
@@ -326,7 +326,7 @@
       if(!isMonster(name)||diamondOwned(name,player)||!DB.items[cardId(name,5)])return {ok:false,msg:'請選擇尚未登錄鑽石卡的怪物。'};
       take([it],1);acquireCard(name,5,1);return {ok:true,reward:{id:cardId(name,5),n:name+' 的鑽石卡'}};
     });
-    say(result.ok?'已收藏「'+result.reward.n+'」。':result.msg);if(result.ok)closeCollection();return result;
+    say(result.ok?'「'+result.reward.n+'」被收進了卡冊。':result.msg);if(result.ok)closeCollection();return result;
   }
   function registerCatalog(input) {
     TIERS.forEach(function(t){(input&&input[t]||[]).forEach(function(spec){
@@ -483,7 +483,7 @@
     if(!found||!relevant(found.form))return oldConfirm.apply(this,arguments);
     var error=ready(),it=player&&player.inv&&player.inv.find(function(x){return x.uid===uid;}),d=it&&DB.items[it.id];
     if(error){say(error);return false;}
-    if(!it || count(it)<1 || !d || !(d.eff==='poly'||d.ttmiAction==='poly'||d.ttmiControlledPoly)){say('請先準備變形卷軸。');return false;}
+    if(!it || count(it)<1 || !d || !(d.eff==='poly'||d.ttmiAction==='poly'||d.ttmiControlledPoly)){say('你身上沒有變形卷軸。');return false;}
     var f=resolve(found.form,player);if(!f){say(isMonster(name)?'先取得「'+name+'」的鑽石卡。':'請先取得這張變身卡。');return false;}
     // Keep the native consume/update path and the rift wrapper's ownership
     // bookkeeping. Card ownership replaces only this form's level/ring gate.
@@ -502,7 +502,7 @@
     }
     if(/^afk_asc_/.test(d.eff)){
       if(silent)return;var error=ready();if(error){say(error);return;}
-      if(it.lock){say('請先解除這件道具的鎖定。');return;}
+      if(it.lock){say('這件道具已上鎖，請先解鎖。');return;}
       if(d.eff==='afk_asc_dshard'){exchangeDiamondShards();return;}
       if(d.eff==='afk_asc_stshard'){openSpacetimePick();return;}
       if(d.eff==='afk_asc_diamond_choice'){openDiamondChoice(uid);return;}
@@ -513,14 +513,14 @@
     }
     if(d.eff==='poly'||d.ttmiAction==='poly'||d.ttmiControlledPoly){
       var err=ready();if(err){if(!silent)say(err);return;}
-      if(d.ttmiRiftOnly&&!(window.AFK_TTMI_ITEMS&&AFK_TTMI_ITEMS.inRift())){if(!silent)say('這件補給只能在時空裂痕中使用。');return;}
+      if(d.ttmiRiftOnly&&!(window.AFK_TTMI_ITEMS&&AFK_TTMI_ITEMS.inRift())){if(!silent)say('這件補給只在時空裂痕中才會回應你。');return;}
       if(d.ttmiPolyForm&&isMonster(d.ttmiPolyForm)&&!diamondOwned(d.ttmiPolyForm,player)){if(!silent)say('先取得「'+d.ttmiPolyForm+'」的鑽石卡。');return;}
       if(!d.ttmiPolyForm && !silent && (hasPolyRing()||selectionList().length)){
         if(!d.ttmiSourceId){openPolySelect(uid);return;}
         var selectionRing=window.hasPolyRing;window.hasPolyRing=function(){return true;};
         try{return oldUse.apply(this,arguments);}finally{window.hasPolyRing=selectionRing;}
       }
-      if(!d.ttmiPolyForm && !(silent&&player.poly&&canUseForm(player.poly,player)) && !polyRandomCandidates().length){if(!silent)say('目前沒有可用變身，卷軸已保留。');return;}
+      if(!d.ttmiPolyForm && !(silent&&player.poly&&canUseForm(player.poly,player)) && !polyRandomCandidates().length){if(!silent)say('眼下沒有可借用的形貌，卷軸已收回行囊。');return;}
       if(silent&&player.poly&&relevant(player.poly)&&canUseForm(player.poly,player)){
         // Native automatic reuse requires a ring. Card ownership supplies the
         // same persistence without changing hasPolyRing's equipment contract.
@@ -574,7 +574,7 @@
     if(!enabled()||!player||!player.cls)return;
     if(syncUnlocks(player))saveGame();
     var host=createModal('變身卡收藏');host.innerHTML='<p>取得鑽石卡可選擇該怪物變身；高階卡首次取得後永久解鎖。</p><div class="afk-ca-actions"><button type="button" class="btn" data-poly>使用卷軸變身</button></div><div id="afk-card-ascension-collection"></div>';
-    host.querySelector('[data-poly]').onclick=function(){var it=player.inv.find(function(x){return x.id==='scroll_poly'&&count(x)>0;});if(!it){say('請先準備變形卷軸。');return;}closeCollection();useItem(it.uid);};drawCollection();
+    host.querySelector('[data-poly]').onclick=function(){var it=player.inv.find(function(x){return x.id==='scroll_poly'&&count(x)>0;});if(!it){say('你身上沒有變形卷軸。');return;}closeCollection();useItem(it.uid);};drawCollection();
   }
   function openChoice(uid){
     var host=createModal('天上卡自選');host.innerHTML='<p>選一張天上卡：沒有的會點亮卡冊，已有的升 1 星（最多 7 星）。</p>';
