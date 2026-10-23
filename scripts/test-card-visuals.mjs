@@ -29,6 +29,8 @@ try {
       },tier);
       await page.waitForFunction(key=>{const c=_morphBattleCache[key];return c&&c!=='probing'&&Array.isArray(c.idle)&&c.idle.length>0;},info.form.key,{timeout:15000});
       await page.evaluate(()=>{_playerMorphApply();_playerMorphApply();});
+      // 每一階都有自己的自製圖（不再共用同一個資料夾），等目前顯示的那一幀解碼完成再量
+      await page.waitForFunction(()=>{const i=document.querySelector('#player-morph-sprite .pm-body');return i&&i.complete&&i.naturalWidth>0;},null,{timeout:15000});
       const rendered=await page.locator('#player-morph-sprite').evaluate(el=>{
         const img=el.querySelector('.pm-body'),aura=el.querySelector('.afk-trans-aura');
         return{tier:el.dataset.cardAura,src:img&&img.src,decoded:!!(img&&img.complete&&img.naturalWidth>0),visible:el.getBoundingClientRect().width>0,aura:!!aura,auraHeight:aura&&aura.getBoundingClientRect().height};

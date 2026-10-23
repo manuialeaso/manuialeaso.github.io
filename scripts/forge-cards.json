@@ -1,0 +1,555 @@
+[
+{
+"tier": "mythic",
+"name": "神話・巴列斯",
+"proto": "巴列斯",
+"alias": "巴列斯",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・艾莉絲",
+"proto": "艾莉絲",
+"alias": "艾莉絲",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・吸血鬼",
+"proto": "吸血鬼",
+"alias": "吸血鬼",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・炎魔",
+"proto": "炎魔",
+"alias": "炎魔",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・黑暗巡守",
+"proto": "黑暗巡守",
+"alias": "黑暗巡守",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・黑暗法師",
+"proto": "黑暗法師",
+"alias": "黑暗法師",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・黑暗騎士",
+"proto": "黑暗騎士",
+"alias": "黑暗騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・銀光巡守",
+"proto": "銀光巡守",
+"alias": "銀光巡守",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・銀光法師",
+"proto": "銀光法師",
+"alias": "銀光法師",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・銀光騎士",
+"proto": "銀光騎士",
+"alias": "銀光騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・騎士范德",
+"proto": "騎士范德",
+"alias": "騎士范德",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・惡魔",
+"proto": "惡魔",
+"alias": "惡魔",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・黃金巡守",
+"proto": "黃金巡守",
+"alias": "黃金巡守",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・黃金法師",
+"proto": "黃金法師",
+"alias": "黃金法師",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・黃金騎士",
+"proto": "黃金騎士",
+"alias": "黃金騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・白金巡守",
+"proto": "白金巡守",
+"alias": "白金巡守",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・白金法師",
+"proto": "白金法師",
+"alias": "白金法師",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・白金騎士",
+"proto": "白金騎士",
+"alias": "白金騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・死亡",
+"proto": "死亡",
+"alias": "死亡",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・反王肯恩",
+"proto": "反王肯恩",
+"alias": "反王肯恩",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・烈焰的死亡騎士",
+"proto": "烈焰的死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・莉絲安",
+"proto": "莉絲安",
+"alias": "莉絲安",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・焚焰死亡騎士",
+"proto": "焚焰死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・黃金死亡騎士",
+"proto": "黃金死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・雷霆死亡騎士",
+"proto": "雷霆死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・闇黑死亡騎士",
+"proto": "闇黑死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・真夏納",
+"proto": "真夏納",
+"alias": "真夏納",
+"kind": "class"
+},
+{
+"tier": "mythic",
+"name": "神話・伊詩蒂",
+"proto": "伊詩蒂",
+"alias": "賽尼斯",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・格利特",
+"proto": "格利特",
+"alias": "白金騎士",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・特羅斯",
+"proto": "特羅斯",
+"alias": "克特",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・喬",
+"proto": "喬",
+"alias": "馬庫爾",
+"kind": "3d"
+},
+{
+"tier": "mythic",
+"name": "神話・絲莉安",
+"proto": "絲莉安",
+"alias": "莉絲安",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・曙光聖騎",
+"proto": "烈焰的死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・月羽神弓",
+"proto": "莉絲安",
+"alias": "莉絲安",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・熾光聖賢",
+"proto": "真夏納",
+"alias": "真夏納",
+"kind": "class"
+},
+{
+"tier": "celestial",
+"name": "天上・天穹劍聖",
+"proto": "格利特",
+"alias": "白金騎士",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・雷霆天將",
+"proto": "雷霆死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・金輝守護",
+"proto": "黃金死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・焚天戰神",
+"proto": "焚焰死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・夜幕天刃",
+"proto": "闇黑死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天律裁決",
+"proto": "特羅斯",
+"alias": "克特",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・星海魔導",
+"proto": "伊詩蒂",
+"alias": "賽尼斯",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・雲端劍豪",
+"proto": "喬",
+"alias": "馬庫爾",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天羽獵星",
+"proto": "絲莉安",
+"alias": "莉絲安",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天影忍神",
+"proto": "忍者",
+"alias": "忍者",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天命陰陽",
+"proto": "陰陽師",
+"alias": "西瑪",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・曦光射手",
+"proto": "安迪斯",
+"alias": "黑暗巡守",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天籟法師",
+"proto": "艾迪爾",
+"alias": "黑長者",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天雷武士",
+"proto": "侍",
+"alias": "黑暗騎士",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天威大名",
+"proto": "大名",
+"alias": "騎士范德",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天弓姬武",
+"proto": "姬武者",
+"alias": "艾莉絲",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・蒼穹拳聖",
+"proto": "拉曼斯",
+"alias": "長老",
+"kind": "3d"
+},
+{
+"tier": "celestial",
+"name": "天上・天狼王",
+"proto": "反王肯恩",
+"alias": "反王肯恩",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・永劫騎士",
+"proto": "烈焰的死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・裂星獵手",
+"proto": "莉絲安",
+"alias": "莉絲安",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・萬象先知",
+"proto": "真夏納",
+"alias": "真夏納",
+"kind": "class"
+},
+{
+"tier": "spacetime",
+"name": "時空・虛空劍帝",
+"proto": "格利特",
+"alias": "白金騎士",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・逆時雷霆",
+"proto": "雷霆死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・終焉守門",
+"proto": "黃金死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・時砂暴君",
+"proto": "焚焰死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・輪迴劍鬼",
+"proto": "闇黑死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・次元裁判",
+"proto": "特羅斯",
+"alias": "克特",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・混沌魔尊",
+"proto": "伊詩蒂",
+"alias": "賽尼斯",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・時空劍豪",
+"proto": "喬",
+"alias": "馬庫爾",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・星界弓神",
+"proto": "絲莉安",
+"alias": "莉絲安",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・永夜忍皇",
+"proto": "忍者",
+"alias": "忍者",
+"kind": "3d"
+},
+{
+"tier": "spacetime",
+"name": "時空・時之巫女",
+"proto": "陰陽師",
+"alias": "西瑪",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "白羊座聖衣",
+"proto": "真夏納",
+"alias": "真夏納",
+"kind": "class"
+},
+{
+"tier": "samsara",
+"name": "金牛座聖衣",
+"proto": "黃金死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "雙子座聖衣",
+"proto": "闇黑死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "巨蟹座聖衣",
+"proto": "特羅斯",
+"alias": "克特",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "獅子座聖衣",
+"proto": "雷霆死亡騎士",
+"alias": "烈焰的死亡騎士",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "處女座聖衣",
+"proto": "伊詩蒂",
+"alias": "賽尼斯",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "天秤座聖衣",
+"proto": "喬",
+"alias": "馬庫爾",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "天蠍座聖衣",
+"proto": "忍者",
+"alias": "忍者",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "射手座聖衣",
+"proto": "莉絲安",
+"alias": "莉絲安",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "摩羯座聖衣",
+"proto": "格利特",
+"alias": "白金騎士",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "水瓶座聖衣",
+"proto": "陰陽師",
+"alias": "西瑪",
+"kind": "3d"
+},
+{
+"tier": "samsara",
+"name": "雙魚座聖衣",
+"proto": "絲莉安",
+"alias": "莉絲安",
+"kind": "3d"
+}
+]

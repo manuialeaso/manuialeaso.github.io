@@ -1,91 +1,303 @@
 # -*- coding: utf-8 -*-
-"""自製變身圖：以現有變身動畫為骨架，逐幀重新上色並加上配件（頭巾、披巾等），輸出成新的三方向變身資料夾。
-用法：python3 scripts/forge-morph.py <配方名> [輸出根目錄]
-已完成的資料夾會覆寫（可重跑）。"""
-import sys, os, colorsys, shutil
+"""自製變身圖（玩家 2026-10-24：沒有專屬圖的變身、以及神話／天上／時空／聖衣卡，全部做出自己的模樣）
+
+做法：拿相近的三方向變身動畫當骨架，逐幀重新上色（依色相／飽和／亮度分區換色），再加配件或階級光效，
+輸出成新的三方向資料夾 assets/morphanim/<名稱>{,2,F}。影子照抄。可重跑（直接覆寫）。
+
+用法：
+  python3 scripts/forge-morph.py all            # 全部：先做基礎形態，再做卡片的階級版本，最後產生 afk-forged-sprites.js
+  python3 scripts/forge-morph.py base 忍者      # 只做指定的基礎形態
+  python3 scripts/forge-morph.py card 天上・天影忍神
+"""
+import sys, os, json, colorsys, shutil, time
 from PIL import Image
 
-ROOT = os.path.join(os.path.dirname(__file__), '..', 'assets', 'morphanim')
+HERE = os.path.dirname(os.path.abspath(__file__))
+WORK = os.path.dirname(HERE)
+ROOT = os.path.join(WORK, 'assets', 'morphanim')
+DIRS = ['', '2', 'F']
+SIDE = {'': -1, '2': 1, 'F': 0}          # 背後方向：資料夾「」朝右上→背在左；「2」朝左上→背在右；「F」背對鏡頭
 
-def hsl(px):
-    r, g, b, a = px
+# ───────────────────────── 色彩工具 ─────────────────────────
+def to_hsl(p):
+    r, g, b, a = p
     h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
     return h * 360, s, l, a
 
-def rgb(h, s, l, a):
+def from_hsl(h, s, l, a):
     r, g, b = colorsys.hls_to_rgb((h % 360) / 360, max(0, min(1, l)), max(0, min(1, s)))
     return (round(r * 255), round(g * 255), round(b * 255), a)
 
-def bbox_top(im):
-    w, h = im.size; px = im.load()
+def in_hue(h, rng):
+    lo, hi = rng
+    return (lo <= h <= hi) if lo <= hi else (h >= lo or h <= hi)
+
+def remap(im, rules):
+    """rules：[{h:(lo,hi)|None, s:(lo,hi), l:(lo,hi), to:(H, S, Lmul, Ladd)}]，第一條符合的生效；H/S 為 None 表示保留。"""
+    px = im.load(); w, h = im.size
+    for y in range(h):
+        for x in range(w):
+            p = px[x, y]
+            if p[3] < 10: continue
+            H, S, L, A = to_hsl(p)
+            for r in rules:
+                if r.get('h') and not in_hue(H, r['h']): continue
+                if 's' in r and not (r['s'][0] <= S <= r['s'][1]): continue
+                if 'l' in r and not (r['l'][0] <= L <= r['l'][1]): continue
+                th, ts, lm, la = r['to']
+                px[x, y] = from_hsl(H if th is None else th, S if ts is None else ts, L * lm + la, A)
+                break
+    return im
+
+def outline_pts(im):
+    px = im.load(); w, h = im.size; out = []
+    for y in range(h):
+        for x in range(w):
+            if px[x, y][3] < 40: continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if nx < 0 or ny < 0 or nx >= w or ny >= h or px[nx, ny][3] < 40: out.append((x, y)); break
+    return out
+
+def top_row(im):
+    px = im.load(); w, h = im.size
     for y in range(h):
         for x in range(w):
             if px[x, y][3] > 40: return y
     return 0
 
+def head_center(im, top):
+    px = im.load(); w, h = im.size
+    xs = [x for yy in range(top, min(h, top + 3)) for x in range(w) if px[x, yy][3] > 40]
+    return round(sum(xs) / len(xs)) if xs else w // 2
+
 def head_span(im, y, top):
     """頭部那一段：以頭頂 3 列的中心為準，只取跟它相連、左右各最多 4 格的不透明像素（避免連到舉起的手臂或武器）。"""
-    w, _ = im.size; px = im.load()
-    xs = [x for yy in range(top, min(top + 3, y + 1)) for x in range(w) if px[x, yy][3] > 40]
-    if not xs: return None
-    cx = round(sum(xs) / len(xs))
-    if px[cx, y][3] <= 40: return None
+    w, h = im.size; px = im.load()
+    cx = head_center(im, top)
+    if not (0 <= cx < w and 0 <= y < h) or px[cx, y][3] <= 40: return None
     a = b = cx
     while a - 1 >= 0 and cx - (a - 1) <= 4 and px[a - 1, y][3] > 40: a -= 1
     while b + 1 < w and (b + 1) - cx <= 4 and px[b + 1, y][3] > 40: b += 1
     return (a, b)
 
-# ── 配方 ──
-def ninja(im, side, fi, act=''):
-    """忍者：黑藍忍裝、裹布手臂、黑頭巾，紅色額帶與飄動的紅披巾。"""
-    im = im.copy(); px = im.load(); w, h = im.size
-    top = bbox_top(im); head_bottom = top + 9
+def put(im, x, y, c):
+    w, h = im.size
+    if 0 <= x < w and 0 <= y < h: im.load()[x, y] = c
+
+# ───────────────────────── 配件與光效 ─────────────────────────
+def headband_scarf(im, side, fi, act, red=(196, 30, 45, 255), red_d=(128, 16, 30, 255)):
+    if act.startswith('death'): return
+    top = top_row(im); band = top + 4
+    sp = head_span(im, band, top)
+    if not sp: return
+    for x in range(sp[0], sp[1] + 1): put(im, x, band, red)
+    sx = sp[0] if side < 0 else sp[1]; wave = (fi // 3) % 2
+    for i in range(1, 9):
+        x = sx + side * i if side else (sp[0] + sp[1]) // 2 + (wave if i > 4 else 0)
+        y = band + (i // 3 if side else i) + (wave if i > 5 and side else 0)
+        put(im, x, y, red); put(im, x, y + 1, red_d)
+
+def halo(im, act, color=(255, 240, 184, 255), glow=(255, 214, 120, 160)):
+    if act.startswith('death'): return
+    top = top_row(im); cx = head_center(im, top); y = top - 4
+    for dx in range(-4, 5):
+        dy = 0 if abs(dx) < 3 else (1 if abs(dx) == 3 else 2)
+        put(im, cx + dx, y + dy, color)
+        if abs(dx) < 4: put(im, cx + dx, y - 1 + (0 if abs(dx) < 3 else 1), glow)
+
+def stars(im, fi, color, n=4):
+    """時空：身邊幾顆閃爍的星點（位置依幀固定、每 2 幀換一組）。"""
+    bb = im.getbbox()
+    if not bb: return
+    x0, y0, x1, y1 = bb; seed = (fi // 2) * 7919 + 17
+    for k in range(n):
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff
+        x = x0 - 4 + seed % max(1, (x1 - x0 + 8)); seed = (seed * 1103515245 + 12345) & 0x7fffffff
+        y = y0 + seed % max(1, (y1 - y0))
+        dim = color[:3] + (150,)
+        put(im, x, y, color); put(im, x + 1, y, dim); put(im, x - 1, y, dim); put(im, x, y - 1, dim); put(im, x, y + 1, dim)
+
+# ───────────────────────── 基礎形態配方 ─────────────────────────
+G = (0, 0.25)          # 低飽和（灰、白、黑）
+def R(h=None, s=(0, 1), l=(0, 1), to=(None, None, 1, 0)): return {'h': h, 's': s, 'l': l, 'to': to}
+
+def ninja_fn(im, side, fi, act):
+    top = top_row(im); px = im.load(); w, h = im.size
     for y in range(h):
         for x in range(w):
             p = px[x, y]
             if p[3] < 10: continue
-            H, S, L, A = hsl(p)
-            if y <= head_bottom and L > 0.5:                      # 白髮 → 黑頭巾
-                px[x, y] = rgb(230, 0.25, 0.10 + (L - 0.5) * 0.35, A)
-            elif (H >= 320 or H < 12) and S > 0.25:               # 紅褲 → 深靛忍裝
-                px[x, y] = rgb(228, 0.35, L * 0.55, A)
-            elif 12 <= H < 50 and S > 0.15 and L > 0.25:          # 膚色手臂、皮件 → 裹布
-                px[x, y] = rgb(220, 0.12, 0.12 + L * 0.35, A)
-    if act == 'death': return im                              # 倒地時頭不在最上方，不畫配件
-    # 額帶：頭部第 4 列
-    band = top + 4
-    sp = head_span(im, band, top)
-    red, red_d = (196, 30, 45, 255), (128, 16, 30, 255)
-    if sp:
-        for x in range(sp[0], sp[1] + 1): px[x, band] = red
-        # 披巾：從頭側往背後飄（side=-1 往左、+1 往右、0 往下），每 3 幀擺動一次
-        sx = sp[0] if side < 0 else sp[1]
-        wave = (fi // 3) % 2
-        for i in range(1, 9):
-            x = sx + side * i if side else (sp[0] + sp[1]) // 2 + (wave if i > 4 else 0)
-            y = band + (i // 3 if side else i) + (wave if i > 5 and side else 0)
-            for dy in (0, 1):
-                if 0 <= x < w and 0 <= y + dy < h: px[x, y + dy] = red if dy == 0 else red_d
+            H, S, L, A = to_hsl(p)
+            if y <= top + 9 and L > 0.5 and not act.startswith('death'): px[x, y] = from_hsl(230, 0.25, 0.10 + (L - 0.5) * 0.35, A)
+            elif (H >= 320 or H < 12) and S > 0.25: px[x, y] = from_hsl(228, 0.35, L * 0.55, A)
+            elif 12 <= H < 50 and S > 0.15 and L > 0.25: px[x, y] = from_hsl(220, 0.12, 0.12 + L * 0.35, A)
+    headband_scarf(im, side, fi, act)
     return im
 
-RECIPES = {
-    '忍者': {'base': '黑暗妖精刺客', 'fn': ninja, 'side': {'': -1, '2': 1, 'F': 0}},
+def DK(hue, sat, metal):   # 死亡騎士四色：烈焰的橘色火焰換色、銀甲換金屬色
+    return [R(h=(5, 55), s=(0.3, 1), to=(hue, sat, 1.0, 0)), R(s=G, to=metal)]
+
+BASES = {
+    '忍者':   {'base': '黑暗妖精刺客', 'fn': ninja_fn, 'note': '深靛忍裝、黑頭巾、紅額帶與披巾'},
+    '侍':     {'base': '黑暗騎士', 'rules': [R(s=G, l=(0.04, 0.42), to=(356, 0.62, 1.25, 0.02)), R(s=G, l=(0.42, 0.72), to=(40, 0.35, 0.9, 0))], 'note': '朱漆鎧甲、古金飾邊'},
+    '大名':   {'base': '騎士范德', 'rules': [R(h=(20, 65), s=(0.15, 1), l=(0, 0.45), to=(230, 0.22, 0.55, 0.02)), R(h=(20, 65), s=(0.15, 1), l=(0.45, 1), to=(46, 0.75, 1, 0)), R(s=G, to=(352, 0.55, 1, 0))], 'note': '黑漆大鎧、金色前立、紅色綁繩'},
+    '姬武者': {'base': '艾莉絲', 'rules': [R(h=(30, 70), s=(0.25, 1), l=(0.3, 1), to=(230, 0.2, 0.25, 0.08)), R(s=(0, 0.45), l=(0, 0.3), to=(352, 0.68, 1.7, 0.08))], 'note': '黑髮、緋紅巫女裝'},
+    '陰陽師': {'base': '西瑪', 'rules': [R(s=(0, 0.35), l=(0, 0.32), to=(45, 0.12, 1.25, 0.55)), R(h=(20, 75), s=(0.1, 1), l=(0.4, 1), to=(275, 0.5, 0.75, 0))], 'note': '白色狩衣、紫色袴'},
+    '格利特': {'base': '白金騎士', 'rules': [R(s=(0, 0.35), l=(0, 0.32), to=(222, 0.45, 1.4, 0.06))], 'note': '藏青鎧甲、金色飾邊'},
+    '伊詩蒂': {'base': '賽尼斯', 'rules': [R(s=G, l=(0.08, 0.85), to=(285, 0.42, 1, 0))], 'note': '紫色星術袍'},
+    '特羅斯': {'base': '克特', 'rules': [R(h=(25, 65), s=(0.2, 1), to=(222, 0.65, 0.95, 0)), R(s=G, l=(0.25, 0.6), to=(220, 0.25, 1, 0))], 'note': '白甲、王家藍飾'},
+    '喬':     {'base': '馬庫爾', 'rules': [R(s=(0, 0.4), l=(0, 0.3), to=(140, 0.38, 1.6, 0.04)), R(h=(180, 260), s=(0.1, 1), to=(46, 0.6, 1, 0))], 'note': '墨綠法袍、金邊'},
+    '拉曼斯': {'base': '長老', 'rules': [R(h=(10, 65), s=(0.2, 1), to=(355, 0.6, 0.9, 0))], 'note': '緋紅長老袍'},
+    '安迪斯': {'base': '黑暗巡守', 'rules': [R(s=G, l=(0.05, 0.75), to=(105, 0.35, 1.15, 0.02))], 'note': '林綠獵裝'},
+    '艾迪爾': {'base': '黑長者', 'rules': [R(s=(0, 0.4), l=(0, 0.3), to=(210, 0.45, 1.5, 0.05)), R(h=(60, 180), s=(0.08, 1), to=(200, 0.1, 1.3, 0.1))], 'note': '冰藍長袍'},
+    '亞克騎士': {'base': '黑騎士', 'rules': [R(s=G, l=(0, 0.5), to=(26, 0.55, 1.6, 0.08))], 'note': '青銅重甲'},
+    '墮落的司祭': {'base': '卡士柏', 'rules': [R(s=(0, 0.4), l=(0, 0.3), to=(290, 0.35, 1.3, 0.03)), R(h=(300, 30), s=(0.1, 1), to=(95, 0.5, 1, 0))], 'note': '紫黑法衣、腐綠下襬'},
+    '歐姆裝甲兵': {'base': '重裝歐姆', 'rules': [R(s=G, to=(18, 0.45, 1.1, 0.02))], 'note': '鏽色裝甲'},
+    '生日慶祝妖精(近攻型)': {'base': '黃金騎士', 'rules': [R(h=(20, 70), s=(0.2, 1), to=(330, 0.65, 1.05, 0.03)), R(s=G, l=(0, 0.4), to=(175, 0.45, 1.6, 0.06))], 'note': '粉紅與湖綠的慶典鎧'},
+    '生日慶祝妖精(遠攻型)': {'base': '黃金巡守', 'rules': [R(h=(15, 70), s=(0.12, 1), to=(175, 0.5, 1.05, 0)), R(s=G, l=(0, 0.4), to=(330, 0.55, 1.5, 0.06))], 'note': '湖綠獵裝、粉紅飾帶'},
+    '生日慶祝妖精(魔法型)': {'base': '黃金法師', 'rules': [R(h=(15, 75), s=(0.08, 1), to=(325, 0.5, 1, 0)), R(s=G, l=(0, 0.35), to=(270, 0.45, 1.5, 0.05))], 'note': '粉紅慶典法袍'},
+    '闇黑死亡騎士': {'base': '烈焰的死亡騎士', 'rules': DK(275, 0.75, (260, 0.15, 0.45, 0)), 'note': '紫焰、黑鐵'},
+    '雷霆死亡騎士': {'base': '烈焰的死亡騎士', 'rules': DK(195, 0.9, (210, 0.25, 1, 0)), 'note': '青色雷光、鋼藍甲'},
+    '黃金死亡騎士': {'base': '烈焰的死亡騎士', 'rules': DK(47, 0.85, (45, 0.5, 1, 0)), 'note': '金焰、金甲'},
+    '焚焰死亡騎士': {'base': '烈焰的死亡騎士', 'rules': DK(355, 0.85, (0, 0.2, 0.6, 0)), 'note': '赤焰、焦黑甲'},
+    '絲莉安': {'base': '莉絲安', 'rules': [R(h=(250, 345), s=(0.12, 1), to=(200, None, 1, 0))], 'note': '天藍禮裙'},
 }
 
-def forge(name, out_root=ROOT):
-    rc = RECIPES[name]
-    for sfx, side in rc['side'].items():
-        src = os.path.join(ROOT, rc['base'] + sfx); dst = os.path.join(out_root, name + sfx)
+# ───────────────────────── 卡片階級 ─────────────────────────
+ZODIAC_HUE = {'白羊': 5, '金牛': 120, '雙子': 200, '巨蟹': 185, '獅子': 30, '處女': 300, '天秤': 160, '天蠍': 340, '射手': 15, '摩羯': 260, '水瓶': 195, '雙魚': 220}
+
+def tier_fn(tier, name):
+    def mythic(im, side, fi, act):      # 神話：金焰描邊、色彩更飽滿
+        remap(im, [R(s=(0.25, 1), to=(None, None, 1.05, 0.02))])
+        px = im.load()
+        for x, y in outline_pts(im):
+            L = to_hsl(px[x, y])[2]; put(im, x, y, from_hsl(38, 0.9, 0.42 + L * 0.35, 255))
+        return im
+    def celestial(im, side, fi, act):   # 天上：整體提亮偏白金、淡金描邊、頭頂光環
+        px = im.load(); w, h = im.size
+        for y in range(h):
+            for x in range(w):
+                p = px[x, y]
+                if p[3] < 10: continue
+                H, S, L, A = to_hsl(p)
+                px[x, y] = from_hsl(H + ((48 - H + 540) % 360 - 180) * 0.35, S * 0.55 + 0.12, L + (1 - L) * 0.28, A)
+        for x, y in outline_pts(im): put(im, x, y, (255, 236, 170, 255))
+        halo(im, act)
+        return im
+    def spacetime(im, side, fi, act):   # 時空：色相收進青～紫、青色描邊、身邊星點
+        px = im.load(); w, h = im.size
+        for y in range(h):
+            for x in range(w):
+                p = px[x, y]
+                if p[3] < 10: continue
+                H, S, L, A = to_hsl(p)
+                px[x, y] = from_hsl(190 + (H / 360) * 95, max(S, 0.35) if L > 0.12 else S, L * 0.9 + 0.03, A)
+        for x, y in outline_pts(im): put(im, x, y, (156, 234, 255, 255))
+        if not act.startswith('death'): stars(im, fi, (225, 245, 255, 255))
+        return im
+    def samsara(im, side, fi, act):     # 聖衣：金色聖衣（灰白與金系全部換成金屬金），其餘換成該星座的代表色
+        zh = next((v for k, v in ZODIAC_HUE.items() if name.startswith(k)), 45)
+        px = im.load(); w, h = im.size
+        for y in range(h):
+            for x in range(w):
+                p = px[x, y]
+                if p[3] < 10: continue
+                H, S, L, A = to_hsl(p)
+                if S < 0.3 or (20 <= H <= 65): px[x, y] = from_hsl(44 + (L - 0.5) * 12, 0.78, 0.14 + L * 0.8, A)
+                else: px[x, y] = from_hsl(zh, max(S, 0.55), L, A)
+        for x, y in outline_pts(im): put(im, x, y, (255, 228, 140, 255))
+        return im
+    return {'mythic': mythic, 'celestial': celestial, 'spacetime': spacetime, 'samsara': samsara}[tier]
+
+# ───────────────────────── 輸出 ─────────────────────────
+def frame_info(f):
+    act, idx = f[:-4].rsplit('_', 1)
+    return act, int(idx)
+
+def save_png(im, path):
+    try: im.quantize(colors=255, method=Image.Quantize.FASTOCTREE).save(path, optimize=True)
+    except Exception: im.save(path, optimize=True)
+
+def build(name, base, fn):
+    n = 0
+    for sfx in DIRS:
+        src = os.path.join(ROOT, base + sfx); dst = os.path.join(ROOT, name + sfx)
+        if not os.path.isdir(src): raise SystemExit('找不到骨架資料夾：' + src)
         os.makedirs(dst, exist_ok=True)
-        n = 0
         for f in sorted(os.listdir(src)):
             if not f.endswith('.png'): continue
-            if '_s_' in f:                                       # 影子照抄
+            act, fi = frame_info(f)
+            if act.endswith('_s'):                                   # 影子照抄
                 shutil.copyfile(os.path.join(src, f), os.path.join(dst, f)); continue
-            fi = int(f.rsplit('_', 1)[1].split('.')[0])
             im = Image.open(os.path.join(src, f)).convert('RGBA')
-            rc['fn'](im, side, fi, f.rsplit('_', 1)[0]).save(os.path.join(dst, f), optimize=True); n += 1
-        print(name + sfx, n, 'frames')
+            save_png(fn(im, SIDE[sfx], fi, act), os.path.join(dst, f)); n += 1
+    return n
+
+def build_base(name):
+    rc = BASES[name]
+    fn = rc.get('fn') or (lambda im, side, fi, act, r=rc['rules']: remap(im, r))
+    return build(name, rc['base'], fn)
+
+# 職業式變身（真夏納）沒有固定的變身圖：卡片版改用相近的變身當骨架（戰場上由 afk-forged-sprites 優先採用）
+SKELETON_OVERRIDE = {'神話・真夏納': '白金法師', '天上・熾光聖賢': '白金法師', '時空・萬象先知': '白金法師', '白羊座聖衣': '銀光騎士'}
+
+def card_skeleton(row):
+    if row['name'] in SKELETON_OVERRIDE: return SKELETON_OVERRIDE[row['name']]
+    return row['proto'] if row['proto'] in BASES else row['alias']
+
+def build_card(row):
+    return build(row['name'], card_skeleton(row), tier_fn(row['tier'], row['name']))
+
+def write_plugin(made):
+    js = os.path.join(WORK, 'afk-forged-sprites.js')
+    open(js, 'w', encoding='utf-8').write(
+        "/* ==========================================================================\n"
+        " * afk-forged-sprites.js — 自製變身圖登錄（由 scripts/forge-morph.py 產生，請勿手改）\n"
+        " *\n"
+        " * 沒有專屬圖的變身、以及神話／天上／時空／聖衣卡，各自有一套由相近變身逐幀重新上色、加配件或階級光效的\n"
+        " * 三方向動畫（assets/morphanim/<名稱>{,2,F}）。這裡把它們登錄成正式變身動畫，蓋過原本的借圖別名。\n"
+        " * 須排在 afk-polys、afk-card-forms 之後。\n"
+        " * ========================================================================== */\n"
+        "(function () {\n  'use strict';\n"
+        "  var LIST = " + json.dumps(made, ensure_ascii=False) + ";\n"
+        "  if (typeof MORPH_BATTLE_ANIM === 'undefined' || typeof MORPH_ANIM_3DIR === 'undefined') return;\n"
+        "  LIST.forEach(function (name) {\n"
+        "    MORPH_BATTLE_ANIM.add(name); MORPH_ANIM_3DIR.add(name);\n"
+        "    if (typeof MORPH_BATTLE_ALIAS !== 'undefined') { MORPH_BATTLE_ALIAS[name] = name; if (/座聖衣$/.test(name)) MORPH_BATTLE_ALIAS['輪迴・' + name] = name; }\n"
+        "  });\n"
+        "  // 職業式變身（真夏納系的卡片）也優先用自製圖：在職業動畫判斷之前先接手\n"
+        "  var SET = new Set(LIST);\n"
+        "  if (typeof window._actorBattleForm === 'function') {\n"
+        "    var oABF = window._actorBattleForm;\n"
+        "    window._actorBattleForm = function (actor, allyGrp) {\n"
+        "      try {\n"
+        "        var pf = actor && (actor._setPoly || ((actor.buffs && actor.buffs.poly > 0 && actor.poly) ? actor.poly : null));\n"
+        "        if (pf && pf.classMorph && SET.has(pf.n)) { var m = pf.n, folder = m + _animDirSfx((actor._faceD != null) ? actor._faceD : 2, false);\n"
+        "          return { key: 'morph:' + folder, domKey: 'morph:' + m, base: 'assets/morphanim/' + encodeURIComponent(folder) + '/', wpn: null }; }\n"
+        "      } catch (e) {}\n"
+        "      return oABF.apply(this, arguments);\n"
+        "    };\n"
+        "  }\n"
+        "  window.__afkForgedSprites = LIST;\n"
+        "  console.log('[AFK-forged-sprites] 已登錄自製變身圖 ' + LIST.length + ' 種');\n"
+        "})();\n")
+    print('wrote', js)
+
+def main():
+    cmd = sys.argv[1] if len(sys.argv) > 1 else 'all'
+    cards = json.load(open(os.path.join(HERE, 'forge-cards.json'), encoding='utf-8'))
+    t0 = time.time(); made = []
+    if cmd in ('all', 'base'):
+        for nm in (sys.argv[2:] if cmd == 'base' and len(sys.argv) > 2 else list(BASES)):
+            print('base', nm, build_base(nm), 'frames', flush=True); made.append(nm)
+    if cmd in ('all', 'card'):
+        want = set(sys.argv[2:]) if cmd == 'card' and len(sys.argv) > 2 else None
+        for row in cards:
+            if want and row['name'] not in want: continue
+            print('card', row['name'], '←', card_skeleton(row), build_card(row), 'frames', flush=True); made.append(row['name'])
+    if cmd == 'all': write_plugin(made)
+    print('done in %.0fs' % (time.time() - t0))
 
 if __name__ == '__main__':
-    forge(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else ROOT)
+    main()
