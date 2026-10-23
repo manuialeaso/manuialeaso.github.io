@@ -285,7 +285,7 @@ body.afk-no-animation .afk-trans-aura *,body.afk-card-background .afk-trans-aura
     var ART=W.AFK_CLOTH_ART;
     if(!w||w.getAttribute('data-zodiac')!==row.zodiac||!w.classList.contains('is-pixel')){if(w)w.remove();w=document.createElement('span');w.className='afk-cloth-back is-pixel';w.setAttribute('aria-hidden','true');w.setAttribute('data-zodiac',row.zodiac);w.innerHTML='<i class="px-l"></i><i class="px-r"></i>';el.prepend(w);}
     if(!geometry)return;
-    var bh=geometry.height/1.35,size=Math.round(bh*.95),key=size+(sealed?'s':'o');
+    var bh=geometry.height/1.35,size=Math.round(bh*.95),key=size+(sealed?'s':'o')+'x'+(W.__afkClothPx||2);
     w.style.left=Math.round(geometry.hx!=null?geometry.hx:geometry.left)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.64)+'px';
     var B=ART.wingBox,sx=-B.x/B.w,sy=-B.y/B.h;
     w.style.setProperty('--px-s',size+'px');w.style.setProperty('--px-ox',(sx*100).toFixed(2)+'%');w.style.setProperty('--px-oy',(sy*100).toFixed(2)+'%');

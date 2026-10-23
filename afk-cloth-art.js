@@ -120,16 +120,22 @@
   // ── 點陣風格（試作：射手座）──
   // 把向量圖在角色的原始像素大小畫進 canvas，再做：硬邊透明、限制成遊戲裡的金色色盤＋有序抖色、1px 深色外框，
   // 讓背飾跟天堂原本的點陣角色同一種質感。斜 45 度視角用一點傾斜，翅膀外側往後上方收。
-  var PAL_GOLD = [[34, 20, 6], [74, 46, 12], [116, 76, 20], [160, 112, 34], [204, 152, 56], [232, 196, 104], [252, 236, 184]];
-  var PAL_SEAL = [[24, 24, 26], [48, 48, 52], [72, 72, 78], [98, 98, 104], [126, 126, 132], [152, 152, 158], [178, 178, 184]];
+  // 色盤：外框色＋4 階（陰影／中間／亮／高光），色階少、不抖色＝一塊一塊的手點像素
+  var PAL_GOLD = [[43, 22, 6], [122, 74, 18], [196, 138, 36], [236, 192, 74], [255, 242, 176]];
+  var PAL_SEAL = [[22, 22, 26], [66, 66, 72], [104, 104, 112], [142, 142, 150], [186, 186, 194]];
+  var DITHER = false;
   var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
   function pixelize(ctx, w, h, pal) {
     var img = ctx.getImageData(0, 0, w, h), d = img.data, solid = new Uint8Array(w * h);
+    // 亮度先拉開到 0～1，色階才分得出陰影／中間／亮部
+    var lo = 1, hi = 0;
+    for (var q = 0; q < w * h; q++) { var o = q * 4; if (d[o + 3] < 110) continue; var LL = (d[o] * .3 + d[o + 1] * .55 + d[o + 2] * .15) / 255; if (LL < lo) lo = LL; if (LL > hi) hi = LL; }
+    var span = Math.max(.05, hi - lo);
     for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
       var i = (y * w + x) * 4; if (d[i + 3] < 110) { d[i + 3] = 0; continue; }
       solid[y * w + x] = 1;
-      var L = (d[i] * .3 + d[i + 1] * .55 + d[i + 2] * .15) / 255, t = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - .5) / (pal.length - 1);
-      var k = Math.max(0, Math.min(pal.length - 1, Math.round((L * .92 + t) * (pal.length - 1))));
+      var L = (d[i] * .3 + d[i + 1] * .55 + d[i + 2] * .15) / 255, t = DITHER ? (BAYER[(y & 3) * 4 + (x & 3)] / 16 - .5) / (pal.length - 1) : 0;
+      var n = (L - lo) / span, k = n < .16 ? 0 : Math.max(1, Math.min(pal.length - 1, 1 + Math.floor((n - .16) / .84 * (pal.length - 1) + t)));
       d[i] = pal[k][0]; d[i + 1] = pal[k][1]; d[i + 2] = pal[k][2]; d[i + 3] = 255;
     }
     // 1px 外框
@@ -144,12 +150,15 @@
   var WING_BOX = { x: -12, y: -110, w: 175, h: 175 };
   function wingSvg() {
     var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + WING_BOX.x + ' ' + WING_BOX.y + ' ' + WING_BOX.w + ' ' + WING_BOX.h + '" width="' + WING_BOX.w + '" height="' + WING_BOX.h + '">' + defs('') + feathers() + '</svg>';
-    return s.replace(/ZZ-/g, 'cbw-');
+    // 點陣化前把羽毛的分隔線加粗，縮小後每根羽毛之間仍留得住一道深色縫
+    return s.replace(/ZZ-/g, 'cbw-').replace(/stroke-width="\.9"/g, 'stroke-width="' + (1.4 + 0.9 * W_PX()) + '"');
   }
   var rasterCache = {};
   // 回傳一個 canvas（右翅），size＝像素寬度；seal＝封印色
+  // px＝一個像素放大幾倍（2＝每點 2×2，越大越像私服手點的粗像素）
   function wingCanvas(size, seal, done) {
-    size = Math.max(16, Math.round(size)); var key = size + (seal ? 's' : 'o');
+    var PX = Math.max(1, Number(W_PX()) || 2);
+    size = Math.max(16, Math.round(size / PX)); var key = size + 'x' + PX + (seal ? 's' : 'o');
     if (rasterCache[key] && rasterCache[key].ready) { done(rasterCache[key].c); return; }
     if (rasterCache[key]) { rasterCache[key].wait.push(done); return; }
     var c = document.createElement('canvas'); c.width = size; c.height = size;
@@ -165,6 +174,7 @@
     };
     im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(wingSvg());
   }
+  function W_PX() { return window.__afkClothPx || 2; }
   var PIXEL = { sagittarius: true };   // 試作：先做射手座
   // 方框與肩膀的對應：viewBox 寬 220、高 190，肩膀在 (110,120)
   window.AFK_CLOTH_ART = { pixel: PIXEL, wingCanvas: wingCanvas, wingBox: WING_BOX, svg: svg, zodiacs: Object.keys(ART), box: { w: 220, h: 190, sx: 110, sy: 120 } };
