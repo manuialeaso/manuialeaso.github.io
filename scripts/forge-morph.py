@@ -164,6 +164,90 @@ BASES = {
     '絲莉安': {'base': '莉絲安', 'rules': [R(h=(250, 345), s=(0.12, 1), to=(200, None, 1, 0))], 'note': '天藍禮裙'},
 }
 
+# ───────────────────────── 原作怪物圖匯入 ─────────────────────────
+# 玩家 2026-10-24：「只是色違版本，沒有特色」→ 改用遊戲裡現成、但還沒當過變身的原作怪物／NPC 動畫（assets/anim）。
+#   怪物圖只有一個方向（面向畫面左下）：資料夾「2」放原圖，「」「F」左右翻轉成面向右方（玩家在左、怪在右）。
+#   武器揮動層（_w）是疊加發光特效，不併入本體；太高的（頭目）等比縮到 120px 以內。
+ANIM = os.path.join(WORK, 'assets', 'anim')
+IMPORT = {
+    '忍者': '魔族暗殺團', '侍': '天狗', '大名': '艾爾摩將軍', '姬武者': '朱利安', '陰陽師': '白面金毛九尾狐・玉藻',
+    '格利特': '闇影格立特', '伊詩蒂': '依詩蒂', '特羅斯': '特羅斯王子', '喬': '喬',
+    '拉曼斯': '長老．拉曼斯', '安迪斯': '長老．安迪斯', '艾迪爾': '長老．艾迪爾',
+    '亞克騎士': '魂騎士', '墮落的司祭': '墮落的司祭(一階)', '歐姆裝甲兵': '歐姆裝甲兵',
+    '生日慶祝妖精(近攻型)': '月之精靈歐薇', '生日慶祝妖精(遠攻型)': '歐薇', '生日慶祝妖精(魔法型)': '風精靈王',
+    '闇黑死亡騎士': '暗黑黑騎士', '雷霆死亡騎士': '拉斯塔巴德近衛隊隊長', '黃金死亡騎士': '闇黑的騎士范德', '焚焰死亡騎士': '血騎士',
+    '絲莉安': '冷酷的艾莉絲',
+}
+CARD_IMPORT = {
+    # 天上
+    '天上・曙光聖騎': '底比斯 賀洛斯', '天上・月羽神弓': '月光朱利安', '天上・熾光聖賢': '長老．泰瑪斯', '天上・天穹劍聖': '黑暗復仇者',
+    '天上・雷霆天將': '黑暗精靈使', '天上・金輝守護': '底比斯 阿努比斯', '天上・焚天戰神': '火焰之影親衛隊(巴風特)', '天上・夜幕天刃': '黑暗棲林者',
+    '天上・天律裁決': '黑暗妖精將軍', '天上・星海魔導': '依詩蒂公主', '天上・雲端劍豪': '卡瑞', '天上・天羽獵星': '黑暗妖精殘兵(弓)',
+    '天上・天影忍神': '黑暗妖精盜賊', '天上・天命陰陽': '長老．琪娜', '天上・曦光射手': '黑暗妖精巡守', '天上・天籟法師': '長老．巴洛斯',
+    '天上・天雷武士': '黑騎士搜索隊', '天上・天威大名': '受詛咒的艾爾摩將軍', '天上・天弓姬武': '暗黑火焰弓箭手', '天上・蒼穹拳聖': '長老．巴陸德',
+    '天上・天狼王': '暗黑萊肯',
+    # 時空
+    '時空・永劫騎士': '闇黑君王', '時空・裂星獵手': '法令軍王蕾雅', '時空・萬象先知': '冥法軍王海露拜', '時空・虛空劍帝': '暗殺軍王史雷佛',
+    '時空・逆時雷霆': '深淵之主', '時空・終焉守門': '特提斯', '時空・時砂暴君': '伊弗利特', '時空・輪迴劍鬼': '死神',
+    '時空・次元裁判': '西斯', '時空・混沌魔尊': '混沌', '時空・時空劍豪': '邪惡的鐮刀死神', '時空・星界弓神': '冰之女王',
+    '時空・永夜忍皇': '哈汀之影', '時空・時之巫女': '魔女賽尼斯',
+    # 聖衣
+    '白羊座聖衣': '長老．巴塔斯', '金牛座聖衣': '恐怖的伊弗利特', '雙子座聖衣': '喚獸師', '巨蟹座聖衣': '奎斯坦修',
+    '獅子座聖衣': '魔獸軍王巴蘭卡', '處女座聖衣': '暗黑思克巴女皇', '天秤座聖衣': '血色術士', '天蠍座聖衣': '毒蠍',
+    '射手座聖衣': '黑暗妖精警衛(十字弓)', '摩羯座聖衣': '巴風特', '水瓶座聖衣': '水精靈王', '雙魚座聖衣': '人魚',
+}
+MAX_H = 120
+
+def import_anim(name, src_name, fn=None):
+    src = os.path.join(ANIM, src_name)
+    if not os.path.isdir(src): raise SystemExit('找不到原作動畫：' + src)
+    files = [f for f in os.listdir(src) if f.endswith('.png')]
+    body = sorted(f for f in files if not frame_info(f)[0].endswith(('_s', '_w')) and 'effect' not in f)
+    hs = [Image.open(os.path.join(src, f)).getbbox() for f in body if f.startswith('idle_')]
+    hmax = max([b[3] - b[1] for b in hs if b] or [1])
+    sc = min(1.0, MAX_H / hmax)
+    def fit(im):
+        return im if sc >= 1 else im.resize((max(1, round(im.width * sc)), max(1, round(im.height * sc))), Image.BOX)
+    dsts = {sfx: os.path.join(ROOT, name + sfx) for sfx in DIRS}
+    for d in dsts.values(): shutil.rmtree(d, ignore_errors=True); os.makedirs(d, exist_ok=True)   # 先清空，免得留下舊骨架的幀
+    n = 0
+    for f in body:
+        act, fi = frame_info(f)
+        im = Image.open(os.path.join(src, f)).convert('RGBA')
+        im = fit(im)
+        for sfx, d in dsts.items():
+            fr = im if sfx == '2' else im.transpose(Image.FLIP_LEFT_RIGHT)
+            fr = fn(fr.copy(), SIDE[sfx], fi, act) if fn else fr
+            save_png(fr, os.path.join(d, f))
+        sf = os.path.join(src, act + '_s_' + str(fi) + '.png')
+        if os.path.exists(sf):
+            sh = fit(Image.open(sf).convert('RGBA'))
+            for sfx, d in dsts.items(): (sh if sfx == '2' else sh.transpose(Image.FLIP_LEFT_RIGHT)).save(os.path.join(d, act + '_s_' + str(fi) + '.png'), optimize=True)
+        n += 1
+    return n
+
+def light_tier_fn(tier, name):
+    """原作圖的階級光效：只描邊、加光環或星點，不改本體顏色（聖衣例外：灰白部分淡淡鍍金）。"""
+    zh = next((v for k, v in ZODIAC_HUE.items() if name.startswith(k)), 45)
+    def fx(im, side, fi, act):
+        px = im.load()
+        if tier == 'samsara':
+            w, h = im.size
+            for y in range(h):
+                for x in range(w):
+                    p = px[x, y]
+                    if p[3] < 10: continue
+                    H, S, L, A = to_hsl(p)
+                    if S < 0.3: px[x, y] = from_hsl(44, 0.3 + S, L * 0.9 + 0.06, A)
+        col = {'mythic': None, 'celestial': (255, 236, 170, 255), 'spacetime': (156, 234, 255, 255), 'samsara': (255, 228, 140, 255)}[tier]
+        for x, y in outline_pts(im):
+            put(im, x, y, col or from_hsl(38, 0.9, 0.42 + to_hsl(px[x, y])[2] * 0.35, 255))
+        if tier == 'celestial': halo(im, act)
+        if tier == 'spacetime' and not act.startswith('death'): stars(im, fi, (225, 245, 255, 255))
+        if tier == 'samsara' and not act.startswith('death'): stars(im, fi, from_hsl(zh, 0.9, 0.7, 255), 3)
+        return im
+    return fx
+
 # ───────────────────────── 卡片階級 ─────────────────────────
 ZODIAC_HUE = {'白羊': 5, '金牛': 120, '雙子': 200, '巨蟹': 185, '獅子': 30, '處女': 300, '天秤': 160, '天蠍': 340, '射手': 15, '摩羯': 260, '水瓶': 195, '雙魚': 220}
 
@@ -224,7 +308,7 @@ def build(name, base, fn):
     for sfx in DIRS:
         src = os.path.join(ROOT, base + sfx); dst = os.path.join(ROOT, name + sfx)
         if not os.path.isdir(src): raise SystemExit('找不到骨架資料夾：' + src)
-        os.makedirs(dst, exist_ok=True)
+        shutil.rmtree(dst, ignore_errors=True); os.makedirs(dst, exist_ok=True)
         for f in sorted(os.listdir(src)):
             if not f.endswith('.png'): continue
             act, fi = frame_info(f)
@@ -235,6 +319,7 @@ def build(name, base, fn):
     return n
 
 def build_base(name):
+    if name in IMPORT: return import_anim(name, IMPORT[name])
     rc = BASES[name]
     fn = rc.get('fn') or (lambda im, side, fi, act, r=rc['rules']: remap(im, r))
     return build(name, rc['base'], fn)
@@ -247,7 +332,10 @@ def card_skeleton(row):
     return row['proto'] if row['proto'] in BASES else row['alias']
 
 def build_card(row):
-    return build(row['name'], card_skeleton(row), tier_fn(row['tier'], row['name']))
+    if row['name'] in CARD_IMPORT: return import_anim(row['name'], CARD_IMPORT[row['name']], light_tier_fn(row['tier'], row['name']))
+    skel = card_skeleton(row)
+    if skel in IMPORT or row['tier'] == 'mythic': return build(row['name'], skel, light_tier_fn(row['tier'], row['name']))   # 神話：原圖＋金焰描邊
+    return build(row['name'], skel, tier_fn(row['tier'], row['name']))
 
 def write_plugin(made):
     js = os.path.join(WORK, 'afk-forged-sprites.js')
@@ -295,7 +383,7 @@ def main():
         want = set(sys.argv[2:]) if cmd == 'card' and len(sys.argv) > 2 else None
         for row in cards:
             if want and row['name'] not in want: continue
-            print('card', row['name'], '←', card_skeleton(row), build_card(row), 'frames', flush=True); made.append(row['name'])
+            print('card', row['name'], '←', CARD_IMPORT.get(row['name']) or card_skeleton(row), build_card(row), 'frames', flush=True); made.append(row['name'])
     if cmd == 'all': write_plugin(made)
     print('done in %.0fs' % (time.time() - t0))
 
