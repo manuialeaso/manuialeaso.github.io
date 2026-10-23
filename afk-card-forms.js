@@ -188,6 +188,19 @@
 .afk-card-celestial{color:#fff0b8;text-shadow:0 0 9px #c6a85d}
 .afk-card-spacetime{color:#9ceaff;text-shadow:0 0 10px #6856d5}
 .afk-card-samsara{color:#fcd34d;text-shadow:0 0 10px #f59e0b}
+.afk-cloth-wings{position:absolute;width:0;height:0;pointer-events:none;z-index:0;filter:drop-shadow(0 0 4px #fbbf24aa)}
+.afk-cloth-wings i{position:absolute;display:block;width:var(--cw-s,90px);height:var(--cw-s,90px);top:calc(var(--cw-s,90px) * -0.6286)}
+.afk-cloth-wings i svg{width:100%;height:100%;overflow:visible;display:block}
+.afk-cloth-wings .cw-r{left:calc(var(--cw-s,90px) * -0.0686);transform-origin:6.86% 62.86%;animation:cw-flap 2.6s ease-in-out infinite}
+.afk-cloth-wings .cw-l{left:calc(var(--cw-s,90px) * -0.0686);transform-origin:6.86% 62.86%;transform:scaleX(-1);animation:cw-flap-l 2.6s ease-in-out infinite}
+.afk-cloth-wings.is-sealed{filter:saturate(.25) brightness(.62);opacity:.55}
+.afk-cloth-wings.is-sealed i{animation:none}
+.afk-card-aura-downed .afk-cloth-wings{opacity:.15}
+body.afk-no-glow .afk-cloth-wings{filter:none}
+body.afk-no-animation .afk-cloth-wings i,body.afk-card-background .afk-cloth-wings i{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.afk-cloth-wings i{animation:none!important}}
+@keyframes cw-flap{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-9deg)}}
+@keyframes cw-flap-l{0%,100%{transform:scaleX(-1) rotate(0deg)}50%{transform:scaleX(-1) rotate(-9deg)}}
 [data-card-aura="samsara"]{--ca-gold:#fcd34d;--ca-light:#fffbeb;--ca-shadow:#f59e0b90}
 [data-card-aura]{--ca-gold:#f6c766;--ca-light:#ffedb4;--ca-shadow:#d07a2570}
 [data-card-aura="diamond"]{--ca-gold:#67e8f9;--ca-light:#e0fcff;--ca-shadow:#0891b250}
@@ -233,15 +246,57 @@ body.afk-no-animation .afk-trans-aura *,body.afk-card-background .afk-trans-aura
     var bh=box.bottom-box.top,bw=box.right-box.left;
     return geometryCache[key]={left:(box.left+box.right)/2,bottom:h-box.bottom+Math.max(3,bh*.04),width:Math.max(64,Math.min(180,bw*1.6)),height:Math.max(70,Math.min(220,bh*1.35))};
   }
+  // 輪迴聖衣的黃金羽翼（玩家 2026-10-23：只有玩家自己；原創造型，SVG 一次產生）
+  var WING_SVG=null;
+  // 單邊翅膀（往右展開），肩膀在 (0,0)；左翅用 CSS 鏡像
+  function wingSvgBuild(){
+  var f=function(v){return v.toFixed(1);};
+  // 翼骨：肩→腕（上外）
+  var P=function(t){var x0=0,y0=0,cx=34,cy=-62,x1=78,y1=-70;var u=1-t;return [u*u*x0+2*u*t*cx+t*t*x1,u*u*y0+2*u*t*cy+t*t*y1];};
+  var out='';
+  var layer=function(n,lenA,lenB,angA,angB,wid,grad,shift){
+    for(var i=n-1;i>=0;i--){
+      var t=shift+(1-shift)*i/(n-1),r=P(t),a=(angA+(angB-angA)*i/(n-1))*Math.PI/180,len=lenA+(lenB-lenA)*i/(n-1),w=wid;
+      var tx=r[0]+Math.cos(a)*len,ty=r[1]+Math.sin(a)*len,nx=-Math.sin(a)*w,ny=Math.cos(a)*w;
+      var mx=r[0]+Math.cos(a)*len*.55,my=r[1]+Math.sin(a)*len*.55;
+      var ex=tx+Math.cos(a)*3,ey=ty+Math.sin(a)*3;
+      out+='<path d="M'+f(r[0]-nx*.5)+' '+f(r[1]-ny*.5)+' Q'+f(mx-nx)+' '+f(my-ny)+' '+f(tx-nx*.35)+' '+f(ty-ny*.35)+' Q'+f(ex)+' '+f(ey)+' '+f(tx+nx*.35)+' '+f(ty+ny*.35)+' Q'+f(mx+nx)+' '+f(my+ny)+' '+f(r[0]+nx*.5)+' '+f(r[1]+ny*.5)+'Z" fill="url(#'+grad+')" stroke="#6b3f08" stroke-width=".9"/>';
+      out+='<path d="M'+f(r[0])+' '+f(r[1])+' L'+f(r[0]+(tx-r[0])*.9)+' '+f(r[1]+(ty-r[1])*.9)+'" stroke="#fff6d0" stroke-width=".8" opacity=".75"/>';
+    }
+  };
+  layer(11,40,88,100,-22,9.5,'cw-a',0.12);   // 主羽：靠肩往下垂，越到腕越長、越往外
+  layer(8,22,38,92,-5,8,'cw-b',0.08);    // 覆羽
+  var arm=P(0),aw=P(1);
+  out+='<path d="M0 0 Q34 -62 78 -70" fill="none" stroke="#8a5410" stroke-width="7" stroke-linecap="round"/><path d="M0 0 Q34 -62 78 -70" fill="none" stroke="url(#cw-b)" stroke-width="4.5" stroke-linecap="round"/>';
+  out+='<circle cx="78" cy="-70" r="4.5" fill="url(#cw-a)" stroke="#6b3f08" stroke-width=".8"/>';
+  return '<svg viewBox="-12 -110 175 175" aria-hidden="true"><defs><linearGradient id="cw-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffbe6"/><stop offset=".45" stop-color="#f8cf55"/><stop offset="1" stop-color="#b9781a"/></linearGradient><linearGradient id="cw-b" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#e2a92f"/></linearGradient></defs>'+out+'</svg>';
+}
+
+  function wingSvg(){return WING_SVG||(WING_SVG=wingSvgBuild());}
+  var SH_X=12/175,SH_Y=110/175;   // 肩膀在 SVG 方框中的位置
+  function clothWings(el,actor,tier,geometry){
+    var w=el.querySelector(':scope > .afk-cloth-wings'),P=typeof player!=='undefined'?player:null;
+    if(tier!=='samsara'||!P||actor!==P||el.id!=='player-morph-sprite'){if(w)w.remove();return;}
+    if(!w){w=document.createElement('span');w.className='afk-cloth-wings';w.setAttribute('aria-hidden','true');w.innerHTML='<i class="cw-l">'+wingSvg()+'</i><i class="cw-r">'+wingSvg()+'</i>';el.prepend(w);}
+    var A=W.AFK_CARD_ASCENSION,f=actor.poly,se=!!(A&&f&&A.sealed&&A.sealed(f.cardAscensionId,actor)),C=W.AFK_CARD_COMBAT,dg=!!(C&&C.inDungeon&&C.inDungeon());
+    w.classList.toggle('is-sealed',se||dg);
+    if(geometry){
+      // 容器以肩膀為原點（寬高 0），兩片翅膀各自從肩膀展開
+      var bh=geometry.height/1.35,S=Math.round(bh*1.1);
+      w.style.left=Math.round(geometry.left)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.66)+'px';w.style.setProperty('--cw-s',S+'px');
+    }
+  }
   function decorate(el,actor) {
     if(!el)return;var f=(!T||T.enabled('card-aura'))&&activeForm(actor),tier=f&&(f.cardAscensionTier||'diamond');
     var down=!!(actor&&(actor.dead||actor._downed||(actor.curHp==null?actor.hp:actor.curHp)<=0));
     var visual=f&&(f.cardVisualBase||f.cardMonster||f.n)+'|'+(actor&&actor.avatar||''),body=tier&&el.querySelector('.pm-body');
     var geometry=tier&&auraGeometry(body,visual);
-    var signature=(tier||'')+'|'+(down?1:0)+'|'+(visual||'')+'|'+(geometry?'ready':'pending'),previous=decorationState.get(el);
+    var sealKey='';if(tier==='samsara'){var A0=W.AFK_CARD_ASCENSION,C0=W.AFK_CARD_COMBAT;sealKey=((A0&&A0.sealed&&A0.sealed(f.cardAscensionId,actor))?'s':'o')+((C0&&C0.inDungeon&&C0.inDungeon())?'d':'');}
+    var signature=(tier||'')+'|'+(down?1:0)+'|'+(visual||'')+'|'+(geometry?'ready':'pending')+'|'+sealKey,previous=decorationState.get(el);
     if(previous&&previous.signature===signature&&(!tier||previous.aura&&previous.aura.parentNode===el))return;
     var aura=previous&&previous.aura&&previous.aura.parentNode===el?previous.aura:el.querySelector(':scope > .afk-trans-aura');
     decorationState.set(el,{signature:signature,aura:aura});
+    clothWings(el,actor,tier,geometry);
     if(!tier){el.removeAttribute('data-card-aura');el.classList.remove('afk-card-aura-downed');if(aura)aura.remove();return;}
     el.setAttribute('data-card-aura',tier);el.classList.toggle('afk-card-aura-downed',down);
     if(!aura){aura=document.createElement('span');aura.className='afk-trans-aura';aura.setAttribute('aria-hidden','true');['ca-ring','ca-wings','ca-crown'].forEach(function(c){var x=document.createElement('i');x.className=c;aura.appendChild(x);});el.prepend(aura);}
