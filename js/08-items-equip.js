@@ -1422,11 +1422,11 @@ function _updateUIImpl() {
     //    v3.6.34 徽章王冠改與戰鬥 sprite 同一顆動態 castle-crown.gif（#victory-badge-crown）·僅王族顯示（非王族純文字）。
     //    ⚠️ 每 tick 都會跑到這裡 → 比對後才寫 DOM（比照上方按鈕的「狀態改變才寫」守衛），避免每幀重設 textContent/display。
     { let vb = document.getElementById('victory-badge'); if (vb) { let _va = siegeVictoryActive(); vb.style.display = _va ? 'inline-flex' : 'none';
-        if (_va) { let _lordTitle = victoryCityCfg().castleName + (player.cls === 'royal' ? '主' : ''); let _lt = document.getElementById('victory-badge-text');
+        if (_va) { let _lordTitle = (typeof window.__afkCastleBadge === 'function' && window.__afkCastleBadge()) || (victoryCityCfg().castleName + (player.cls === 'royal' ? '主' : ''));   /* AFK_CASTLE_BADGE */ let _lt = document.getElementById('victory-badge-text');
             if (_lt && _lt.textContent !== _lordTitle) _lt.textContent = _lordTitle;
             let _vc = document.getElementById('victory-badge-crown'), _vd = (player.cls === 'royal') ? '' : 'none';
             if (_vc && _vc.style.display !== _vd) _vc.style.display = _vd;
-            vb.title = `${_lordTitle}：血盟持有${victoryCityCfg().castleName}，全商店 8 折、開放城堡`; } } }   // 血盟城堡淡金黃標記（同模式永久共用，換城時同步更新）
+            vb.title = (typeof window.__afkCastleBadgeTitle === 'function' && window.__afkCastleBadgeTitle()) || `${_lordTitle}：血盟持有${victoryCityCfg().castleName}，全商店 8 折、開放城堡`; } } }   // 血盟城堡淡金黃標記（同模式永久共用，換城時同步更新）
     { let cb = document.getElementById('classic-badge'); if (cb) cb.style.display = player.classicMode ? 'inline' : 'none'; }   // 🎮 經典模式標記（🏛️v3.0.83 傳統徽章已移除）
     applyAreaBackground();   // 區域背景：地監/攻城→戰鬥區、城堡→村莊畫面
     

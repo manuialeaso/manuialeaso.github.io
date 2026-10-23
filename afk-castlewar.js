@@ -494,12 +494,67 @@
           var txt = title ? '<span class="text-yellow-300 font-bold">' + title + '</span>（' + h.length + ' 城）' : (h.length ? h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、') : '');
           if (txt) el.innerHTML = el.innerHTML.replace(/城堡：[\s\S]*$/, '城堡：' + txt);
         });
+        // 回城城堡選擇
+        if (h.length) {
+          var old = div.querySelector('#afk-castle-home'); if (old) old.remove();
+          var hc = homeCity(), row = document.createElement('div');
+          row.id = 'afk-castle-home'; row.className = 'mt-2 p-2 rounded border border-amber-700/60 bg-slate-900/70 text-sm text-slate-200 flex flex-wrap items-center gap-2';
+          row.innerHTML = '<span class="text-amber-200 font-bold">🏰 回城地點</span><select class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-100">' +
+            h.map(function (c) { var nm = SIEGE_CITY[c] ? SIEGE_CITY[c].castleName : c; return '<option value="' + c + '"' + (c === hc ? ' selected' : '') + '>' + nm + '</option>'; }).join('') +
+            '</select><span class="text-xs text-slate-400">按「回城」或 Ctrl+C 會回到這座城堡</span>';
+          row.querySelector('select').onchange = function () { setHome(this.value); };
+          var anchor = div.firstElementChild; if (anchor) anchor.appendChild(row); else div.appendChild(row);
+        }
       } catch (e) {}
       return r;
     };
   }
 
-  window.__afkCastleWar = { unifyTitle: unifyTitle, held: held, data: data, save: save, syncWar: syncWar, tierOf: tierOf, groupSize: groupSize, payIncome: payIncome, shadowScale: shadowScale, NEW: NEW, need: need, unified: unified,
+  // ── 回城選城堡（玩家 2026-10-23）：持有多座時在血盟分頁選回城要回哪一座 ──
+  var homeCity = function () {
+    var h = held(), d = data(); if (!h.length) return null;
+    if (d.home && h.indexOf(d.home) >= 0) return d.home;
+    var main = null; try { main = castleOwnerCity(); } catch (e) {}
+    return main && h.indexOf(main) >= 0 ? main : h[0];
+  };
+  var setHome = function (city) {
+    var d = data(); if (held().indexOf(city) < 0) return false;
+    d.home = city; save(d); titleCache.at = -1e9;
+    sys('<span class="text-amber-200">🏰 回城地點改為' + (SIEGE_CITY[city] ? SIEGE_CITY[city].castleName : city) + '。</span>');
+    return true;
+  };
+  var withHome = function (fn, self, args) {
+    var c = null; try { c = homeCity(); } catch (e) {}
+    var cfg = c && SIEGE_CITY[c], old = window.victoryCityCfg;
+    if (!cfg || typeof old !== 'function') return fn.apply(self, args);
+    window.victoryCityCfg = function () { return cfg; };
+    try { return fn.apply(self, args); } finally { window.victoryCityCfg = old; }
+  };
+  ['returnToTown', 'returnToPledgeBase'].forEach(function (nm) {
+    var o = window[nm]; if (typeof o !== 'function') return;
+    window[nm] = function () { return withHome(o, this, arguments); };
+  });
+  // 徽章只放得下 2～3 字：王族「N城主」、其他「N城」，七座「統一」；完整城名放在滑鼠提示
+  var badgeCache = { at: -1e9, n: 0 };   // 每個 tick 都會問：一秒內只讀一次
+  window.__afkCastleBadge = function () {
+    var p = P(); if (!p) return ''; var now = Date.now();
+    if (now - badgeCache.at > 1000) { badgeCache.at = now; try { badgeCache.n = held().length; } catch (e) { badgeCache.n = 0; } }
+    var n = badgeCache.n; if (!n) return '';
+    if (n >= 7) return '統一';
+    return n + '城' + (p.cls === 'royal' ? '主' : '');
+  };
+  var titleCache = { at: -1e9, t: '' };
+  window.__afkCastleBadgeTitle = function () {
+    var now = Date.now(); if (now - titleCache.at < 1000) return titleCache.t;
+    titleCache.at = now; titleCache.t = badgeTitle(); return titleCache.t;
+  };
+  var badgeTitle = function () {
+    var h = held(); if (!h.length) return '';
+    var names = h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、'), hc = homeCity();
+    return '血盟持有 ' + h.length + ' 座城堡' + (h.length >= 7 ? '（' + unifyTitle() + '）' : '') + '：' + names + '。回城：' + (SIEGE_CITY[hc] ? SIEGE_CITY[hc].castleName : '') + '。全商店 8 折、開放城堡';
+  };
+
+  window.__afkCastleWar = { homeCity: homeCity, setHome: setHome, unifyTitle: unifyTitle, held: held, data: data, save: save, syncWar: syncWar, tierOf: tierOf, groupSize: groupSize, payIncome: payIncome, shadowScale: shadowScale, NEW: NEW, need: need, unified: unified,
     _setCall: function (c) { call = c; }, fillCall: fillCall };
   console.log('[AFK-castlewar] 已啟用：七城攻城、城堡收成、宣戰與統一伺服器');
 })();

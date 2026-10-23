@@ -63,7 +63,7 @@
   var ZODIAC = [
     { key:'aries', z:'白羊座', base:'真夏納', sp:'星屑護壁：受到攻擊時 15% 機率完全抵銷該次傷害，之後 10 秒魔法防禦 +50、AC -50、迴避 +10', bonus:{} },
     { key:'taurus', z:'金牛座', base:'黃金死亡騎士', sp:'巨角之鎧：AC -50、魔法防禦 +50、五屬性抗性各 +50、傷害減免 +30', bonus:{ac:-50,mr:50,resFire:50,resWater:50,resWind:50,resEarth:50,resNone:50,dr:30} },
-    { key:'gemini', z:'雙子座', base:'闇黑死亡騎士', sp:'異次元：對每隻怪物的前兩次傷害都改為 ×30', bonus:{} },
+    { key:'gemini', z:'雙子座', base:'闇黑死亡騎士', sp:'異次元：每 50 秒一次，冷卻好後的下一擊傷害 ×30（優先於首擊加倍，不影響首擊加倍的冷卻）', bonus:{} },
     { key:'cancer', z:'巨蟹座', base:'特羅斯', sp:'冥界之息：造成傷害的 3% 轉為自己的 HP', bonus:{} },
     { key:'leo', z:'獅子座', base:'雷霆死亡騎士', sp:'光速連擊：每次造成傷害 10% 機率變成 3 倍', bonus:{} },
     { key:'virgo', z:'處女座', base:'伊詩蒂', sp:'天舞：魔法傷害 +30、額外魔法點數 +30、魔法爆擊率 +5%、魔法爆擊傷害 +50%', bonus:{magicDmg:30,extraMp:30,magicCrit:5,magicCritDmg:50} },

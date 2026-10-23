@@ -19,7 +19,7 @@ import { applyRelicRuntimePatches } from './apply-relic-runtime-patches.mjs';
 import { applyRelicWeaponBridgePatches } from './apply-relic-weapon-bridge-patches.mjs';
 import { applyRelicCompanionPatches } from './apply-relic-companion-patches.mjs';
 import { applyRelicDefensePatches } from './apply-relic-defense-patches.mjs';
-import { applyDisplayPatches } from './apply-display-patches.mjs';
+import { applyDisplayPatches, applyCastleBadgePatch } from './apply-display-patches.mjs';
 import { applyCardCombatPatches } from './apply-card-combat-patches.mjs';
 
 const CHECK = process.argv.includes('--check');
@@ -968,6 +968,7 @@ try {
   applyRelicCompanionPatches(CHECK);
   applyRelicDefensePatches(CHECK);
   applyDisplayPatches(CHECK);
+  applyCastleBadgePatch(CHECK);
   applyCardCombatPatches(CHECK);
 } catch (e) {
   console.error('❌ apply-core-patches 失敗：' + e.message);

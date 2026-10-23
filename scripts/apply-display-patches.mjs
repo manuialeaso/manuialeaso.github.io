@@ -22,3 +22,21 @@ export function applyDisplayPatches(check=false) {
   writeFileSync(file,src.replace(before,after));
   console.log('[display-patch] projectile rendering installed');
 }
+
+// 城堡徽章文字可由外掛提供（多城堡時顯示座數；徽章只放得下 2～3 字）
+export function applyCastleBadgePatch(check=false) {
+  const file='js/08-items-equip.js';
+  const before="let _lordTitle = victoryCityCfg().castleName + (player.cls === 'royal' ? '主' : '');";
+  const after="let _lordTitle = (typeof window.__afkCastleBadge === 'function' && window.__afkCastleBadge()) || (victoryCityCfg().castleName + (player.cls === 'royal' ? '主' : ''));   /* AFK_CASTLE_BADGE */";
+  const tBefore="vb.title = `${_lordTitle}：血盟持有${victoryCityCfg().castleName}，全商店 8 折、開放城堡`;";
+  const tAfter="vb.title = (typeof window.__afkCastleBadgeTitle === 'function' && window.__afkCastleBadgeTitle()) || `${_lordTitle}：血盟持有${victoryCityCfg().castleName}，全商店 8 折、開放城堡`;";
+  const src=readFileSync(file,'utf8');
+  if(src.includes('AFK_CASTLE_BADGE')) {
+    if(src.split(after).length!==2||src.split(tAfter).length!==2)throw new Error(`[${file}] castle badge patch changed unexpectedly`);
+    console.log('[display-patch] castle badge already installed'); return;
+  }
+  if(src.split(before).length!==2||src.split(tBefore).length!==2)throw new Error(`[${file}] castle badge anchor must occur exactly once`);
+  if(check)throw new Error(`[${file}] castle badge patch is missing`);
+  writeFileSync(file,src.replace(before,after).replace(tBefore,tAfter));
+  console.log('[display-patch] castle badge installed');
+}

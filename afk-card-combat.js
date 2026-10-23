@@ -95,11 +95,11 @@
     var s=memory(actor),identity=targetIdentity(target),first=!s.seen.has(identity);
     var row0=active(actor),zs=special(row0,actor);
     if(zs&&!(opt.dotCapped)){var base=Number(amount);amount=zodiacHit(actor,target,base,zs,opt);if(amount!==base)noteSettlement(actor,target,base,amount,opt);}
-    if(!first){
-      // 雙子座：每隻怪物的第二次傷害也 ×30
-      if(zs==='gemini'&&gemini.get(identity)===1){gemini.set(identity,2);var v2=Number(amount)*30;noteSettlement(actor,target,Number(amount),v2,opt);return v2;}
-      return amount;
+    // 雙子座（玩家 2026-10-23）：自己的 50 秒冷卻，冷卻好後的下一擊 ×30；優先於首擊加倍（不疊乘），也不影響首擊加倍的冷卻
+    if(zs==='gemini'&&!opt.dotCapped&&!opt.inherited&&ticks()>=(s.gemAt||0)){
+      s.gemAt=ticks()+500;var v2=Number(amount)*30;noteSettlement(actor,target,Number(amount),v2,opt);return v2;
     }
+    if(!first)return amount;
     // Mark only a real, positive settlement. An ordinary-form first hit also
     // spends this enemy's opportunity, so changing form cannot renew it.
     s.seen.add(identity);
@@ -109,8 +109,7 @@
       if(ticks()<s.nextAt)return amount;
       s.nextAt=ticks()+300;
     }
-    if(zs==='gemini')gemini.set(identity,1);
-    var value=Number(amount)*(zs==='gemini'?30:ruleFor(row,actor).mult);
+    var value=Number(amount)*ruleFor(row,actor).mult;
     if(opt.dotCapped){
       // The ordinary poison/bleed budget has already paid for amount. Only
       // request the extra part, preserving the same shared one-percent cap.
@@ -124,7 +123,7 @@
     return value;
   }
   // 解除封印的星座特殊能力（每次傷害結算）
-  var stings=new WeakMap(),gemini=new WeakMap();
+  var stings=new WeakMap();
   function zodiacHit(actor,target,amount,z,opt){
     var v=amount;
     if(z==='leo'&&Math.random()<.1)v*=3;
