@@ -145,6 +145,26 @@
     var l = (img.getAttribute('data-fb') || '').split('|').filter(Boolean);
     if (l.length) { img.src = l.shift(); img.setAttribute('data-fb', l.join('|')); } else { img.onerror = null; img.style.visibility = 'hidden'; }
   };
+  // 怪物圖（assets/anim）跟怪物圖鑑一樣整張縮進格子；變身／職業動畫的畫布留白多，放大取中間
+  // 依圖中實際有畫東西的範圍（不透明像素外框）縮放、置中、腳貼底，每種圖大小一致；結果依圖檔快取
+  var fitCache = Object.create(null);
+  window.__afkThumbFit = window.__afkThumbFit || function (img) {
+    var key = img.getAttribute('src'), W = 64, H = 66, bb = fitCache[key];
+    if (!bb) {
+      bb = { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
+      try {
+        // 先縮到最長邊 96 再量，避免大張怪物圖卡住畫面
+        var w0 = img.naturalWidth, h0 = img.naturalHeight, k = Math.min(1, 96 / Math.max(w0, h0)), w = Math.max(1, Math.round(w0 * k)), h = Math.max(1, Math.round(h0 * k));
+        var c = document.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h);
+        var d = x.getImageData(0, 0, w, h).data, l = w, r = -1, t = h, b = -1;
+        for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) if (d[(yy * w + xx) * 4 + 3] > 40) { if (xx < l) l = xx; if (xx > r) r = xx; if (yy < t) t = yy; if (yy > b) b = yy; }
+        if (r >= l && b >= t) bb = { x: l / k, y: t / k, w: (r - l + 1) / k, h: (b - t + 1) / k };
+      } catch (e) {}
+      fitCache[key] = bb;
+    }
+    var sc = Math.min(W / bb.w, H / bb.h, 2.5);
+    img.style.cssText = 'position:absolute;max-width:none;transform:none;width:' + (img.naturalWidth * sc) + 'px;height:' + (img.naturalHeight * sc) + 'px;left:' + (W / 2 - (bb.x + bb.w / 2) * sc) + 'px;top:' + (H - (bb.y + bb.h) * sc) + 'px';
+  };
   window.__afkFormThumb = window.__afkFormThumb || function (name, owned, extraCls) {
     var alias = (typeof MORPH_BATTLE_ALIAS !== 'undefined' && MORPH_BATTLE_ALIAS[name]) || name, pre = [];
     // 跟戰場上實際用的圖一致：用目前角色的外觀問一次戰場形態（真夏納這類職業式變身會走職業動畫資料夾）
@@ -164,10 +184,16 @@
       var pl2 = typeof player !== 'undefined' ? player : null;
       if (pl2 && typeof _classForm === 'function') { var cf = _classForm({ avatar: pl2.avatar, cls: pl2.cls, eq: pl2.eq, _faceD: 5 }, false); if (cf && cf.base) post.push(cf.base + (cf.wpn ? cf.wpn + '_idle_0.png' : 'idle_0.png')); }
     } catch (e) {}
-    var list = pre.concat(['assets/morphanim/' + enc(alias) + '/idle_0.png', 'assets/morphanim/' + enc(name) + '/idle_0.png', 'assets/morph/' + enc(name) + '.jpg', 'assets/morph/' + enc(alias) + '.jpg'], post);
+    // 跟怪物圖鑑一樣面向玩家：同名怪物有動畫就先用怪物的待機圖（怪物的圖是面對鏡頭的）
+    var mobDir = null; try { mobDir = typeof _animDir === 'function' ? _animDir(name) : name; } catch (e) { mobDir = name; }
+    var face = (typeof MOB_ANIM_NAMES === 'undefined' || MOB_ANIM_NAMES.has(name)) ? ['assets/anim/' + enc(mobDir) + '/idle_0.png'] : [];
+    if (typeof MOB_ANIM_NAMES !== 'undefined' && !face.length && MOB_ANIM_NAMES.has(alias)) face.push('assets/anim/' + enc(typeof _animDir === 'function' ? _animDir(alias) : alias) + '/idle_0.png');
+    // 三方向變身：「2」資料夾是朝左下（跟怪物圖鑑一樣面向畫面）
+    if (typeof MORPH_ANIM_3DIR !== 'undefined' && MORPH_ANIM_3DIR.has(alias)) face.push('assets/morphanim/' + enc(alias + '2') + '/idle_0.png');
+    var list = face.concat(pre).concat(['assets/morphanim/' + enc(alias) + '/idle_0.png', 'assets/morphanim/' + enc(name) + '/idle_0.png', 'assets/morph/' + enc(name) + '.jpg', 'assets/morph/' + enc(alias) + '.jpg'], post);
     list = list.filter(function (x, i) { return list.indexOf(x) === i; });
     var first = list.shift();
-    return '<span class="afk-th' + (extraCls ? ' ' + extraCls : '') + '"><img alt="" src="' + first + '" data-fb="' + list.join('|') + '" class="' + (owned ? '' : 'card-silhouette') + '" onerror="__afkThumbErr(this)"></span>';
+    return '<span class="afk-th' + (extraCls ? ' ' + extraCls : '') + '"><img alt="" src="' + first + '" data-fb="' + list.join('|') + '" class="' + (owned ? '' : 'card-silhouette') + '" onload="__afkThumbFit(this)" onerror="__afkThumbErr(this)"></span>';
   };
   // ── 畫面（至幻者）──
   var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -195,7 +221,7 @@
     box.innerHTML = h; host.appendChild(box);
   }
   var st = document.createElement('style'); st.textContent = '.afk-pc-grid{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;justify-content:flex-start}#afk-poly-codex details{margin:6px 0}#afk-poly-codex summary{cursor:pointer}'
-    + '.afk-th{position:relative;display:block;width:64px;height:68px;overflow:hidden;margin:0 auto}.afk-th img{position:absolute;left:50%;top:50%;height:210%;max-width:none;transform:translate(-50%,-50%);image-rendering:pixelated}'
+    + '.afk-th{position:relative;display:block;width:64px;height:68px;overflow:hidden;margin:0 auto}.afk-th img{position:absolute;left:50%;top:50%;height:210%;max-width:none;transform:translate(-50%,-50%);image-rendering:pixelated}.afk-th img.fit{left:0;top:0;width:100%;height:100%;transform:none;object-fit:contain}'
     + '.afk-pc-tile,.afk-cb-tile{position:relative;width:88px;padding:4px 3px 5px;text-align:center;border:1px solid #4e3526;border-radius:.25rem;background:linear-gradient(180deg,#2b2830,#211f26)}'
     + '.afk-pc-tile b,.afk-cb-tile b{display:block;font-size:11.5px;line-height:1.25;color:#ece6dc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.afk-pc-tile small,.afk-cb-tile small{display:block;font-size:10.5px;color:#a39a8e}'
     + '.afk-pc-tile.t0 b{color:#6b645c}.afk-pc-tile.t1{border-color:#6b6460}.afk-pc-tile.t2{border-color:#a8b3c0}.afk-pc-tile.t2 small{color:#cbd5e1}.afk-pc-tile.t3{border-color:#c9a03a;box-shadow:inset 0 0 8px rgba(234,179,8,.18)}.afk-pc-tile.t3 small{color:#fde047}';
