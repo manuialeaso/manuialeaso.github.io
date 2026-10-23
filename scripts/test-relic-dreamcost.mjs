@@ -78,15 +78,18 @@ try {
 
       for (const rebirth of [0, 1]) {
         const team = setup(rebirth);
+        // 玩家 2026-10-24：一般怪死亡 → 你與傭兵各扣最大 HP 1%（寵物、召喚物、MP 不變）
         const before = snapshot(team), auditBefore = _audit.kills;
-        for (let i = 0; i < 100; i++) {
+        let expect = {...before};
+        for (let i = 0; i < 30; i++) {
           const m = deadMob();
           killMob(0);
           require(m._dead === true, 'Native normal kill settles: rebirth=' + rebirth + ', kill=' + (i + 1));
-          same(snapshot(team), before, 'No HP/MP loss at normal kill ' + (i + 1) + ', rebirth=' + rebirth);
+          expect.playerHp -= Math.max(1, Math.floor(player.mhp * .01)); expect.allyHp -= Math.max(1, Math.floor(team.ally.mhp * .01));
+          same(snapshot(team), expect, 'Normal kill costs 1% max HP ' + (i + 1) + ', rebirth=' + rebirth);
         }
-        require(_audit.kills - auditBefore === 100, 'All 100 kills reach native reward/audit settlement');
-        cases.push({case:'100 normal kills', rebirth, count:100, before, after:snapshot(team)});
+        require(_audit.kills - auditBefore === 30, 'All 30 kills reach native reward/audit settlement');
+        cases.push({case:'30 normal kills', rebirth, count:30, before, after:snapshot(team)});
 
         for (let i = 0; i < 2; i++) {
           const bossBefore = snapshot(team), boss = deadMob(true);
@@ -123,6 +126,6 @@ try {
     });
     assert.deepEqual(errors, [], 'The complete index must load and execute without uncaught page errors');
     console.log(JSON.stringify(result, null, 2));
-    console.log('Dreamcost native browser regression passed: 200 normal kills, four boss costs, duplicate settlement, mode and building guards.');
+    console.log('Dreamcost native browser regression passed: 60 normal kills (1% max HP each), four boss costs, duplicate settlement, mode and building guards.');
   } finally { await close(); }
 } finally { await browser.close(); }

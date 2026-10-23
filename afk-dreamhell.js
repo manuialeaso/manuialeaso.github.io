@@ -305,6 +305,7 @@
         var k = rf.kind === 'phys' ? '物理' : '魔法', mn = '<span class="' + getMobColor(mob.lv) + '">' + mob.n + '</span>';
         var actor = ally || player, R = window.AFK_RELIC_RUNTIME;
         if (ally ? ally._downed || ally.curHp <= 0 : player.dead || player.hp <= 0) return r;
+        dmg = Math.max(1, Math.floor(dmg * 0.25));   // 玩家 2026-10-24：夢艷小怪的反射傷害 −75%
         var context = { kind: kind, origin: 'reflection', main: false, direct: true };
         if (R) dmg = R.incoming(actor, dmg, mob, context);
         if (ally) {

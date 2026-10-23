@@ -217,8 +217,17 @@
     var oPA = window.playerAttack;
     window.playerAttack = function () {
       var ms = (typeof mapState !== 'undefined' && mapState) ? mapState.mobs : [], snap = ms.map(function (m) { return m ? m.curHp : null; });
+      var CE = window.__afkCardExtra; if (CE) CE.reset();
       var r = oPA.apply(this, arguments);
-      try { var lost = 0; ms.forEach(function (m, i) { if (m && snap[i] != null) lost += Math.max(0, snap[i] - Math.max(0, m.curHp)); }); if (lost > 0) avgHit = avgHit ? avgHit * 0.9 + lost * 0.1 : lost; } catch (e) {}
+      // 玩家 2026-10-24：敵對血盟的強度不吃變身卡系統——扣掉這一擊裡卡片加的傷害（首擊、雙子、星座特效）與卡冊的傷害加成，
+      //   單擊再夾在平均的 3 倍以內，避免一次爆發把敵人的攻擊力拉上天
+      try {
+        var lost = 0, n = 0; ms.forEach(function (m, i) { if (m && snap[i] != null) { var l = Math.max(0, snap[i] - Math.max(0, m.curHp)); if (l > 0) { lost += l; n++; } } });
+        if (CE) lost -= CE.take();
+        try { var B = window.AFK_CARD_CODEX && AFK_CARD_CODEX.bonusOf(P()), st = (B && B.stats) || {}; lost -= n * ((Number(st.meleeDmg) || 0) + (Number(st.rangedDmg) || 0) + (Number(st.extraDmg) || 0)); } catch (e) {}
+        if (avgHit > 0) lost = Math.min(lost, avgHit * 3);
+        if (lost > 0) avgHit = avgHit ? avgHit * 0.9 + lost * 0.1 : lost;
+      } catch (e) {}
       return r;
     };
   }

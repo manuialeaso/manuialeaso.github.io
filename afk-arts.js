@@ -419,7 +419,8 @@
         var el = Math.floor(per * 4 * (fs ? fs.mult : 1) * f); hurtMob(prim, el, actor) /* card-combat:arts-element */; total += el;
       }
       var k = kings();
-      if (k > 0) { var kv = wpnMax(actor) * k; hurtMob(prim, kv, actor) /* card-combat:arts-flat */; }
+      if (k > 0) { var kv = wpnMax(actor) * k * 5; hurtMob(prim, kv, actor) /* card-combat:arts-flat */; }   // 玩家 2026-10-24：四大天王傷害 ×5
+      if (a && actor.cls === 'royal' && prim.curHp > 0 && !prim._dead) hurtMob(prim, pl, actor) /* card-combat:arts-royal */;   // 王族技藝：一般攻擊追加 1 次（同主目標那一擊的傷害）
       if (a === 'n_heine' && inHeine() && prim.curHp > 0 && Math.random() < 0.5 * f) { prim.curHp = 0; log(tag('海音守護者', '#38bdf8') + nm(actor) + '喚來海音的潮聲，' + (prim.n || '敵人') + ' 被一擊吞沒。'); }
       if (a === 'r_sword') heal(actor, total * 0.3 * f);
       if (a === 'k_doom') heal(actor, total * f);
@@ -771,7 +772,7 @@
       if (b.dataset.art) { learn(b.dataset.art); renderInto(host.querySelector('.box')); }
       if (b.dataset.dev) {
         var go = function () { var r = window.afkDevRebirthAll(); renderInto(host.querySelector('.box')); if (r && r.ok) logSys('已處理：' + r.slots.join('、')); };
-        var msg = '會把帳號裡所有角色改成轉生、Lv150、屬性 200，直接寫進存檔（無法復原）。確定嗎？';
+        var msg = '會把帳號裡所有角色改成轉生、Lv150、屬性 200、五屬性抗性 +100、全變身開啟，並發給 GM 專屬裝備，直接寫進存檔（無法復原）。確定嗎？';
         if (window.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '開發測試', message: msg, okText: '執行', cancelText: '取消', danger: true, onOk: go });
         else if (confirm(msg)) go();
       }
@@ -792,9 +793,25 @@
     p.lv = 1; recomputeStats(); k.hp = Math.max(0, Math.round(h100 - p.mhp)); k.mp = Math.max(0, Math.round(m100 - p.mmp));
     p.lv = lv; return k;
   };
+  // 玩家 2026-10-24：測試再加——五屬性抗性 +100（afk-rebirth 的 devResist）、全變身開啟、GM 專屬裝備
+  var devForms = function (p) {
+    var A = window.AFK_CARD_ASCENSION; if (!A || !A.catalog) return;
+    var s = p.cardAscension && typeof p.cardAscension === 'object' ? p.cardAscension : (p.cardAscension = { v: 1 });
+    ['owned', 'failures', 'attempts', 'unlocked', 'sealed', 'bonus'].forEach(function (k) { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
+    Object.keys(A.catalog).forEach(function (t) { s.unlocked[t] = true; (A.catalog[t] || []).forEach(function (r) { s.owned[r.id] = true; delete s.sealed[r.id]; }); });
+    try { var PC = window.AFK_POLY_CODEX; if (PC && PC.forms) { p.polyDex = p.polyDex || {}; PC.forms.forEach(function (f) { p.polyDex[f.n] = 3; }); } } catch (e) {}
+  };
+  var devDex = function (me) {
+    try { var F = window.AFK_CARD_FORMS, ns = F && F.monsterNames ? F.monsterNames() : []; me.cardDex = me.cardDex || {}; ns.forEach(function (n) { if (!(Number(me.cardDex[n]) >= 10000)) me.cardDex[n] = 10000; }); me.cardDexV = 2; } catch (e) {}
+  };
+  var devGM = function (p) {
+    p.inv = p.inv || [];
+    ['99999', '99998'].forEach(function (id) { if (DB.items[id] && !p.inv.some(function (x) { return x && x.id === id; }) && !Object.keys(p.eq || {}).some(function (k) { return p.eq[k] && p.eq[k].id === id; })) p.inv.push({ id: id, uid: uid(), cnt: 1, en: 0 }); });
+  };
   var devOne = function (p) {
     if (!(p.rebirth > 0)) { var k = keepOf(p); p.rebirth = 1; p.rebirthHpKeep = k.hp; p.rebirthMpKeep = k.mp; }
-    maxOut(p); p.lv = 150; p.exp = 0;
+    maxOut(p); p.lv = 150; p.exp = 0; p.devResist = 100;
+    devForms(p); devGM(p);
     recomputeStats(); p.hp = p.mhp; p.mp = p.mmp;
   };
   window.afkDevRebirthAll = function () {
@@ -813,9 +830,9 @@
       _lzSet(key, _saveWrap(JSON.stringify(data)));
       done.push(n + ':' + (p.name || p.cls));
     }
-    devOne(me); try { calcStats(); me.hp = me.mhp; me.mp = me.mmp; updateUI(); renderTabs(true); saveGame(); } catch (e) {}
+    devDex(me); devOne(me); try { calcStats(); me.hp = me.mhp; me.mp = me.mmp; updateUI(); renderTabs(true); saveGame(); } catch (e) {}
     done.push(currentSlot + ':' + (me.name || me.cls));
-    try { logSys('<span class="text-fuchsia-300 font-bold">🧪 測試：' + done.length + ' 個角色已轉生、Lv150、六項屬性 200。</span>'); } catch (e) {}
+    try { logSys('<span class="text-fuchsia-300 font-bold">🧪 測試：' + done.length + ' 個角色已轉生、Lv150、六項屬性 200、五屬性抗性 +100、全變身開啟，並取得 GM 專屬裝備。</span>'); } catch (e) {}
     return { ok: true, slots: done };
   };
 
