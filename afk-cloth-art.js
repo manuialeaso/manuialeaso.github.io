@@ -52,6 +52,35 @@
     layer(11, 40, 88, 100, -22, 9.5, GOLD, .12); layer(8, 22, 38, 92, -5, 8, GOLD2, .08);
     return out + thick('M0 0 Q34 -62 78 -70', 4.5);
   };
+  // 通用翼：翼骨（肩→腕）上排一列羽片；shape＝feather 羽毛／blade 刀刃／fin 魚鰭；layers＝[{n,lenA,lenB,angA,angB,w,fill,shift}]
+  var wingOf = function (shape, layers, arm, armFill) {
+    arm = arm || [34, -62, 78, -70];
+    var P = function (t) { var u = 1 - t; return [2 * u * t * arm[0] + t * t * arm[2], 2 * u * t * arm[1] + t * t * arm[3]]; }, out = '';
+    layers.forEach(function (L) {
+      for (var i = L.n - 1; i >= 0; i--) {
+        var k = L.n > 1 ? i / (L.n - 1) : 0, t = L.shift + (1 - L.shift) * k, r = P(t), a = (L.angA + (L.angB - L.angA) * k) * Math.PI / 180, len = L.lenA + (L.lenB - L.lenA) * k, w = L.w;
+        var cx = Math.cos(a), sy = Math.sin(a), nx = -sy * w, ny = cx * w, tx = r[0] + cx * len, ty = r[1] + sy * len;
+        var at = function (q, side) { return [r[0] + cx * len * q + nx * side, r[1] + sy * len * q + ny * side]; };
+        var P2 = function (v) { return f(v[0]) + ' ' + f(v[1]); };
+        var fill = typeof L.fill === 'function' ? L.fill(i) : L.fill;
+        if (shape === 'blade') {   // 刀刃：窄根、直刃、尖端＋護手
+          out += path('M' + P2(at(0, -.35)) + ' L' + P2(at(.78, -.55)) + ' L' + f(tx) + ' ' + f(ty) + ' L' + P2(at(.78, .55)) + ' L' + P2(at(0, .35)) + 'Z', fill, .9)
+            + path('M' + P2(at(.08, -.75)) + ' L' + P2(at(.14, -.75)) + ' L' + P2(at(.14, .75)) + ' L' + P2(at(.08, .75)) + 'Z', GOLD2, .7);
+        } else if (shape === 'fin') {   // 魚鰭：寬、圓弧尖、中間一條鰭骨
+          out += path('M' + P2(at(0, -.4)) + ' Q' + P2(at(.55, -1.25)) + ' ' + P2(at(1, -.5)) + ' Q' + f(tx + cx * 4) + ' ' + f(ty + sy * 4) + ' ' + P2(at(1, .5)) + ' Q' + P2(at(.55, 1.25)) + ' ' + P2(at(0, .4)) + 'Z', fill, .9)
+            + line('M' + f(r[0]) + ' ' + f(r[1]) + ' L' + f(tx) + ' ' + f(ty), 1.2, LINE);
+        } else {   // 羽毛
+          out += path('M' + P2(at(0, -.5)) + ' Q' + P2(at(.55, -1)) + ' ' + P2(at(1, -.35)) + ' Q' + f(tx + cx * 3) + ' ' + f(ty + sy * 3) + ' ' + P2(at(1, .35)) + ' Q' + P2(at(.55, 1)) + ' ' + P2(at(0, .5)) + 'Z', fill, .9);
+        }
+      }
+    });
+    var d = 'M0 0 Q' + arm[0] + ' ' + arm[1] + ' ' + arm[2] + ' ' + arm[3];
+    return out + (armFill ? (MIN ? line(d, Math.max(5.8, MIN * 1.7), armFill) : line(d, 6.9, LINE) + line(d, 4.5, armFill)) : thick(d, 4.5));
+  };
+  var flapPair = function (p, right, left, amp, sc) {   // 左右一對、跟著 phase 拍動
+    var a = -(amp || 10) * (1 - Math.cos(p * Math.PI * 2)) / 2; sc = sc || .82;
+    return '<g transform="scale(' + sc + ') ' + rot(a, 0, 0) + '">' + right + '</g><g transform="scale(' + (-sc) + ' ' + sc + ') ' + rot(a, 0, 0) + '">' + (left || right) + '</g>';
+  };
   // 每個星座：draw(p) 畫 phase p 那一格；frames 幀數、dur 一輪秒數
   var ART = {
     aries: { frames: 6, dur: 1.8, draw: function (p) {   // 白羊座：一對往外捲的羊角＋短披風
@@ -60,10 +89,11 @@
     taurus: { frames: 6, dur: 1.8, draw: function (p) {   // 金牛座：往上彎的巨大牛角＋厚重肩甲
       return cape(20, 34, 40, null, p) + mirror(path('M14 -18 Q40 -22 62 -48 Q74 -64 70 -86 Q86 -62 76 -40 Q60 -14 20 -6Z') + path('M10 -8 Q28 -18 42 -4 Q30 4 12 2Z', GOLD2));
     } },
-    gemini: { frames: 8, dur: 2.4, draw: function (p) {   // 雙子座：一白一深藍的披風，頭後兩個互繞的光環
-      var a = p * Math.PI * 2, dx = Math.cos(a) * 11, dy = Math.sin(a) * 3, s = wave(p) * 3;
-      return ring(f(-dx), f(-40 - dy), 20, 4, GOLD2) + ring(f(dx), f(-40 + dy), 20, 4, '#93a5f5')
-        + path('M-20 -2 Q-10 -7 0 -6 L0 58 Q-18 64 ' + f(-40 + s) + ' 60Z', 'url(#ZZ-c)', 1) + path('M20 -2 Q10 -7 0 -6 L0 58 Q18 64 ' + f(40 + s) + ' 60Z', '#1e2a5a', 1) + line('M0 -6 L0 58', 2, GOLD2);
+    gemini: { frames: 8, dur: 2.4, draw: function (p) {   // 雙子座：一金一夜藍、左右不同色的雙生羽翼，頭後兩個互繞的光環
+      var a = p * Math.PI * 2, dx = Math.cos(a) * 9, dy = Math.sin(a) * 2.5;
+      var gold = wingOf('feather', [{ n: 9, lenA: 38, lenB: 82, angA: 100, angB: -24, w: 9.5, fill: GOLD, shift: .12 }, { n: 6, lenA: 22, lenB: 34, angA: 92, angB: -4, w: 8, fill: GOLD2, shift: .08 }]);
+      var night = wingOf('feather', [{ n: 9, lenA: 38, lenB: 82, angA: 100, angB: -24, w: 9.5, fill: '#2a3a7a', shift: .12 }, { n: 6, lenA: 22, lenB: 34, angA: 92, angB: -4, w: 8, fill: '#c7d2fe', shift: .08 }], null, '#c7d2fe');
+      return flapPair(p, gold, night, 9, .8) + ring(f(-dx), f(-44 - dy), 14, 3.5, GOLD2) + ring(f(dx), f(-44 + dy), 14, 3.5, '#93a5f5');
     } },
     cancer: { frames: 6, dur: 1.6, draw: function (p) {   // 巨蟹座：兩支往上張開的蟹螯（開合）
       var o = (wave(p) + 1) * 4;
@@ -96,22 +126,23 @@
       var a = -10 * (1 - Math.cos(p * Math.PI * 2)) / 2;
       return '<g transform="scale(.82) ' + rot(a, 0, 0) + '">' + feathers() + '</g><g transform="scale(-.82 .82) ' + rot(a, 0, 0) + '">' + feathers() + '</g>';
     } },
-    capricorn: { frames: 6, dur: 1.8, draw: function (p) {   // 摩羯座：往後掠的山羊角＋背上的聖劍
-      return cape(16, 26, 36, null, p) + path('M0 -100 L6 -80 L4 18 L0 26 L-4 18 L-6 -80Z', 'url(#ZZ-s)') + path('M-14 -28 L14 -28 L12 -22 L-12 -22Z')
-        + mirror(path('M8 -30 Q30 -52 58 -40 Q74 -32 76 -12 Q64 -28 46 -30 Q28 -32 12 -20Z'));
+    capricorn: { frames: 6, dur: 1.8, draw: function (p) {   // 摩羯座：一片片聖劍排成的刃翼＋往後掠的山羊角
+      var blades = wingOf('blade', [{ n: 7, lenA: 44, lenB: 86, angA: 96, angB: -26, w: 7, fill: 'url(#ZZ-s)', shift: .15 }], [30, -52, 70, -62]);
+      return flapPair(p, blades, null, 6, .8) + mirror(path('M6 -26 Q24 -46 46 -40 Q58 -34 60 -18 Q50 -30 38 -30 Q24 -30 10 -18Z'));
     } },
-    aquarius: { frames: 8, dur: 2.4, draw: function (p) {   // 水瓶座：肩上流下的水流披帶（起伏），頭上旋轉的冰晶
-      var y = f(wave(p) * 3), star = '';
-      for (var i = 0; i < 6; i++) star += '<g transform="' + rot(i * 60, 0, -64) + '">' + line('M0 -64 L0 -82 M0 -76 L-5 -81 M0 -76 L5 -81', 2.4, '#e0f2fe') + '</g>';
-      return '<g transform="translate(0 ' + y + ')">' + mirror(path('M10 -4 Q36 -10 44 12 Q50 34 36 56 Q54 40 58 14 Q56 -16 16 -14Z', 'url(#ZZ-w)', .9)) + '</g>'
-        + cape(14, 22, 30, 'url(#ZZ-w)', p, false) + '<g transform="' + rot(60 * p, 0, -64) + '">' + star + '<circle cx="0" cy="-64" r="4" fill="#fff"/></g>';
+    aquarius: { frames: 8, dur: 2.4, draw: function (p) {   // 水瓶座：冰晶與水流化成的羽翼，羽尖結晶；頭上旋轉的冰晶
+      var ice = wingOf('feather', [{ n: 9, lenA: 36, lenB: 80, angA: 102, angB: -22, w: 9, fill: 'url(#ZZ-w)', shift: .12 }, { n: 6, lenA: 20, lenB: 32, angA: 92, angB: -4, w: 7.5, fill: '#e0f7ff', shift: .08 }], null, '#bae6fd');
+      var tips = ''; for (var i = 0; i < 5; i++) { var a = (-22 + i * 22) * Math.PI / 180, x = 78 + Math.cos(a) * 72, y = -70 + Math.sin(a) * 72; tips += path('M' + f(x) + ' ' + f(y - 6) + ' L' + f(x + 4) + ' ' + f(y) + ' L' + f(x) + ' ' + f(y + 6) + ' L' + f(x - 4) + ' ' + f(y) + 'Z', '#f0fbff', .8); }
+      var star = ''; for (var j = 0; j < 6; j++) star += '<g transform="' + rot(j * 60, 0, -66) + '">' + line('M0 -66 L0 -80 M0 -75 L-4 -79 M0 -75 L4 -79', 2.4, '#e0f2fe') + '</g>';
+      return flapPair(p, ice + tips, null, 7, .74) + '<g transform="' + rot(60 * p, 0, -66) + '">' + star + '<circle cx="0" cy="-66" r="3.5" fill="#fff"/></g>';
     } },
-    pisces: { frames: 8, dur: 3.2, draw: function (p) {   // 雙魚座：繞著光環游動的兩條魚＋點點玫瑰
-      var fish = function (r, col) { return '<g transform="' + rot(r, 0, -34) + '">' + path('M0 -86 Q16 -94 30 -86 Q16 -78 0 -86Z', col, .9) + path('M30 -86 L40 -94 L38 -86 L40 -78Z', col, .9) + '</g>'; };
-      var rose = function (x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="4.6" fill="#e11d48" stroke="#7f1d1d" stroke-width="1"/><circle cx="' + x + '" cy="' + y + '" r="2" fill="#fb7185"/>'; };
-      return cape(16, 28, 38, '#f5f3ff', p) + ring(0, -34, 52, 1.6, GOLD2) + fish(180 * p, GOLD) + fish(180 * p + 180, GOLD2)
-        + rose(-40, -8) + rose(42, -14) + rose(-30, 30) + rose(34, 24) + rose(0, -88);
-    } }
+    pisces: { frames: 8, dur: 3.2, draw: function (p) {   // 雙魚座：珊瑚色的魚鰭翼（波動），鰭根綴玫瑰，兩條小魚繞著頭游
+      var w = wave(p) * 4;
+      var fins = wingOf('fin', [{ n: 5, lenA: 46, lenB: 80, angA: 96, angB: -18, w: 13, fill: function (i) { return i % 2 ? '#f9a8b8' : '#fb7185'; }, shift: .1 }], [30, -54, 70, -64 + w], GOLD2);
+      var rose = function (x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="4.6" fill="#e11d48" stroke="#7f1d1d" stroke-width="1"/><circle cx="' + x + '" cy="' + y + '" r="2" fill="#fecdd3"/>'; };
+      var fish = function (r, col) { return '<g transform="' + rot(r, 0, -40) + '">' + path('M0 -70 Q12 -76 22 -70 Q12 -64 0 -70Z', col, .9) + path('M22 -70 L30 -76 L28 -70 L30 -64Z', col, .9) + '</g>'; };
+      return flapPair(p, fins + rose(30, -50) + rose(58, -62), null, 5, .78) + fish(180 * p, GOLD) + fish(180 * p + 180, GOLD2);
+    } },
   };
   var BOX = { x: -110, y: -120, w: 220, h: 190 };   // 肩膀在方框內 (110,120)
   function frameSvg(z, p, minLine) {
