@@ -491,7 +491,11 @@
         var title = unifyTitle(), h = held();
         div.querySelectorAll('.text-sm.text-slate-400.mt-1').forEach(function (el) {
           if (el.textContent.indexOf('城堡：') < 0) return;
-          var txt = title ? '<span class="text-yellow-300 font-bold">' + title + '</span>（' + h.length + ' 城）' : (h.length ? h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、') : '');
+          // 這格很窄，只放 2～3 個字：1 座顯示城名、多座顯示「N城」、七座「統一」；完整城名與稱號放在滑鼠提示
+          var names = h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; });
+          var short = !h.length ? '' : (title ? '統一' : (h.length === 1 ? names[0] : h.length + '城'));
+          var tip = h.length ? ('血盟持有 ' + h.length + ' 座城堡' + (title ? '（' + title + '）' : '') + '：' + names.join('、')) : '';
+          var txt = short ? '<span class="' + (title ? 'text-yellow-300 font-bold' : 'text-amber-200 font-bold') + '" style="white-space:nowrap" title="' + tip + '">' + short + '</span>' : '';
           if (txt) el.innerHTML = el.innerHTML.replace(/城堡：[\s\S]*$/, '城堡：' + txt);
         });
         // 回城城堡選擇
