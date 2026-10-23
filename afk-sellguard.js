@@ -71,6 +71,8 @@
         var m = document.getElementById('item-modal');
         if (!m || m.classList.contains('hidden')) return;
         if (!ev.target || !m.contains(ev.target)) return;
+        // 關閉鈕不擋：誤按關閉沒有損失，擋掉反而像按鈕失靈（介面測試與快速點擊都會踩到）
+        try { var b = ev.target.closest && ev.target.closest('button'); if (b && /closeModal\(/.test(b.getAttribute('onclick') || '')) return; } catch (e) {}
         ev.preventDefault();
         ev.stopPropagation();
         if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();

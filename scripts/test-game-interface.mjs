@@ -107,7 +107,9 @@ try {
       await page.screenshot({path:'.scratch/interface/'+spec.name+'-collection.png'});
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#afk-card-ascension-modal').count(),0,'ESC closes card collection');
+      await page.waitForTimeout(400); // ESC 關卡冊會走 history.back，等 popstate 落地再開下一個面板，免得被它順手關掉
       await page.evaluate(()=>AFK_POWERSAVE.open());
+      await page.locator('#afk-ps-overlay').waitFor();
       const beforeAudio=await page.evaluate(()=>{const v=AFK_POWERSAVE.snapshot();return{bgm:v.bgm,sfx:v.sfx};});
       await page.locator('[data-preset="smooth"]').click();
       assert.deepEqual(await page.evaluate(()=>{const v=AFK_POWERSAVE.snapshot();return{noanim:v.noanim,nofx:v.nofx,vfx:v.vfx,vfxnum:v.vfxnum};}),{noanim:false,nofx:true,vfx:false,vfxnum:true});
