@@ -188,32 +188,16 @@
 .afk-card-celestial{color:#fff0b8;text-shadow:0 0 9px #c6a85d}
 .afk-card-spacetime{color:#9ceaff;text-shadow:0 0 10px #6856d5}
 .afk-card-samsara{color:#fcd34d;text-shadow:0 0 10px #f59e0b}
-.afk-cloth-back{position:absolute;pointer-events:none;z-index:0;filter:drop-shadow(0 0 4px #fbbf24aa)}
-.afk-cloth-back svg{width:100%;height:100%;overflow:visible;display:block}
-.afk-cloth-back svg g,.afk-cloth-back svg circle{transform-box:view-box}
-.afk-cloth-back .cb-spin{animation:cb-spin 24s linear infinite}
-.afk-cloth-back .cb-slow{animation-duration:40s}
-.afk-cloth-back .cb-sway{animation:cb-sway 3.2s ease-in-out infinite}
-.afk-cloth-back .cb-tail{animation:cb-sway 2.4s ease-in-out infinite}
-.afk-cloth-back .cb-wave{animation:cb-wave 3s ease-in-out infinite}
-.afk-cloth-back .cb-wr,.afk-cloth-back .cb-wl{transform-origin:0px 0px;animation:cb-flap 2.6s ease-in-out infinite}
-.afk-cloth-back.is-sealed{filter:saturate(.25) brightness(.62);opacity:.55}
-.afk-cloth-back.is-sealed *{animation:none!important}
+.afk-cloth-back{position:absolute;pointer-events:none;z-index:0;filter:drop-shadow(0 0 2px #fbbf2455)}
+.afk-cloth-back i{position:absolute;inset:0;display:block;background-repeat:no-repeat;background-position:0 0;image-rendering:pixelated}
+.afk-cloth-back.is-sealed{filter:none;opacity:.7}
+.afk-cloth-back.is-sealed i{animation:none!important}
+.afk-cloth-back[data-face="back"]{filter:brightness(.92)}
 .afk-card-aura-downed .afk-cloth-back{opacity:.15}
 body.afk-no-glow .afk-cloth-back{filter:none}
-body.afk-no-animation .afk-cloth-back *,body.afk-card-background .afk-cloth-back *{animation-play-state:paused}
-@media(prefers-reduced-motion:reduce){.afk-cloth-back *{animation:none!important}}
-.afk-cloth-back.is-pixel{width:0;height:0;filter:drop-shadow(0 0 2px #fbbf2455)}
-.afk-cloth-back.is-pixel i{position:absolute;display:block;width:var(--px-s);height:var(--px-s);left:var(--px-dx);top:var(--px-dy);transform-origin:var(--px-ox) var(--px-oy);transform:scaleX(var(--px-m));animation:px-flap 2.4s steps(6,jump-none) infinite alternate}
-.afk-cloth-back.is-pixel i canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
-.afk-cloth-back.is-pixel .px-l{--px-m:-1}
-.afk-cloth-back.is-pixel .px-r{--px-m:1}
-.afk-cloth-back.is-pixel[data-face="back"]{filter:brightness(.92)}
-@keyframes px-flap{from{transform:scaleX(var(--px-m)) rotate(0deg)}to{transform:scaleX(var(--px-m)) rotate(-8deg)}}
-@keyframes cb-spin{to{transform:rotate(360deg)}}
-@keyframes cb-sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
-@keyframes cb-wave{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
-@keyframes cb-flap{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-9deg)}}
+body.afk-no-animation .afk-cloth-back i,body.afk-card-background .afk-cloth-back i{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.afk-cloth-back i{animation:none!important}}
+@keyframes cb-frames{to{background-position-x:calc(var(--cbw) * -1 * var(--cbn))}}
 [data-card-aura="samsara"]{--ca-gold:#fcd34d;--ca-light:#fffbeb;--ca-shadow:#f59e0b90}
 [data-card-aura]{--ca-gold:#f6c766;--ca-light:#ffedb4;--ca-shadow:#d07a2570}
 [data-card-aura="diamond"]{--ca-gold:#67e8f9;--ca-light:#e0fcff;--ca-shadow:#0891b250}
@@ -264,35 +248,29 @@ body.afk-no-animation .afk-trans-aura *,body.afk-card-background .afk-trans-aura
     var bh=box.bottom-box.top,bw=box.right-box.left;
     return geometryCache[key]={hx:box.hx!=null?box.hx:(box.left+box.right)/2,left:(box.left+box.right)/2,bottom:h-box.bottom+Math.max(3,bh*.04),width:Math.max(64,Math.min(180,bw*1.6)),height:Math.max(70,Math.min(220,bh*1.35))};
   }
-  // 輪迴聖衣背飾：12 星座各自不同（afk-cloth-art），只顯示在玩家自己身上
+  // 輪迴聖衣背飾：12 星座各自不同、粗像素點陣（afk-cloth-art），只顯示在玩家自己身上
   function clothWings(el,actor,tier,geometry){
     var w=el.querySelector(':scope > .afk-cloth-back'),P=typeof player!=='undefined'?player:null,ART=W.AFK_CLOTH_ART;
     var row=tier==='samsara'&&W.AFK_CARD_ASCENSION&&actor&&actor.poly&&W.AFK_CARD_ASCENSION.catalog.samsara.filter(function(r){return r.id===actor.poly.cardAscensionId;})[0];
-    if(!row||!ART||!P||actor!==P||el.id!=='player-morph-sprite'){if(w)w.remove();return;}
-    var A=W.AFK_CARD_ASCENSION,se=!!(A.sealed&&A.sealed(row.id,actor)),C=W.AFK_CARD_COMBAT,dg=!!(C&&C.inDungeon&&C.inDungeon());
-    if(ART.pixel&&ART.pixel[row.zodiac]){pixelBack(el,w,row,geometry,se||dg,actor);return;}
-    if(!w||w.getAttribute('data-zodiac')!==row.zodiac||w.classList.contains('is-pixel')){if(w)w.remove();w=document.createElement('span');w.className='afk-cloth-back';w.setAttribute('aria-hidden','true');w.setAttribute('data-zodiac',row.zodiac);w.innerHTML=ART.svg(row.zodiac);el.prepend(w);}
-    w.classList.toggle('is-sealed',se||dg);
-    if(geometry){
-      // SVG 1 單位 ≈ 身高 1%；肩膀（方框內 sx,sy）對到角色肩膀（腳底往上 66%）
-      var bh=geometry.height/1.35,u=bh/100,B=ART.box;
-      w.style.width=Math.round(B.w*u)+'px';w.style.height=Math.round(B.h*u)+'px';
-      w.style.left=Math.round((geometry.hx!=null?geometry.hx:geometry.left)-B.sx*u)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.66-(B.h-B.sy)*u)+'px';
-    }
-  }
-  // 點陣風格背飾（試作：射手座）：兩片 canvas 翅膀，肩膀為原點；背對鏡頭時翅膀移到身體前面，側身時收窄
-  function pixelBack(el,w,row,geometry,sealed,actor){
-    var ART=W.AFK_CLOTH_ART;
-    if(!w||w.getAttribute('data-zodiac')!==row.zodiac||!w.classList.contains('is-pixel')){if(w)w.remove();w=document.createElement('span');w.className='afk-cloth-back is-pixel';w.setAttribute('aria-hidden','true');w.setAttribute('data-zodiac',row.zodiac);w.innerHTML='<i class="px-l"></i><i class="px-r"></i>';el.prepend(w);}
-    if(!geometry)return;
-    var bh=geometry.height/1.35,size=Math.round(bh*.95),key=size+(sealed?'s':'o')+'x'+(W.__afkClothPx||2);
-    w.style.left=Math.round(geometry.hx!=null?geometry.hx:geometry.left)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.64)+'px';
-    var B=ART.wingBox,sx=-B.x/B.w,sy=-B.y/B.h;
-    w.style.setProperty('--px-s',size+'px');w.style.setProperty('--px-ox',(sx*100).toFixed(2)+'%');w.style.setProperty('--px-oy',(sy*100).toFixed(2)+'%');
-    w.style.setProperty('--px-dx',(-sx*size).toFixed(1)+'px');w.style.setProperty('--px-dy',(-sy*size).toFixed(1)+'px');
+    if(!row||!ART||!ART.strip||!P||actor!==P||el.id!=='player-morph-sprite'){if(w)w.remove();return;}
+    var A=W.AFK_CARD_ASCENSION,C=W.AFK_CARD_COMBAT,sealed=!!(A.sealed&&A.sealed(row.id,actor))||!!(C&&C.inDungeon&&C.inDungeon());
+    if(!w||w.getAttribute('data-zodiac')!==row.zodiac){if(w)w.remove();w=document.createElement('span');w.className='afk-cloth-back is-pixel';w.setAttribute('aria-hidden','true');w.setAttribute('data-zodiac',row.zodiac);w.innerHTML='<i></i>';el.prepend(w);}
     w.classList.toggle('is-sealed',sealed);
-    if(w.getAttribute('data-key')!==key){w.setAttribute('data-key',key);
-      ART.wingCanvas(size,sealed,function(c){if(w.getAttribute('data-key')!==key)return;['px-l','px-r'].forEach(function(cls){var slot=w.querySelector('.'+cls);if(!slot)return;var cc=document.createElement('canvas');cc.width=c.width;cc.height=c.height;cc.getContext('2d').drawImage(c,0,0);slot.innerHTML='';slot.appendChild(cc);});});}
+    if(!geometry)return;
+    // 1 單位≈身高 1%；肩膀（方框內 sx, syFrac）對到角色肩膀（腳底往上 66%）、身體中線（頭頂中線）
+    var bh=geometry.height/1.35,u=bh/100,B=ART.box,ww=Math.round(B.w*u),hh=Math.round(B.h*u),cx=geometry.hx!=null?geometry.hx:geometry.left;
+    w.style.width=ww+'px';w.style.height=hh+'px';
+    w.style.left=Math.round(cx-B.sx*u)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.66-hh*(1-B.syFrac))+'px';
+    var key=row.zodiac+'|'+ww+'x'+hh+'|'+(sealed?'s':'o')+'|'+(W.__afkClothPx||3);
+    if(w.getAttribute('data-key')===key)return;
+    w.setAttribute('data-key',key);
+    ART.strip(row.zodiac,ww,hh,sealed,function(o){
+      if(w.getAttribute('data-key')!==key||!o.url)return;
+      var i=w.querySelector('i');if(!i)return;
+      i.style.backgroundImage='url("'+o.url+'")';i.style.backgroundSize=(o.frames*100)+'% 100%';
+      i.style.setProperty('--cbw',ww+'px');i.style.setProperty('--cbn',o.frames);
+      i.style.animation=o.frames>1?'cb-frames '+o.dur+'s steps('+o.frames+') infinite':'none';
+    });
   }
   // 朝向：背對鏡頭（北、東北、西北）翅膀在身體前面；正東／正西側身收窄
   function pixelFacing(el,actor){
