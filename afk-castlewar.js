@@ -391,7 +391,7 @@
     var inc = n >= 7 ? '每小時 100 龍鑽＋1,000 萬天幣＋100 席琳結晶' : (n >= 5 ? '每小時 500 萬天幣＋100 龍鑽' : (n >= 3 ? '每小時 500 萬天幣' : '3 座以上才有收成'));
     var war = d.surrendered ? '全伺服器已投降，宣戰結束' : (d.warIds.length ? d.warIds.length + ' 個血盟對你宣戰' : (n <= 1 ? '只有 1 座城，沒人對你宣戰' : '—'));
     return '<div class="bg-slate-900/70 border border-amber-700/60 rounded p-3 text-sm text-slate-200 leading-relaxed">' +
-      '<div class="font-bold text-amber-200 mb-1">🏰 持有城堡 ' + n + '／7' + (n >= 7 ? '（' + unifyTitle() + '）' : '') + '</div>' +
+      '<div class="afk-lore">「城牆會倒，旗幟會換；唯有統一天下的名字，會被刻進亞丁的歷史。」</div><div class="font-bold text-amber-200 mb-1">🏰 持有城堡 ' + n + '／7' + (n >= 7 ? '（' + unifyTitle() + '）' : '') + '</div>' +
       '<div>' + (h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、') || '尚未持有') + '</div>' +
       '<div class="mt-1">收成：' + inc + '</div>' +
       '<div>宣戰：' + war + '</div>' +

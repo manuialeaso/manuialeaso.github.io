@@ -13,6 +13,10 @@
   var T=W.AFK_TOGGLES;
   if(T)T.register({id:'card-aura',name:'變身光環',desc:'顯示鑽石、神話、天上與時空變身的光環；關閉後保留全部能力。',group:'遊戲介面',parent:'card-ascension'});
   // 天上 21 種、時空 14 種（玩家 2026-10-23）：前 3 種保留原 ID（已持有的卡不受影響），其餘借用既有變身的外型
+  // 傳說句（玩家 2026-10-23：文字要有意境；原創，數值說明另外附在後面）
+  var CEL_LORE = {"曙光聖騎": "曾墮入業火的騎士，在第一道曙光中重披聖鎧。", "月羽神弓": "以月光織成羽箭的神射手，箭離弦便化作流星。", "熾光聖賢": "用熾白聖光書寫咒文的賢者，字字皆是審判。", "天穹劍聖": "一劍劃開雲層的劍聖，那道劍痕至今仍懸在天穹。", "雷霆天將": "統御天雷的神將，每一步都在雲端落下雷鳴。", "金輝守護": "披著金輝的守門者，誓言不讓任何黑暗越過身後。", "焚天戰神": "點燃天空的戰神，所過之處只剩熾紅的焦土。", "夜幕天刃": "藏身夜幕的天之刃，刀光亮起時，敵人才知長夜已至。", "天律裁決": "執掌天律的裁決者，判語一出，萬罪無所遁形。", "星海魔導": "在星海汲取魔力的導師，指尖輕點便有星辰墜落。", "雲端劍豪": "踏雲而行的劍豪，刀未出鞘，風已先斷。", "天羽獵星": "追獵星辰的天羽射手，箭矢從不落空。", "天影忍神": "行於天影之間的忍神，連月光也映不出祂的身形。", "天命陰陽": "推演天命的陰陽師，符咒一展便能扭轉吉凶。", "曦光射手": "迎著晨曦拉弓的射手，第一道光便是祂的箭。", "天籟法師": "以天籟為咒的法師，詠唱聲中萬物俯首。", "天雷武士": "刀身纏繞天雷的武士，拔刀即是落雷。", "天威大名": "坐擁天威的大名，一聲號令千軍俱動。", "天弓姬武": "執掌天弓的姬武者，優雅一射便貫穿雲霄。", "蒼穹拳聖": "以拳撼動蒼穹的聖者，拳風所至山岳崩裂。", "天狼王": "昔日的反王化身天狼，在月下重新號令群雄。"};
+  var ST_LORE = {"永劫騎士": "在無盡時光中反覆戰死又復生的騎士，劍上刻著永劫的年輪。", "裂星獵手": "一箭射穿星辰的獵手，裂開的星光至今仍在墜落。", "萬象先知": "看盡萬象生滅的先知，祂的預言就是未來本身。", "虛空劍帝": "立於虛空的劍帝，斬下的不是血肉，而是存在。", "逆時雷霆": "逆著時間奔流的雷霆，總在敵人出手之前落下。", "終焉守門": "看守世界終焉之門的巨人，祂退一步，便是末日。", "時砂暴君": "以時之砂為鎧的暴君，被祂盯上的人只剩最後一刻。", "輪迴劍鬼": "困在輪迴裡的劍鬼，每一世都只為了同一場決鬥。", "次元裁判": "穿梭次元的審判者，罪人逃到哪個世界都會被找到。", "混沌魔尊": "自混沌中誕生的魔尊，秩序在祂面前只是幻影。", "時空劍豪": "斬斷時空的劍豪，刀光過處，昨日與明日同時裂開。", "星界弓神": "在星界之間拉弓的神祇，弦響之時群星改道。", "永夜忍皇": "統御永夜的忍皇，祂所在之處黎明永不到來。", "時之巫女": "侍奉時間的巫女，鈴音一響，萬物靜止。"};
+  var ZD_LORE = {"aries": "以金羊毛鍛成的聖衣，傳說曾載著王子飛越怒海。", "taurus": "化身白牛的天神所遺，一角便能撞開城門。", "gemini": "同生共死的雙子，一人在天、一人在冥，聖衣也一分為二。", "cancer": "被英雄踏碎卻為天后銘記的巨蟹，甲殼化為不碎的聖衣。", "leo": "以刀劍不入的獅皮製成，聖衣上仍迴盪著百獸之王的咆哮。", "virgo": "正義女神離開人間時留下的聖衣，純白之中不容半點汙穢。", "libra": "正義女神手中的天秤化為聖衣，衡量世間每一份善與惡。", "scorpio": "奉命刺殺狂妄獵人的天蠍，毒針至今仍懸在夏夜的天空。", "sagittarius": "半人馬賢者以星為弓，聖衣的金翼會指引迷途者回家。", "capricorn": "牧神為躲避巨獸而化身的羊首之形，角如新月，翼如利刃。", "aquarius": "為眾神斟酒的少年所持寶瓶，傾出的水流凍成永恆的冰晶。", "pisces": "以絲帶相繫、逃離巨怪的母子雙魚，聖衣上開滿不凋的玫瑰。"};
   var prototypes = [
     { key:'knight', name:'烈焰的死亡騎士', role:'重甲騎士', celestial:'曙光聖騎', spacetime:'永劫騎士' },
     { key:'ranger', name:'莉絲安', role:'精靈弓手', celestial:'月羽神弓', spacetime:'裂星獵手' },
@@ -75,10 +79,10 @@
     { key:'pisces', z:'雙魚座', base:'絲莉安', sp:'玫瑰之癒：每秒恢復自己 2% 最大 HP；每 10 秒全體隊友（傭兵、寵物、召喚物）恢復 2% 最大 HP', bonus:{} },
   ];
   function description(tier) {
-    var t=tiers[tier],s='對每隻怪物的首次傷害 ×'+t.mult+'；六項能力各 +'+t.stat+'，火、水、風、地、無屬性抗性各 +'+t.resist+'。';
-    if(tier==='spacetime')s='對每隻怪物的首次傷害 ×15，角色共用冷卻 30 秒；六項能力各 +50，五屬性抗性各 +200。';
+    var t=tiers[tier],s='初擊之力：對每隻怪物的首次傷害 ×'+t.mult+'。六項能力各 +'+t.stat+'，火、水、風、地、無屬性抗性各 +'+t.resist+'。';
+    if(tier==='spacetime')s='初擊之力：對每隻怪物的首次傷害 ×15（共用冷卻 30 秒）。六項能力各 +50，五屬性抗性各 +200。';
     if(t.crit)s+=' 近距離、遠距離、魔法爆擊率各 +'+t.crit+'%。';
-    if(t.critDamage)s+=' 三種爆擊傷害各 +'+t.critDamage+'%；對副本中的敵人每秒造成 500 點真實傷害。';
+    if(t.critDamage)s+=' 三種爆擊傷害各 +'+t.critDamage+'%。時之餘波：副本中每秒對所有敵人造成 500 點真實傷害。';
     return s;
   }
   // Mythic cards upgrade the existing selectable Lv70+ forms. Equipment-only
@@ -98,7 +102,8 @@
     f.n=n;f.c=tiers.mythic.className;f.cardAscensionId=id;f.cardAscensionTier='mythic';f.cardVisualBase=base.n;f.cardNativeLevel=base.lv;
     delete f.controlOnly;
     var bm=bonusFor('mythic',base.n,hi);
-    catalog.mythic.push({id:id,n:n,tier:'mythic',form:f,prototype:base.n,level:base.lv,role:'高階變身',lore:tiers.mythic.lore,bonus:bm.stats,desc:description('mythic')+' '+bm.text});
+    var ml='「'+base.n+'」的英靈被金焰重新鍛入卡中，第一擊便喚醒古老的傳說。';
+    catalog.mythic.push({id:id,n:n,tier:'mythic',form:f,prototype:base.n,level:base.lv,role:'高階變身',lore:ml,bonus:bm.stats,desc:ml+' '+description('mythic')+' '+bm.text});
     if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS[base.n]||base.n;
   });
   prototypes.forEach(function (p,pi) {
@@ -109,7 +114,8 @@
       var t=tiers[key],id=key+'_'+p.key,n=t.name+'・'+p[key],form=copy(found.form),bb=bonusFor(key,p.name,pi);
       form.n=n;form.c=t.className;form.cardAscensionId=id;form.cardAscensionTier=key;form.cardVisualBase=p.name;form.cardNativeLevel=found.form.lv;
       delete form.controlOnly;
-      catalog[key].push({id:id,n:n,tier:key,form:form,prototype:p.name,role:p.role,lore:t.lore,bonus:bb.stats,desc:description(key)+' '+bb.text});
+      var pl=(key==='celestial'?CEL_LORE:ST_LORE)[p[key]]||t.lore;
+      catalog[key].push({id:id,n:n,tier:key,form:form,prototype:p.name,role:p.role,lore:pl,bonus:bb.stats,desc:pl+' '+description(key)+' '+bb.text});
       if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS[p.name]||p.name;
     });
   });
@@ -119,8 +125,9 @@
     var t=tiers.samsara,id='samsara_'+z.key,n='輪迴・'+z.z+'聖衣',form=copy(found.form);
     form.n=n;form.c=t.className;form.cardAscensionId=id;form.cardAscensionTier='samsara';form.cardVisualBase=z.base;form.cardNativeLevel=found.form.lv;
     delete form.controlOnly;
-    catalog.samsara.push({id:id,n:n,tier:'samsara',form:form,prototype:z.base,role:'星座聖衣',lore:t.lore,zodiac:z.key,special:z.sp,specialBonus:copy(z.bonus),
-      desc:'封印型態：效果同時空變身，另有最終減傷 +100。解除封印（第二次取得）：六項能力各 +100、五屬性抗性各 +500、最終減傷 +500，並得到特殊能力「'+z.sp+'」。副本內一律回到封印型態、沒有特殊能力。缺點：沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘（期間不能用輪迴變身）。'});
+    var zl=ZD_LORE[z.key]||t.lore;
+    catalog.samsara.push({id:id,n:n,tier:'samsara',form:form,prototype:z.base,role:'星座聖衣',lore:zl,zodiac:z.key,special:z.sp,specialBonus:copy(z.bonus),
+      desc:zl+' 封印型態：效果同時空變身，另有最終減傷 +100。解除封印（第二次取得）：六項能力各 +100、五屬性抗性各 +500、最終減傷 +500，並得到特殊能力「'+z.sp+'」。副本內一律回到封印型態、沒有特殊能力。缺點：沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘（期間不能用輪迴變身）。'});
     if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS[z.base]||z.base;
   });
   function monsterForm(name) {

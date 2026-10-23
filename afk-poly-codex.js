@@ -52,7 +52,7 @@
     for (var t = 1; t <= 3; t++) {
       var id = itemId(f.n, t);
       if (!DB.items[id]) DB.items[id] = { n: f.n + ' 變身' + TIER_N[t - 1] + '卡', type: 'misc', eff: 'afk_pcard', pcardTier: t, pcardForm: f.n, c: TIER_C[t - 1], img: TIER_IMG[t - 1], p: 0, gachaWeight: 0,
-        d: '變身收集卡。使用後在變身收集冊登錄「' + f.n + '」的' + TIER_N[t - 1] + '階（要先登錄前一階）。' + (t === 3 ? '多出來的金卡可在燃柳村至幻者合成神話變身卡。' : '') };
+        d: ['薄薄一張，映著「' + f.n + '」模糊的身影。', '銀邊卡面上，「' + f.n + '」的輪廓清晰了起來。', '鍍金的卡面裡，「' + f.n + '」彷彿隨時會走出來。'][t - 1] + '使用後在變身收集冊登錄' + TIER_N[t - 1] + '階（要先登錄前一階）。' + (t === 3 ? '多出來的金卡可在燃柳村至幻者合成神話變身卡。' : '') };
       try { if (typeof MISC_BOOK_EXCLUDED !== 'undefined') MISC_BOOK_EXCLUDED[id] = true; } catch (e) {}
     }
   });
@@ -148,7 +148,7 @@
     forms.forEach(function (f) { var v = d[f.n] || 0; for (var i = 0; i < v; i++) reg[i]++; });
     var box = document.createElement('section'); box.id = 'afk-poly-codex'; box.className = 'afk-ca-panel';
     var statTxt = Object.keys(t.stats).map(function (k) { var nm = (STATS.find(function (s) { return s[0] === k; }) || [k, k])[1]; var v = t.stats[k]; return nm + ' ' + (k === 'ac' ? '+' + (-v) : (v > 0 ? '+' : '') + v); });
-    var h = '<h3>變身收集冊</h3><p>打怪掉變身卡，同一款依普通 → 銀 → 金登錄。金卡登錄 5 種後開放神話變身卡冊。</p>'
+    var h = '<h3>變身收集冊</h3><p class="afk-lore">倒下的魔物會留下一縷形貌。收集它們，有一天你也能借用那份力量。</p><p>打怪會掉落變身卡，同一款依普通 → 銀 → 金登錄。金卡登錄 5 種後開放神話變身卡冊。</p>'
       + '<div>普通 <b>' + reg[0] + '</b>／銀 <b>' + reg[1] + '</b>／金 <b>' + reg[2] + '</b>（共 ' + forms.length + ' 種）</div>'
       + '<div style="color:#86efac">目前加成：最大 HP +' + t.hp + '、最大 MP +' + t.mp + (statTxt.length ? '、' + statTxt.join('、') : '') + '</div>';
     series.forEach(function (sr) {

@@ -336,7 +336,8 @@
       if(byName[row.form.n] && byName[row.form.n].id!==row.id)throw Error('Duplicate card form name '+row.form.n);
       byId[row.id]=row;byName[row.form.n]=row;catalog[t].push(row);
       var itemId='afk_asc_card_'+row.id;row.itemId=itemId;
-      DB.items[itemId]={n:row.n+'的'+RULES[t].n+'卡',type:'misc',eff:'afk_asc_card',cardAscensionId:row.id,p:0,gachaWeight:0,c:'text-yellow-300',img:'assets/icons/items/鑽石卡.png',d:'使用後永久解鎖「'+row.n+'」變身；重複時返還 1 張隨機一般鑽石卡。'};
+      DB.items[itemId]={n:row.n+'的'+RULES[t].n+'卡',type:'misc',eff:'afk_asc_card',cardAscensionId:row.id,p:0,gachaWeight:0,c:'text-yellow-300',img:'assets/icons/items/'+({mythic:'金卡',celestial:'白金卡',spacetime:'鑽白金幻化',samsara:'鑽石卡'}[t]||'鑽石卡')+'.png',
+        d:'封存著「'+row.n+'」形貌的'+RULES[t].n+'卡。'+(t==='samsara'?'使用後取得封印聖衣；再取得一次即可解除封印，解封後重複取得返還 1 張隨機鑽石卡。':'使用後永久解鎖這個變身；再次取得在卡冊升 1 星，滿 7 星後返還 1 張隨機鑽石卡。')};
       if(typeof MISC_BOOK_EXCLUDED!=='undefined')MISC_BOOK_EXCLUDED[itemId]=true;
     });});
     return TIERS.reduce(function(n,t){return n+catalog[t].length;},0);
@@ -376,11 +377,11 @@
     if(actor&&actor.poly&&(actor.poly.cardAscensionId||actor.poly.cardMonster)){actor.poly=null;if(actor.buffs)actor.buffs.poly=0;return true;}return false;
   }
 
-  DB.items[CHOICE]={n:'天上卡自選',type:'misc',eff:'afk_asc_choice',p:0,gachaWeight:0,c:'text-yellow-300',img:'assets/icons/items/鑽石卡.png',d:'自選一張天上卡並永久解鎖變身；重複時返還 1 張隨機一般鑽石卡。'};
-  DB.items[FRAGMENT]={n:'天上自選碎片',type:'misc',eff:'afk_asc_fragment',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/鑽石卡.png',d:'時空卡合成失敗時取得；集滿 10 枚後使用，換取 1 張天上卡自選。'};
-  DB.items[DIAMOND_CHOICE]={n:'鑽石卡自選（未收藏）',type:'misc',eff:'afk_asc_diamond_choice',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/鑽石卡.png',d:'自選一隻尚未登錄鑽石卡的怪物，已登錄普卡至白金卡仍可選；若鑽石卡已全數登錄，保留此券等待新增可選卡片。'};
-  DB.items[DSHARD]={n:'鑽石卡碎片',type:'misc',eff:'afk_asc_dshard',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/鑽石卡.png',d:'天上卡合成失敗時取得；集滿 5 枚使用，合成 1 張隨機的尚未收藏鑽石卡。'};
-  DB.items[STSHARD]={n:'時空變身碎片',type:'misc',eff:'afk_asc_stshard',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/鑽石卡.png',d:'時空／輪迴卡合成失敗時取得。30 枚可指定 1 種時空變身（封印型態，效果減半）；10 枚可解除 1 種時空變身的封印。'};
+  DB.items[CHOICE]={n:'天上卡自選',type:'misc',eff:'afk_asc_choice',p:0,gachaWeight:0,c:'text-yellow-300',img:'assets/icons/items/白金卡.png',d:'以天界羽毛凝成的空白卡面，等待被寫上一個名字。可自選一張天上卡：沒有的永久解鎖，已有的升 1 星。'};
+  DB.items[FRAGMENT]={n:'天上自選碎片',type:'misc',eff:'afk_asc_fragment',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/格利芬羽毛.png',d:'碎裂的天界卡面，邊緣仍透著微光。集滿 10 枚使用，換取 1 張天上卡自選。'};
+  DB.items[DIAMOND_CHOICE]={n:'鑽石卡自選（未收藏）',type:'misc',eff:'afk_asc_diamond_choice',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/鑽石卡.png',d:'映著萬千魔物倒影的鑽石券。自選一隻尚未登錄鑽石卡的怪物（已登錄普卡至白金卡仍可選）；若已全數登錄，此券會留到有新卡可選。'};
+  DB.items[DSHARD]={n:'鑽石卡碎片',type:'misc',eff:'afk_asc_dshard',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/品質鑽石.png',d:'天上卡合成失敗時迸落的鑽石碎屑，仍殘留著魔物的魂影。集滿 5 枚使用，合成 1 張隨機的尚未收藏鑽石卡。'};
+  DB.items[STSHARD]={n:'時空變身碎片',type:'misc',eff:'afk_asc_stshard',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/時空裂痕碎片.png',d:'自時空裂隙剝落的碎片，握在掌中能感覺光陰倒流。時空／輪迴卡合成失敗時取得：30 枚可指定 1 種時空變身（封印型態，效果減半），10 枚可解除 1 種時空變身的封印。'};
   [CHOICE,FRAGMENT,DIAMOND_CHOICE,DSHARD,STSHARD].forEach(function(id){
     if(typeof miscCatKey!=='function'||typeof MISC_CAT_ITEMS==='undefined')return;
     var k=miscCatKey(id,DB.items[id]);if(k&&MISC_CAT_ITEMS[k]&&!MISC_ITEM_CAT[id]){MISC_CAT_ITEMS[k].push(id);MISC_ITEM_CAT[id]=k;if(typeof OBTAINABLE_MISC!=='undefined')OBTAINABLE_MISC[id]=true;}
@@ -534,7 +535,7 @@
     if(!div||!enabled())return;
     var old=div.querySelector('#afk-card-ascension-synth');if(old)old.remove();
     var s=status(player),box=document.createElement('section');box.id='afk-card-ascension-synth';box.className='afk-ca-panel';
-    box.innerHTML='<h3>高階變身卡合成</h3><p>每次消耗 5 張背包內的材料卡，圖鑑已登錄的收藏保留。三階各自累計連敗；連敗 10 次後，第 11 次必定成功。</p><div>可用材料：'+s.tiers.map(function(t){return RULES[t.tier].mat+' <b>'+t.mat+'</b>';}).join('　')+'</div>';
+    box.innerHTML='<h3>高階變身卡合成</h3><p class="afk-lore">「把五張卡的魂影放進爐裡吧。成與不成，皆是命數。」——至幻者</p><p>每次消耗 5 張背包內的材料卡，圖鑑已登錄的收藏保留。各階分別累計連敗；連敗 10 次後，第 11 次必定成功。</p><div>可用材料：'+s.tiers.map(function(t){return RULES[t.tier].mat+' <b>'+t.mat+'</b>';}).join('　')+'</div>';
     s.tiers.forEach(function(t){var line=document.createElement('div');line.className='afk-ca-tier';
       line.innerHTML='<strong style="color:'+RULES[t.tier].color+'">'+t.n+'卡</strong><span>成功率 '+Math.round(t.rate*100)+'%'+(t.tier==='spacetime'&&t.rate>RULES.spacetime.rate?'（失敗累加，最高 50%）':'')+' · '+(t.guaranteed?'本次必定成功':'連敗 '+t.failures+'/10')+'</span><small>'+escape(RULES[t.tier].fail)+'</small>';
       var b=document.createElement('button');b.type='button';b.className='btn';b.dataset.ascendTier=t.tier;b.disabled=!t.unlocked||t.mat<5||!t.total;
@@ -581,7 +582,7 @@
   function openSpacetimePick(){
     if(!enabled()||!player||!player.cls)return;
     var n=itemCount(STSHARD,player),host=createModal('時空變身碎片（持有 '+n+' 枚）');
-    host.innerHTML='<p>'+ST_PICK+' 枚碎片：指定 1 種時空變身。還沒有的會以「封印型態」取得（六項能力、抗性、爆擊、首擊倍率與專屬效果都減半）；已解除封印的升 1 星。'+ST_UNSEAL+' 枚碎片：解除 1 種時空變身的封印。</p>';
+    host.innerHTML='<p class="afk-lore">碎片裡的光陰仍在倒流，湊齊了，就能把某一段時空喚回現世。</p><p>'+ST_PICK+' 枚碎片：指定 1 種時空變身。還沒有的會以「封印型態」取得（六項能力、抗性、爆擊、首擊倍率與專屬效果都減半）；已解除封印的升 1 星。'+ST_UNSEAL+' 枚碎片：解除 1 種時空變身的封印。</p>';
     catalog.spacetime.forEach(function(row){
       var el=document.createElement('div');el.className='afk-ca-tier';var o=owned(row.id,player),se=sealed(row.id,player);
       el.innerHTML='<strong style="color:#c4b5fd">'+escape(row.n)+'</strong><span>'+(!o?'未取得':se?'封印中':'★'+starsOf(row.id,player)+'/7')+'</span><small>'+escape(row.desc)+'</small>';

@@ -350,7 +350,7 @@
             '<div id="afk-ds-box" class="flex flex-col gap-2">'
             + '<button id="afk-ds-btn" onclick="enterDreamStar()" class="btn w-full py-4 text-xl font-bold ' + (cores >= SOLO_CORES ? 'bg-fuchsia-950 hover:bg-fuchsia-900 border-fuchsia-500' : 'bg-slate-700 border-slate-500 opacity-70') + ' border text-white shadow-lg">🌌 暗夢星迴・單人（龜裂之核 ' + cores.toLocaleString() + '／' + SOLO_CORES + '）</button>'
             + '<button id="afk-ds-multi" onclick="enterDreamStar(\'multi\')" class="btn w-full py-2 font-bold bg-slate-800 border border-slate-600 text-slate-300">👥 暗夢星迴・多人（境滅亡域鑰匙 ' + keys + '）— 製作中</button>'
-            + '<div class="text-xs text-fuchsia-200 leading-relaxed bg-slate-950/70 border border-fuchsia-800/60 rounded p-2">只出現頭目（名字上方標示「裂縫夢境者投影」），一次一隻；會相消、暈眩、聖結界（要魔法相消術或相消術卷軸打破）、血壁空間、堅固防禦，第 3／5／6 分各放一次全幻覺／鏡反射／疼痛歡愉，7 分起四屬性風暴、10 分四大究極魔法、15 分自爆。'
+            + '<div class="text-xs text-fuchsia-200 leading-relaxed bg-slate-950/70 border border-fuchsia-800/60 rounded p-2"><div class="afk-lore">碎裂的夢境裡，強者的投影一遍又一遍重演著最後一戰。</div>只出現頭目（名字上方標示「裂縫夢境者投影」），一次一隻；會相消、暈眩、聖結界（要魔法相消術或相消術卷軸打破）、血壁空間、堅固防禦，第 3／5／6 分各放一次全幻覺／鏡反射／疼痛歡愉，7 分起四屬性風暴、10 分四大究極魔法、15 分自爆。'
             + '每隻必掉一種時空材料＋5000 龍鑽，50% 再掉三個昇華材料，0.01% 鑽白金幻化。不記排名、不給裂痕獎勵。</div>'
             + (player.rebirth > 0
               ? '<button id="afk-hades-btn" disabled class="btn w-full py-3 font-bold bg-rose-950 border border-rose-700 text-rose-200 opacity-80">⚰️ 時空裂痕-冥王域（已輪迴轉生）</button>'

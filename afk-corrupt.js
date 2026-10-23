@@ -185,7 +185,7 @@
           CARD_TIERS.forEach(function (ct) {
             var id = cardId(n, ct.t); if (DB.items[id]) return;
             DB.items[id] = { n: n + ' 的' + ct.sfx, type: 'misc', eff: 'card', cardTier: ct.t, cardMob: n, c: ct.col, img: ct.img, p: ct.price, gachaWeight: ct.weight,
-              d: '怪物卡片。使用以在卡片收集冊中登錄「' + n + '」（' + ct.sfx + '效果）。' };
+              d: '封著「' + n + '」身影的怪物卡片，卡面隱約透著龍息侵蝕的痕跡。使用後在卡片收集冊登錄（' + ct.sfx + '效果）。' };
           });
         });
       });

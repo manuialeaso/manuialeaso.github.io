@@ -784,7 +784,7 @@
     css();
     var m = document.createElement('div'); m.id = 'rp-modal';
     m.innerHTML = '<div class="rp-box" role="dialog" aria-modal="true" aria-label="哈瑪大師・遺物強化"><div class="rp-head">🔨 哈瑪大師・遺物強化<span class="rp-bal" id="rp-bal"></span><button class="rp-x" type="button" id="rp-x" aria-label="關閉遺物強化">✕</button></div>'
-      + '<div class="rp-content"><details class="rp-rule"><summary>合成、昇華與費用說明</summary>'
+      + '<div class="rp-content"><p class="afk-lore">「同源的遺物會互相呼喚。把它們交給爐火，讓沉睡的力量醒來吧。」——哈瑪</p><details class="rp-rule"><summary>合成、昇華與費用說明</summary>'
       + '<p><b>武器、防具最高 +15。</b>合成 +1～+10 要 2 件同款、同階遺物。做出 +1～+6，每次 500 龍鑽＋5,000 萬金幣；+7～+10 每高一階，費用再加 100 龍鑽＋1,000 萬金幣。+11～+15 改用單件，每次 5 萬龍鑽、成功率 10%，失敗保留遺物。</p>'
       + '<p><b>戒指、耳環、項鍊、腰帶等飾品最高 +10。</b>+1～+5 每階要 3 件同款、同階遺物；+6～+10 改為 2 件，成功率 50%，失敗時遺物都還在。龍鑽和金幣為上述費用的 3 倍，另需席琳結晶 500 顆。</p>'
       + '<p><b>能力成長：</b>武器一般每 +1 增加小型／大型傷害各 1，每 +3 增加原有能力各 1；防具、飾品每 +1 防禦 −1、魔法防禦 +1，每 +3 遠距迴避 +1，每 +5 傷害減免 +1。各件的專屬階段數值優先，完整效果可查「遺物進階」。</p>'

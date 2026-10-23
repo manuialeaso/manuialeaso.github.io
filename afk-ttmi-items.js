@@ -51,10 +51,11 @@
   });
   function resolve(sid) { return sourceIds[sid] || null; }
   var creditId = resolve(12039), crystalId = resolve(7102);
+  var NPC_D = { '古物商人 洛依': '走遍亞丁各地的古物商人，貨架上擺著來歷不明、卻都還堪用的遠行補給。', '工匠 薩克': '手指被爐火燻黑的老工匠，能把旅人帶回的零碎材料打造成古物。' };
   function addNpc(id,n,title) {
     var town = DB.towns[TOWN]; if (!town) return;
     town.npcs = town.npcs || [];
-    if (!town.npcs.some(function(x){return x.id === id;})) town.npcs.push({id:id,n:n,title:title,type:'shop',d:'遠方古物、補給與工藝在此相逢。'});
+    if (!town.npcs.some(function(x){return x.id === id;})) town.npcs.push({id:id,n:n,title:title,type:'shop',d:NPC_D[n]||'遠方古物、補給與工藝在此相逢。'});
   }
   addNpc(SHOP,'古物商人 洛依','古物與遠行補給'); addNpc(WORKSHOP,'工匠 薩克','材料與古物製作');
 
