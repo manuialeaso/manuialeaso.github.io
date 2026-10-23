@@ -90,6 +90,10 @@
         ['meleeDmg', 'meleeHit', 'rangedDmg', 'rangedHit', 'magicDmg', 'magicHit', 'extraMp', 'resFire', 'resWater', 'resWind', 'resEarth', 'mr', 'er']
           .forEach(function (k) { d[k] = (Number(d[k]) || 0) + 50; });
         d.ac = (Number(d.ac) || 0) - 50;
+        // 魔法公式用的 SP：面板 +50 額外魔法點數要算進道具 SP；INT 超過 100 的成長不再被原版的 33 封頂吃掉
+        //   （原版 INT 100＝35 點只取 33；轉生後 INT 每多出的點照延伸曲線往上加）
+        d.itemSp = (Number(d.itemSp) || 0) + 50;
+        try { var rawInt = Math.max(0, getIntExtraMp(d.int)); if (rawInt > 35) d.intSp = 33 + (rawInt - 35); } catch (e) {}
       }
     } catch (e) {}
     return r;
