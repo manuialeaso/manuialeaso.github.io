@@ -346,7 +346,7 @@
         if (state.ticks % 10 === 0 && mapState && mapState.mobs) {
           for (var i = 0; i < mapState.mobs.length; i++) {
             var m = mapState.mobs[i];
-            if (!m || !m._dream || m._dead || m.curHp <= 0 || m.curHp >= m.hp) continue;
+            if (!m || !m._dream || m._dead || m.curHp <= 0 || m.curHp >= m.hp || m._noBossRegen) continue;   // 暗夢星迴試煉頭目不回血
             var add = m.boss ? Math.max(1, Math.floor(m.hp * 0.001)) : (m._dreamRegen || 0);
             m.curHp = Math.min(m.hp, m.curHp + add);
           }

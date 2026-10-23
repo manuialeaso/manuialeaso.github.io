@@ -959,7 +959,19 @@ function patchRapidTrue() {
   changed++; console.log('[patch] 連射真實傷害');
 }
 
-const PATCHES = [patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun, patchSetLate, patchRelicFx, patchRapidTrue];
+// 44. 頭目每 5 秒的 HP 自然恢復：帶 _noBossRegen 的頭目不回血（暗夢星迴・星迴試煉，玩家 2026-10-24）
+function patchNoBossRegen() {
+  const FILE = 'js/03-combat-core.js', MARK = '/* 🔌 加掛版補丁:頭目不回血旗標 */';
+  let s = readFileSync(FILE, 'utf8');
+  if (s.includes(MARK)) { already++; return; }
+  const A = "        if (m.boss && !m.siegeEnemy && m.race !== '建築' && state.ticks % 50 === 0 && m.curHp > 0 && m.curHp < m.hp) {";
+  if (s.split(A).length - 1 !== 1) throw new Error(`[${FILE}] 頭目回血錨點應出現 1 次`);
+  s = s.replace(A, "        if (m.boss && !m.siegeEnemy && !m._noBossRegen && m.race !== '建築' && state.ticks % 50 === 0 && m.curHp > 0 && m.curHp < m.hp) {   " + MARK);
+  if (!CHECK) writeFileSync(FILE, s);
+  changed++; console.log('[patch] 頭目不回血旗標');
+}
+
+const PATCHES = [patchNoBossRegen, patchMaybeSpawnMobs, patchTradEnHook, patch16Slots, patchPetAnimTicker, patchBossHuntEscape, patchUseItemKeepModal, patchSellNowNoForce, patchInsigniaOrder, patchGiltasWandRecompute, patchEyeSlotInEquipList, patchRelicAffixHook, patchIllusionSetWpnProc, patchBuyerEnHook, patchWandererMakeHook, patchRelicBleedBonus, patchRelicSpecialScale, patchRelicDotRules, patchDreamHell, patchAscAttrStar, patchCardRebirth, patchPetHostRect, patchBarrierCdSkip, patchNoOfflineMaps, patchEvoHooks, patchRebirthMastery, patchLevelCap, patchCastleWar, patchIdleRaf, patchMaxAdd, patchAntFinal, patchEleRes, patchAllyDrCap, patchAllyHitstun, patchSetLate, patchRelicFx, patchRapidTrue];
 
 try {
   for (const p of PATCHES) p();

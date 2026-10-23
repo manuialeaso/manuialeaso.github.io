@@ -57,6 +57,33 @@
     return bossPool;
   };
 
+  // ── 星迴試煉的數值（玩家 2026-10-24）──
+  //   hp：頭目血量；body：夢境之軀，所有傷害 −30%；phase：每分鐘輪替「星輝護甲」物理 −30%／「夢紗」魔法 −30%
+  //   ac／dr／mr／res：頭目防禦統一成這組數值（不看抽到的頭目原本多硬）；rage：每過 1 分鐘頭目傷害 +10%
+  //   atk／db／hit／spd：頭目一般攻擊統一（10D50＋150，每 2 秒），原頭目的魔法拿掉
+  //   eclipse：星蝕（每 20 秒全隊最大 HP 5%）；devour：夢噬（每 35 秒，生命最多的人現有 HP 30%）；fall：墜星（2 分 30 秒起每分鐘全隊最大 HP 10%）
+  var DS = { atk: [10, 50], db: 150, hit: 200, spd: 2, hp: 310000000, body: 0.70, phase: 0.70, ac: -80, dr: 30, mr: 300, res: 300, rage: 0.10, eclipse: 0.05, devour: 0.30, fall: 0.10 };
+  window.__afkDreamStarCfg = DS;
+  var rageOf = function (m) { var age = (S().ticks || 0) - (m._dsBorn || 0); return 1 + DS.rage * Math.floor(age / 600); };
+  var phaseOf = function (m) { var age = (S().ticks || 0) - (m._dsBorn || 0); return Math.floor(age / 600) % 2 === 0 ? 'phys' : 'magic'; };
+  var hooked = false;
+  var hookDamage = function () {
+    var C = window.AFK_CARD_COMBAT; if (hooked || !C || typeof C.damage !== 'function') return;
+    hooked = true;
+    var oD = C.damage;
+    C.damage = function (actor, target, amount, opt) {
+      var r = oD.apply(this, arguments);
+      try {
+        if (target && target._dreamStar && r > 0 && on()) {
+          var k = (opt && opt.kind) || 'melee', mag = k === 'magic', phys = k === 'melee' || k === 'ranged' || k === 'phys';
+          var f = DS.body * ((phaseOf(target) === 'phys' && phys) || (phaseOf(target) === 'magic' && mag) ? DS.phase : 1);
+          r = Math.max(1, Math.floor(r * f));
+        }
+      } catch (e) {}
+      return r;
+    };
+  };
+
   // ── 出怪：只在中央格、場上沒有活著的怪時才出一隻頭目 ──
   var oSpawn = window.spawnRiftMob;
   window.spawnRiftMob = function (idx) {
@@ -64,7 +91,7 @@
     if (idx !== 1) return;
     if (mapState.mobs.some(function (m) { return m && !m._dead && m.curHp > 0; })) return;
     var ids = pool(); if (!ids.length) return;
-    var id = ids[Math.floor(Math.random() * ids.length)], base = DB.mobs[id];
+    var id = (window.__afkDsForceBoss && DB.mobs[window.__afkDsForceBoss]) ? window.__afkDsForceBoss : ids[Math.floor(Math.random() * ids.length)], base = DB.mobs[id];
     var m = { ...base, curHp: base.hp, uid: uid(), _born: ++_mobBornSeq, _magCd: {}, justHit: false, st: newMobStatus() };
     mapState.mobs[idx] = m;
     var keep = { w: player.sherineWorld, mad: player.sherineMad, dream: player.sherineDream };
@@ -75,6 +102,16 @@
     } finally { player.sherineWorld = keep.w; player.sherineMad = keep.mad; player.sherineDream = keep.dream; }
     if (m.hard && typeof initHardSkin === 'function') initHardSkin(m);
     m._dreamStar = true; m._dsName = NAME; m._dsBorn = S().ticks || 0; m._dsRage = m.rageDmgMult || 1;
+    // 星迴試煉（玩家 2026-10-24）：以「16 人、全身昇華支配 +5、時空變身」為基準，苦戰到 14 分 30 秒左右才打得倒
+    m.hp = m.curHp = DS.hp;
+    // 抽到哪隻頭目都一樣難：防禦統一（不再看原頭目的 AC、硬皮與減傷），再疊上試煉的抗性
+    m.ac = DS.ac; m.dr = DS.dr; m.hard = false; m.hardSkin = 0; m._noBossRegen = true;   // 頭目每 5 秒回 0.5～2.5% 的自然恢復在 2 億血量下會變成主宰，試煉頭目不回血
+    m.regenHp = 0; m._dreamRegen = 0;
+    // 攻擊也統一：一般攻擊用試煉的數值，原頭目自己的魔法拿掉（試煉有自己的時間軸）
+    m.dmg = DS.atk.slice(); m.db = DS.db; m.hit = DS.hit; m.atkSpd = DS.spd; delete m.mag; delete m.mag2; delete m.mag3; delete m.mag4;
+    m.mr = DS.mr;
+    ['resFire', 'resWater', 'resWind', 'resEarth'].forEach(function (k) { m[k] = DS.res; });
+    hookDamage();
     m.exp = 0; m.goldMin = 0; m.goldMax = 0; m.noGold = true;
     sys('<span class="font-bold" style="color:#c084fc;">夢境的裂縫無聲張開，' + NAME + '——' + base.n + '的投影——自星屑中走出。</span>');
     if (typeof vfxBossEntrance === 'function') { try { vfxBossEntrance(m); } catch (e) {} }
@@ -100,6 +137,8 @@
     }
     return false;
   };
+  var hpNow = function (t) { return t === player ? (player.hp || 0) : (t.curHp || 0); };
+  var pctAll = function (pct, why) { var dead = false; members().forEach(function (x) { if (dead) return; dead = hurt(x, (x.mhp || 1) * pct, why); }); return dead; };
   var dispel = function (m, t) {
     if (t === player) { try { applyMobMagic(m, { type: 'dispel', skn: '魔法相消術' }); } catch (e) {} return; }
     var kept = {};
@@ -140,6 +179,14 @@
         if (!mob._dsHolyLog || now - mob._dsHolyLog >= 1000) { mob._dsHolyLog = now; log(tag('聖結界', '#fde68a') + NAME + ' 的聖結界吞沒了一切攻擊。（唯有魔法相消術能破）'); }
         return;
       }
+      // 反彈（血壁空間／鏡反射／疼痛歡愉）每次最多算到受害者最大 HP 30%（之後再減半＝15%）：16 人的爆發全數反彈會整隊蒸發
+      try {
+        if (mob && mob._dreamStar && dmg > 0) {
+          var a = Array.prototype.slice.call(arguments), v = a[3] || player;
+          a[1] = Math.min(dmg, Math.max(1, Math.floor((Number(v.mhp) || 1) * 0.3)));
+          return oRW.apply(this, a);
+        }
+      } catch (e) {}
       return oRW.apply(this, arguments);
     };
   }
@@ -175,7 +222,16 @@
       var age = t - (m._dsBorn || t);
       var team = members(); if (!team.length) return;
       var pick = function () { return team[Math.floor(Math.random() * team.length)]; };
-      if (m._dsIllu && t > m._dsIllu) { m._dsIllu = 0; m.rageDmgMult = m._dsRage; log(NAME + ' 的幻影褪去，回歸本相。'); }
+      if (m._dsIllu && t > m._dsIllu) { m._dsIllu = 0; log(NAME + ' 的幻影褪去，回歸本相。'); }
+      // 暴走：每過 1 分鐘傷害 +10%（全幻覺期間再 ×1.5）
+      m.rageDmgMult = m._dsRage * rageOf(m) * (m._dsIllu ? 1.5 : 1);
+      if (age > 0 && age % (60 * SEC) === 0) {
+        log(tag('暴走', '#ef4444') + NAME + ' 的殺意又深了一層（傷害 +' + Math.round((rageOf(m) - 1) * 100) + '%）。' + (phaseOf(m) === 'phys' ? tag('星輝護甲', '#fde68a') + '刀劍之傷減三成。' : tag('夢紗', '#c4b5fd') + '咒文之傷減三成。'));
+      }
+      // 百分比傷害（不吃暴走倍率，暴走只加在頭目本身的攻擊上）
+      if (age >= 10 * SEC && every(age - 10 * SEC, 20)) { pctAll(DS.eclipse, '星蝕'); log(tag('星蝕', '#a78bfa') + '星光一暗，全隊失去最大 HP ' + Math.round(DS.eclipse * 100) + '% 的生命。'); }
+      if (every(age, 35)) { var top = team.slice().sort(function (a, b) { return hpNow(b) - hpNow(a); })[0]; if (top) { hurt(top, hpNow(top) * DS.devour, '夢噬'); log(tag('夢噬', '#f0abfc') + NAME + ' 咬向生命最盛的 ' + nameOf(top) + '，奪走其現有生命的 ' + Math.round(DS.devour * 100) + '%。'); } }
+      if (age >= 150 * SEC && every(age - 30 * SEC, 60)) { pctAll(DS.fall, '墜星'); log(tag('墜星', '#fb7185') + '夢境的星辰崩落，全隊受到最大 HP ' + Math.round(DS.fall * 100) + '% 的傷害。'); }
       if (every(age, 15)) dispel(m, pick());
       if (every(age, 30)) {
         stun(m, pick());
@@ -195,7 +251,7 @@
         log(tag('血壁空間', '#f87171') + NAME + ' 周身血壁湧動，3 秒內' + { melee: '近距離', ranged: '遠距離', magic: '魔法' }[k] + '傷害將原路折返。');
       }
       if (every(age, 60)) { try { applyMobMagic(m, { type: 'self_buff', buffKind: 'guard', skn: '堅固防禦', drBase: 10, dr50: 12, drStep: 2 }); } catch (e) {} }
-      if (age === 180 * SEC) { m._dsIllu = t + 30 * SEC; m.rageDmgMult = m._dsRage * 1.5; log(tag('幻術・全幻覺', '#a78bfa') + NAME + ' 化作千重幻影，30 秒內傷害 ×1.5。'); }
+      if (age === 180 * SEC) { m._dsIllu = t + 30 * SEC; log(tag('幻術・全幻覺', '#a78bfa') + NAME + ' 化作千重幻影，30 秒內傷害 ×1.5。'); }
       if (age === 300 * SEC) { m._reflectWall = { kind: 'magic', until: t + 10 * SEC }; log(tag('鏡反射', '#93c5fd') + NAME + ' 立起鏡面，10 秒內咒文將映回施術者。'); }
       if (age === 360 * SEC) { m._reflectWall = { kind: 'phys', until: t + 10 * SEC }; log(tag('疼痛歡愉', '#fca5a5') + NAME + ' 沉醉於痛楚之中，10 秒內刀劍之傷將反噬其主。'); }
       if (age >= 420 * SEC && age % SEC === 0) {
