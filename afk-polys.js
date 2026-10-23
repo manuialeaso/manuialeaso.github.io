@@ -73,12 +73,15 @@
   //   日出之國＝刺客／黑騎／重甲領主／女弓手／法衣術士；90 級＝白金騎士、克特、賽尼斯、馬庫爾；
   //   長老三人＝長老／黑暗巡守／黑長者；生日慶祝妖精＝黃金套裝三型（近攻騎士、遠攻巡守、魔法法師）
   var BORROW = {
-    '忍者': '黑暗妖精刺客', '侍': '黑暗騎士', '大名': '騎士范德', '姬武者': '艾莉絲', '陰陽師': '西瑪',
+    '侍': '黑暗騎士', '大名': '騎士范德', '姬武者': '艾莉絲', '陰陽師': '西瑪',
     '格利特': '白金騎士', '特羅斯': '克特', '伊詩蒂': '賽尼斯', '喬': '馬庫爾',
     '拉曼斯': '長老', '安迪斯': '黑暗巡守', '艾迪爾': '黑長者',
     '亞克騎士': '黑騎士', '墮落的司祭': '卡士柏', '歐姆裝甲兵': '重裝歐姆',
     '生日慶祝妖精(近攻型)': '黃金騎士', '生日慶祝妖精(遠攻型)': '黃金巡守', '生日慶祝妖精(魔法型)': '黃金法師'
   };
+  // 自製變身圖（scripts/forge-morph.py 以相近變身逐幀重新上色、加配件）：有自己的三方向資料夾，直接當成正式動畫
+  var FORGED = { '忍者': '黑暗妖精刺客' };
+  try { Object.keys(FORGED).forEach(function (n) { MORPH_BATTLE_ANIM.add(n); if (MORPH_ANIM_3DIR.has(FORGED[n])) MORPH_ANIM_3DIR.add(n); }); } catch (e) {}
   var borrowed = [];
   try { Object.keys(BORROW).forEach(function (n) { if (!MORPH_BATTLE_ALIAS[n] && MORPH_BATTLE_ANIM.has(BORROW[n])) { MORPH_BATTLE_ALIAS[n] = BORROW[n]; borrowed.push(n); } }); } catch (e) {}
   // 夏納：原本維持職業外觀，改穿真夏納的職業式變身圖（速度仍是夏納自己的）
@@ -95,6 +98,6 @@
     }
   } catch (e) {}
 
-  window.__afkPolys = { added: added, borrowed: borrowed, BORROW: BORROW };
+  window.__afkPolys = { added: added, borrowed: borrowed, BORROW: BORROW, FORGED: FORGED };
   console.log('[AFK-polys] 已啟用：新增 ' + added.length + ' 種變身');
 })();
