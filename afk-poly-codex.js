@@ -139,6 +139,36 @@
     if (!enabled() || !p || !p.polyDex) return; var t = totals(p); p.mhp = (p.mhp || 0) + t.hp; p.mmp = (p.mmp || 0) + t.mp;
   });
 
+  // ── 變身縮圖（跟怪物圖鑑一樣有圖）：取變身戰鬥動畫的第一格；找不到就退到變身肖像，再不行就隱藏 ──
+  var enc = function (x) { return encodeURIComponent(x); };
+  window.__afkThumbErr = window.__afkThumbErr || function (img) {
+    var l = (img.getAttribute('data-fb') || '').split('|').filter(Boolean);
+    if (l.length) { img.src = l.shift(); img.setAttribute('data-fb', l.join('|')); } else { img.onerror = null; img.style.visibility = 'hidden'; }
+  };
+  window.__afkFormThumb = window.__afkFormThumb || function (name, owned, extraCls) {
+    var alias = (typeof MORPH_BATTLE_ALIAS !== 'undefined' && MORPH_BATTLE_ALIAS[name]) || name, pre = [];
+    // 跟戰場上實際用的圖一致：用目前角色的外觀問一次戰場形態（真夏納這類職業式變身會走職業動畫資料夾）
+    try {
+      var pl = typeof player !== 'undefined' ? player : null, fd = typeof findPolyForm === 'function' ? findPolyForm(name) : null, form = fd && fd.form || { n: name };
+      if (pl && typeof _actorBattleForm === 'function') {
+        var bf = _actorBattleForm({ avatar: pl.avatar, cls: pl.cls, eq: pl.eq, _faceD: 5, buffs: { poly: 1 }, poly: form }, false);
+        if (bf && bf.base && (!/^class:/.test(bf.key || '') || form.classMorph)) { if (bf.wpn) pre.push(bf.base + bf.wpn + '_idle_0.png'); pre.push(bf.base + 'idle_0.png'); }
+      }
+    } catch (e) {}
+    // 沒有變身動畫的形態：借同名角色／怪物的圖；再沒有就用自己職業的模樣（戰場上看到的也是這個）
+    var ANIM = { '喬': '喬', '拉曼斯': '長老．拉曼斯', '安迪斯': '長老．安迪斯', '艾迪爾': '長老．艾迪爾', '歐姆裝甲兵': '歐姆裝甲兵', '墮落的司祭': '墮落的司祭(一階)' };
+    var post = [];
+    if (ANIM[name]) post.push('assets/anim/' + enc(ANIM[name]) + '/idle_0.png', 'assets/anim/' + enc(ANIM[name]) + '/attack_0.png');
+    post.push('assets/anim/' + enc(name) + '/idle_0.png');
+    try {
+      var pl2 = typeof player !== 'undefined' ? player : null;
+      if (pl2 && typeof _classForm === 'function') { var cf = _classForm({ avatar: pl2.avatar, cls: pl2.cls, eq: pl2.eq, _faceD: 5 }, false); if (cf && cf.base) post.push(cf.base + (cf.wpn ? cf.wpn + '_idle_0.png' : 'idle_0.png')); }
+    } catch (e) {}
+    var list = pre.concat(['assets/morphanim/' + enc(alias) + '/idle_0.png', 'assets/morphanim/' + enc(name) + '/idle_0.png', 'assets/morph/' + enc(name) + '.jpg', 'assets/morph/' + enc(alias) + '.jpg'], post);
+    list = list.filter(function (x, i) { return list.indexOf(x) === i; });
+    var first = list.shift();
+    return '<span class="afk-th' + (extraCls ? ' ' + extraCls : '') + '"><img alt="" src="' + first + '" data-fb="' + list.join('|') + '" class="' + (owned ? '' : 'card-silhouette') + '" onerror="__afkThumbErr(this)"></span>';
+  };
   // ── 畫面（至幻者）──
   var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   function render(host) {
@@ -156,14 +186,19 @@
       h += '<details' + (sr.forms.some(function (n) { return d[n]; }) ? ' open' : '') + '><summary><b>' + esc(sr.n) + '</b>　系列：' + (minT >= 3 ? '全金' : minT >= 2 ? '全銀' : minT >= 1 ? '全普通' : '未完成') + '</summary><div class="afk-pc-grid">';
       sr.forms.forEach(function (n) {
         var v = d[n] || 0, f = byName[n];
-        h += '<span class="afk-pc-cell" style="opacity:' + (v ? 1 : .5) + ';color:' + ['#94a3b8', '#e2e8f0', '#cbd5e1', '#fde047'][v] + '" title="' + esc(f.stat[1]) + ' +' + v + '、HP +' + (10 * v) + '">' + esc(n) + ' ' + (v ? TIER_N[v - 1] : '—') + '</span>';
+        h += '<div class="afk-pc-tile t' + v + '" title="' + esc(n) + '：' + esc(f.stat[1]) + ' +' + v + '、HP +' + (10 * v) + '">' + window.__afkFormThumb(n, v > 0)
+          + '<b>' + (v ? esc(n) : '？？？') + '</b><small>' + (v ? TIER_N[v - 1] + '卡' : '未登錄') + '</small></div>';
       });
       h += '</div></details>';
     });
     h += '<p>系列加成：全部普通 HP +50、MP +30；全部銀 防禦 +2、魔防 +2；全部金 額外傷害、命中、魔法點數各 +2。</p>';
     box.innerHTML = h; host.appendChild(box);
   }
-  var st = document.createElement('style'); st.textContent = '.afk-pc-grid{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}.afk-pc-cell{font-size:12px;border:1px solid #334155;border-radius:6px;padding:2px 6px}#afk-poly-codex details{margin:6px 0}#afk-poly-codex summary{cursor:pointer}';
+  var st = document.createElement('style'); st.textContent = '.afk-pc-grid{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;justify-content:flex-start}#afk-poly-codex details{margin:6px 0}#afk-poly-codex summary{cursor:pointer}'
+    + '.afk-th{position:relative;display:block;width:64px;height:68px;overflow:hidden;margin:0 auto}.afk-th img{position:absolute;left:50%;top:50%;height:210%;max-width:none;transform:translate(-50%,-50%);image-rendering:pixelated}'
+    + '.afk-pc-tile,.afk-cb-tile{position:relative;width:88px;padding:4px 3px 5px;text-align:center;border:1px solid #4e3526;border-radius:.25rem;background:linear-gradient(180deg,#2b2830,#211f26)}'
+    + '.afk-pc-tile b,.afk-cb-tile b{display:block;font-size:11.5px;line-height:1.25;color:#ece6dc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.afk-pc-tile small,.afk-cb-tile small{display:block;font-size:10.5px;color:#a39a8e}'
+    + '.afk-pc-tile.t0 b{color:#6b645c}.afk-pc-tile.t1{border-color:#6b6460}.afk-pc-tile.t2{border-color:#a8b3c0}.afk-pc-tile.t2 small{color:#cbd5e1}.afk-pc-tile.t3{border-color:#c9a03a;box-shadow:inset 0 0 8px rgba(234,179,8,.18)}.afk-pc-tile.t3 small{color:#fde047}';
   document.head.appendChild(st);
 
   window.AFK_POLY_CODEX = { forms: forms, series: series, itemId: itemId, tierOf: tierOf, goldCount: goldCount, register: register, totals: totals, render: render, rollFor: rollFor, partyMult: partyMult, enabled: enabled };

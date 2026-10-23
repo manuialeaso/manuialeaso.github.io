@@ -68,11 +68,17 @@
       + '<div>點亮 <b>' + b.lit + '</b>/' + all + '　總星數 <b>' + b.stars + '</b>　滿星 ' + b.full + '　目前加成：五種屬性抗性各 <b style="color:#86efac">+' + b.total + '</b>、最大 HP +' + b.hp + Object.keys(b.stats).map(function (k) { return '、' + ({ extraDmg: '額外傷害', extraHit: '額外命中', extraMp: '額外魔法點數' }[k] || k) + ' +' + b.stats[k]; }).join('') + '</div>'
       + '<p>收集加成：每張神話 HP +20；天上 HP +40、額外傷害 +1；時空 HP +60、額外傷害 +1、額外命中 +1。同一階收集一半、全部收集再各加額外傷害與命中（神話 +2／+3、天上 +3／+5、時空 +5／+8；全收另加同值額外魔法點數）。</p>';
     TIERS.forEach(function (t) {
-      h += '<h3 style="color:' + COLOR[t] + '">' + RULE_TXT[t] + '卡</h3>';
-      (a.catalog[t] || []).forEach(function (row) {
+      var rows = a.catalog[t] || [], lit = rows.filter(function (row) { return a.owned(row.id, p); }).length;
+      h += '<h3 style="color:' + COLOR[t] + '">' + RULE_TXT[t] + '卡 <small style="color:#a39a8e;font-weight:normal">' + lit + '／' + rows.length + '</small></h3><div class="afk-cb-grid">';
+      rows.forEach(function (row) {
         var on = a.owned(row.id, p), s = on ? Math.min(7, a.starsOf(row.id, p)) : 0, se = on && a.sealed && a.sealed(row.id, p);
-        h += '<div class="afk-ca-tier" style="opacity:' + (on ? 1 : .55) + '"><strong>' + esc(row.n) + (se ? ' <span style="color:#f87171">［封印中·效果減半］</span>' : '') + '</strong><span style="color:' + (on ? '#fde047' : '#64748b') + '">' + (on ? starStr(s) : '未點亮') + '</span><small>' + (on ? (s >= 7 ? '已滿星（+45）' : '再取得 ' + (7 - s) + ' 次滿星；目前 +' + (s * 5)) : esc(row.desc || '')) + '</small></div>';
+        var nm = row.n.replace(/^[^・]+・/, ''), base = row.form && (row.form.cardVisualBase || row.prototype) || nm;
+        h += '<div class="afk-cb-tile ' + t + (on ? '' : ' off') + '" title="' + esc(row.n + '\n' + (row.desc || '')) + '">'
+          + (window.__afkFormThumb ? window.__afkFormThumb(base, on) : '')
+          + '<b>' + esc(nm) + '</b><small class="st">' + (on ? starStr(s).replace(/☆/g, '<i>☆</i>') : '未點亮') + '</small>'
+          + (se ? '<small style="color:#f87171">封印中</small>' : '') + '</div>';
       });
+      h += '</div>';
     });
     // 輪迴變身（十二星座聖衣）：時空變身收集滿開放
     var zs = a.catalog.samsara || [];
@@ -82,10 +88,16 @@
       if (!st || !st.unlocked) h += '<p>收集全部時空變身後開放（封印的也算）。</p>';
       if (st && st.unlocked) { var cd = a.samsaraCd ? a.samsaraCd(p) : 0, ft = Math.floor(((p.cardAscension && p.cardAscension.samsaraFight) || 0) / 600);
         h += '<p>缺點：沒回安全區（村莊）連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘，冷卻中不能用輪迴變身。' + (cd > 0 ? '<b style="color:#f87171">冷卻中，剩 ' + Math.ceil(cd / 60000) + ' 分鐘</b>' : '目前連續戰鬥 ' + ft + '/30 分鐘') + '</p>'; }
-      if (st && st.unlocked) zs.forEach(function (row) {
-        var on = a.owned(row.id, p), se = on && a.sealed(row.id, p);
-        h += '<div class="afk-ca-tier" style="opacity:' + (on ? 1 : .55) + '"><strong>' + esc(row.n) + '</strong><span style="color:' + (on ? (se ? '#fca5a5' : '#fde047') : '#64748b') + '">' + (!on ? '未取得' : se ? '封印聖衣' : '已解除封印') + '</span><small>特殊能力：' + esc(row.special || '') + '（解除封印後生效；副本內回到封印型態、沒有特殊能力）</small></div>';
-      });
+      if (st && st.unlocked) {
+        h += '<div class="afk-cb-grid">';
+        zs.forEach(function (row) {
+          var on = a.owned(row.id, p), se = on && a.sealed(row.id, p), nm = row.n.replace(/^[^・]+・/, '');
+          h += '<div class="afk-cb-tile samsara' + (on ? '' : ' off') + '" title="' + esc(row.n + '\n特殊能力：' + (row.special || '') + '（解除封印後生效；副本內回到封印型態、沒有特殊能力）') + '">'
+            + (window.__afkFormThumb ? window.__afkFormThumb(row.form && row.form.cardVisualBase || nm, on) : '')
+            + '<b>' + esc(nm) + '</b><small style="color:' + (on ? (se ? '#fca5a5' : '#fde047') : '#7a7168') + '">' + (!on ? '未取得' : se ? '封印聖衣' : '已解除封印') + '</small></div>';
+        });
+        h += '</div>';
+      }
     }
     box.innerHTML = h; host.appendChild(box);
   }
@@ -121,6 +133,11 @@
       return r;
     };
   }
+  var cbStyle = document.createElement('style');
+  cbStyle.textContent = '.afk-cb-grid{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}.afk-cb-tile .st{color:#fde047;letter-spacing:-1px}.afk-cb-tile .st i{font-style:normal;color:#5c554e}'
+    + '.afk-cb-tile.mythic{border-color:#9a651c}.afk-cb-tile.celestial{border-color:#c6a85d}.afk-cb-tile.spacetime{border-color:#6856d5}.afk-cb-tile.samsara{border-color:#f59e0b;box-shadow:inset 0 0 8px rgba(245,158,11,.18)}'
+    + '.afk-cb-tile.off{border-color:#3a2c24;box-shadow:none}.afk-cb-tile.off b{color:#6b645c}';
+  document.head.appendChild(cbStyle);
   window.AFK_CARD_CODEX = { bonusOf: bonusOf, renderBook: renderBook, openNpc: openNpc };
   console.log('[AFK-card-codex] 已啟用：變身卡冊（點亮／升星）、燃柳村至幻者');
 })();
