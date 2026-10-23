@@ -311,6 +311,17 @@
   [['enemyPhysicalAttack', 'phys'], ['enemyAttackAlly', 'phys'], ['enemyAttackPet', 'phys'], ['enemyAttackSummon', 'phys'], ['enemyAttackGuard', 'phys'],
    ['applyMobMagic', 'magic'], ['applyMobMagicToAlly', 'magic'], ['applyMobMagicToPet', 'magic'], ['applyMobMagicToSummon', 'magic'], ['applyMobMagicToGuard', 'magic']]
     .forEach(function (x) { wrapTaken(x[0], x[1]); });
+  // 血壁空間／反擊屏障的反彈傷害也是「受到的傷害」：一樣吃技藝減傷（呼喊夥伴的物理 −50% 等）與最終減傷（玩家 2026-10-24：王族呼喊夥伴打林德拜爾被反彈秒殺）
+  if (typeof window.reflectWallOnDamage === 'function') {
+    var oRefl = window.reflectWallOnDamage;
+    window.reflectWallOnDamage = function (mob, dmg, kind) {
+      if (dmgDepth > 0 || !P() || !(active || finalOn())) return oRefl.apply(this, arguments);
+      var snap = partySnap(), r; dmgDepth++; pendingKill = false;
+      try { r = oRefl.apply(this, arguments); }
+      finally { dmgDepth--; try { afterTaken(snap, mob, kind === 'magic' ? 'magic' : 'phys'); } catch (e) { if (pendingKill) { pendingKill = false; window.killPlayer(); } } }
+      return r;
+    };
+  }
 
   if (typeof window.killPlayer === 'function') {
     var oKill = window.killPlayer;
