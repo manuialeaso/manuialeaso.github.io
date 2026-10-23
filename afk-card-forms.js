@@ -203,6 +203,13 @@
 body.afk-no-glow .afk-cloth-back{filter:none}
 body.afk-no-animation .afk-cloth-back *,body.afk-card-background .afk-cloth-back *{animation-play-state:paused}
 @media(prefers-reduced-motion:reduce){.afk-cloth-back *{animation:none!important}}
+.afk-cloth-back.is-pixel{width:0;height:0;filter:drop-shadow(0 0 2px #fbbf2455)}
+.afk-cloth-back.is-pixel i{position:absolute;display:block;width:var(--px-s);height:var(--px-s);left:var(--px-dx);top:var(--px-dy);transform-origin:var(--px-ox) var(--px-oy);transform:scaleX(var(--px-m));animation:px-flap 2.4s steps(6,jump-none) infinite alternate}
+.afk-cloth-back.is-pixel i canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.afk-cloth-back.is-pixel .px-l{--px-m:-1}
+.afk-cloth-back.is-pixel .px-r{--px-m:1}
+.afk-cloth-back.is-pixel[data-face="back"]{filter:brightness(.92)}
+@keyframes px-flap{from{transform:scaleX(var(--px-m)) rotate(0deg)}to{transform:scaleX(var(--px-m)) rotate(-8deg)}}
 @keyframes cb-spin{to{transform:rotate(360deg)}}
 @keyframes cb-sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
 @keyframes cb-wave{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
@@ -246,27 +253,54 @@ body.afk-no-animation .afk-trans-aura *,body.afk-card-background .afk-trans-aura
         var ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(body,0,0);
         var data=ctx.getImageData(0,0,w,h).data,l=w,r=-1,t=h,b=-1;
         for(var y=0;y<h;y++)for(var x=0;x<w;x++)if(data[(y*w+x)*4+3]>32){if(x<l)l=x;if(x>r)r=x;if(y<t)t=y;if(y>b)b=y;}
-        if(r>=l&&b>=t)box={left:l,right:r+1,top:t,bottom:b+1};
+        if(r>=l&&b>=t){box={left:l,right:r+1,top:t,bottom:b+1};
+          // 頭頂附近的不透明像素取中位數＝身體中線（弓、劍伸出去不會把背飾拉偏）
+          var xs=[],y2=Math.min(b,t+Math.max(4,Math.round((b-t)*.18)));
+          for(var yy=t;yy<=y2;yy++)for(var xx=l;xx<=r;xx++)if(data[(yy*w+xx)*4+3]>32)xs.push(xx);
+          if(xs.length){xs.sort(function(p,q){return p-q;});box.hx=xs[xs.length>>1]+.5;}
+        }
       }
     }catch(e){} // Cross-origin portraits keep a bounded geometric fallback.
     var bh=box.bottom-box.top,bw=box.right-box.left;
-    return geometryCache[key]={left:(box.left+box.right)/2,bottom:h-box.bottom+Math.max(3,bh*.04),width:Math.max(64,Math.min(180,bw*1.6)),height:Math.max(70,Math.min(220,bh*1.35))};
+    return geometryCache[key]={hx:box.hx!=null?box.hx:(box.left+box.right)/2,left:(box.left+box.right)/2,bottom:h-box.bottom+Math.max(3,bh*.04),width:Math.max(64,Math.min(180,bw*1.6)),height:Math.max(70,Math.min(220,bh*1.35))};
   }
-  // 輪迴聖衣的黃金羽翼（玩家 2026-10-23：只有玩家自己；原創造型，SVG 一次產生）
   // 輪迴聖衣背飾：12 星座各自不同（afk-cloth-art），只顯示在玩家自己身上
   function clothWings(el,actor,tier,geometry){
     var w=el.querySelector(':scope > .afk-cloth-back'),P=typeof player!=='undefined'?player:null,ART=W.AFK_CLOTH_ART;
     var row=tier==='samsara'&&W.AFK_CARD_ASCENSION&&actor&&actor.poly&&W.AFK_CARD_ASCENSION.catalog.samsara.filter(function(r){return r.id===actor.poly.cardAscensionId;})[0];
     if(!row||!ART||!P||actor!==P||el.id!=='player-morph-sprite'){if(w)w.remove();return;}
-    if(!w||w.getAttribute('data-zodiac')!==row.zodiac){if(w)w.remove();w=document.createElement('span');w.className='afk-cloth-back';w.setAttribute('aria-hidden','true');w.setAttribute('data-zodiac',row.zodiac);w.innerHTML=ART.svg(row.zodiac);el.prepend(w);}
     var A=W.AFK_CARD_ASCENSION,se=!!(A.sealed&&A.sealed(row.id,actor)),C=W.AFK_CARD_COMBAT,dg=!!(C&&C.inDungeon&&C.inDungeon());
+    if(ART.pixel&&ART.pixel[row.zodiac]){pixelBack(el,w,row,geometry,se||dg,actor);return;}
+    if(!w||w.getAttribute('data-zodiac')!==row.zodiac||w.classList.contains('is-pixel')){if(w)w.remove();w=document.createElement('span');w.className='afk-cloth-back';w.setAttribute('aria-hidden','true');w.setAttribute('data-zodiac',row.zodiac);w.innerHTML=ART.svg(row.zodiac);el.prepend(w);}
     w.classList.toggle('is-sealed',se||dg);
     if(geometry){
       // SVG 1 單位 ≈ 身高 1%；肩膀（方框內 sx,sy）對到角色肩膀（腳底往上 66%）
       var bh=geometry.height/1.35,u=bh/100,B=ART.box;
       w.style.width=Math.round(B.w*u)+'px';w.style.height=Math.round(B.h*u)+'px';
-      w.style.left=Math.round(geometry.left-B.sx*u)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.66-(B.h-B.sy)*u)+'px';
+      w.style.left=Math.round((geometry.hx!=null?geometry.hx:geometry.left)-B.sx*u)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.66-(B.h-B.sy)*u)+'px';
     }
+  }
+  // 點陣風格背飾（試作：射手座）：兩片 canvas 翅膀，肩膀為原點；背對鏡頭時翅膀移到身體前面，側身時收窄
+  function pixelBack(el,w,row,geometry,sealed,actor){
+    var ART=W.AFK_CLOTH_ART;
+    if(!w||w.getAttribute('data-zodiac')!==row.zodiac||!w.classList.contains('is-pixel')){if(w)w.remove();w=document.createElement('span');w.className='afk-cloth-back is-pixel';w.setAttribute('aria-hidden','true');w.setAttribute('data-zodiac',row.zodiac);w.innerHTML='<i class="px-l"></i><i class="px-r"></i>';el.prepend(w);}
+    if(!geometry)return;
+    var bh=geometry.height/1.35,size=Math.round(bh*.95),key=size+(sealed?'s':'o');
+    w.style.left=Math.round(geometry.hx!=null?geometry.hx:geometry.left)+'px';w.style.bottom=Math.round(geometry.bottom+bh*.64)+'px';
+    var B=ART.wingBox,sx=-B.x/B.w,sy=-B.y/B.h;
+    w.style.setProperty('--px-s',size+'px');w.style.setProperty('--px-ox',(sx*100).toFixed(2)+'%');w.style.setProperty('--px-oy',(sy*100).toFixed(2)+'%');
+    w.style.setProperty('--px-dx',(-sx*size).toFixed(1)+'px');w.style.setProperty('--px-dy',(-sy*size).toFixed(1)+'px');
+    w.classList.toggle('is-sealed',sealed);
+    if(w.getAttribute('data-key')!==key){w.setAttribute('data-key',key);
+      ART.wingCanvas(size,sealed,function(c){if(w.getAttribute('data-key')!==key)return;['px-l','px-r'].forEach(function(cls){var slot=w.querySelector('.'+cls);if(!slot)return;var cc=document.createElement('canvas');cc.width=c.width;cc.height=c.height;cc.getContext('2d').drawImage(c,0,0);slot.innerHTML='';slot.appendChild(cc);});});}
+  }
+  // 朝向：背對鏡頭（北、東北、西北）翅膀在身體前面；正東／正西側身收窄
+  function pixelFacing(el,actor){
+    var w=el&&el.querySelector(':scope > .afk-cloth-back.is-pixel');if(!w)return;
+    // 只有變身圖本身有轉向（三方向變身的「背面」資料夾）時才跟著轉，否則角色沒轉身、翅膀卻跑到前面會很怪
+    var d=actor&&actor._faceD!=null?actor._faceD:5,nm=typeof W._playerMorphName==='function'?W._playerMorphName():'',dir3=typeof MORPH_ANIM_3DIR!=='undefined'&&nm&&MORPH_ANIM_3DIR.has(nm);
+    var mode=dir3&&d===1?'back':'front';
+    if(w.getAttribute('data-face')!==mode){w.setAttribute('data-face',mode);if(mode==='back')el.appendChild(w);else el.prepend(w);}
   }
   function decorate(el,actor) {
     if(!el)return;var f=(!T||T.enabled('card-aura'))&&activeForm(actor),tier=f&&(f.cardAscensionTier||'diamond');
@@ -288,7 +322,7 @@ body.afk-no-animation .afk-trans-aura *,body.afk-card-background .afk-trans-aura
     decorationState.get(el).aura=aura;
   }
   var oldPlayer=W._playerMorphApply;
-  if(typeof oldPlayer==='function')W._playerMorphApply=function(){var v=oldPlayer.apply(this,arguments);decorate(document.getElementById('player-morph-sprite'),typeof player!=='undefined'?player:null);return v;};
+  if(typeof oldPlayer==='function')W._playerMorphApply=function(){var v=oldPlayer.apply(this,arguments);var pel=document.getElementById('player-morph-sprite'),pp=typeof player!=='undefined'?player:null;decorate(pel,pp);pixelFacing(pel,pp);return v;};
   var oldParty=W._allySpritesApply;
   if(typeof oldParty==='function')W._allySpritesApply=function(){var v=oldParty.apply(this,arguments);if(typeof _allySpriteStates!=='undefined'&&typeof player!=='undefined'&&player)(player.allies||[]).forEach(function(a){var s=_allySpriteStates[String(a._slot)];if(s)decorate(s.el,a);});return v;};
   F.decorate=decorate;F.activeForm=activeForm;
