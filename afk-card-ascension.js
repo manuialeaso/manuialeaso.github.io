@@ -19,7 +19,7 @@
     mythic:{n:'神話',rate:.5,color:'#fb923c',mat:'變身金卡',fail:'材料：5 張變身金卡。失敗什麼都沒有。'},
     celestial:{n:'天上',rate:.3,color:'#fde68a',mat:'怪物白金卡',fail:'材料：5 張怪物白金卡。失敗得到 1 枚鑽石卡碎片（5 枚換 1 張尚未收藏的鑽石卡）。'},
     spacetime:{n:'時空',rate:.1,color:'#c4b5fd',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗：下次時空合成成功率 +5%（可累加，最高 50%），再得到 1 枚時空變身碎片。'},
-    samsara:{n:'輪迴',rate:.05,color:'#fcd34d',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗得到 1 枚時空變身碎片。第一次取得是封印聖衣，再取得同一件解除封印。沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘。'}
+    samsara:{n:'聖衣',rate:.05,color:'#fcd34d',mat:'怪物鑽石卡',fail:'材料：5 張怪物鑽石卡。失敗得到 1 枚時空變身碎片。第一次取得是封印聖衣，再取得同一件解除封印。沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘。'}
   };
   // 玩家 2026-10-23：天上失敗給鑽石卡碎片；時空失敗累加成功率、給時空變身碎片與鑽石卡；碎片 30 枚指定時空變身（封印型態），10 枚解除封印
   var DSHARD = 'afk_card_diamond_shard', STSHARD = 'afk_card_spacetime_shard', ST_BONUS = .05, ST_CAP = .5, DSHARD_COST = 5, ST_PICK = 30, ST_UNSEAL = 10;
@@ -68,12 +68,13 @@
   function samsaraTick(actor, step, safe) {
     actor = actor || player; if (!actor || !actor.cardAscension) return false;
     var s = actor.cardAscension, f = actor.poly, on = !!(f && f.cardAscensionTier === 'samsara' && actor.buffs && actor.buffs.poly > 0);
+    if (f && f.cardAscensionTier === 'samsara' && typeof f.n === 'string' && f.n.indexOf('輪迴・') === 0) f.n = f.n.slice(3);   // 舊名「輪迴・X聖衣」→「X聖衣」（玩家 2026-10-24 改名）
     if (safe || !on) { if (s.samsaraFight) s.samsaraFight = 0; return false; }
     s.samsaraFight = (Number(s.samsaraFight) || 0) + step;
     if (s.samsaraFight < SAMSARA_FIGHT) return false;
     s.samsaraFight = 0; s.samsaraCdUntil = Date.now() + SAMSARA_CD;
     actor.poly = null; actor.buffs.poly = 0;
-    say('連續戰鬥 30 分鐘，輪迴聖衣的力量耗盡，變身解除（冷卻 30 分鐘，期間只能用其他變身）。');
+    say('連續戰鬥 30 分鐘，聖衣的力量耗盡，變身解除（冷卻 30 分鐘，期間只能用其他變身）。');
     try { if (typeof calcStats === 'function') calcStats(); } catch (e) {}
     return true;
   }
@@ -381,7 +382,7 @@
   DB.items[FRAGMENT]={n:'天上自選碎片',type:'misc',eff:'afk_asc_fragment',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/格利芬羽毛.png',d:'碎裂的天界卡面，邊緣仍透著微光。集滿 10 枚使用，換取 1 張天上卡自選。'};
   DB.items[DIAMOND_CHOICE]={n:'鑽石卡自選（未收藏）',type:'misc',eff:'afk_asc_diamond_choice',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/鑽石卡.png',d:'映著萬千魔物倒影的鑽石券。自選一隻尚未登錄鑽石卡的怪物（已登錄普卡至白金卡仍可選）；若已全數登錄，此券會留到有新卡可選。'};
   DB.items[DSHARD]={n:'鑽石卡碎片',type:'misc',eff:'afk_asc_dshard',p:0,gachaWeight:0,c:'c-card-diamond',img:'assets/icons/items/品質鑽石.png',d:'天上卡合成失敗時迸落的鑽石碎屑，仍殘留著魔物的魂影。集滿 5 枚使用，合成 1 張隨機的尚未收藏鑽石卡。'};
-  DB.items[STSHARD]={n:'時空變身碎片',type:'misc',eff:'afk_asc_stshard',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/時空裂痕碎片.png',d:'自時空裂隙剝落的碎片，握在掌中能感覺光陰倒流。時空／輪迴卡合成失敗時取得：30 枚可指定 1 種時空變身（封印型態，效果減半），10 枚可解除 1 種時空變身的封印。'};
+  DB.items[STSHARD]={n:'時空變身碎片',type:'misc',eff:'afk_asc_stshard',p:0,gachaWeight:0,c:'text-violet-300',img:'assets/icons/items/時空裂痕碎片.png',d:'自時空裂隙剝落的碎片，握在掌中能感覺光陰倒流。時空／聖衣卡合成失敗時取得：30 枚可指定 1 種時空變身（封印型態，效果減半），10 枚可解除 1 種時空變身的封印。'};
   [CHOICE,FRAGMENT,DIAMOND_CHOICE,DSHARD,STSHARD].forEach(function(id){
     if(typeof miscCatKey!=='function'||typeof MISC_CAT_ITEMS==='undefined')return;
     var k=miscCatKey(id,DB.items[id]);if(k&&MISC_CAT_ITEMS[k]&&!MISC_ITEM_CAT[id]){MISC_CAT_ITEMS[k].push(id);MISC_ITEM_CAT[id]=k;if(typeof OBTAINABLE_MISC!=='undefined')OBTAINABLE_MISC[id]=true;}

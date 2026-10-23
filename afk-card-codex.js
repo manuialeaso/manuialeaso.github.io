@@ -80,14 +80,14 @@
       });
       h += '</div>';
     });
-    // 輪迴變身（十二星座聖衣）：時空變身收集滿開放
+    // 聖衣（十二星座）：時空變身收集滿開放
     var zs = a.catalog.samsara || [];
     if (zs.length) {
       var st = a.status(p).tiers.filter(function (x) { return x.tier === 'samsara'; })[0];
-      h += '<h3 style="color:#fcd34d">輪迴變身（星座聖衣）</h3><p class="afk-lore">當十四段時空都被收進卡冊，天上十二宮的星光便會降臨，化為披在身上的聖衣。</p>';
+      h += '<h3 style="color:#fcd34d">聖衣（十二星座）</h3><p class="afk-lore">當十四段時空都被收進卡冊，天上十二宮的星光便會降臨，化為披在身上的聖衣。</p>';
       if (!st || !st.unlocked) h += '<p>收集全部時空變身後開放（封印的也算）。</p>';
       if (st && st.unlocked) { var cd = a.samsaraCd ? a.samsaraCd(p) : 0, ft = Math.floor(((p.cardAscension && p.cardAscension.samsaraFight) || 0) / 600);
-        h += '<p>缺點：沒回安全區（村莊）連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘，冷卻中不能用輪迴變身。' + (cd > 0 ? '<b style="color:#f87171">冷卻中，剩 ' + Math.ceil(cd / 60000) + ' 分鐘</b>' : '目前連續戰鬥 ' + ft + '/30 分鐘') + '</p>'; }
+        h += '<p>缺點：沒回安全區（村莊）連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘，冷卻中不能變身聖衣。' + (cd > 0 ? '<b style="color:#f87171">冷卻中，剩 ' + Math.ceil(cd / 60000) + ' 分鐘</b>' : '目前連續戰鬥 ' + ft + '/30 分鐘') + '</p>'; }
       if (st && st.unlocked) {
         h += '<div class="afk-cb-grid">';
         zs.forEach(function (row) {
@@ -107,7 +107,7 @@
     var town = DB.towns && DB.towns.town_gludio;
     if (town && Array.isArray(town.npcs) && !town.npcs.some(function (x) { return x.id === 'npc_zhihuan'; })) {
       town.npcs.push({ id: 'npc_zhihuan', n: '至幻者', title: '變身卡冊', type: 'cardcodex',
-        d: '自稱見過世間一切形貌的幻術師。他收藏著變身卡冊，也能把卡片的魂影熔鑄成神話、天上、時空與輪迴之形。' });
+        d: '自稱見過世間一切形貌的幻術師。他收藏著變身卡冊，也能把卡片的魂影熔鑄成神話、天上、時空與聖衣之形。' });
     }
     if (typeof NPC_SPR_FIXED !== 'undefined' && !NPC_SPR_FIXED.npc_zhihuan) NPC_SPR_FIXED.npc_zhihuan = '902';
   } catch (e) {}

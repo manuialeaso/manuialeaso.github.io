@@ -60,10 +60,10 @@
     mythic:{name:'神話',stat:20,resist:100,mult:5,crit:0,critDamage:0,color:'#f6c766',className:'afk-card-mythic',lore:'金焰守住不滅的輪廓，古老傳說在第一擊甦醒。'},
     celestial:{name:'天上',stat:30,resist:150,mult:10,crit:10,critDamage:0,color:'#fff0b8',className:'afk-card-celestial',lore:'羽光展開，星冠垂落；一擊如晨曦穿透長夜。'},
     spacetime:{name:'時空',stat:50,resist:200,mult:15,crit:15,critDamage:50,color:'#9ceaff',className:'afk-card-spacetime',lore:'星環逆轉，裂隙無聲；萬象在同一瞬間迎來終局。'},
-    samsara:{name:'輪迴',stat:100,resist:500,mult:15,crit:15,critDamage:50,color:'#fcd34d',className:'afk-card-samsara',lore:'黃金聖衣覆身，十二宮的星光在此輪迴。'}
+    samsara:{name:'聖衣',stat:100,resist:500,mult:15,crit:15,critDamage:50,color:'#fcd34d',className:'afk-card-samsara',lore:'黃金聖衣覆身，十二宮的星光在此輪迴。'}
   };
   var catalog = {mythic:[],celestial:[],spacetime:[],samsara:[]};
-  // 輪迴變身：十二星座聖衣（玩家 2026-10-23）。時空變身收集滿才開放；第一次取得是封印型態，第二次取得解除封印。副本內無效果。
+  // 聖衣變身：十二星座聖衣（玩家 2026-10-23）。時空變身收集滿才開放；第一次取得是封印型態，第二次取得解除封印。副本內無效果。
   var ZODIAC = [
     { key:'aries', z:'白羊座', base:'真夏納', sp:'星屑護壁：受到攻擊時 15% 機率完全抵銷該次傷害，之後 10 秒魔法防禦 +50、AC -50、迴避 +10', bonus:{} },
     { key:'taurus', z:'金牛座', base:'黃金死亡騎士', sp:'巨角之鎧：AC -50、魔法防禦 +50、五屬性抗性各 +50、傷害減免 +30', bonus:{ac:-50,mr:50,resFire:50,resWater:50,resWind:50,resEarth:50,resNone:50,dr:30} },
@@ -122,13 +122,13 @@
   ZODIAC.forEach(function (z) {
     var found=nativeFind(z.base);
     if(!found){console.warn('[AFK-card-forms] 找不到聖衣外型：'+z.base);return;}
-    var t=tiers.samsara,id='samsara_'+z.key,n='輪迴・'+z.z+'聖衣',form=copy(found.form);
+    var t=tiers.samsara,id='samsara_'+z.key,n=z.z+'聖衣',form=copy(found.form);
     form.n=n;form.c=t.className;form.cardAscensionId=id;form.cardAscensionTier='samsara';form.cardVisualBase=z.base;form.cardNativeLevel=found.form.lv;
     delete form.controlOnly;
     var zl=ZD_LORE[z.key]||t.lore;
     catalog.samsara.push({id:id,n:n,tier:'samsara',form:form,prototype:z.base,role:'星座聖衣',lore:zl,zodiac:z.key,special:z.sp,specialBonus:copy(z.bonus),
-      desc:zl+' 封印型態：效果同時空變身，另有最終減傷 +100。解除封印（第二次取得）：六項能力各 +100、五屬性抗性各 +500、最終減傷 +500，並得到特殊能力「'+z.sp+'」。副本內一律回到封印型態、沒有特殊能力。缺點：沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘（期間不能用輪迴變身）。'});
-    if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS[z.base]||z.base;
+      desc:zl+' 封印型態：效果同時空變身，另有最終減傷 +100。解除封印（第二次取得）：六項能力各 +100、五屬性抗性各 +500、最終減傷 +500，並得到特殊能力「'+z.sp+'」。副本內一律回到封印型態、沒有特殊能力。缺點：沒回安全區連續戰鬥 30 分鐘會解除變身，冷卻 30 分鐘（期間不能變身聖衣）。'});
+    if(typeof MORPH_BATTLE_ALIAS!=='undefined')MORPH_BATTLE_ALIAS[n]=MORPH_BATTLE_ALIAS['輪迴・'+n]=MORPH_BATTLE_ALIAS[z.base]||z.base;   // 舊存檔的「輪迴・X聖衣」照樣有外觀
   });
   function monsterForm(name) {
     var info=CARD_MOB_INFO[name],mob=info&&DB.mobs[info.id]||info&&info.mob;
@@ -255,7 +255,7 @@ body.afk-no-animation .afk-trans-aura *,body.afk-card-background .afk-trans-aura
     var bh=box.bottom-box.top,bw=box.right-box.left;
     return geometryCache[key]={hx:box.hx!=null?box.hx:(box.left+box.right)/2,left:(box.left+box.right)/2,bottom:h-box.bottom+Math.max(3,bh*.04),width:Math.max(64,Math.min(180,bw*1.6)),height:Math.max(70,Math.min(220,bh*1.35))};
   }
-  // 輪迴聖衣背飾：12 星座各自不同、粗像素點陣（afk-cloth-art），只顯示在玩家自己身上
+  // 聖衣背飾：12 星座各自不同、粗像素點陣（afk-cloth-art），只顯示在玩家自己身上
   function clothWings(el,actor,tier,geometry){
     var w=el.querySelector(':scope > .afk-cloth-back'),P=typeof player!=='undefined'?player:null,ART=W.AFK_CLOTH_ART;
     var row=tier==='samsara'&&W.AFK_CARD_ASCENSION&&actor&&actor.poly&&W.AFK_CARD_ASCENSION.catalog.samsara.filter(function(r){return r.id===actor.poly.cardAscensionId;})[0];

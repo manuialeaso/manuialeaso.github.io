@@ -12,7 +12,7 @@
   var CRIT=['meleeCrit','rangedCrit','magicCrit'];
   var CRIT_DAMAGE=['meleeCritDmg','rangedCritDmg','magicCritDmg'];
   var RULES={mythic:{stat:20,resist:100,mult:5,crit:0,critDamage:0},celestial:{stat:30,resist:150,mult:10,crit:10,critDamage:0},spacetime:{stat:50,resist:200,mult:15,crit:15,critDamage:50},
-    // 輪迴聖衣（玩家 2026-10-23）：封印＝時空效果＋最終減傷 100；解除封印＝能力 +100、五抗 +500、最終減傷 +500＋星座特殊能力。副本內無效果
+    // 聖衣（玩家 2026-10-23）：封印＝時空效果＋最終減傷 100；解除封印＝能力 +100、五抗 +500、最終減傷 +500＋星座特殊能力。副本內無效果
     samsara:{stat:50,resist:200,mult:15,crit:15,critDamage:50,finalDR:100},samsaraOpen:{stat:100,resist:500,mult:15,crit:15,critDamage:50,finalDR:500}};
   // 封印的時空變身（碎片換得）效果減半
   function ruleFor(row,actor){
