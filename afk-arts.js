@@ -831,7 +831,7 @@
     };
   }
 
-  window.__afkArts = { ARTS: ARTS, art: art, learn: learn, open: open, st: st, kings: kings, trySaves: trySaves, healMult: healMult, takenMult: takenMult, finalDR: finalDR,
+  window.__afkArts = { ARTS: ARTS, LORE: ARTS_LORE, art: art, learn: learn, open: open, st: st, kings: kings, trySaves: trySaves, healMult: healMult, takenMult: takenMult, finalDR: finalDR,
     battle: function () { return B; }, partyN: function () { return partyN; }, _setParty: function (n) { partyN = n; }, _setActive: function (v) { active = v; }, isActive: function () { return active; } };
   // 衝擊之暈：命中時額外 500 真實傷害（玩家 2026-10-22；原本 +10，加在傷害計算之後＝不吃防禦）
   try { var ss = DB.skills.sk_shock_stun; if (ss && !ss._afk500) { ss.skillAddDmg = (ss.skillAddDmg || 0) + 500; ss._afk500 = true; } } catch (e) {}
