@@ -7,8 +7,10 @@
  *      奇岩城＝黃金之鷹（黃金龍圖）｜妖魔堡＝妖魔傭兵（妖魔巡守圖）｜侏儒城＝鐵斧護衛（巨大牛人圖）｜亞丁城＝亞丁白虎衛（真‧虎男圖）
  * 3. 統一七城後，亞丁城可招「聖十字近衛」：能力＝七支部隊相加（HP、DPS、AC、魔防、減傷相加，命中取最高），
  *    另有 5% 迴避、5% 魔法抗性；不受盟主魅力限制，最多 8 名。
- *    一次招滿 8 名可「融合」成一名融合體：HP、傷害、減傷、抗性、AC、魔防、迴避直接 ×8，
+ *    湊滿 4 名可「融合」成一名融合體：HP、傷害、減傷、抗性、AC、魔防、迴避直接 ×4，
  *    碰到上限為止（魔防 1000、AC −200、迴避 80%、抗性 90%）。
+ *    融合體專屬「聖十字之盾」：你（玩家）受到的傷害優先由融合體承擔，融合體承受的量 ×2（本來 50 → 融合體扣 100）；
+ *    融合體倒下時多出來的部分才由你承受；倒下 30 秒後自動歸隊。
  * 4. 城池會一直留在手上，所以「宣戰其他城堡」不再遣散護衛；只有失去該部隊所屬的城才會失效。
  * 只覆寫 js/31 的全域函式，不動核心檔。
  * ========================================================================== */
@@ -24,7 +26,7 @@
     return m ? [m] : [];
   };
   var unified = function () { return held().length >= 7; };
-  var ELITE_MAX = 8, FUSE_N = 8;
+  var ELITE_MAX = 8, FUSE_N = 4;   // 玩家 2026-10-24：融合改為 4 名、能力 ×4（原本 8 名 ×8 太強）
   var CAP = { mr: 1000, ac: -200, eva: 0.80, res: 0.90 };
   var BASE_KEYS = ['kent', 'windwood', 'heine', 'giran', 'orc_fortress', 'dwarf_castle', 'aden'];
 
@@ -50,7 +52,7 @@
       d: '七城旗幟同時升起之日，亞丁王座下的聖十字近衛才肯向一位君主屈膝。七支部隊的武藝集於一身。' },
     aden_fused: { form: '聖十字近衛·融合', gfx: '毒蛇之牙', city: 'aden_elite', home: 'aden', label: '亞丁', captain: '亞丁禁衛長', elite: true, fused: true,
       hpPerLv: 0, dpsRatio: 0, aspdSec: 0.5, hitBonus: 0, acBase: 0, acLvDiv: 4, mrBase: 0, mrLvDiv: 4, aggroWeight: 10, threat: 10,
-      d: '八名近衛以聖十字之誓合為一體，八人的血肉與鋼鐵，凝成一具不倒的身軀。' }
+      d: '四名近衛以聖十字之誓合為一體，凝成一具不倒的身軀；它會擋在君主身前，替你承受一切傷害（承受的量加倍）。' }
   });
   BASE_KEYS.forEach(function (k) { CASTLE_GUARD_BOOK.aden_elite.hpPerLv += CASTLE_GUARD_BOOK[k].hpPerLv; });
   CASTLE_GUARD_BOOK.aden_fused.hpPerLv = CASTLE_GUARD_BOOK.aden_elite.hpPerLv * FUSE_N;
@@ -62,7 +64,7 @@
   };
   var homeOf = function (spec) { return spec.home || spec.city; };
 
-  // ── 數值：近衛＝七支部隊相加；融合體再 ×8（碰上限為止）──
+  // ── 數值：近衛＝七支部隊相加；融合體再 ×4（碰上限為止）──
   var oDerive = window.guardDerive;
   var eliteDerive = function (lv, fused) {
     var dps = 0, ac = 0, mr = 0, dr = 0, hit = 0;
@@ -147,6 +149,45 @@
     };
   }
 
+  // ── 融合體專屬：聖十字之盾（玩家 2026-10-24）──
+  //   你受到的傷害優先由融合體承擔，融合體承受 ×2；融合體倒下時，剩下沒擋住的部分才由你承受。
+  var coverGuard = function () {
+    var p = P(); if (!p || p.dead) return null;
+    var list = p.guardsV2 || [];
+    for (var i = 0; i < list.length; i++) { var g = list[i]; if (g && !g._downed && (g.hp || 0) > 0 && g.form === CASTLE_GUARD_BOOK.aden_fused.form) return g; }
+    return null;
+  };
+  var coverDepth = 0, coverPend = false;
+  var coverSettle = function (h0) {
+    var p = P(), g = coverGuard(); if (!p || !g) return;
+    var lost = h0 - (p.hp || 0); if (!(lost > 0)) return;
+    var take = lost * 2, left = 0;
+    if (take >= g.hp) { left = Math.ceil((take - g.hp) / 2); g.hp = 0; try { _guardDown(g); } catch (e) { g._downed = true; g._reviveAt = Date.now() + 30000; } }
+    else g.hp -= take;
+    p.hp = h0 - left;
+    try { renderGuardPanel(); } catch (e) {}
+  };
+  ['enemyPhysicalAttack', 'applyMobMagic', 'reflectWallOnDamage'].forEach(function (name) {
+    var o = window[name]; if (typeof o !== 'function') return;
+    window[name] = function () {
+      var p = P();
+      if (coverDepth > 0 || !p || !coverGuard() || (name === 'reflectWallOnDamage' && arguments[3])) return o.apply(this, arguments);
+      var h0 = p.hp || 0, r; coverDepth++; coverPend = false;
+      try { r = o.apply(this, arguments); }
+      finally {
+        coverDepth--;
+        try { coverSettle(h0); } catch (e) {}
+        if (coverPend) { coverPend = false; if ((p.hp || 0) <= 0 && !p.dead && typeof oKillCover === 'function') oKillCover(); }
+      }
+      return r;
+    };
+  });
+  var oKillCover = window.killPlayer;
+  if (typeof oKillCover === 'function') window.killPlayer = function () {
+    if (coverDepth > 0 && coverGuard()) { coverPend = true; return; }
+    return oKillCover.apply(this, arguments);
+  };
+
   // 宣戰其他城堡不再遣散（城池會留著）
   window.castleGuardsOnSiegeDeclared = function () {};
 
@@ -225,7 +266,7 @@
     logSys('<span class="text-emerald-300 font-bold">' + spec.captain + '派出了 ' + n + ' 名' + spec.form + '（現有 ' + res.count + ' 名·' + spec.label + '）。</span>同盟同模式的角色都將獲得其跟隨。');
     refresh(key);
   };
-  // 一口氣招滿 8 名近衛並融合（已招的近衛也算數，只補差額）
+  // 湊滿 4 名近衛並融合（已招的近衛也算數，只補差額）
   window.fuseAdenGuards = function () {
     var spec = CASTLE_GUARD_BOOK.aden_elite, p = P();
     if (!p || !canHire(spec)) return;
@@ -233,11 +274,11 @@
     if (cur && cur.city === 'aden_elite' && cur.fused) { logSys('<span class="text-amber-300">近衛早已合而為一。</span>'); return; }
     var have = (cur && cur.city === 'aden_elite') ? (cur.count || 0) : 0;
     var need = FUSE_N - have, cost = CASTLE_GUARD_COST * Math.max(0, need);
-    if ((p.gold || 0) < cost) { red('金幣不足，補滿 8 名近衛還需要 ' + cost.toLocaleString() + ' 金幣。'); return; }
+    if ((p.gold || 0) < cost) { red('金幣不足，補滿 ' + FUSE_N + ' 名近衛還需要 ' + cost.toLocaleString() + ' 金幣。'); return; }
     var res = writeRoster(function (info) { info.guards = { city: 'aden_elite', count: FUSE_N, fused: true, hiredAt: Date.now() }; return {}; });
     if (!res.ok) { if (res.error) red(res.error); return; }
     p.gold -= cost; p.guardsV2 = [];
-    logSys('<span class="text-amber-300 font-bold">八名聖十字近衛舉劍立誓，身影在聖光中重疊——融合體誕生了。</span>');
+    logSys('<span class="text-amber-300 font-bold">四名聖十字近衛舉劍立誓，身影在聖光中重疊——融合體誕生了。它將以身為盾，替你承受傷害。</span>');
     refresh('aden_elite');
   };
   window.disbandCastleGuards = function (key) {
@@ -274,7 +315,7 @@
     if (spec.elite) {
       var f = CASTLE_GUARD_BOOK.aden_fused, fd = guardDerive({ form: f.form, lv: lv });
       html += '<div class="text-amber-200 text-xs">融合體：' + line(f, fd) + '</div>'
-        + '<div class="text-slate-400 text-xs">能力＝七城部隊相加；不受盟主魅力限制，最多 ' + ELITE_MAX + ' 名。招滿 8 名可融合成一名，HP、傷害、減傷、抗性、AC、魔防、迴避 ×8（上限：魔防 1000、AC −200、迴避 80%、抗性 90%）。</div>';
+        + '<div class="text-slate-400 text-xs">能力＝七城部隊相加；不受盟主魅力限制，最多 ' + ELITE_MAX + ' 名。湊滿 4 名可融合成一名，HP、傷害、減傷、抗性、AC、魔防、迴避 ×4（上限：魔防 1000、AC −200、迴避 80%、抗性 90%）。融合體專屬「聖十字之盾」：你受到的傷害優先由融合體承擔，承受的量 ×2（本來 50 → 融合體扣 100）；融合體倒下時多出來的部分才算你的。</div>';
     } else {
       html += '<div class="text-slate-400 text-xs">死亡 30 秒自動歸隊（不耗卷軸）。可攜帶＝盟主魅力 ÷ 15（沒有血盟時看你自己的魅力；最多 ' + CASTLE_GUARD_MAX + ' 名·目前 ' + castleGuardCapacity() + ' 名）；每名 ' + (CASTLE_GUARD_COST / 10000) + ' 萬金幣。</div>';
     }
@@ -296,7 +337,7 @@
       if (spec.elite) {
         var need = FUSE_N - (same && !r.fused ? cnt : (same ? FUSE_N : 0)), fc = need * CASTLE_GUARD_COST;
         var fused = same && r.fused;
-        html += btn(!fused && gold >= fc, 'bg-amber-800 hover:bg-amber-700 border-amber-500 text-amber-100', 'fuseAdenGuards()', fused ? '已融合' : '一口氣招滿 8 名並融合（' + (fc / 10000) + ' 萬金幣）');
+        html += btn(!fused && gold >= fc, 'bg-amber-800 hover:bg-amber-700 border-amber-500 text-amber-100', 'fuseAdenGuards()', fused ? '已融合' : '湊滿 ' + FUSE_N + ' 名並融合（' + (fc / 10000) + ' 萬金幣）');
       }
     }
     div.innerHTML = html + '</div>';
@@ -328,7 +369,7 @@
     document.head.appendChild(st);
   } catch (e) {}
 
-  window.__afkCastleGuards = { held: held, unified: unified, specOfRoster: specOfRoster, eliteDerive: eliteDerive, followOf: followOf, CAP: CAP };
+  window.__afkCastleGuards = { coverGuard: function () { return coverGuard(); }, held: held, unified: unified, specOfRoster: specOfRoster, eliteDerive: eliteDerive, followOf: followOf, CAP: CAP };
   try { castleGuardSync(true); } catch (e) {}
   console.log('[AFK-castle-guards] 已啟用：七城護衛、聖十字近衛與融合');
 })();
