@@ -65,7 +65,7 @@
   var ascOf = function (id) { var p = parseId(id); return p ? p.asc : null; };
   var evoOf = function (id) { var p = parseId(id); return p ? p.evo : null; };
   var makeId = function (base, n, fx, asc, evo) { return n <= 0 ? base : base + '~r' + n + (fx ? '~' + fx : '') + (asc != null ? '~a' + asc : '') + (evo != null && asc === 5 ? '~e' + evo : ''); };
-  // 至高的支配（昇華支配 +5 進化）：8 種特效，9＝司祭苦行套裝（全部 8 種）
+  // 至高的支配（昇華支配 +5 進化）：8 種特效，9＝遺物・司祭苦行套裝（全部 8 種）
   var EVO = [null, '克特套裝', '死亡騎士套裝', '惡魔套裝', '四大軍王套裝', '真．冥皇套裝', '全能力 +30', '面板能力 +50', '四屬性抗性 +100', '全部八種特效'];
   var catOf = function (id) { try { return equipCatKey(id, DB.items[id]); } catch (e) { return null; } };
 
@@ -554,7 +554,7 @@
     var miss = TS_MATS.filter(function (id) { return invCnt(id) < 1; });
     if (miss.length) return { ok: false, msg: '材料不足：' + miss.map(function (id) { return (DB.items[id] || {}).n || id; }).join('、') };
     var bd = DB.items[g.base], evo;
-    if (bd && bd.set === 'priest') evo = 9;   // 司祭苦行套裝：直接擁有全部八種
+    if (bd && bd.set === 'priest') evo = 9;   // 遺物・司祭苦行套裝：直接擁有全部八種
     else {
       var have = {}; equippedEvo(p).forEach(function (e) { have[e] = 1; });
       (p.inv || []).forEach(function (it) { var d = it && DB.items[it.id]; if (d && d.relicEvo != null) have[d.relicEvo] = 1; });
@@ -580,11 +580,24 @@
     var s2 = {}; equippedEvo(p).forEach(function (e) { if (e === 9) [1, 2, 3, 4, 5, 6, 7, 8].forEach(function (x) { s2[x] = 1; }); else s2[e] = 1; });
     return s2;
   };
+  // 克特／死亡騎士／惡魔套裝會強制套裝變身；身上已是變身卡（神話以上）的型態時不蓋掉它，只給套裝本身的數值（玩家 2026-10-24 模擬發現）
+  var hiForm = function (p) {
+    try { var A = window.AFK_CARD_ASCENSION; if (!A || !p) return false; var keep = p._setPoly; p._setPoly = null; try { return !!A.active(p); } finally { p._setPoly = keep; } } catch (e) { return false; }
+  };
   window.__afkSetBoost = function (p, setCheck) {
-    var e = evoSet(p);
-    if (e[1]) setCheck.kurt = Math.max(setCheck.kurt || 0, 4);
-    if (e[2]) setCheck.dk = Math.max(setCheck.dk || 0, 4);
-    if (e[3]) setCheck.demon = Math.max(setCheck.demon || 0, 4);
+    var e = evoSet(p), keepForm = (e[1] || e[2] || e[3]) && hiForm(p);
+    p._afkEvoFlat = null;
+    if (keepForm) {
+      var f = { ac: 0, hpR: 0 };
+      if (e[1] && !((setCheck.kurt || 0) >= 4)) f.ac -= 4;
+      if (e[2] && !((setCheck.dk || 0) >= 4)) f.ac -= 4;
+      if (e[3] && !((setCheck.demon || 0) >= 4)) { f.ac -= 2; f.hpR += 5; }
+      p._afkEvoFlat = f;
+    } else {
+      if (e[1]) setCheck.kurt = Math.max(setCheck.kurt || 0, 4);
+      if (e[2]) setCheck.dk = Math.max(setCheck.dk || 0, 4);
+      if (e[3]) setCheck.demon = Math.max(setCheck.demon || 0, 4);
+    }
     if (e[4]) setCheck.kinglord = Math.max(setCheck.kinglord || 0, 4);
     if (e[5]) setCheck.emperor = Math.max(setCheck.emperor || 0, 5);
   };
@@ -598,6 +611,7 @@
       var r = oRecomp.apply(this, arguments);
       try {
         var p = P(), e = p && evoSet(p);
+        if (p && p.d && p._afkEvoFlat) { p.d.ac = (Number(p.d.ac) || 0) + p._afkEvoFlat.ac; p.d.hpR = (Number(p.d.hpR) || 0) + p._afkEvoFlat.hpR; }
         if (e && p.d) {
           if (e[7]) { ['meleeDmg', 'meleeHit', 'rangedDmg', 'rangedHit', 'magicDmg', 'magicHit', 'extraMp', 'resFire', 'resWater', 'resWind', 'resEarth', 'mr', 'er'].forEach(function (k) { p.d[k] = (Number(p.d[k]) || 0) + 50; }); p.d.ac = (Number(p.d.ac) || 0) - 50; }
           if (e[8]) RES4.forEach(function (k) { p.d[k] = (Number(p.d[k]) || 0) + 100; });
@@ -849,7 +863,7 @@
         else if (A > 5) {
           var evMiss = TS_MATS.filter(function (id) { return invCnt(id) < 1; });
           btn = '<button class="rp-go rp-evo" type="button" data-k="' + esc(g.key) + '"' + (evMiss.length ? ' disabled' : '') + '>進化<br><span style="font-weight:600;font-size:13px">至高的支配 100%</span></button>';
-          ascTxt = '<div class="rp-sub" style="color:#fde047">進化：隨機獲得一種至高的支配特效（克特／死亡騎士／惡魔／四大軍王／真．冥皇套裝、全能力 +30、面板能力 +50、四屬性抗性 +100，不跟你已有的重複）' + (bd.set === 'priest' ? '；司祭苦行套裝直接擁有全部八種' : '') + '</div>'
+          ascTxt = '<div class="rp-sub" style="color:#fde047">進化：隨機獲得一種至高的支配特效（克特／死亡騎士／惡魔／四大軍王／真．冥皇套裝、全能力 +30、面板能力 +50、四屬性抗性 +100，不跟你已有的重複）' + (bd.set === 'priest' ? '；遺物・司祭苦行套裝直接擁有全部八種' : '') + '</div>'
             + '<div class="rp-sub">需要：' + TS_MATS.map(function (id) { var h = invCnt(id); return '<span class="' + (h ? '' : 'rp-miss') + '">' + esc((DB.items[id] || {}).n || id) + ' ' + h + '/1</span>'; }).join('、') + '</div>';
         }
         else {
@@ -1020,5 +1034,20 @@
 
   var featureApi = { hamaAttr: hamaAttr, ascend: ascend, ascCost: ascCost, craftStardust: craftStardust, open: open, upgrade: upgrade, groups: groups, ensure: ensure, exchange: exchange, embed: embed, evolve: evolve, equippedEvo: equippedEvo, EVO: EVO, buildDef: buildDef, costOf: costOf, donorsFor: donorsFor, makeId: makeId };
   Object.defineProperty(window, '__afkRelicPlus', { configurable: true, get: function () { return enabled() ? featureApi : null; } });
+  // ── 遺物・司祭苦行套裝（玩家 2026-10-24）：名稱標上遺物；墮落的司祭一～五階每殺一隻判定一次 0.0001%，中了從五件裡隨機給一件 ──
+  (function () {
+    var PIECES = ['relic_priest_hood', 'relic_priest_gloves', 'relic_priest_collar', 'relic_priest_robe', 'relic_priest_sandals'];
+    PIECES.forEach(function (id) { var d = DB.items[id]; if (d && typeof d.d === 'string' && d.d.indexOf('遺物・司祭苦行套裝') < 0) d.d = d.d.replace('司祭苦行套裝', '遺物・司祭苦行套裝'); });
+    try {
+      if (typeof MOB_DROPS === 'undefined') return;
+      ['一', '二', '三', '四', '五'].forEach(function (k) {
+        var key = '墮落的司祭(' + k + '階)', list = MOB_DROPS[key]; if (!list) return;
+        var rate = 0;
+        for (var i = list.length - 1; i >= 0; i--) { var e = list[i], id = Array.isArray(e) ? e[0] : e; if (PIECES.indexOf(id) >= 0) { rate = Math.max(rate, Number(e[1]) || 0); list.splice(i, 1); } }
+        if (!rate) return;
+        PIECES.forEach(function (id) { if (DB.items[id]) list.push([id, rate / PIECES.length]); });   // 五件均分＝一次判定、隨機一件
+      });
+    } catch (e) { console.warn('[AFK-relicplus] 司祭苦行掉落', e); }
+  })();
   if (enabled()) console.log('[AFK-relicplus] 已啟用：遺物合成（武器 +1～+15）');
 })();

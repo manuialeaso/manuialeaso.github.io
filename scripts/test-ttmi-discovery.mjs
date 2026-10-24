@@ -63,7 +63,7 @@ try {
       const A=AFK_CARD_ASCENSION,ids=[...Object.values(A.items),...Object.values(A.catalog).flat().map(r=>r.itemId)];
       return ids.map(id=>({id,name:DB.items[id].n,text:AFK_EXTRA.itemAcquireOf(id)?.short,found:AFK_DEX_API.searchSummary(DB.items[id].n,10000)?.items.includes(DB.items[id].n)}));
     });
-    assert.equal(cardSources.length,23);assert.ok(cardSources.every(r=>r.found&&r.text));
+    assert.ok(cardSources.length>=23,String(cardSources.length));assert.ok(cardSources.every(r=>r.found&&r.text),JSON.stringify(cardSources.filter(r=>!(r.found&&r.text)).slice(0,6)));
     assert.match(cardSources.find(r=>r.id==='afk_card_diamond_missing_choice').text,/尚未登錄鑽石卡/);
     assert.ok(cardSources.filter(r=>r.id.startsWith('afk_asc_card_mythic')).every(r=>r.text.includes('50%')&&r.text.includes('任一地區')));
     cases.push({case:'all advanced card and compensation items share live acquisition rules',items:cardSources.length});

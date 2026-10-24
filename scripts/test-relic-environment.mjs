@@ -142,18 +142,18 @@ try {
         reflectWallOnDamage(m, 250, hitKind, role === 'player' ? null : ally);
         same(getHp(actor), 1000, 'Dream reflection hits the correct shield before HP');
         same(R.api.shieldAmount(actor, shieldSource), 338, 'Dream reflection spends the shield once (夢艷反射 −75%)');
-        same(m._afkDreamReflect, null, 'A reflected dream flag is consumed');
+        check(!!m._afkDreamReflect, 'The dream reflection lasts the whole immunity window (2026-10-24)');
         const count = hurts.filter(row => row.actor === actor && row.origin === 'reflection').length;
         same(count, 1, 'One native incoming event for the matching reflected hit');
         reflectWallOnDamage(m, 250, hitKind, role === 'player' ? null : ally);
-        same(getHp(actor), 1000, 'The same flag cannot hurt twice');
-        same(R.api.shieldAmount(actor, shieldSource), 338, 'The same flag cannot spend shield twice');
-        same(hurts.filter(row => row.actor === actor && row.origin === 'reflection').length, count, 'No duplicate incoming event');
+        same(getHp(actor), 1000, 'A second hit inside the window still lands on the shield');
+        same(R.api.shieldAmount(actor, shieldSource), 276, 'Each hit inside the window reflects 25% again');
+        same(hurts.filter(row => row.actor === actor && row.origin === 'reflection').length, count + 1, 'One incoming event per reflected hit');
 
         m = dreamReflector(kind);
         reflectWallOnDamage(m, 300, hitKind, role === 'player' ? null : ally);
         same(getHp(actor), 1000, 'A new reflection spends shield remainder and applies only overflow');
-        same(R.api.shieldAmount(actor, shieldSource), 263, 'The reflection shield keeps the remainder (−75%)');
+        same(R.api.shieldAmount(actor, shieldSource), 201, 'The reflection shield keeps the remainder (−75%)');
         setHp(actor, 25); m = dreamReflector(kind);
         reflectWallOnDamage(m, 10000, hitKind, role === 'player' ? null : ally);
         same(getHp(actor), 1, 'Dream reflection routes lethal damage through #222');

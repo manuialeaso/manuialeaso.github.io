@@ -13,8 +13,9 @@
  *   每 30 秒  衝擊之暈：隨機一名角色暈眩（受魔防影響）
  *   每 30 秒  聖結界（自己）：免疫一切直接傷害與持續傷害，一直持續到被魔法相消術打破
  *             （你或傭兵施放魔法相消術；或身上有相消術卷軸時自動使用 1 張）
- *   每 45 秒  血壁空間：3 秒內隨機反射 近距離／遠距離／魔法 傷害
+ *   每 30 秒  血壁空間：3 秒內近距離／遠距離／魔法傷害的 10% 反彈
  *   每 1 分   堅固防禦：15 秒傷害減免提升
+ *   第 4／8 分 暴氣：全隊額外受到最大 HP 10%
  *   第 3 分   幻術・全幻覺：30 秒內頭目傷害 ×1.5（只放這一次）
  *   第 5 分   鏡反射：10 秒內反射魔法傷害（只放這一次）
  *   第 6 分   疼痛歡愉：10 秒內反射物理傷害（只放這一次）
@@ -25,6 +26,7 @@
  * 掉落（固定機率，不受任何倍率影響；頭目原本的掉落、金幣、經驗全部沒有）
  *   ‧100%  六種時空材料其中一種：滅魔蔑視水晶(地/水/風/火)(時空)、暗星塵(時空)、夢域塵(時空)
  *   ‧100%  龍之鑽石 5000
+ *   ‧100%  不屈的命運一顆（八職業隨機）；八顆集齊 → 冥王域顯示第二次轉生（轉生資訊：暫無，尚不能轉）
  *   ‧50%   三個隨機昇華支配材料
  *   ‧0.01% 鑽白金幻化（可自選任一隻怪的鑽石卡）
  *   集齊六種時空材料＋Lv100：時空裂痕入口可進入「時空裂痕-冥王域」＝輪迴轉生（等級回 1、回到說話之島）
@@ -62,7 +64,7 @@
   //   ac／dr／mr／res：頭目防禦統一成這組數值（不看抽到的頭目原本多硬）；rage：每過 1 分鐘頭目傷害 +10%
   //   atk／db／hit／spd：頭目一般攻擊統一（6D40＋80，每 2 秒），原頭目的魔法拿掉
   //   eclipse：星蝕（每 20 秒全隊最大 HP 5%）；devour：夢噬（每 35 秒，生命最多的人現有 HP 30%）；fall：墜星（2 分 30 秒起每分鐘全隊最大 HP 10%）
-  var DS = { atk: [6, 40], db: 80, hit: 200, spd: 2, hp: 310000000, wallEvery: 30, wallPct: 0.10, rageMax: 1.0, body: 0.70, phase: 0.70, ac: -80, dr: 30, mr: 300, res: 300, rage: 0.10, eclipse: 0.05, devour: 0.30, fall: 0.10 };
+  var DS = { atk: [6, 40], db: 80, hit: 200, spd: 2, hp: 335000000, wallEvery: 30, wallPct: 0.10, rageMax: 1.0, body: 0.70, phase: 0.70, ac: -80, dr: 30, mr: 300, res: 300, rage: 0.10, eclipse: 0.05, devour: 0.30, fall: 0.10, burst: 0.10 };
   window.__afkDreamStarCfg = DS;
   // 暴走：一開場就暴走（+10%），之後每分鐘再 +10%，最多 +100%；瘋狂席琳版不暴走
   var rageOf = function (m) { if (m._dsMode === 'mad') return 1; var age = (S().ticks || 0) - (m._dsBorn || 0); return 1 + Math.min(DS.rageMax, DS.rage * (Math.floor(age / 600) + 1)); };
@@ -252,6 +254,11 @@
       if (age > 0 && age % (60 * SEC) === 0) {
         log(tag('暴走', '#ef4444') + NAME + ' 的殺意又深了一層（傷害 +' + Math.round((rageOf(m) - 1) * 100) + '%）。' + (phaseOf(m) === 'phys' ? tag('星輝護甲', '#fde68a') + '刀劍之傷減三成。' : tag('夢紗', '#c4b5fd') + '咒文之傷減三成。'));
       }
+      // 第 4、8 分暴氣：額外全隊最大 HP 10%（玩家 2026-10-24）
+      if (age === 240 * SEC || age === 480 * SEC) {
+        log(tag('暴氣', '#dc2626') + NAME + ' 的殺意炸裂開來，全隊受到最大 HP ' + Math.round(DS.burst * 100) + '% 的衝擊。');
+        if (pctAll(DS.burst, '暴氣')) return;
+      }
       // 百分比傷害（不吃暴走倍率，暴走只加在頭目本身的攻擊上）
       if (age >= 10 * SEC && every(age - 10 * SEC, 20)) { pctAll(DS.eclipse, '星蝕'); log(tag('星蝕', '#a78bfa') + '星光一暗，全隊失去最大 HP ' + Math.round(DS.eclipse * 100) + '% 的生命。'); }
       if (every(age, 35)) { var top = team.slice().sort(function (a, b) { return hpNow(b) - hpNow(a); })[0]; if (top) { hurt(top, hpNow(top) * DS.devour, '夢噬'); log(tag('夢噬', '#f0abfc') + NAME + ' 咬向生命最盛的 ' + nameOf(top) + '，奪走其現有生命的 ' + Math.round(DS.devour * 100) + '%。'); } }
@@ -336,6 +343,15 @@
   // ── 擊殺：只給固定掉落 ──
   var TS = ['afk_ts_contempt_earth', 'afk_ts_contempt_water', 'afk_ts_contempt_wind', 'afk_ts_contempt_fire', 'afk_ts_dark_stardust', 'afk_ts_dream_dust'];
   var MATS = [['afk_dream_crystal', 30], ['afk_hell_essence', 20], ['afk_contempt_earth', 8], ['afk_contempt_water', 8], ['afk_contempt_wind', 8], ['afk_contempt_fire', 8], ['afk_dark_stardust', 8], ['afk_dream_dust', 4], ['afk_abyss_key', 2]];
+  // 不屈的命運：八職業各一顆，星迴試煉每隻頭目必掉一顆（隨機職業）；集滿八顆，冥王域開放第二次轉生（內容暫無）
+  var FATE = [['royal', '王族', '王冠'], ['knight', '騎士', '斷劍'], ['elf', '妖精', '弓弦'], ['mage', '法師', '法典'], ['dark', '黑暗妖精', '暗刃'], ['dragon', '龍騎士', '龍鱗'], ['illusion', '幻術師', '幻晶'], ['warrior', '戰士', '戰斧']];
+  var FATE_IDS = FATE.map(function (f) { return 'afk_fate_' + f[0]; });
+  FATE.forEach(function (f) {
+    var id = 'afk_fate_' + f[0]; if (DB.items[id]) return;
+    DB.items[id] = { n: '不屈的命運(' + f[1] + ')', type: 'etc', p: 0, c: 'text-amber-200', noUse: true, noSell: true, gachaWeight: 0, img: 'assets/icons/items/不屈的命運.png',
+      d: '一枚刻著' + f[2] + '紋樣的命運碎片——' + f[1] + '的靈魂一次次倒下，又一次次站起。暗夢星迴・星迴試煉的頭目必定掉落一顆（隨機職業）。八職業各一顆全部集齊，時空裂痕-冥王域會為走過輪迴的人再次開門（第二次轉生，內容暫無）。' };
+  });
+  var fateHave = function () { return FATE_IDS.filter(function (id) { return invCnt(id) > 0; }).length; };
   var pickW = function (arr) { var tot = 0; arr.forEach(function (x) { tot += x[1]; }); var r = Math.random() * tot; for (var i = 0; i < arr.length; i++) { r -= arr[i][1]; if (r < 0) return arr[i][0]; } return arr[arr.length - 1][0]; };
   var addDia = function (n) { try { if (typeof window.pandoraAdjustSharedDiamonds === 'function') return !!(window.pandoraAdjustSharedDiamonds(n) || {}).ok; } catch (e) {} return false; };
   // （舊規格的 1% 昇華支配遺物已依 2026-10-21 新規格移除；relicBases/randomAscRelic 保留給測試與日後使用）
@@ -376,6 +392,8 @@
         var ts = TS[Math.floor(Math.random() * TS.length)];
         if (DB.items[ts]) { gainItem(ts, 1); got.push(DB.items[ts].n); }
         if (addDia(5000)) got.push('龍之鑽石 5000');
+        var fate = FATE_IDS[Math.floor(Math.random() * FATE_IDS.length)];
+        if (DB.items[fate]) { gainItem(fate, 1); got.push(DB.items[fate].n); }
         if (Math.random() < 0.5) { for (var q = 0; q < 3; q++) { var mat = pickW(MATS); if (DB.items[mat]) { gainItem(mat, 1); got.push(DB.items[mat].n); } } }
         if (Math.random() < 0.0001 && DB.items.afk_card_pick) { gainItem('afk_card_pick', 1); got.push(DB.items.afk_card_pick.n); }
         sys('<span class="font-bold" style="color:#c084fc;">' + NAME + ' 化作星屑散去。</span>' + (got.length ? '<span class="text-fuchsia-200">它遺下了：' + got.join('、') + '</span>' : '<span class="text-slate-400">夢境什麼也沒有留下。</span>'));
@@ -424,7 +442,11 @@
   // 冥王域＝輪迴轉生：集齊六種時空材料、Lv100 才能進入；進去後輪迴開始 → 等級回 1、回到說話之島（轉生內容見 afk-rebirth.js）
   window.enterHades = function () {
     if (!hasAllTS()) { sys('<span class="text-red-400">六種時空材料未齊，冥王域的大門紋絲不動。</span>'); return; }
-    if (player.rebirth > 0) { sys('<span class="text-slate-300">你已走過一次輪迴，冥王域不再回應你的呼喚。</span>'); return; }
+    if (player.rebirth > 0) {
+      if (fateHave() >= FATE_IDS.length) sys('<span class="font-bold" style="color:#fda4af;">八顆不屈的命運在掌中共鳴，冥王域的門縫透出微光——第二次轉生的內容尚未開放（轉生資訊：暫無）。</span>');
+      else sys('<span class="text-slate-300">你已走過一次輪迴。集齊八職業的「不屈的命運」（目前 ' + fateHave() + '／8），冥王域才會再次回應。</span>');
+      return;
+    }
     if ((player.lv || 1) < 100) { sys('<span class="text-red-400">冥王域只接納 Lv100 的靈魂（你目前 Lv' + (player.lv || 1) + '）。</span>'); return; }
     if (S().riftRun) { sys('<span class="text-amber-300">你仍身在時空裂痕之中，先離開才能走向冥王域。</span>'); return; }
     var go = function () {
@@ -453,10 +475,10 @@
             '<div id="afk-ds-box" class="flex flex-col gap-2">'
             + '<button id="afk-ds-btn" onclick="enterDreamStar()" class="btn w-full py-4 text-xl font-bold ' + (cores >= SOLO_CORES ? 'bg-fuchsia-950 hover:bg-fuchsia-900 border-fuchsia-500' : 'bg-slate-700 border-slate-500 opacity-70') + ' border text-white shadow-lg">🌌 暗夢星迴・單人（龜裂之核 ' + cores.toLocaleString() + '／' + SOLO_CORES + '）</button>'
             + '<button id="afk-ds-multi" onclick="enterDreamStar(\'multi\')" class="btn w-full py-2 font-bold bg-slate-800 border border-slate-600 text-slate-300">👥 暗夢星迴・多人（境滅亡域鑰匙 ' + keys + '）— 製作中</button>'
-            + '<div class="text-xs text-fuchsia-200 leading-relaxed bg-slate-950/70 border border-fuchsia-800/60 rounded p-2"><div class="afk-lore">碎裂的夢境裡，強者的投影一遍又一遍重演著最後一戰。</div>只出現頭目（名字上方標示「裂縫夢境者投影」），一次一隻；會相消、暈眩、聖結界（要魔法相消術或相消術卷軸打破）、血壁空間、堅固防禦，第 3／5／6 分各放一次全幻覺／鏡反射／疼痛歡愉，7 分起四屬性風暴、10 分四大究極魔法、15 分自爆。'
-            + '每隻必掉一種時空材料＋5000 龍鑽，50% 再掉三個昇華材料，0.01% 鑽白金幻化。不記排名、不給裂痕獎勵。</div>'
+            + '<div class="text-xs text-fuchsia-200 leading-relaxed bg-slate-950/70 border border-fuchsia-800/60 rounded p-2"><div class="afk-lore">碎裂的夢境裡，強者的投影一遍又一遍重演著最後一戰。</div>只出現頭目（名字上方標示「裂縫夢境者投影」），一次一隻；會相消、暈眩、聖結界（要魔法相消術或相消術卷軸打破）、血壁空間、堅固防禦，第 3／5／6 分各放一次全幻覺／鏡反射／疼痛歡愉，第 4／8 分暴氣全隊扣 10%，7 分起四屬性風暴、10 分四大究極魔法、15 分自爆。'
+            + '每隻必掉一種時空材料＋5000 龍鑽＋一顆不屈的命運（隨機職業），50% 再掉三個昇華材料，0.01% 鑽白金幻化。不記排名、不給裂痕獎勵。</div>'
             + (player.rebirth > 0
-              ? '<button id="afk-hades-btn" disabled class="btn w-full py-3 font-bold bg-rose-950 border border-rose-700 text-rose-200 opacity-80">⚰️ 時空裂痕-冥王域（已輪迴轉生）</button>'
+              ? '<button id="afk-hades-btn" onclick="enterHades()" class="btn w-full py-3 font-bold bg-rose-950 border border-rose-700 text-rose-200 ' + (fateHave() >= 8 ? '' : 'opacity-80') + '">⚰️ 時空裂痕-冥王域・第二次轉生（不屈的命運 ' + fateHave() + '／8；轉生資訊：暫無）</button>'
               : '<button id="afk-hades-btn" onclick="enterHades()" ' + (tsHave >= 6 ? '' : 'disabled ') + 'class="btn w-full py-3 font-bold ' + (tsHave >= 6 ? 'bg-rose-900 hover:bg-rose-800 border-rose-500' : 'bg-slate-800 border-slate-600 opacity-60') + ' border text-white">⚰️ 進入時空裂痕-冥王域・輪迴轉生（時空材料 ' + tsHave + '／6 種，需 Lv100）</button>')
             + '</div>');
         }
@@ -484,6 +506,6 @@
     };
   }
 
-  window.__afkDreamStar = { on: on, pool: pool, randomAscRelic: randomAscRelic, timeline: timeline, NAME: NAME };
+  window.__afkDreamStar = { FATE_IDS: FATE_IDS, fateHave: function () { return fateHave(); }, on: on, pool: pool, randomAscRelic: randomAscRelic, timeline: timeline, NAME: NAME };
   console.log('[AFK-dreamstar] 已啟用：暗夢星迴（單機版）');
 })();

@@ -96,7 +96,7 @@
   //   （同 afk-wiki 的 EQ_SET_CN_EXTRA；上游再新增而這裡沒補時退回第一件裝備的名字，不會露英文代碼）
   var SET_CN_EXTRA = {
     orin: '歐林西瑪套裝', icequeen_charm: '冰之女王魅力套裝', frost: '寒冰套裝',
-    bluepirate: '藍海賊套裝', emperor: '真．冥皇套裝', priest: '司祭苦行套裝'
+    bluepirate: '藍海賊套裝', emperor: '真．冥皇套裝', priest: '遺物・司祭苦行套裝'
   };
   var _cn = null;
   function setName(code) {

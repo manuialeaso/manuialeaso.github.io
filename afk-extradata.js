@@ -130,15 +130,18 @@
         var r=src.rift,nm=this.mapName(r.mapId),credit=(DB.items[r.creditId]||{}).n||'裂痕戰勳';
         return {short:r.isCredit?'進入'+nm+'時取得 '+r.entryCredits+' 枚；擊敗一般敵人再得 '+r.normalCredits+' 枚、首領 '+r.bossCredits+' 枚，用於本場補給，離場後消失。':nm+'內開啟「裂痕補給」，以 '+r.cost+' 枚'+credit+'兌換；只限本場使用，離場後消失。'};
       }
+      if(/^afk_fate_/.test(id))return {short:'暗夢星迴・星迴試煉的頭目必定掉落一顆（八職業隨機）；八職業各一顆集齊後，時空裂痕-冥王域顯示第二次轉生（轉生資訊：暫無）。'};
       var A=window.AFK_CARD_ASCENSION;
       if(A){
-        if(id===A.items.diamondChoice)return {short:'天上卡合成失敗時取得；自選尚未登錄鑽石卡的怪物，普卡至白金卡仍可選；全鑽石時保留此券。'};
+        if(id===A.items.diamondChoice)return {short:'在至幻者用 5 枚鑽石卡碎片兌換；自選一隻尚未登錄鑽石卡的怪物，普卡至白金卡仍可選；全鑽石時保留此券。'};
+        if(id===A.items.diamondShard)return {short:'天上卡合成失敗時取得 1 枚；5 枚可在燃柳村「至幻者」換 1 張尚未收藏的鑽石卡（自選）。'};
+        if(id===A.items.spacetimeShard)return {short:'時空變身、聖衣合成失敗時取得 1 枚；30 枚可指定一件時空變身（封印型態），10 枚可解除一件封印。'};
         if(id===A.items.fragment)return {short:'時空卡合成失敗時取得 1 枚；使用 10 枚可換取 1 張天上卡自選。'};
         if(id===A.items.choice)return {short:'使用 10 枚天上自選碎片兌換；選擇一張天上卡永久解鎖，重複時返還 1 張隨機一般鑽石卡。'};
         if(d.cardAscensionId){
           var tier=null,row=null;Object.keys(A.catalog).some(function(t){row=A.catalog[t].find(function(x){return x.id===d.cardAscensionId;});if(row){tier=t;return true;}return false;});
-          if(row){var rule=A.rules[tier],unlock=tier==='mythic'?'任一地區的卡片圖鑑全數登錄鑽石卡':tier==='celestial'?'集滿全部 70 級以上變身原型的神話卡':'集滿全部天上卡';
-            return {short:unlock+'後，在威頓村魔法娃娃商人的「卡片合成」使用 '+A.cost+' 張多餘鑽石卡；'+rule.n+'卡成功率 '+Math.round(rule.rate*100)+'%，此階連敗 '+A.pityFailures+' 次後下次必定成功，成功時隨機取得本階變身並永久解鎖。'+rule.fail};
+          if(row){var rule=A.rules[tier],unlock=tier==='mythic'?'任一地區的怪物圖鑑全數登錄白金卡':tier==='samsara'?'時空變身全部收集（封印的也算）':'神話卡收集一半';
+            return {short:unlock+'後，在燃柳村「至幻者」合成（5 張'+(rule.mat||'材料卡')+'）；'+rule.n+'卡成功率 '+Math.round(rule.rate*100)+'%，此階連敗 '+A.pityFailures+' 次後下次必定成功，成功時隨機取得本階變身並永久解鎖。'+rule.fail};
           }
         }
       }

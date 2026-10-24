@@ -5,7 +5,8 @@
  *     遠古系詞條＋屬性五階 同時出現 0.1%；單獨遠古系詞條 1%、單獨屬性五階 1%；
  *     頭目掉的遺物必定同時帶遠古系詞條＋屬性五階。
  *     屬性只能存在於武器（遊戲讀檔會清掉防具／飾品上的屬性），所以防具／飾品只會拿到遠古系詞條。
- * ‧商人收遺物：改付龍之鑽石，+0＝500，每 +1 多 100，最高算到 +15（2000）；昇華支配遺物以 +15 計。
+ * ‧商人收遺物（販賣、自動賣出、一鍵賣出）：改付龍之鑽石，固定價 +0＝500，每 +1 多 100，最高算到 +15（2000）；昇華支配遺物以 +15 計。
+ *   （安全區的龍鑽收購 NPC 也收 +0 遺物，出價 1～500 亂數，見 afk-buyerprice）
  * ‧昇華支配遺物（+0～+5）可以分解：換 1 顆自選的昇華支配強化石（武器／防具／飾品）。
  * 須排在 afk-relicaffix、afk-relicplus、afk-dreamhell 之後。
  * ========================================================================== */
@@ -60,6 +61,40 @@
       else { try { openModal(it, false); } catch (e) {} }
       logSys('商人收下了 ' + n + ' 個' + d.n + '，付給你 <span class="text-cyan-300 font-bold">' + got + ' 龍之鑽石</span>。');
       try { renderTabs(); updateUI(); if (wasGrant) { calcStats(); renderSkillSelects(); } saveGame(); } catch (e) {}
+    };
+  }
+
+  // ── 自動賣出／一鍵賣出：遺物同樣付龍之鑽石（固定價；玩家 2026-10-24「商人收遺物是指快速賣出」）──
+  var selling = false;
+  var relicEq = function (d) { return isRelicD(d) && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc'); };
+  if (typeof window.getSellPrice === 'function') {
+    var oPrice = window.getSellPrice;
+    window.getSellPrice = function (item) {
+      if (selling && relicEq(item && DB.items[item.id])) return 0;
+      return oPrice.apply(this, arguments);
+    };
+  }
+  if (typeof window.autoSellJunk === 'function') {
+    var oAuto = window.autoSellJunk;
+    window.autoSellJunk = function (manual) {
+      var before = {}, held = [];
+      (player && player.inv || []).forEach(function (i) { var d = i && DB.items[i.id]; if (i && i.junk && !i.lock && relicEq(d)) before[i.uid] = { cnt: i.cnt || 1, p: relicPrice(d), it: i }; });
+      if (!Object.keys(before).length) return oAuto.apply(this, arguments);
+      if (typeof window.pandoraAdjustSharedDiamonds !== 'function') {   // 龍鑽帳戶不在：這輪先不賣遺物，免得白白賣掉
+        Object.keys(before).forEach(function (u) { held.push(before[u].it); before[u].it.junk = false; });
+        try { return oAuto.apply(this, arguments); } finally { held.forEach(function (i) { i.junk = true; }); }
+      }
+      selling = true;
+      var r;
+      try { r = oAuto.apply(this, arguments); } finally { selling = false; }
+      var left = {}; (player.inv || []).forEach(function (i) { if (i && before[i.uid]) left[i.uid] = i.cnt || 0; });
+      var dia = 0, n = 0;
+      Object.keys(before).forEach(function (u) { var sold = before[u].cnt - (left[u] != null ? left[u] : 0); if (sold > 0) { dia += sold * before[u].p; n += sold; } });
+      if (dia > 0) {
+        if (addDia(dia)) logSys('<span class="text-cyan-300">' + (manual ? '一鍵賣出' : '系統自動賣出') + '的 ' + n + ' 個遺物改付龍之鑽石：<span class="font-bold">' + dia + '</span> 顆。</span>');
+        else logSys('<span class="text-red-400">龍之鑽石帳戶暫時無法寫入，' + n + ' 個遺物的 ' + dia + ' 顆龍鑽沒有入帳。</span>');
+      }
+      return r;
     };
   }
 

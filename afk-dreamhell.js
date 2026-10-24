@@ -13,15 +13,15 @@
  *   ‧一般攻擊與技能傷害：一般怪 再 ×2、頭目 再 ×5（瘋狂席琳的 ×3 之外）；怪物施加的持續傷害 再 ×5
  *   ‧全部隨時處於狂暴狀態（同吉爾塔斯：命中與傷害 ×1.2）
  *   ‧一般怪出生時隨機免疫「物理」或「魔法」傷害 10 秒（血壁空間型免疫；持續傷害、寵物、召喚不受影響）
- *     60 級以上的一般怪出生時同時反射另一類傷害（魔法免疫＋物理反射／物理免疫＋魔法反射），反射只維持 1 秒、而且只反射一次
+ *     60 級以上的一般怪出生時同時反射另一類傷害（魔法免疫＋物理反射／物理免疫＋魔法反射），反射跟免疫一樣維持 10 秒，每次反彈 25%（玩家 2026-10-24）
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
  *     2026-10-22：場上的王保持 1 隻；用傳送控制戒指找來的王一次出 3 隻同名王（每隻登場、每次變身都各打一次衝擊）。
  *     傲慢之塔（含支配者傲慢之塔）與時空裂痕不限制；副本（王房、四大龍副本）維持舊規則
  *     有轉生狀態者（2026-10-22）：解除限制，場上 5 隻、王在場照樣出小怪；
- *     但王登場時（不論怎麼出現：自然出怪、傳送控制戒指、王房、變身成下一階都算）先對全隊
- *     （你＋傭兵＋寵物＋召喚物）造成最大 HP 10% 的真實傷害，每隻王（每一階）一次
+ *   ‧王登場（不論是否轉生；2026-10-24 起）：不論怎麼出現（自然出怪、傳送控制戒指、王房、變身成下一階都算）先對全隊
+ *     （你＋傭兵＋寵物＋召喚物）造成最大 HP 10% 的真實傷害，每隻王（每一階）一次；傳送控制戒指引來的那一波改為 15%
  * 報酬
  *   ‧經驗 0、金幣 0；每殺一隻 0.1% 機率掉龍之鑽石（掉的時候一半是 1～499 隨機、一半是 500）
  *   ‧掉落機率 ×50（恩賜 ×10 × 5）；裝備掉落 100% 祝福；席琳結晶掉率 ×5
@@ -124,7 +124,8 @@
       var kind = Math.random() < 0.5 ? 'phys' : 'magic';
       m._reflectWall = { kind: kind, until: ((typeof state !== 'undefined' && state.ticks) || 0) + 100, block: true };
       // 60 級以上：同時反射另一類傷害（魔法免疫→物理反射；物理免疫→魔法反射）
-      if ((m.lv || 0) >= 60) m._afkDreamReflect = { kind: kind === 'phys' ? 'magic' : 'phys', until: ((typeof state !== 'undefined' && state.ticks) || 0) + 10 };   // 反射只維持 1 秒（玩家 2026-10-22：反射太強）
+      // 玩家 2026-10-24：反射跟隨機免疫同時存在、同樣維持 10 秒（每次反射都只有 25%）
+      if ((m.lv || 0) >= 60) m._afkDreamReflect = { kind: kind === 'phys' ? 'magic' : 'phys', until: ((typeof state !== 'undefined' && state.ticks) || 0) + 100 };
     }
     m._dreamRegen = boss ? 0 : (m.regenHp ? 100 : 500);
   }
@@ -142,17 +143,19 @@
 
   // ── 場上怪物上限：最多 3 隻；有王的時候場上只有王（玩家 2026-10-21 指定）──
   var reborn = function () { try { return !!(player && player.rebirth > 0); } catch (e) { return false; } };
-  // 轉生者：王登場先給全隊一波最大 HP 10% 真實傷害
-  var bossEntryBlast = function (nm) {
+  // 王登場先給全隊一波真實傷害：最大 HP 10%；傳送控制戒指找來的王 15%
+  //   玩家 2026-10-24：不分是否轉生，夢艷地獄的王每次登場都算（原本只有轉生者）
+  var bossEntryBlast = function (nm, pct) {
+    pct = pct || 0.1;
     try {
       var hit = [];
       if (!player.dead) {
-        var d0 = Math.max(1, Math.floor((player.mhp || 1) * 0.1)); player.hp -= d0; hit.push('你 ' + d0);
+        var d0 = Math.max(1, Math.floor((player.mhp || 1) * pct)); player.hp -= d0; hit.push('你 ' + d0);
         if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer();
       }
       (player.allies || []).forEach(function (x) {
         if (!x || x._downed || !(x.curHp > 0)) return;
-        var d = Math.max(1, Math.floor((x.mhp || x.curHp || 1) * 0.1)); x.curHp -= d; hit.push((x._allyName || '傭兵') + ' ' + d);
+        var d = Math.max(1, Math.floor((x.mhp || x.curHp || 1) * pct)); x.curHp -= d; hit.push((x._allyName || '傭兵') + ' ' + d);
         if (x.curHp <= 0) { x.curHp = 0; x._downed = true; x._reviveCd = 150; }
       });
       // 寵物
@@ -160,7 +163,7 @@
         (typeof petsOutList === 'function' ? petsOutList() : []).forEach(function (pt) {
           if (!pt || pt._downed || !(pt.hp > 0)) return;
           var mh = typeof petMhpEff === 'function' ? petMhpEff(pt) : (pt.mhp || pt.hp);
-          var d = Math.max(1, Math.floor(mh * 0.1)); pt.hp -= d; hit.push('寵物' + pt.form + ' ' + d);
+          var d = Math.max(1, Math.floor(mh * pct)); pt.hp -= d; hit.push('寵物' + pt.form + ' ' + d);
           if (pt.hp <= 0 && typeof _petDown === 'function') _petDown(pt, nm.n + '降臨的衝擊');
         });
         if (typeof petMarkDirty === 'function') petMarkDirty();
@@ -169,33 +172,42 @@
       try {
         (player.summonsV2 || []).forEach(function (sm) {
           if (!sm || sm._downed || !(sm.hp > 0)) return;
-          var d = Math.max(1, Math.floor((sm.mhp || sm.hp) * 0.1)); sm.hp -= d; hit.push('召喚' + sm.form + ' ' + d);
+          var d = Math.max(1, Math.floor((sm.mhp || sm.hp) * pct)); sm.hp -= d; hit.push('召喚' + sm.form + ' ' + d);
           if (sm.hp <= 0) { sm.hp = 0; sm._downed = true; sm._diedAt = Date.now(); }
         });
         if (!state.ff && typeof renderSummonPanel === 'function') renderSummonPanel();
       } catch (e) {}
-      if (!state.ff) logCombat('<span class="text-fuchsia-300 font-bold">' + nm.n + ' 降臨的衝擊席捲全隊。</span>最大 HP 10% 真實傷害（' + hit.join('、') + '）', 'enemy');
+      if (!state.ff) logCombat('<span class="text-fuchsia-300 font-bold">' + nm.n + ' 降臨的衝擊席捲全隊' + (pct > 0.1 ? '（被傳送控制戒指引來，怒意更盛）' : '') + '。</span>最大 HP ' + Math.round(pct * 100) + '% 真實傷害（' + hit.join('、') + '）', 'enemy');
     } catch (e) {}
   };
   // 不管用什麼方式出場（自然出怪、傳送控制戒指、王房、變身成下一階…），只要場上出現沒放過衝擊的王就放一次
   var scanBossEntry = function () {
     try {
-      if (!dreamOn() || !reborn() || siege()) return;
-      var ms = mapState.mobs || [];
+      if (!dreamOn() || siege()) return;
+      var ms = mapState.mobs || [], ring = !!mapState._afkRingBoss, any = false;
       for (var i = 0; i < ms.length; i++) {
         var m = ms[i];
         if (!m || !m.boss || m._dead || !(m.curHp > 0) || m._afkEntryBlast || m.race === '血盟' || m.race === '建築') continue;
-        m._afkEntryBlast = true; bossEntryBlast(m);
+        m._afkEntryBlast = true; any = true; bossEntryBlast(m, ring ? 0.15 : 0.10);
       }
+      if (any && ring) mapState._afkRingBoss = false;   // 戒指引來的那一波（可能 3 隻同時）都算 15%
     } catch (e) {}
   };
   if (typeof window.doMobTransform === 'function') {   // 變身當下就算登場（同一 tick 連續變身也每階各打一次）
     var oTf = window.doMobTransform;
-    window.doMobTransform = function () { var r = oTf.apply(this, arguments); if (dreamOn() && reborn()) scanBossEntry(); return r; };
+    window.doMobTransform = function () { var r = oTf.apply(this, arguments); if (dreamOn()) scanBossEntry(); return r; };
   }
   if (typeof window.tick === 'function') {
     var oTickE = window.tick;
-    window.tick = function () { var r = oTickE.apply(this, arguments); if (dreamOn() && reborn()) scanBossEntry(); return r; };
+    window.tick = function () { var r = oTickE.apply(this, arguments); if (dreamOn()) scanBossEntry(); return r; };
+  }
+  if (typeof window.doTeleport === 'function') {   // 傳送控制戒指：記下「下一波王是戒指引來的」（換地圖或傳送沒戒指就清掉）
+    var oTp = window.doTeleport;
+    window.doTeleport = function (forceBoss) { var r = oTp.apply(this, arguments); try { mapState._afkRingBoss = !!forceBoss; } catch (e) {} return r; };
+  }
+  if (typeof window.changeMap === 'function') {
+    var oCmR = window.changeMap;
+    window.changeMap = function () { try { mapState._afkRingBoss = false; } catch (e) {} return oCmR.apply(this, arguments); };
   }
   var siege = function () { try { return typeof isSiegeArea === 'function' && isSiegeArea(mapState.current); } catch (e) { return false; } };
   // ── 場上規則（2026-10-22 改）──
@@ -301,7 +313,6 @@
         if (state.ticks > rf.until) { mob._afkDreamReflect = null; return r; }
         if (rf.kind !== kind && !(rf.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))) return r;
         if (mob._dead || !(mob.curHp > 0)) return r;
-        mob._afkDreamReflect = null;   // 只反射一次（玩家 2026-10-22：連續反射會暴斃）
         var k = rf.kind === 'phys' ? '物理' : '魔法', mn = '<span class="' + getMobColor(mob.lv) + '">' + mob.n + '</span>';
         var actor = ally || player, R = window.AFK_RELIC_RUNTIME;
         if (ally ? ally._downed || ally.curHp <= 0 : player.dead || player.hp <= 0) return r;

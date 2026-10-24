@@ -45,6 +45,16 @@
     };
   }
 
+  // 用 if 分段寫的表（爆擊率、藥水加成）不經過 lookupStep，另外套同一條延伸公式（玩家 2026-10-24：100 以上都要照延伸算）
+  ['getStrMeleeCrit', 'getDexRangedCrit', 'getIntMagicCrit', 'getConPotionPct'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function (v) {
+      if (!(v > 100) || !reborn()) return o.apply(this, arguments);
+      var a = o.call(this, 100), b = o.call(this, 80);
+      return a + Math.floor((a - b) / 20 * (v - 100));
+    };
+  });
+
   // 超過屬性上限的部分（裝備、Buff、血盟等其他來源）仍算進「攻擊」與「魔法」公式：
   // 核心在夾上限前呼叫 __afkAttrBoost → 這裡記下夾之前的值；近戰／遠程／魔法的傷害、命中、爆擊、額外魔法點數改用夾之前的值查表
   var oBoostR = window.__afkAttrBoost;
