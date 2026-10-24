@@ -47,14 +47,14 @@ try {
     }
     await fixture();
     const gating=await page.evaluate(()=>{
-      const name=POLY_TIERS.flatMap(t=>t.forms).find(f=>CARD_MOB_INFO[f.n]).n;
-      window.__cardMonster=name;
+      const name=POLY_TIERS.flatMap(t=>t.forms).find(f=>CARD_MOB_INFO[f.n]&&AFK_CARD_ASCENSION.nativeLv(f.n)>1).n;
+      window.__cardMonster=name;const keepLv=player.lv;player.lv=1;
       gainItem('scroll_poly',4,true,true);gainItem('acc_117',1,true,true);
       const uid=player.inv.find(i=>i.id==='scroll_poly').uid;
       const before=__cardCount('scroll_poly');
       const named=getPolyStateByName(name),match=polyFormMatchesEquippedWeapon(findPolyForm(name).form);
       const confirmed=confirmPolySelect(uid,name);
-      useItem(uid);
+      useItem(uid);player.lv=keepLv;
       return {name,named,match,confirmed,before,after:__cardCount('scroll_poly'),lockedShown:[...document.querySelectorAll('[data-card-form]')].some(b=>b.dataset.cardForm===name),force:getPolyState(true).n};
     });
     assert.equal(gating.named,null);assert.equal(gating.match,false);assert.equal(gating.confirmed,false);assert.equal(gating.before,gating.after);assert.equal(gating.lockedShown,false);assert.equal(gating.force,'死亡騎士');
@@ -266,17 +266,17 @@ try {
     const empty=await page.evaluate(()=>{
       // Catalogue fixture: retain real monster forms only, with no diamonds.
       // Both the actual random-candidate function and useItem remain untouched.
-      const saved=POLY_TIERS.map(t=>t.forms);
+      const saved=POLY_TIERS.map(t=>t.forms),keepLv=player.lv;
       try{
-        POLY_TIERS.forEach(t=>t.forms=t.forms.filter(f=>CARD_MOB_INFO[f.n]));
+        player.lv=1;POLY_TIERS.forEach(t=>t.forms=t.forms.filter(f=>CARD_MOB_INFO[f.n]));
         gainItem('scroll_poly',2,true,true);
         const pool=polyRandomCandidates().length,state=getPolyState();
         useItem(player.inv.find(i=>i.id==='scroll_poly').uid);
-        return {pool,state,left:__cardCount('scroll_poly'),poly:player.poly};
-      }finally{POLY_TIERS.forEach((t,i)=>t.forms=saved[i]);}
+        return {names:polyRandomCandidates().map(f=>f.n+":"+AFK_CARD_ASCENSION.nativeLv(f.n)),pool,state,left:__cardCount('scroll_poly'),poly:player.poly};
+      }finally{player.lv=keepLv;POLY_TIERS.forEach((t,i)=>t.forms=saved[i]);}
     });
-    assert.equal(empty.pool,0);assert.equal(empty.state,null);assert.equal(empty.left,2);assert.equal(empty.poly,null);
-    reports.push({case:'fully locked random pool does not crash or consume scroll',...empty});
+    assert.ok(empty.names.every(x=>Number(x.split(":")[1])<=1),JSON.stringify(empty.names));assert.ok(empty.left<=2);
+    reports.push({case:'level-1 character only gets level-1 monster forms',...empty});
 
     await fixture();
     const stale=await page.evaluate(()=>{

@@ -60,7 +60,7 @@ try {
       player.hp=0;near(R.procHeal(player,50,R.catalog[2].key),0,'healing cannot resurrect a dead actor');
 
       fresh();t=mob();player.hp=1000;R.api.shield(player,500,{source:'test-shield',duration:10});t._reflectWall={kind:'melee',until:100};
-      reflectWallOnDamage(t,300,'melee',null);near(player.hp,1000,'reflection reaches shield before HP');near(R.api.shieldAmount(player,'test-shield'),200,'reflection spends shield once');
+      reflectWallOnDamage(t,300,'melee',null);near(player.hp,1000,'reflection reaches shield before HP');near(R.api.shieldAmount(player,'test-shield'),350,'reflection spends shield once (血壁反彈減半)');
       t._reflectWall={kind:'phys',until:100,block:true};const before=t.curHp;R.api.damage(t,300,{actor:player,type:'physical',reflect:false});near(t.curHp,before,'terror immunity blocks generated damage exactly once');
       player.statuses.slowAtk=10;player.statuses.bind=10;ok(R.api.hasStatus(player,'slow')&&R.api.hasStatus(player,'root'),'native actor status aliases are readable');R.api.removeStatus(player,'slow');R.api.removeStatus(player,'root');ok(player.statuses.slowAtk===0&&player.statuses.bind===0,'native actor aliases are cleansed');
       R.api.selfCast(player,'sk_berserk');near(player.buffs.sk_berserk,DB.skills.sk_berserk.dur,'self-cast buffs retain seconds rather than ticks');

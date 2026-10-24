@@ -103,7 +103,7 @@ try{
     if(role==='ally'){actor=JSON.parse(JSON.stringify(player));actor._allyName='反傷法術測試傭兵';actor._slot='1';actor.curHp=actor.mhp;actor.allies=[];player.allies=[actor];R.invalidate();}
     const before=R.api.hp(actor),mobBefore=mob.curHp;mob._reflectWall={kind:'magic',until:state.ticks+100};
     R.api.damage(mob,200,{actor,source:'test-reflection-entry',kind:'magic',element:'fire',reflect:true});
-    same(hurts.length,1,role+' counter spell must not reenter blood wall');same(R.api.hp(actor),before-50,role+' only original reflected damage after reduction');check(mob.curHp<mobBefore-200,role+' reflected hit actually casts retaliatory damage');
+    same(hurts.length,1,role+' counter spell must not reenter blood wall');same(R.api.hp(actor),before-25,role+' only original reflected damage after reduction (血壁反彈減半)');check(mob.curHp<mobBefore-200,role+' reflected hit actually casts retaliatory damage');
     check(damage.some(x=>x.origin==='reflection'&&x.target===mob),role+' retaliation inherits reflection origin');done('blood wall → '+role+' retaliatory spell cannot create a reflection loop');
    }
    return out;

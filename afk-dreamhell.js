@@ -355,6 +355,29 @@
     };
   }
 
+  // ── 夢艷地獄：所有王 5% 機率發動看破——這一下對玩家的傷害 ×2（任何傷害都算，只有一下；玩家 2026-10-24）──
+  var insightDepth = 0;
+  var snapTeam = function () { var a = [[player, player.hp]]; (player.allies || []).forEach(function (x) { if (x && !x._downed) a.push([x, x.curHp]); }); return a; };
+  ['enemyPhysicalAttack', 'enemyAttackAlly', 'applyMobMagic', 'applyMobMagicToAlly'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function (mob) {
+      if (insightDepth > 0 || !mob || !mob.boss || !mob._dream || !dreamOn() || Math.random() >= 0.05) return o.apply(this, arguments);
+      var snap = snapTeam(), r; insightDepth++;
+      try { r = o.apply(this, arguments); } finally { insightDepth--; }
+      try {
+        var hitAny = false;
+        snap.forEach(function (row) {
+          var e = row[0], lost = row[1] - (e === player ? player.hp : e.curHp); if (!(lost > 0)) return;
+          hitAny = true;
+          if (e === player) { player.hp -= lost; if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer(); }
+          else { e.curHp -= lost; if (e.curHp <= 0) { e.curHp = 0; e._downed = true; e._reviveCd = 150; } }
+        });
+        if (hitAny && !state.ff) logCombat('<span class="font-bold" style="color:#f472b6;">【看破】</span>' + mob.n + ' 看穿了你們的破綻，這一擊的傷害加倍。', 'enemy');
+      } catch (e) {}
+      return r;
+    };
+  });
+
   // ── 擊殺：100% 祝福、龍鑽、新掉落 ──
   var addDia = function (n) { try { if (typeof window.pandoraAdjustSharedDiamonds === 'function') return !!(window.pandoraAdjustSharedDiamonds(n) || {}).ok; } catch (e) {} return false; };
   var oKill = window.killMob;

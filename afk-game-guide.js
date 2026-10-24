@@ -9,9 +9,14 @@
   var copy=function(x){return JSON.parse(JSON.stringify(x));};
   var on=function(id){return !W.AFK_TOGGLES||AFK_TOGGLES.enabled(id);};
   function note(s){return '<div class="m-wiki-note">'+s+'</div>';}
-  function desc(s){return '<div class="m-wiki-desc">'+s+'</div>';}
+  function desc(s){return '<div class="m-wiki-desc" style="margin-top:4px;">・'+s+'</div>';}   // 與小百科原本的條列一致
   function card(title,body){return '<section class="m-wiki-card"><div class="m-wiki-name">'+title+'</div>'+body+'</section>';}
-  function table(head,rows){return '<div class="m-wiki-tblwrap"><table class="m-wiki-tbl"><thead><tr>'+head.map(function(s){return '<th>'+s+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(s){return '<td>'+s+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>';}
+  // 表格：沿用小百科原本的樣式（第一欄靠左、其餘置中、表頭不換行）
+  var TH='style="text-align:left;padding:5px 8px;border-bottom:1px solid #475569;color:#e2e8f0;font-weight:bold;white-space:nowrap;"',THc='style="text-align:center;padding:5px 8px;border-bottom:1px solid #475569;color:#e2e8f0;font-weight:bold;white-space:nowrap;"',TD='style="padding:5px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1;vertical-align:top;"',TD0='style="padding:5px 8px;border-bottom:1px solid #1e293b;color:#e2e8f0;vertical-align:top;min-width:5em;"';
+  function table(head,rows){return '<div class="m-wiki-tblwrap"><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;"><thead><tr>'+head.map(function(h,i){return '<th '+(i===0?TH:THc)+'>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+row.map(function(c,i){return '<td '+(i===0?TD0:TD)+'>'+c+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>';}
+  // 專精頁那種卡片：名稱、副標、敘述、📐 實際數據
+  function factCard(name,sub,text,facts){return '<div class="m-wiki-card"><div class="m-wiki-name">'+name+'</div>'+(sub?'<div class="m-wiki-msg">'+sub+'</div>':'')+(text?'<div class="m-wiki-desc">'+text+'</div>':'')+(facts&&facts.length?'<div class="m-wiki-desc" style="margin-top:6px;padding:8px 10px;border:1px solid #475569;border-left:3px solid #fbbf24;border-radius:8px;"><b style="color:#fbbf24;">📐 實際數據</b>'+facts.map(function(f){return '<div style="margin-top:3px;">・'+f+'</div>';}).join('')+'</div>':'')+'</div>';}
+  var splitFacts=function(d){return String(d||'').split(/[；。]/).map(function(x){return x.trim();}).filter(Boolean);};
   function link(name){return '<span class="m-dexlink" data-dexq="'+esc(name)+'">'+esc(name)+'</span>';}
   function clean(s){return String(s||'').replace(/本次本次/g,'本次').replace(/\bBoss\b/g,'首領').replace(/\bCD\b/g,'冷卻').replace(/原稿所列的/g,'既定的').replace(/依原稿/g,'').replace(/〔本階標籤暫定〕/g,'');}
   function plain(s){return String(s||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();}
@@ -46,9 +51,16 @@
   function relics(){
     return note('翻開遺物的來歷與力量，查看 +5、+10、昇華支配及終階效果。印記、毒血上限與治療冷卻請看「冒險規則」。')+
       '<label class="afk-guide-search">搜尋遺物<input id="afk-guide-relic-query" type="search" value="'+esc(relicQuery)+'" placeholder="名稱、編號或效果，例如：護盾"></label><div id="afk-guide-relic-results">'+relicResults()+'</div>'+
-      card('GM 測試道具・固定終階',table(['編號／部位','效果'],[
-        ['99999・武器','同時啟用全部遺物的最高已定階段效果。'],['99998・防具','全部遺物效果，並啟用全部套裝配置。']
-      ])+desc('兩件均直接處於昇華支配 +5，不能強化或合成；同源效果不重複疊加。第 029 件保留其最高已定的昇華支配階段。'));
+      evoCard();
+  }
+  function evoCard(){
+    return factCard('至高的支配（昇華支配 +5 再進化）','遺物的最後一個階段','在燃柳村「哈瑪大師」把「+5 昇華支配」遺物進化，成功率 100%。',[
+      '材料：六種時空材料各 1 個（滅魔蔑視水晶 地／水／火／風、暗星塵、夢域塵）',
+      '進化後隨機得到一種特效（身上與背包已有的會優先避開）：克特套裝、死亡騎士套裝、惡魔套裝、四大軍王套裝（各視同穿滿 4 件）、真．冥皇套裝（視同 5 件）、全能力 +30、面板能力 +50、四屬性抗性 +100',
+      '司祭苦行套裝的遺物進化時，直接得到全部八種特效',
+      '最多同時裝備 6 件至高的支配',
+      '裝滿 6 件：發動「至暗支配・席琳的永生」——受到致命傷時免於死亡，30 秒後可再次觸發'
+    ]);
   }
   function formRules(){
     var F=W.AFK_CARD_FORMS,A=W.AFK_CARD_ASCENSION,PC=W.AFK_POLY_CODEX;
@@ -123,14 +135,20 @@
     var X=W.__afkArts;if(!X||!X.ARTS)return note('請開啟「轉生技藝」外掛後重新載入遊戲。');
     var CN={royal:'王族',knight:'騎士',mage:'法師',elf:'妖精',dark:'黑暗妖精',illusion:'幻術士',dragon:'龍騎士',warrior:'戰士'},by={};
     Object.keys(X.ARTS).forEach(function(id){var a=X.ARTS[id];(by[a.cls]=by[a.cls]||[]).push([id,a]);});
-    var h=note('「輪迴洗去了你的等級，卻洗不去刻在靈魂上的技藝。」轉生後到<b>燃柳村・奧拉奇里亞</b>免費修習；每個職業兩門技藝擇一，可隨時回來改選。');
-    Object.keys(by).forEach(function(c){h+=card((CN[c]||c)+'的技藝',table(['技藝','傳說','效果'],by[c].map(function(x){return ['<b>'+esc(x[1].n)+'</b>',esc((X.LORE||{})[x[0]]||''),esc(x[1].d)];})));});
-    h+=card('四大天王與上場人數',table(['項目','規則'],[
-      ['四大天王','隊伍每 4 人計 1 次（16 人＝5 次）；每次一般攻擊對主目標追加「武器最大值 × 次數 × 5」的傷害。'],
-      ['王族技藝','學了魔劍技藝或呼喊夥伴的王族，一般攻擊追加 1 次（同主目標那一擊的傷害）。'],
-      ['16 人上場','傭兵的技藝效果減半。'],
-      ['命運迴響','受到的傷害先減 10%，再扣 500 點最終減傷（見「變身卡」的最終減傷說明）。']
-    ]));
+    var h=note('轉生後到<b>燃柳村・奧拉奇里亞</b>免費修習；每個職業兩門技藝擇一，可隨時回來改選。卡片下方金框是實際數據。');
+    Object.keys(by).forEach(function(c){
+      h+='<div class="m-wiki-note" style="margin-top:10px;"><b>'+(CN[c]||c)+'</b></div>';
+      by[c].forEach(function(x){h+=factCard(esc(x[1].n),esc((X.LORE||{})[x[0]]||''),'',splitFacts(x[1].d).map(esc));});
+    });
+    h+=factCard('四大天王','傭兵越多，全隊的刀鋒越重','轉生後招傭兵自動生效。',[
+      '上場人數每 4 人計 1 次，16 人＝5 次',
+      '每次一般攻擊，對主目標追加「武器最大值 × 次數 × 5」的傷害',
+      '16 人上場時，傭兵的技藝效果減半'
+    ]);
+    h+=factCard('最終減傷（真實減傷）','所有減傷算完之後，最後再扣一次','',[
+      '來源：聖衣（封印 100／解封 500）、命運迴響 500',
+      '命運迴響：受到的傷害先減 10%，再扣 500 點'
+    ]);
     return h;
   }
   function castleWar(){
@@ -174,15 +192,7 @@
       ['一般遺物、原有技能及其他普通來源','合計最多扣除目標最大生命的 1%。'],
       ['昇華支配遺物來源','目標受過昇華命中後，該昇華來源的毒血不受 1% 上限限制。']
     ])+desc('普通毒血不會因隊友打過昇華傷害而一併解限。中毒與出血各自最多 50 層。'))+healing()+dragonRules()+
-    card('夢艷地獄・規則與代價',table(['事件','效果'],[
-      ['開啟','席琳神殿向席琳祈禱（需 Lv40）；以瘋狂席琳為底，怪物 HP 共 ×50、傷害與命中大幅提高，沒有經驗與金幣，改掉昇華支配材料。'],
-      ['王的數量','場上的王保持 1 隻；用傳送控制戒指找來的王一次出 3 隻同名王。傲慢之塔與時空裂痕不限制，副本維持原規則。'],
-      ['轉生者','解除場上限制（最多 5 隻、王在場照樣出小怪）；但每隻王登場、每次變身，都先對全隊（含寵物、召喚物）造成最大 HP 10% 的真實傷害。'],
-      ['60 級以上小怪','出生時隨機免疫物理或魔法 10 秒，同時反射另一類傷害（只維持 1 秒、只反射一次，反射回施放者）。'],
-      ['擊敗一般小怪','不扣血。'],['擊敗首領','全隊受到當前 HP 10% 的真實傷害，並吸走你與傭兵當前 MP 的 10%。'],
-      ['轉生後的代價','技能消耗 ×2；復活與召喚代價再 ×2，戰鬥中累積倒下 20／50／60／80／100 次各再 ×2；100 次起復活有 10 秒冷卻。你自己倒下或換地圖歸零。'],
-      ['復活卷軸（夢艷）','HP 100% 復活，吸走當前 MP 10%。']
-    ]))+supplyRules()+
+    note('夢艷地獄的完整規則請看「席琳」分頁。')+supplyRules()+
     card('畫面與效能選項',table(['選項','用途'],[
       ['魔法武器','你的魔法武器發動時，20% 機率傷害加倍。'],
       ['外掛開關 → 變身光環','只控制光環外觀；關閉後保留變身能力。'],['省電模式','可關閉動畫、光暈、戰鬥特效與音效，減少裝置負擔。'],
@@ -192,21 +202,7 @@
     ]));}
   function reborn(){
     return note('夢艷地獄的盡頭是暗夢星迴，星迴的盡頭是冥王域。走過一次輪迴，同一副身軀便能承載兩倍的力量。轉生技藝請看「轉生技藝」。')+
-    card('暗夢星迴（時空裂痕入口・單人）',table(['項目','規則'],[
-      ['進入','時空裂痕入口的「暗夢星迴」：單人消耗 1000 顆龜裂之核（多人模式暫不開放）。'],
-      ['對手','只出一隻頭目「裂縫夢境者投影」，外觀沿用抽到的頭目，套用瘋狂席琳夢艷地獄的頭目狀態；打倒就結束、回到時空裂痕入口。不記排名、不給裂痕停留獎勵。'],
-      ['每 15 秒','魔法相消術：隨機一名角色的增益全部被驅散。'],
-      ['每 30 秒','衝擊之暈（隨機一人，受魔防影響）；聖結界：頭目免疫一切傷害，直到被魔法相消術打破（身上有相消術卷軸會自動用 1 張）。'],
-      ['每 45 秒','血壁空間：3 秒內隨機反射近距離／遠距離／魔法傷害（反彈的傷害減半，也吃轉生技藝的減傷與最終減傷）。'],
-      ['每 1 分','堅固防禦：15 秒傷害減免提升；暴走：頭目傷害每分鐘 +10%。'],
-      ['星迴試煉','不論抽到哪隻頭目，數值都統一：HP '+(W.__afkDreamStarCfg?Math.round(W.__afkDreamStarCfg.hp/1e6)+' 百萬':'—')+'、AC −80、傷害減免 30、魔防 300、四屬性抗性 300，不會自然回血；一般攻擊 10D50＋150（每 2 秒），原頭目的魔法拿掉；反彈每次最多算到受害者最大 HP 30%（再減半）。夢境之軀：受到的傷害 −30%；星輝護甲／夢紗：每分鐘輪替，物理或魔法再 −30%。基準是 16 人、全身昇華支配 +5、時空變身，約 14 分鐘苦戰拿下（倒下太多人就會打不完）。'],
-      ['星蝕／夢噬／墜星','每 20 秒全隊失去最大 HP 5%；每 35 秒生命最多的人失去現有 HP 30%；2 分 30 秒起每分鐘全隊受到最大 HP 10%。'],
-      ['第 3／5／6 分','全幻覺（30 秒傷害 ×1.5）／鏡反射（10 秒反射魔法）／疼痛歡愉（10 秒反射物理），各一次。'],
-      ['7 分起','四屬性風暴：每秒對全隊每人地／水／火／風各 100 傷害，各吃對應屬性抗性。'],
-      ['10 分','四大究極魔法：連續 4 發，每發最大 HP 20%（吃屬性抗性，至少 10%）。'],
-      ['15 分','自爆：全隊死亡。'],
-      ['掉落','必掉一種時空材料（滅魔蔑視水晶地／水／火／風、暗星塵、夢域塵）＋5000 龍之鑽石；50% 再掉 3 個昇華支配材料；0.01% 鑽白金幻化。不受任何倍率影響。']
-    ]))+
+    note('暗夢星迴・星迴試煉的完整規則請看「副本」分頁。')+
     card('輪迴轉生（時空裂痕-冥王域）',table(['項目','規則'],[
       ['條件','Lv100、集齊六種時空材料；每個角色一次。從時空裂痕入口進入「時空裂痕-冥王域」，轉生後回到說話之島。'],
       ['等級','回到 Lv1、經驗歸零，但保留 Lv100 時的 HP／MP；等級上限 150（Lv100 以上每級需求依 Lv99 再每級 +10%）。技能、裝備、背包都保留。'],
@@ -235,17 +231,92 @@
     ]))+
     card('寵物 MP 恢復',desc('寵物的 MP 自然恢復改吃你自己的面板「MP 恢復」：比寵物原本的高就用你的，寵物裝備加成照加；任何地區都有效。'));
   }
+  // ── 套裝：加掛版新增的套裝（資料取自天堂透視鏡）──
+  var SET_SRC={kenrauhel:'首領「反王肯恩」Lv75（傲慢之塔 41～60 樓）',cerenis:'首領「賽尼斯(首領)」Lv72（傲慢之塔 41～60 樓）；兩隻首領互掉對方的部分部件',yahee:'炎魔謁見所的炎魔鐵匠製作（靈魂石碎片＋火焰之影素材＋混沌／死亡裝備）；素材由象牙塔 4～8 樓的怪物掉落',wet:'海音、伊娃王國、海賊島的水邊怪物掉落（原作是釣魚）',mutation:'首領「變異實驗體」Lv89（黑魔法研究室）',sihon:'不死系首領掉落（原作是屍魂塔分解）',vigor:'活動：所有首領 0.05% 掉落其中一件',old_bone:'原版骷髏套裝的掉落處，1/5 機率',old_gnome:'原版侏儒套裝的掉落處，1/5 機率',old_oasis:'原版歐西斯套裝的掉落處，1/5 機率'};
+  function setExtra(){
+    var S=W.__afkSets;if(!S||!S.SETNAME)return '';
+    var by={};Object.keys(S.items||{}).forEach(function(id){var d=S.items[id];if(d&&d.set)(by[d.set]=by[d.set]||[]).push(d.n);});
+    var h='<div class="m-wiki-note" style="margin-top:12px;">以下是加掛版依<b>天堂透視鏡</b>補齊的套裝（部件數值、套裝效果、取得方式照透視鏡；中文名轉繁體）。</div>';
+    Object.keys(S.SETNAME).forEach(function(k){
+      if(!by[k])return;var src=SET_SRC[k]||(/^(love|miracle|hope|luck|passion|truth|w11|b11|r11|trainee)$/.test(k)?'活動：所有首領 0.05% 掉落其中一件':'');
+      h+='<div class="m-wiki-card"><div class="m-wiki-name">'+esc(S.SETNAME[k])+'　<span style="color:#7dd3fc;font-size:12.5px;">'+by[k].length+' 件部件</span></div>'
+        +'<div class="m-wiki-desc"><b>效果：</b>'+esc((S.SET_TXT||{})[k]||'')+'</div>'
+        +'<div class="m-wiki-desc" style="color:#94a3b8;"><b>組成：</b>'+esc(by[k].join('、'))+'</div>'
+        +(src?'<div class="m-wiki-desc" style="color:#94a3b8;"><b>取得：</b>'+esc(src)+'</div>':'')+'</div>';
+    });
+    return h+note('透視鏡上有、但這裡沒做的：妖精套裝（透視鏡沒列部件）、修好的飾品（只有水中呼吸，本作用不到）。');
+  }
+  // ── 席琳：夢艷地獄 ──
+  function dreamCard(){
+    return card('瘋狂席琳・夢艷地獄',table(['事件','效果'],[
+      ['開啟','席琳神殿向席琳祈禱（需 Lv40）；以瘋狂席琳為底，怪物 HP 共 ×50、傷害與命中大幅提高，沒有經驗與金幣，改掉昇華支配材料。'],
+      ['王的數量','場上的王保持 1 隻；用傳送控制戒指找來的王一次出 3 隻同名王。傲慢之塔與時空裂痕不限制，副本維持原規則。'],
+      ['王的看破','所有王每次出手 5% 機率發動看破：這一下的傷害 ×2（任何傷害都算，只有一下）。'],
+      ['王的回血','每秒回復最大 HP 0.1%（暗夢星迴的試煉頭目不回）。'],
+      ['轉生者','解除場上限制（最多 5 隻、王在場照樣出小怪）；但每隻王登場、每次變身，都先對全隊（含寵物、召喚物）造成最大 HP 10% 的真實傷害。'],
+      ['60 級以上小怪','出生時隨機免疫物理或魔法 10 秒，同時反射另一類傷害（只維持 1 秒、只反射一次），反射的傷害 −75%。'],
+      ['擊敗一般小怪','你與傭兵各扣最大 HP 1%（身上有魔法屏障就不受影響）。'],['擊敗首領','全隊受到當前 HP 10% 的真實傷害，並吸走你與傭兵當前 MP 的 10%。'],
+      ['轉生後的代價','技能消耗 ×2；復活與召喚代價再 ×2，戰鬥中累積倒下 20／50／60／80／100 次各再 ×2；100 次起復活有 10 秒冷卻。你自己倒下或換地圖歸零。'],
+      ['復活卷軸（夢艷）','HP 100% 復活，吸走當前 MP 10%。'],
+      ['夢艷遺物','打到的遺物：遠古系詞條＋屬性五階同時出現 0.1%；只出遠古系詞條 1%、只出屬性五階 1%；頭目掉的遺物必定兩者都有。'],
+      ['暗夢星迴','在瘋狂席琳或夢艷地獄的世界裡，時空裂痕入口可進入星迴試煉（見「副本」與「輪迴轉生」）。']
+    ]));
+  }
+  // ── 能力值：轉生後的上限與延伸 ──
+  function statsExtra(){
+    var fns=[['力量','近距離傷害','getStrMeleeDmg'],['力量','近距離命中','getStrMeleeHit'],['敏捷','遠距離傷害','getDexRangedDmg'],['敏捷','遠距離命中','getDexRangedHit'],['智力','魔法傷害','getIntMagicDmg'],['智力','魔法命中','getIntMagicHit'],['智力','額外魔法點數','getIntExtraMp']];
+    var ext=function(fn,v){var f=W[fn];if(typeof f!=='function')return '—';var a=f(100),b=f(80);if(typeof a!=='number')return '—';return v<=100?f(v):a+Math.floor((a-b)/20*(v-100));};
+    var rows=fns.filter(function(x){return typeof W[x[2]]==='function';}).map(function(x){return [x[0]+'・'+x[1]].concat([100,120,150,200,250].map(function(v){return String(ext(x[2],v));}));});
+    return card('轉生後的能力值（上限 200，超過還能算）',
+      desc('轉生後屬性上限提升到 <b>200</b>（配點上限 60 → 200）。100 以上的效果，依「80 → 100」那一段的成長幅度往上延伸：<b>效果(v) = 效果(100) ＋ ⌊(效果(100) − 效果(80)) ÷ 20 × (v − 100)⌋</b>。')+
+      desc('<b>超過 200 也還能計算</b>：裝備、Buff、血盟等其他來源把屬性推過 200 時，面板顯示「200(+X)」，超出的 X 仍算進近距離、遠距離、魔法的傷害、命中、爆擊與額外魔法點數（照同一條延伸公式）。')+
+      desc('INT 提供的 SP 不再封頂 33，至少 ⌊(INT ＋ 35) ÷ 3⌋（INT 200 → 78）；面板的額外魔法點數 +50 也算進魔法公式。')+
+      table(['屬性・效果','100','120','150','200','250'],rows));
+  }
+  // ── 副本：四龍巢穴與星迴試煉 ──
+  function dungeonExtra(){
+    var C=W.__afkCorrupt,h='';
+    if(C&&C.DRAGONS){
+      var EN={water:'水',fire:'火',wind:'風',earth:'地'};
+      h+=card('四龍巢穴（法利昂／巴拉卡斯／林德拜爾）',
+        desc('在威頓村「多魯嘉貝爾」進入，跟安塔瑞斯一樣分 4 區推進（入口 → 通道 → 深處 → 棲息地），擊敗各區頭目自動深入，最終龍七階變身。每個角色每天每座 1 次（主戰與出戰傭兵都消耗，UTC+8 凌晨 12 點重置；失敗或離開不消耗）。')+
+        table(['副本','屬性','各區頭目','小怪'],Object.keys(C.DRAGONS).map(function(k){var d=C.DRAGONS[k];return ['<b style="color:'+d.color+'">'+esc(d.pre+'的'+d.dragon)+'</b>',EN[d.ele]||d.ele,esc(d.bosses.map(function(b){return b[0];}).join('、')),esc(d.minions.map(function(b){return b[0];}).join('、'))];}))+
+        desc('房間效果：每秒 500 真實傷害＋500 對應屬性傷害（屬性部分吃抗性）。王在場時每 20 秒對全隊施放一種治療減益 10 秒：死亡藥水（藥水變扣血）、死亡治療（治癒魔法變扣血）、減少治療（治癒減半）。')+
+        desc('最終龍的技能：龍魂吸取（倒下前吸走全隊 20% HP、80% MP）、不滅龍心（致命一擊以 1 HP 撐 10 秒）、龍之再生（60 秒內沒擊倒就回滿）、龍鱗反射（2 秒反射物理或魔法）。')+
+        desc('掉落：比照安塔瑞斯，最終龍改掉該龍的八種專屬材料，另有該龍的六階魔法娃娃 1%；四座最終龍另有白金卡 0.001%、鑽白金幻化 0.01%、境滅亡域鑰匙。'));
+    }
+    var D=W.__afkDreamStarCfg;
+    h+=card('暗夢星迴・星迴試煉（最終頭目）',
+      desc('只在<b>瘋狂席琳</b>或<b>夢艷地獄</b>的世界裡開啟：時空裂痕入口消耗 1000 顆龜裂之核，只出一隻頭目「裂縫夢境者投影」（外觀與魔法沿用抽到的頭目），15 分鐘內沒打倒就自爆。')+
+      table(['項目','夢艷地獄（完整試煉）','瘋狂席琳（簡化版）'],[
+        ['頭目','HP '+(D?Math.round(D.hp/1e6)+' 百萬':'—')+'，AC −80、減傷 30、魔防與四屬性抗性 300，不回血','同 HP；AC、減傷、魔防、抗性都減半'],
+        ['一般攻擊','6D40＋80，每 2 秒；原頭目的魔法保留','傷害減半'],
+        ['受到的傷害','夢境之軀 −30%；星輝護甲（物理）／夢紗（魔法）每分鐘輪替再 −30%','只有夢境之軀的一半（−15%）'],
+        ['暴走','一開場就暴走：傷害 +10%，每分鐘再 +10%，最多 +100%','沒有'],
+        ['血壁空間','每 30 秒，3 秒內近距離、遠距離、魔法傷害的 10% 反彈給出手的人','沒有'],
+        ['百分比傷害','星蝕每 20 秒全隊最大 HP 5%；夢噬每 35 秒血最多的人現有 HP 30%；墜星 2 分 30 秒起每分鐘全隊 10%','只有星蝕（每 20 秒全隊 5%）'],
+        ['其他時間軸','魔法相消術（15 秒）、衝擊之暈與聖結界（30 秒）、堅固防禦（1 分）、全幻覺（3 分）、鏡反射與疼痛歡愉（5／6 分，各 10 秒反彈一成）、四屬性風暴（7 分起）、四大究極魔法（10 分）','沒有'],
+        ['死亡藥水','喝治癒藥水：一半回復、一半變成傷害（藥水加成照算）','沒有'],
+        ['基準','16 人、全身昇華支配 +5、時空變身，苦戰約 14 分鐘','—']
+      ])+
+      desc('掉落：必掉一種時空材料＋5000 龍之鑽石；50% 再掉 3 個昇華支配材料；0.01% 鑽白金幻化。'));
+    return h;
+  }
+
   function augment(key,html){
     if(key==='relicbook'&&on('relicfx'))return note('各件分階能力請看「遺物進階」；共通的印記、毒血及治療規則請看「冒險規則」。')+html;
     if(key==='combat'&&on('relicfx'))return marks()+healing()+html;
     if(key==='rift'&&W.AFK_TTMI_ITEMS)return supplyRules()+html;
     if(key==='pledge'&&W.__afkCastleWar)return castleWar()+html.replace(/肯特城／風木城／海音城/g,'七座城（詳見上方）');
-    if(key==='poly')return html.replace(/「鑽石變身」/g,'「變身卡」');
+    if(key==='poly')return note('怪物型態：<b>等級夠就能變身</b>（表中「解鎖條件」的等級）。要吃到<b>變身收集冊</b>的加成：怪物圖鑑收到<b>銀卡</b>後，那隻怪才會掉變身卡；<b>普卡</b>全部收集滿才開放銀卡掉落，銀卡全部收集滿才開放<b>金卡</b>。')+html.replace(/「鑽石變身」/g,'「變身卡」');
+    if(key==='set')return html+setExtra();
+    if(key==='sherine')return dreamCard()+html;
+    if(key==='stats')return html+statsExtra();
     if(key==='antharas'&&on('corrupt')){
       // The original page describes the base three-stage dragon; the current
       // dragon plugin extends that same encounter to seven stages.
       html=html.replace(/三段變身/g,'七階變身').replace(/連續變身三階/g,'連續變身七階').replace(/前兩階/g,'前六階');
-      return dragonRules()+html;
+      return dungeonExtra()+dragonRules()+html;
     }
     return html;
   }

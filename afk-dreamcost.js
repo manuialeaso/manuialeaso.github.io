@@ -139,7 +139,7 @@
     Object.keys(base).forEach(function (k) {
       var s = DB.skills[k], b = base[k]; if (!s) return;
       var mul = want ? 2 * (REVIVE_SK[k] ? want : 1) : 1;
-      if (b.mp) s.mp = b.mp * mul;
+      if (b.mp) { var v = Number(b.mp) * mul; if (b.mp._afkDmg) { v = Object(v); v._afkDmg = true; } s.mp = v; }   // 保留傷害型法術的標記（afk-rebirth-rules）
       if (b.hp) s.hpCost = b.hp * mul;
     });
     applied = want;

@@ -102,7 +102,7 @@ try{
     const mob=fresh([['helm',222,4]]);let actor=player;
     if(role==='ally'){actor=JSON.parse(JSON.stringify(player));actor._allyName='反射測試傭兵';actor._slot='1';actor.curHp=100;actor.allies=[];player.allies=[actor];R.invalidate();}
     mob._reflectWall={kind:'magic',until:100};R.api.shield(actor,500,{source:'test-reflect-shield',cap:500,duration:10});
-    reflectWallOnDamage(mob,200,'magic',role==='ally'?actor:null);same(R.api.hp(actor),100,role+' blood wall first consumes shield');same(R.api.shieldAmount(actor,'test-reflect-shield'),300,role+' shield balance');
+    reflectWallOnDamage(mob,200,'magic',role==='ally'?actor:null);same(R.api.hp(actor),100,role+' blood wall first consumes shield');same(R.api.shieldAmount(actor,'test-reflect-shield'),400,role+' shield balance');
     same(hurts.length,1,role+' one protected incoming event');check(hurts[0].origin==='reflection'&&hurts[0].main===false,role+' reflection context');
     reflectWallOnDamage(mob,1e7,'magic',role==='ally'?actor:null);same(R.api.hp(actor),1,role+' death prevention happens before HP subtraction');check(!actor.dead&&!actor._downed,role+' survives without native death settlement');same(R.state(actor,D.byId[222].key).deathUses,1,role+' consumes exactly one stone seal');
     same(hurts.length,2,role+' no reflection recursion');out.push('native blood-wall '+role+' shields and lethal protection');

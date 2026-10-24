@@ -68,7 +68,7 @@
     var p = P(); if (!p || !byName[name]) return false;
     if (tierOf(name, p) !== t - 1) return false;
     dex(p)[name] = t; recalc();
-    if (!quiet) log('<span class="text-pink-300 font-bold">收集冊上，「' + name + '」的' + TIER_N[t - 1] + '卡亮了起來。</span>' + (t === 3 && goldCount(p) === 5 ? '<span class="text-amber-300">（金卡滿 5 種，開放查看神話變身卡冊）</span>' : ''));
+    fullAt.t = -1; if (!quiet) log('<span class="text-pink-300 font-bold">收集冊上，「' + name + '」的' + TIER_N[t - 1] + '卡亮了起來。</span>' + (t === 3 && goldCount(p) === 5 ? '<span class="text-amber-300">（金卡滿 5 種，開放查看神話變身卡冊）</span>' : ''));
     return true;
   }
   // 使用卡片道具
@@ -91,9 +91,20 @@
 
   // ── 掉落 ──
   var partyMult = function () { var p = P(); if (!p) return 1; var n = 1 + (p.allies || []).filter(function (a) { return a && !a._downed; }).length; return Math.min(16, n); };
-  function rollFor(f, mult) {
+  // 掉落門檻（玩家 2026-10-24）：被打倒的怪在怪物圖鑑達到銀卡，才會掉變身卡；
+  //   普卡全部收集滿才開放銀卡掉落，銀卡全部收集滿才開放金卡
+  var fullAt = { t: -1, v: [false, false, false] };
+  var allTier = function (k) {
+    var now = Date.now();
+    if (now - fullAt.t > 5000) { var p = P(); fullAt = { t: now, v: [true, 1, 2, 3].map(function (x, i) { return i === 0 ? true : forms.every(function (f) { return tierOf(f.n, p) >= i; }); }) }; }
+    return !!fullAt.v[k];
+  };
+  var mobSilver = function (name) { try { return typeof cardDexTier === 'function' ? cardDexTier(name) >= 2 : true; } catch (e) { return true; } };
+  function rollFor(f, mult, mobName) {
+    if (mobName && !mobSilver(mobName)) return;
     var p = P(), cur = tierOf(f.n, p); var t = cur + 1;
     var goldDup = cur >= 3; if (goldDup) t = 3;   // 金卡登錄後仍會掉金卡（合成神話的材料）
+    if (!goldDup && t >= 2 && !allTier(t - 1)) return;
     if (Math.random() >= RATE[t - 1] * mult) return;
     if (!goldDup && register(f.n, t)) return;
     try { if (typeof gainItem === 'function') gainItem(itemId(f.n, t), 1, true, true); } catch (e) {}
@@ -106,9 +117,9 @@
     try {
       if (was && m._dead && enabled() && P() && !m.siegeEnemy && !m.pledgeEnemy && !m.trollPlayer && m.race !== '建築') {
         var pm = partyMult();
-        if (byName[m.n] && byName[m.n].hasMob) rollFor(byName[m.n], pm);
+        if (byName[m.n] && byName[m.n].hasMob) rollFor(byName[m.n], pm, m.n);
         var lv = Number(m.lv) || 0, near = noMob.filter(function (f) { return Math.abs(f.lv - lv) <= 5; });
-        if (near.length) rollFor(near[Math.floor(Math.random() * near.length)], pm * 0.5);
+        if (near.length) rollFor(near[Math.floor(Math.random() * near.length)], pm * 0.5, m.n);
       }
     } catch (e) {}
     return r;

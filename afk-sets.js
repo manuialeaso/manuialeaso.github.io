@@ -289,6 +289,6 @@
     });
   } catch (e) {}
 
-  window.__afkSets = { count: count, items: I, SETNAME: SETNAME };
+  window.__afkSets = { count: count, items: I, SETNAME: SETNAME, SET_TXT: SET_TXT };
   console.log('[AFK-sets] 已啟用：補齊 ' + Object.keys(SETNAME).length + ' 組套裝、' + Object.keys(I).length + ' 件物品、3 隻首領');
 })();

@@ -61,6 +61,14 @@
     } catch (e) { dex = {}; }
     return Number(dex[name]) >= 10000;
   }
+  // 怪物型態（玩家 2026-10-24）：等級夠就能變身（原版卷軸表有這個型態就用它的等級，否則用怪物本身的等級）；鑽石卡仍是合成材料
+  var nativeLvCache = null;
+  function nativeLv(name) {
+    if (!nativeLvCache) { nativeLvCache = {}; try { POLY_TIERS.forEach(function (t) { t.forms.forEach(function (f) { if (f && f.n && nativeLvCache[f.n] == null) nativeLvCache[f.n] = Number(f.lv) || 1; }); }); } catch (e) {} }
+    if (nativeLvCache[name] != null) return nativeLvCache[name];
+    try { var info = CARD_MOB_INFO[name], mob = info && (DB.mobs[info.id] || info.mob); return Math.max(1, Number(mob && mob.lv) || 1); } catch (e) { return 1; }
+  }
+  function formOk(name, actor) { actor = actor || player; return diamondOwned(name, actor) || (Number(actor && actor.lv) || 1) >= nativeLv(name); }
   function owned(id, actor) { return !!(byId[id] && (data(actor).owned || {})[id]); }
   // 輪迴缺點（玩家 2026-10-23）：沒回安全區連續戰鬥 30 分鐘解除變身，冷卻 30 分鐘（存檔用真實時間）
   var SAMSARA_FIGHT = 18000, SAMSARA_CD = 30 * 60 * 1000;
@@ -354,14 +362,14 @@
       if(row.tier==='samsara'&&samsaraCd(actor)>0)return false;   // 輪迴冷卻中只能用其他變身
       return owned(row.id,actor);
     }
-    var nm=form.cardMonster||form.n;if(isMonster(nm))return diamondOwned(nm,actor);
+    var nm=form.cardMonster||form.n;if(isMonster(nm))return formOk(nm,actor);
     return true;
   }
   function resolve(form,actor) {
     if(!form)return null;var row=rowFor(form);
     if(row)return canUseForm(form,actor)?clone(row.form):null;
     var nm=form.cardMonster||form.n;
-    if(isMonster(nm))return diamondOwned(nm,actor)?clone(monsterForm(nm)):null;
+    if(isMonster(nm))return formOk(nm,actor)?clone(monsterForm(nm)):null;
     return clone(form);
   }
   function active(actor) {
@@ -403,7 +411,7 @@
   window.polyRandomCandidates=function(){
     var original=oldCandidates.apply(this,arguments);if(!enabled())return original;
     var pool=original.map(function(f){return resolve(f,player);}).filter(Boolean);
-    if(!pool.length)pool=monsterNames().filter(function(n){return diamondOwned(n,player);}).map(monsterForm).filter(Boolean);
+    if(!pool.length)pool=monsterNames().filter(function(n){return formOk(n,player);}).map(monsterForm).filter(Boolean);
     if(!pool.length)pool=listOwned(player).map(function(r){return clone(r.form);});
     return pool;
   };
@@ -456,7 +464,7 @@
       POLY_TIERS.forEach(function(t){t.forms.forEach(function(f){if(!isMonster(f.n)&&player.lv>=f.lv&&polyFormMatchesEquippedWeapon(f))add(f,t.color);});});
       CONTROL_ONLY_POLY_FORMS.forEach(function(f){if(!isMonster(f.n)&&player.lv>=f.lv&&polyFormMatchesEquippedWeapon(f))add(f,f.c);});
     }
-    monsterNames().forEach(function(n){if(diamondOwned(n,player))add(monsterForm(n),'c-card-diamond');});
+    monsterNames().forEach(function(n){if(formOk(n,player))add(monsterForm(n),'c-card-diamond');});
     listOwned(player).forEach(function(r){add(clone(r.form),'text-yellow-300');});
     return out;
   }
@@ -472,7 +480,7 @@
       filtered.forEach(function(x){var b=document.createElement('button');b.type='button';b.className='btn afk-ca-form';b.dataset.cardForm=x.form.n;
         b.innerHTML='<strong class="'+escape(x.color)+'">'+escape(x.form.n)+'</strong><span>'+escape(polyFormDesc(x.form))+'</span>';
         b.onclick=function(){confirmPolySelect(uid,x.form.n);};list.appendChild(b);});
-      if(!filtered.length)list.textContent=avail.length?'找不到符合的變身。':'先取得怪物鑽石卡，或攜帶變形控制戒指。';
+      if(!filtered.length)list.textContent=avail.length?'找不到符合的變身。':'等級越高能變的怪物越多；也可以攜帶變形控制戒指。';
     }
     search.oninput=draw;draw();
   };
@@ -484,7 +492,7 @@
     var error=ready(),it=player&&player.inv&&player.inv.find(function(x){return x.uid===uid;}),d=it&&DB.items[it.id];
     if(error){say(error);return false;}
     if(!it || count(it)<1 || !d || !(d.eff==='poly'||d.ttmiAction==='poly'||d.ttmiControlledPoly)){say('你身上沒有變形卷軸。');return false;}
-    var f=resolve(found.form,player);if(!f){say(isMonster(name)?'先取得「'+name+'」的鑽石卡。':'請先取得這張變身卡。');return false;}
+    var f=resolve(found.form,player);if(!f){say(isMonster(name)?'等級還不夠變成「'+name+'」（需 Lv'+nativeLv(name)+'）。':'請先取得這張變身卡。');return false;}
     // Keep the native consume/update path and the rift wrapper's ownership
     // bookkeeping. Card ownership replaces only this form's level/ring gate.
     var lookup=window.findPolyForm,before=count(it);f.lv=0;f.controlOnly=false;
@@ -514,7 +522,7 @@
     if(d.eff==='poly'||d.ttmiAction==='poly'||d.ttmiControlledPoly){
       var err=ready();if(err){if(!silent)say(err);return;}
       if(d.ttmiRiftOnly&&!(window.AFK_TTMI_ITEMS&&AFK_TTMI_ITEMS.inRift())){if(!silent)say('這件補給只在時空裂痕中才會回應你。');return;}
-      if(d.ttmiPolyForm&&isMonster(d.ttmiPolyForm)&&!diamondOwned(d.ttmiPolyForm,player)){if(!silent)say('先取得「'+d.ttmiPolyForm+'」的鑽石卡。');return;}
+      if(d.ttmiPolyForm&&isMonster(d.ttmiPolyForm)&&!formOk(d.ttmiPolyForm,player)){if(!silent)say('等級還不夠變成「'+d.ttmiPolyForm+'」（需 Lv'+nativeLv(d.ttmiPolyForm)+'）。');return;}
       if(!d.ttmiPolyForm && !silent && (hasPolyRing()||selectionList().length)){
         if(!d.ttmiSourceId){openPolySelect(uid);return;}
         var selectionRing=window.hasPolyRing;window.hasPolyRing=function(){return true;};
@@ -606,6 +614,6 @@
   }
   var style=document.createElement('style');style.textContent='.afk-ca-panel{padding:14px;border-top:1px solid #334155;color:#e2e8f0}.afk-ca-panel h3,.afk-ca-dialog h3{font-weight:700;margin:8px 0}.afk-ca-panel p,.afk-ca-dialog p{font-size:12px;color:#94a3b8;margin:8px 0}.afk-ca-tier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #334155;background:#0f172a;padding:10px;border-radius:8px;margin:8px 0}.afk-ca-tier small{flex-basis:100%;color:#94a3b8;font-size:12px}.afk-ca-tier .btn{margin-left:auto}.afk-ca-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.afk-ca-overlay{position:fixed;inset:0;z-index:10001;background:#020617cf;display:flex;align-items:center;justify-content:center;padding:14px 12px 12px;box-sizing:border-box}.afk-ca-dialog{width:min(620px,100%);max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #64748b;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px}#afk-card-ascension-body{min-height:0;overflow:auto;overscroll-behavior:contain}.afk-ca-dialog header{flex-shrink:0;padding-bottom:8px}.afk-ca-dialog header{display:flex;justify-content:space-between;align-items:center;gap:12px}.afk-ca-dialog header button{padding:6px 10px;color:#cbd5e1}.afk-ca-form{display:flex;flex-direction:column;text-align:left;padding:10px!important;white-space:normal;margin:3px 0;width:100%}.afk-ca-form span{font-size:11px;color:#94a3b8;margin-top:4px}.afk-ca-search{background:#020617;color:#e2e8f0;border:1px solid #475569;padding:8px;margin:0 0 10px;border-radius:6px}.afk-ca-panel button:disabled{opacity:.45;cursor:not-allowed}';document.head.appendChild(style);
   var publicRules={};TIERS.forEach(function(t){publicRules[t]=Object.freeze(Object.assign({},RULES[t]));});Object.freeze(publicRules);
-  window.AFK_CARD_ASCENSION={matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,exchangeDiamondShards:exchangeDiamondShards,chooseSpacetime:chooseSpacetime,unsealSpacetime:unsealSpacetime,openSpacetimePick:openSpacetimePick,sealed:sealed,rateOf:rateOf,samsaraCd:samsaraCd,samsaraTick:samsaraTick,samsaraFightMax:SAMSARA_FIGHT,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE,diamondShard:DSHARD,spacetimeShard:STSHARD}};
+  window.AFK_CARD_ASCENSION={formOk:formOk,nativeLv:nativeLv,matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,exchangeDiamondShards:exchangeDiamondShards,chooseSpacetime:chooseSpacetime,unsealSpacetime:unsealSpacetime,openSpacetimePick:openSpacetimePick,sealed:sealed,rateOf:rateOf,samsaraCd:samsaraCd,samsaraTick:samsaraTick,samsaraFightMax:SAMSARA_FIGHT,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE,diamondShard:DSHARD,spacetimeShard:STSHARD}};
   if(forms()&&forms().catalog)registerCatalog(forms().catalog);
 })();

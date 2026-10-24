@@ -90,7 +90,7 @@
   // ── 名冊：持有該部隊所屬的城就有效 ──
   window.castleGuardRosterActive = function () {
     var p = P(); if (!p) return null;
-    var info = (typeof clanGetModeInfo === 'function') ? clanGetModeInfo(p) : null;
+    var info = rosterInfo(p);
     if (!info || !info.guards) return null;
     var spec = specOfRoster(info.guards); if (!spec) return null;
     if (held().indexOf(homeOf(spec)) < 0) return null;
@@ -148,10 +148,22 @@
   };
 
   // ── 招募 ──
+  // 名冊：有血盟就存在血盟共用狀態；沒有血盟（例如用測試工具直接拿到城堡）就存在本機、同模式共用（玩家 2026-10-24：沒血盟時招不到）
+  var LKEY = 'afk_castle_guards_v1';
+  var modeOf = function () { try { return (typeof clanModeKey === 'function') ? clanModeKey(P()) : 'normal'; } catch (e) { return 'normal'; } };
+  var localAll = function () { try { return JSON.parse(localStorage.getItem(LKEY) || '{}') || {}; } catch (e) { return {}; } };
+  var clanInfo = function (p) { try { return (typeof clanGetModeInfo === 'function') ? clanGetModeInfo(p) : null; } catch (e) { return null; } };
+  var rosterInfo = function (p) { var c = clanInfo(p); if (c) return c; var all = localAll(); return all[modeOf()] || { guards: null }; };
   var writeRoster = function (fn) {
-    if (typeof _clanWithLock !== 'function') return { ok: false, error: '血盟系統未就緒。' };
-    var mode = (typeof clanModeKey === 'function') ? clanModeKey(P()) : 'normal';
-    return _clanWithLock(function (st) { var info = st.modes[mode]; if (!info) return { commit: false, error: '你尚未加入血盟。' }; return fn(info) || {}; });
+    if (clanInfo(P()) && typeof _clanWithLock === 'function') {
+      var mode = modeOf();
+      return _clanWithLock(function (st) { var info = st.modes[mode]; if (!info) return { commit: false, error: '你尚未加入血盟。' }; return fn(info) || {}; });
+    }
+    var all = localAll(), info = all[modeOf()] || { guards: null };
+    var r = fn(info) || {};
+    if (r.commit === false) return { ok: false, error: r.error };
+    all[modeOf()] = info; try { localStorage.setItem(LKEY, JSON.stringify(all)); } catch (e) { return { ok: false, error: '名冊寫入失敗。' }; }
+    return Object.assign({ ok: true }, r);
   };
   var red = function (t) { logSys('<span class="text-red-400">' + t + '</span>'); };
   var refresh = function (key) { try { saveGame(); } catch (e) {} castleGuardSync(true); try { updateUI(); } catch (e) {} var el = document.getElementById('interaction-content'); if (el && el.dataset.afkGuard) renderCastleGuard(el, key); };

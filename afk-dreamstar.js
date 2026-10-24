@@ -19,7 +19,7 @@
  *   第 5 分   鏡反射：10 秒內反射魔法傷害（只放這一次）
  *   第 6 分   疼痛歡愉：10 秒內反射物理傷害（只放這一次）
  *   7 分起    四屬性風暴：每秒對全隊每人造成 地／水／火／風 各 100 傷害，各自吃對應屬性抗性
- *   10 分     四大究極魔法：連續 4 發（火／水／風／地），每發最大 HP 20%、吃對應屬性抗性，但每發至少最大 HP 10%
+ *   10 分     四大究極魔法：10 分 05 秒起每 2 秒一發，共 4 發（火／水／風／地），每發最大 HP 12%、吃對應屬性抗性，但每發至少最大 HP 5%
  *   15 分     自爆：全隊死亡
  *
  * 掉落（固定機率，不受任何倍率影響；頭目原本的掉落、金幣、經驗全部沒有）
@@ -60,11 +60,13 @@
   // ── 星迴試煉的數值（玩家 2026-10-24）──
   //   hp：頭目血量；body：夢境之軀，所有傷害 −30%；phase：每分鐘輪替「星輝護甲」物理 −30%／「夢紗」魔法 −30%
   //   ac／dr／mr／res：頭目防禦統一成這組數值（不看抽到的頭目原本多硬）；rage：每過 1 分鐘頭目傷害 +10%
-  //   atk／db／hit／spd：頭目一般攻擊統一（10D50＋150，每 2 秒），原頭目的魔法拿掉
+  //   atk／db／hit／spd：頭目一般攻擊統一（6D40＋80，每 2 秒），原頭目的魔法拿掉
   //   eclipse：星蝕（每 20 秒全隊最大 HP 5%）；devour：夢噬（每 35 秒，生命最多的人現有 HP 30%）；fall：墜星（2 分 30 秒起每分鐘全隊最大 HP 10%）
-  var DS = { atk: [10, 50], db: 150, hit: 200, spd: 2, hp: 310000000, body: 0.70, phase: 0.70, ac: -80, dr: 30, mr: 300, res: 300, rage: 0.10, eclipse: 0.05, devour: 0.30, fall: 0.10 };
+  var DS = { atk: [6, 40], db: 80, hit: 200, spd: 2, hp: 310000000, wallEvery: 30, wallPct: 0.10, rageMax: 1.0, body: 0.70, phase: 0.70, ac: -80, dr: 30, mr: 300, res: 300, rage: 0.10, eclipse: 0.05, devour: 0.30, fall: 0.10 };
   window.__afkDreamStarCfg = DS;
-  var rageOf = function (m) { var age = (S().ticks || 0) - (m._dsBorn || 0); return 1 + DS.rage * Math.floor(age / 600); };
+  // 暴走：一開場就暴走（+10%），之後每分鐘再 +10%，最多 +100%；瘋狂席琳版不暴走
+  var rageOf = function (m) { if (m._dsMode === 'mad') return 1; var age = (S().ticks || 0) - (m._dsBorn || 0); return 1 + Math.min(DS.rageMax, DS.rage * (Math.floor(age / 600) + 1)); };
+  var full = function (m) { return m._dsMode !== 'mad'; };
   var phaseOf = function (m) { var age = (S().ticks || 0) - (m._dsBorn || 0); return Math.floor(age / 600) % 2 === 0 ? 'phys' : 'magic'; };
   var hooked = false;
   var hookDamage = function () {
@@ -76,7 +78,7 @@
       try {
         if (target && target._dreamStar && r > 0 && on()) {
           var k = (opt && opt.kind) || 'melee', mag = k === 'magic', phys = k === 'melee' || k === 'ranged' || k === 'phys';
-          var f = DS.body * ((phaseOf(target) === 'phys' && phys) || (phaseOf(target) === 'magic' && mag) ? DS.phase : 1);
+          var f = target._dsMode === 'mad' ? 1 - (1 - DS.body) * 0.5 : DS.body * ((phaseOf(target) === 'phys' && phys) || (phaseOf(target) === 'magic' && mag) ? DS.phase : 1);
           r = Math.max(1, Math.floor(r * f));
         }
       } catch (e) {}
@@ -95,11 +97,13 @@
     var m = { ...base, curHp: base.hp, uid: uid(), _born: ++_mobBornSeq, _magCd: {}, justHit: false, st: newMobStatus() };
     mapState.mobs[idx] = m;
     var keep = { w: player.sherineWorld, mad: player.sherineMad, dream: player.sherineDream };
+    var mode = player.sherineDream ? 'dream' : 'mad';   // 夢艷地獄＝完整試煉；只有瘋狂席琳＝簡化版
     try {
-      player.sherineMad = true; player.sherineDream = true;
+      player.sherineMad = true; player.sherineDream = mode === 'dream';
       applySherineBuff(idx);
-      if (window.__afkDreamHell && !m._dream) window.__afkDreamHell.applyDream(m);
+      if (mode === 'dream' && window.__afkDreamHell && !m._dream) window.__afkDreamHell.applyDream(m);
     } finally { player.sherineWorld = keep.w; player.sherineMad = keep.mad; player.sherineDream = keep.dream; }
+    m._dsMode = mode;
     if (m.hard && typeof initHardSkin === 'function') initHardSkin(m);
     m._dreamStar = true; m._dsName = NAME; m._dsBorn = S().ticks || 0; m._dsRage = m.rageDmgMult || 1;
     // 星迴試煉（玩家 2026-10-24）：以「16 人、全身昇華支配 +5、時空變身」為基準，苦戰到 14 分 30 秒左右才打得倒
@@ -108,9 +112,13 @@
     m.ac = DS.ac; m.dr = DS.dr; m.hard = false; m.hardSkin = 0; m._noBossRegen = true;   // 頭目每 5 秒回 0.5～2.5% 的自然恢復在 2 億血量下會變成主宰，試煉頭目不回血
     m.regenHp = 0; m._dreamRegen = 0;
     // 攻擊也統一：一般攻擊用試煉的數值，原頭目自己的魔法拿掉（試煉有自己的時間軸）
-    m.dmg = DS.atk.slice(); m.db = DS.db; m.hit = DS.hit; m.atkSpd = DS.spd; delete m.mag; delete m.mag2; delete m.mag3; delete m.mag4;
+    m.dmg = DS.atk.slice(); m.db = DS.db; m.hit = DS.hit; m.atkSpd = DS.spd;   // 原頭目自己的魔法保留（玩家 2026-10-24：要有最終頭目的感覺）
     m.mr = DS.mr;
     ['resFire', 'resWater', 'resWind', 'resEarth'].forEach(function (k) { m[k] = DS.res; });
+    if (mode === 'mad') {   // 瘋狂席琳：防禦與傷害都減半，只有星蝕
+      m.ac = Math.round(DS.ac * 0.5); m.dr = Math.round(DS.dr * 0.5); m.mr = Math.round(DS.mr * 0.5);
+      ['resFire', 'resWater', 'resWind', 'resEarth'].forEach(function (k) { m[k] = Math.round(DS.res * 0.5); });
+    }
     hookDamage();
     m.exp = 0; m.goldMin = 0; m.goldMax = 0; m.noGold = true;
     sys('<span class="font-bold" style="color:#c084fc;">夢境的裂縫無聲張開，' + NAME + '——' + base.n + '的投影——自星屑中走出。</span>');
@@ -179,7 +187,18 @@
         if (!mob._dsHolyLog || now - mob._dsHolyLog >= 1000) { mob._dsHolyLog = now; log(tag('聖結界', '#fde68a') + NAME + ' 的聖結界吞沒了一切攻擊。（唯有魔法相消術能破）'); }
         return;
       }
-      // 反彈（血壁空間／鏡反射／疼痛歡愉）每次最多算到受害者最大 HP 30%（之後再減半＝15%）：16 人的爆發全數反彈會整隊蒸發
+      // 血壁空間（星迴試煉）：3 秒內所有直接傷害的 10% 反彈給出手的人
+      try {
+        var kind = arguments[2], mir = mob && mob._dsMirror, mirOn = !!(mir && mir.until >= (S().ticks || 0) && (mir.kind === kind || (mir.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))));
+        if (mob && mob._dreamStar && dmg > 0 && ((mob._dsWallUntil || 0) >= (S().ticks || 0) || mirOn) && !mob._dead) {
+          var vv = arguments[3] || player, back = Math.max(1, Math.floor(dmg * DS.wallPct));
+          if (vv === player ? !player.dead : !vv._downed) {
+            hurt(vv, back, '血壁空間');
+            var nw = Date.now(); if (!mob._dsWallLog || nw - mob._dsWallLog >= 1000) { mob._dsWallLog = nw; log(tag('血壁空間', '#f87171') + nameOf(vv) + ' 的攻擊撞上血壁，' + back + ' 點傷害折返。'); }
+          }
+        }
+      } catch (e) {}
+      // 反彈（鏡反射／疼痛歡愉）每次最多算到受害者最大 HP 30%（之後再減半＝15%）：16 人的爆發全數反彈會整隊蒸發
       try {
         if (mob && mob._dreamStar && dmg > 0) {
           var a = Array.prototype.slice.call(arguments), v = a[3] || player;
@@ -224,7 +243,12 @@
       var pick = function () { return team[Math.floor(Math.random() * team.length)]; };
       if (m._dsIllu && t > m._dsIllu) { m._dsIllu = 0; log(NAME + ' 的幻影褪去，回歸本相。'); }
       // 暴走：每過 1 分鐘傷害 +10%（全幻覺期間再 ×1.5）
-      m.rageDmgMult = m._dsRage * rageOf(m) * (m._dsIllu ? 1.5 : 1);
+      m.rageDmgMult = m._dsRage * rageOf(m) * (m._dsIllu ? 1.5 : 1) * (full(m) ? 1 : 0.5);
+      if (!full(m)) {   // 瘋狂席琳版：只有每 20 秒的星蝕
+        if (age >= 10 * SEC && every(age - 10 * SEC, 20)) { pctAll(DS.eclipse, '星蝕'); log(tag('星蝕', '#a78bfa') + '星光一暗，全隊失去最大 HP ' + Math.round(DS.eclipse * 100) + '% 的生命。'); }
+        if (age >= 900 * SEC) { m.curHp = 0; m._dsBlast = true; sys('<span class="text-red-500 font-bold">' + NAME + ' 的身軀化為光焰炸裂，夢境隨之崩塌——無人生還。</span>'); (player.allies || []).forEach(function (x) { if (x && !x._downed) { x.curHp = 0; x._downed = true; x._reviveCd = 150; } }); player.hp = 0; if (typeof killPlayer === 'function') killPlayer(); return; }
+        continue;
+      }
       if (age > 0 && age % (60 * SEC) === 0) {
         log(tag('暴走', '#ef4444') + NAME + ' 的殺意又深了一層（傷害 +' + Math.round((rageOf(m) - 1) * 100) + '%）。' + (phaseOf(m) === 'phys' ? tag('星輝護甲', '#fde68a') + '刀劍之傷減三成。' : tag('夢紗', '#c4b5fd') + '咒文之傷減三成。'));
       }
@@ -245,15 +269,14 @@
           }
         }
       }
-      if (every(age, 45)) {
-        var k = ['melee', 'ranged', 'magic'][Math.floor(Math.random() * 3)];
-        m._reflectWall = { kind: k, until: t + 3 * SEC };
-        log(tag('血壁空間', '#f87171') + NAME + ' 周身血壁湧動，3 秒內' + { melee: '近距離', ranged: '遠距離', magic: '魔法' }[k] + '傷害將原路折返。');
+      if (every(age, DS.wallEvery)) {
+        m._dsWallUntil = t + 3 * SEC;
+        log(tag('血壁空間', '#f87171') + NAME + ' 周身血壁湧動，3 秒內近距離、遠距離、魔法的傷害都有一成原路折返。');
       }
       if (every(age, 60)) { try { applyMobMagic(m, { type: 'self_buff', buffKind: 'guard', skn: '堅固防禦', drBase: 10, dr50: 12, drStep: 2 }); } catch (e) {} }
       if (age === 180 * SEC) { m._dsIllu = t + 30 * SEC; log(tag('幻術・全幻覺', '#a78bfa') + NAME + ' 化作千重幻影，30 秒內傷害 ×1.5。'); }
-      if (age === 300 * SEC) { m._reflectWall = { kind: 'magic', until: t + 10 * SEC }; log(tag('鏡反射', '#93c5fd') + NAME + ' 立起鏡面，10 秒內咒文將映回施術者。'); }
-      if (age === 360 * SEC) { m._reflectWall = { kind: 'phys', until: t + 10 * SEC }; log(tag('疼痛歡愉', '#fca5a5') + NAME + ' 沉醉於痛楚之中，10 秒內刀劍之傷將反噬其主。'); }
+      if (age === 300 * SEC) { m._dsMirror = { kind: 'magic', until: t + 10 * SEC }; log(tag('鏡反射', '#93c5fd') + NAME + ' 立起鏡面，10 秒內咒文的一成將映回施術者。'); }
+      if (age === 360 * SEC) { m._dsMirror = { kind: 'phys', until: t + 10 * SEC }; log(tag('疼痛歡愉', '#fca5a5') + NAME + ' 沉醉於痛楚之中，10 秒內刀劍之傷的一成將反噬其主。'); }
       if (age >= 420 * SEC && age % SEC === 0) {
         var dead = false;
         members().forEach(function (x) {
@@ -264,11 +287,11 @@
         if (age % (10 * SEC) === 0) log(tag('四屬性風暴', '#fb923c') + '地、水、火、風四道洪流席捲全隊（每秒各 100，受屬性抗性減免）。');
         if (dead) return;
       }
-      if (age >= 600 * SEC && age <= 603 * SEC && age % SEC === 0) {
-        var k4 = (age - 600 * SEC) / SEC, nm = ['流星雨', '冰雪颶風', '雷霆風暴', '大地崩裂'][k4], ele = ['fire', 'water', 'wind', 'earth'][k4];
-        log(tag('究極魔法・' + nm, '#f472b6') + NAME + ' 詠唱禁忌的究極魔法，全隊受到最大 HP 20% 的傷害（受屬性抗性減免，至少 10%）。');
+      if (age >= 605 * SEC && age <= 611 * SEC && (age - 605 * SEC) % (2 * SEC) === 0) {
+        var k4 = (age - 605 * SEC) / (2 * SEC), nm = ['流星雨', '冰雪颶風', '雷霆風暴', '大地崩裂'][k4], ele = ['fire', 'water', 'wind', 'earth'][k4];
+        log(tag('究極魔法・' + nm, '#f472b6') + NAME + ' 詠唱禁忌的究極魔法，全隊受到最大 HP 12% 的傷害（受屬性抗性減免，至少 5%）。');
         var dd = false;
-        members().forEach(function (x) { if (dd) return; var mh = x.mhp || x.hp || x.curHp || 1; dd = hurt(x, Math.max(mh * 0.1, mh * 0.2 * effRes(x, ele)), '究極魔法'); });
+        members().forEach(function (x) { if (dd) return; var mh = x.mhp || x.hp || x.curHp || 1; dd = hurt(x, Math.max(mh * 0.05, mh * 0.12 * effRes(x, ele)), '究極魔法'); });
         if (dd) return;
       }
       if (age >= 900 * SEC) {
@@ -286,6 +309,29 @@
     try { return oTick.apply(this, arguments); }
     finally { if (S().ticks !== t0) { try { timeline(); } catch (e) { console.warn('[AFK-dreamstar] timeline', e); } } }   // tick 提早返回（暫停／倒地）時不跑時間軸
   };
+
+  // ── 死亡藥水（減半版，只在夢艷地獄的星迴試煉）：喝下的治療量一半回復、一半變成傷害（藥水加成都算進去）──
+  var trialFull = function () { return on() && (mapState.mobs || []).some(function (m) { return m && m._dreamStar && !m._dead && m._dsMode !== 'mad'; }); };
+  var HEAL_POT = function (id) { return !!id && (id.indexOf('potion_heal') >= 0 || id === 'potion_strong' || id === 'potion_ult' || id === 'new_item_141'); };
+  if (typeof window.useItem === 'function') {
+    var oUse = window.useItem;
+    window.useItem = function (u) {
+      var it = trialFull() ? (player.inv || []).find(function (i) { return i && i.uid === u; }) : null;
+      if (!it || !HEAL_POT(it.id)) return oUse.apply(this, arguments);
+      var h0 = player.hp, r = oUse.apply(this, arguments), gain = player.hp - h0;
+      if (gain > 0) { var half = Math.floor(gain / 2); player.hp = h0 + (gain - half); hurt(player, half, '死亡藥水'); log(tag('死亡藥水', '#f87171') + '夢境扭曲了藥效：回復 ' + (gain - half) + '，同時灼傷 ' + half + '。'); }
+      return r;
+    };
+  }
+  if (typeof window.allyTryPotion === 'function') {
+    var oAp = window.allyTryPotion;
+    window.allyTryPotion = function (ally) {
+      if (!trialFull()) return oAp.apply(this, arguments);
+      var h0 = ally.curHp, r = oAp.apply(this, arguments), gain = (ally.curHp || 0) - h0;
+      if (gain > 0) { var half = Math.floor(gain / 2); ally.curHp = h0 + (gain - half); hurt(ally, half, '死亡藥水'); }
+      return r;
+    };
+  }
 
   // ── 擊殺：只給固定掉落 ──
   var TS = ['afk_ts_contempt_earth', 'afk_ts_contempt_water', 'afk_ts_contempt_wind', 'afk_ts_contempt_fire', 'afk_ts_dark_stardust', 'afk_ts_dream_dust'];
@@ -362,6 +408,7 @@
   window.enterDreamStar = function (mode) {
     if (mode === 'multi') { sys('<span class="text-amber-300">境滅亡域的門扉尚未開啟（多人模式製作中），目前只能獨自入夢。</span>'); return; }
     if ((player.lv || 1) < 40) { sys('<span class="text-red-400">你的力量尚淺（需 Lv40），夢境拒你於門外。</span>'); return; }
+    if (!player.sherineMad) { sys('<span class="text-red-400">星迴試煉只在瘋狂席琳或夢艷地獄的世界裡開啟——先到席琳神殿祈禱。</span>'); return; }
     if (player.riftRewardMs != null) { sys('<span class="text-amber-300">請先在時空裂痕入口領取獎勵，再踏入暗夢星迴。</span>'); return; }
     var have = invCnt('mat_crack_core');
     if (have < SOLO_CORES) { sys('<span class="text-red-400">入夢需要 ' + SOLO_CORES + ' 顆龜裂之核（你只有 ' + have + ' 顆）。</span>'); return; }

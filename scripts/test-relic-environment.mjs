@@ -141,21 +141,21 @@ try {
         R.api.shield(actor, 400, {source:shieldSource, duration:60});
         reflectWallOnDamage(m, 250, hitKind, role === 'player' ? null : ally);
         same(getHp(actor), 1000, 'Dream reflection hits the correct shield before HP');
-        same(R.api.shieldAmount(actor, shieldSource), 150, 'Dream reflection spends the shield once');
+        same(R.api.shieldAmount(actor, shieldSource), 338, 'Dream reflection spends the shield once (夢艷反射 −75%)');
         same(m._afkDreamReflect, null, 'A reflected dream flag is consumed');
         const count = hurts.filter(row => row.actor === actor && row.origin === 'reflection').length;
         same(count, 1, 'One native incoming event for the matching reflected hit');
         reflectWallOnDamage(m, 250, hitKind, role === 'player' ? null : ally);
         same(getHp(actor), 1000, 'The same flag cannot hurt twice');
-        same(R.api.shieldAmount(actor, shieldSource), 150, 'The same flag cannot spend shield twice');
+        same(R.api.shieldAmount(actor, shieldSource), 338, 'The same flag cannot spend shield twice');
         same(hurts.filter(row => row.actor === actor && row.origin === 'reflection').length, count, 'No duplicate incoming event');
 
         m = dreamReflector(kind);
         reflectWallOnDamage(m, 300, hitKind, role === 'player' ? null : ally);
-        same(getHp(actor), 850, 'A new reflection spends shield remainder and applies only overflow');
-        same(R.api.shieldAmount(actor, shieldSource), 0, 'The reflection shield is empty');
+        same(getHp(actor), 1000, 'A new reflection spends shield remainder and applies only overflow');
+        same(R.api.shieldAmount(actor, shieldSource), 263, 'The reflection shield keeps the remainder (−75%)');
         setHp(actor, 25); m = dreamReflector(kind);
-        reflectWallOnDamage(m, 1000, hitKind, role === 'player' ? null : ally);
+        reflectWallOnDamage(m, 10000, hitKind, role === 'player' ? null : ally);
         same(getHp(actor), 1, 'Dream reflection routes lethal damage through #222');
         check(!actor.dead && !actor._downed, 'Dream reflection does not bypass reconstruction');
         same(R.state(actor, source).deathUses, 1, 'Reflection consumes one reconstruction');

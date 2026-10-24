@@ -1097,7 +1097,7 @@
     { k: 'rift', n: '時空裂痕' },
     { k: 'sunrise', n: '日出之國' },
     { k: 'kingroom', n: '軍王之室' },
-    { k: 'antharas', n: '安塔瑞斯副本' },
+    { k: 'antharas', n: '副本' },
     { k: 'pledge', n: '血盟' },
     { k: 'relicmarket', n: '遺物市場' },
     { k: 'pvp', n: 'PVP／性向值' },
@@ -1371,7 +1371,7 @@
     { key: 'rift', cls: false, label: '時空裂痕' },
     { key: 'sunrise', cls: false, label: '日出之國' },
     { key: 'kingroom', cls: false, label: '軍王之室' },
-    { key: 'antharas', cls: false, label: '安塔瑞斯副本' },
+    { key: 'antharas', cls: false, label: '副本' },
     { key: 'pledge', cls: false, label: '血盟' },
     { key: 'relicmarket', cls: false, label: '遺物市場' },
     { key: 'pvp', cls: false, label: 'PVP／性向值' },
@@ -1892,7 +1892,7 @@
       ])
     );
     if(tiers.length>=5)out+=wCard('💠 白金與鑽石卡的用途',wTbl(['材料','用途'],[
-      ['20 張重複白金卡','自選一隻五階魔法娃娃'],['20 張重複鑽石卡','兌換六階魔法娃娃哈瑪'],['5 張多餘白金卡','天上變身合成（至幻者）'],['5 張多餘鑽石卡','時空／聖衣變身合成（至幻者）；條件與機率見「變身卡」']
+      ['20 張重複白金卡','自選一隻五階魔法娃娃'],['20 張重複鑽石卡','兌換七階魔法娃娃哈瑪'],['5 張多餘白金卡','天上變身合成（至幻者）'],['5 張多餘鑽石卡','時空／聖衣變身合成（至幻者）；條件與機率見「變身卡」']
     ]));
 
     out += wCard('🎎 重複卡片 → 魔法娃娃（娃娃怎麼換：先看這裡）',
@@ -1909,7 +1909,7 @@
   //   上游早年 d.d prose 含效果文字,後來(v3.7.43 前)簡化成通用句「X階魔法娃娃。…游標變其模樣。」、
   //   效果全搬進結構化欄位;若還只讀 d.d 會整片顯示「(無加成)」(玩家回報過)。切掉「適用職業/重量/
   //   無法強化」尾段樣板(那三段在 buildItemDescHTML 固定排在效果之後),娃娃的特效/數值/AC/免疫都在其前。
-  var DOLL_TIER_CN = ['', '一階', '二階', '三階', '四階', '五階', '六階'];
+  var DOLL_TIER_CN = ['', '一階', '二階', '三階', '四階', '五階', '六階', '七階'];
   function dollDescClean(id) {
     var d = DB.items[id]; if (!d) return '（無加成）';
     var t = (typeof buildItemDescHTML === 'function') ? buildItemDescHTML({ id: id }) : String(d.d || '');
@@ -1923,10 +1923,11 @@
     var items = DB.items || {};
     var byTier = (typeof DOLL_BY_TIER !== 'undefined') ? DOLL_BY_TIER : null;
     if (!byTier) {   // 降級:DOLL_BY_TIER 沒載到就自己掃 DB
-      byTier = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+      byTier = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
       for (var id in items) { var dd = items[id]; if (dd && dd.slot === 'doll' && byTier[dd.dollTier]) byTier[dd.dollTier].push(id); }
     }
-    var total = [1, 2, 3, 4, 5, 6].reduce(function (s, t) { return s + ((byTier[t] || []).length); }, 0);
+    if (!byTier[7]) { byTier = Object.assign({}, byTier, { 7: Object.keys(items).filter(function (id) { var x = items[id]; return x && x.slot === 'doll' && x.dollTier === 7; }) }); }
+    var total = [1, 2, 3, 4, 5, 6, 7].reduce(function (s, t) { return s + ((byTier[t] || []).length); }, 0);
     if (!total) return '<div class="m-wiki-note">讀不到魔法娃娃資料。</div>';
 
     var out = '<div class="m-wiki-note">「魔法娃娃」是裝在專屬<b>「娃娃」飾品欄</b>的收藏品（不佔其他飾品格），提供屬性加成；部分還有<b>機率觸發效果</b>或<b>異常狀態免疫</b>。<b>無武器也生效、經典模式照常吃</b>。共<b>一～六階</b>，越高階越強；裝上後滑鼠游標會變成該娃娃的模樣。</div>';
@@ -1954,13 +1955,14 @@
       if (bagPool) { bagPool.forEach(function (p) { var dd = items[p[0]]; var t = dd ? dd.dollTier : 0; bagByTier2[t] = (bagByTier2[t] || 0) + p[1]; bagSum2 += p[1]; }); }
       if (boxPool) { boxPool.forEach(function (p) { boxByTier2[p[0]] = (boxByTier2[p[0]] || 0) + p[1]; boxSum2 += p[1]; }); }
       var sr2 = (typeof DOLL_SYNTH_RATES !== 'undefined') ? DOLL_SYNTH_RATES : {};
-      for (var t2 = 1; t2 <= 6; t2++) {
+      for (var t2 = 1; t2 <= 7; t2++) {
         var src = [];
         if (bagByTier2[t2]) src.push('🎒 袋子開出（' + (bagByTier2[t2] / bagSum2 * 100).toFixed(0) + '%）');
         if (boxByTier2[t2]) src.push('📦 高級盒子開出（' + (boxByTier2[t2] / boxSum2 * 100).toFixed(0) + '%）');
         if (sr2[t2 - 1]) src.push('🪆 用 ' + DOLL_TIER_CN[t2 - 1] + '娃娃合成');
         if (t2 === 6) src.push('🔄 六階重組（拿 2 個六階換 1 個不同的六階，見下方）');
-        var note6 = (!bagByTier2[t2] && !boxByTier2[t2]) ? '（袋子／盒子開不出，<b>只能合成</b>）' : '';
+        if (t2 === 7) src.push('💎 用 20 張重複鑽石卡在魔法娃娃商人兌換「哈瑪」');
+        var note6 = t2 === 7 ? '（<b>只能兌換</b>；能力＝全部五階娃娃融合）' : ((!bagByTier2[t2] && !boxByTier2[t2]) ? '（袋子／盒子開不出，<b>只能合成</b>）' : '');
         tierSrcRows.push([DOLL_TIER_CN[t2] + '娃娃', src.join('、') + note6]);
       }
     })();
@@ -1993,7 +1995,7 @@
     }
 
     // 逐階列出每隻娃娃(讀 d.d 官方介紹)
-    for (var tier = 1; tier <= 6; tier++) {
+    for (var tier = 1; tier <= 7; tier++) {
       var list = (byTier[tier] || []).slice();
       if (!list.length) continue;
       var rows = list.map(function (id) {
@@ -3246,7 +3248,7 @@
       var f = x.f;
       // 型態名不換行:窄畫面下四字以上會被拆成三四行、整列變超高很難讀,寬度不足時讓表格自己橫捲(m-wiki-tblwrap)
       return ['<span class="' + x.color + '" style="white-space:nowrap;">' + esc(f.n) + (_isRangedForm(f.n) ? ' 🏹' : '') + '</span>',
-        f.cardMonster ? '取得該怪鑽石卡' : 'Lv' + (f.lv || 1), polyAtk(f), polyCast(f), polyStun(f), polyWlk(f)];
+        f.cardMonster ? 'Lv' + ((window.AFK_CARD_ASCENSION && AFK_CARD_ASCENSION.nativeLv) ? AFK_CARD_ASCENSION.nativeLv(f.n) : (f.lv || 1)) : 'Lv' + (f.lv || 1), polyAtk(f), polyCast(f), polyStun(f), polyWlk(f)];
     }));
     h += wDesc('點欄位標題可<b>排序</b>（再點一次反向）。速度欄位<b>越小越快</b>，所以升序＝最快的排最前面；查不到值的（—）一律排最後。目前共 <b>' + _shown.length + '</b> 個型態。');
     // 🧝 戒指限定型態(夏納/真夏納):不在 POLY_TIERS,變形卷軸抽不到,只有變形控制戒指指定得到

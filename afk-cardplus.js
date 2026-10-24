@@ -5,7 +5,7 @@
  *   ‧白金卡：瘋狂席琳（含夢艷地獄）中掉落；鑽石卡：只有瘋狂席琳夢艷地獄掉落
  *   ‧掉落率：白金、鑽石都是 0.001%，乘隊伍人數（最高 ×8）；視為遺物掉落，裝備幸運爆走兔腳時再 ×2（兩個 ×4）
  *     不吃席琳／夢艷地獄的掉落倍率
- *   ‧白金卡 20 張 → 自選一隻五階魔法娃娃；鑽石卡 20 張 → 六階魔法娃娃「哈瑪」（九隻五階娃娃能力融合）
+ *   ‧白金卡 20 張 → 自選一隻五階魔法娃娃；鑽石卡 20 張 → 七階魔法娃娃「哈瑪」（九隻五階娃娃能力融合）
  *     在威頓村魔法娃娃商人兌換（只算已登錄到該階的重複卡）
  *   ‧地區完成加成「往上一階」：照該地區原本每一階的增加幅度再加（例：AC 1/2/3 → 白金 4、鑽石 5；HP 3/5/10 → 15、20）
  *   ‧圖鑑積分：白金 = 1000、鑽石 = 10000（沿用原本的共用圖鑑桶，只增不減，跨角色共用）
@@ -239,13 +239,14 @@
   };
 
 
-  // ── 魔法娃娃：白金卡 20 張換自選五階、鑽石卡 20 張換六階「哈瑪」──
+  // ── 魔法娃娃：白金卡 20 張換自選五階、鑽石卡 20 張換七階「哈瑪」──
   var HAMA = 'doll_哈瑪', NEED = 20;
+  try { if (typeof DOLL_BY_TIER !== 'undefined' && !DOLL_BY_TIER[7]) DOLL_BY_TIER[7] = []; } catch (e) {}
   var T5 = (typeof DOLL_BY_TIER !== 'undefined' && DOLL_BY_TIER[5]) ? DOLL_BY_TIER[5].slice() : [];
   (function buildHama() {
     if (DB.items[HAMA] || !T5.length) return;
     var SKIP = { p: 1, safe: 1, dollTier: 1, gachaWeight: 0, procRateBase: 1 };
-    var d = { n: '魔法娃娃：哈瑪', type: 'acc', slot: 'doll', req: 'all', safe: 0, p: 0, doll: true, dollTier: 6, noEnhance: true, gachaWeight: 0, c: 'text-cyan-300', afkHama: true };
+    var d = { n: '魔法娃娃：哈瑪', type: 'acc', slot: 'doll', req: 'all', safe: 0, p: 0, doll: true, dollTier: 7, noEnhance: true, gachaWeight: 0, c: 'text-cyan-300', afkHama: true };   // 七階（玩家 2026-10-24：原版六階之上）
     var procs = [], parts = [];
     T5.forEach(function (id) {
       var x = DB.items[id]; if (!x) return;
@@ -259,9 +260,10 @@
       });
     });
     if (procs.length) { d.procSkill = procs[0]; d.procRateBase = 1; d.afkExtraProcs = procs.slice(1); }
-    d.d = '六階魔法娃娃。由鑽石卡兌換：融合全部五階魔法娃娃（' + parts.join('、') + '）的能力'
+    d.d = '七階魔法娃娃。由鑽石卡兌換：融合全部五階魔法娃娃（' + parts.join('、') + '）的能力'
       + (procs.length ? '，攻擊時各自 1% 觸發 ' + procs.map(function (sk) { return (DB.skills[sk] || {}).n || sk; }).join('、') : '') + '。裝於魔法娃娃欄，游標變成哈瑪大師。';
     d.img = 'assets/icons/accessories/魔法娃娃：哈瑪.png';
+    try { if (typeof DOLL_BY_TIER !== 'undefined' && DOLL_BY_TIER[7].indexOf(HAMA) < 0) DOLL_BY_TIER[7].push(HAMA); } catch (e) {}
     DB.items[HAMA] = d;
   })();
   // 哈瑪的額外觸發魔法（核心只讀一個 procSkill）
@@ -286,7 +288,7 @@
   var hamaCnt = function () { return player.inv.reduce(function (a, i) { return a + (i.id === HAMA && !i.lock ? (i.cnt || 1) : 0); }, 0); };
   if (typeof window.dollTierCount === 'function') {
     var oDtc = window.dollTierCount;
-    window.dollTierCount = function (t) { var n = oDtc.apply(this, arguments); return t === 6 ? Math.max(0, n - hamaCnt()) : n; };
+    window.dollTierCount = function (t) { return oDtc.apply(this, arguments); };   // 哈瑪改為七階後，六階數量不必再扣它
   }
   ['dollRerollT6', 'dollRerollT6All'].forEach(function (fn) {
     var o = window[fn]; if (typeof o !== 'function') return;
@@ -333,7 +335,7 @@
           + '<div class="text-sm text-slate-300">💎 <b>白金／鑽石卡兌換</b> <span class="text-xs text-slate-400">（已登錄到該階的重複卡・只算背包）</span></div>'
           + '<div class="bg-slate-900/50 border border-slate-700 rounded px-3 py-2 text-sm"><div><span class="c-card-plat font-bold">白金卡</span> ' + NEED + ' 張 → 自選一隻五階魔法娃娃　持有：<span class="' + (okP ? 'c-card-plat' : 'text-slate-500') + ' font-bold">' + pc + '</span> 張</div>'
           + '<div class="flex flex-wrap gap-1 mt-2">' + T5.map(function (id) { return '<button class="btn px-2 py-1 text-xs ' + (okP ? 'bg-slate-600 hover:bg-slate-500 border-slate-400' : 'bg-slate-700 border-slate-600 opacity-50 cursor-not-allowed') + '" ' + (okP ? '' : 'disabled ') + 'onclick="afkPlatToDoll(\'' + id + '\')">' + DB.items[id].n.replace('魔法娃娃：', '') + '</button>'; }).join('') + '</div></div>'
-          + '<div class="flex items-center justify-between bg-slate-900/50 border border-slate-700 rounded px-3 py-2"><span class="text-sm"><span class="c-card-diamond font-bold">鑽石卡</span> ' + NEED + ' 張 → 六階 <span class="text-cyan-300 font-bold">魔法娃娃：哈瑪</span>（五階全部能力融合）　持有：<span class="' + (okD ? 'c-card-diamond' : 'text-slate-500') + ' font-bold">' + dc + '</span> 張</span>'
+          + '<div class="flex items-center justify-between bg-slate-900/50 border border-slate-700 rounded px-3 py-2"><span class="text-sm"><span class="c-card-diamond font-bold">鑽石卡</span> ' + NEED + ' 張 → 七階 <span class="text-cyan-300 font-bold">魔法娃娃：哈瑪</span>（五階全部能力融合）　持有：<span class="' + (okD ? 'c-card-diamond' : 'text-slate-500') + ' font-bold">' + dc + '</span> 張</span>'
           + '<button class="btn px-3 py-1 text-xs font-bold ' + (okD ? 'bg-cyan-800 hover:bg-cyan-700 border-cyan-500' : 'bg-slate-700 border-slate-600 opacity-50 cursor-not-allowed') + '" ' + (okD ? '' : 'disabled ') + 'onclick="afkDiamondToHama()">兌換</button></div></div>';
         var old = div.querySelector('#afk-cp-doll'); if (old) old.remove();
         div.insertAdjacentHTML('beforeend', html);

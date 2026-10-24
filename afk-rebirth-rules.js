@@ -2,7 +2,8 @@
  * afk-rebirth-rules.js — 轉生後的規則補充與聖衣、魔法武器（玩家 2026-10-24 指定）
  *
  * 轉生後（各角色自己）
- *   ‧魔法消耗：(技能基礎 MP ＋ SP 超過 50 時再 +50) × 5。例：流星雨 80 MP，SP 51 以上 → (80+50)×5＝650
+ *   ‧傷害型法術的消耗：(技能基礎 MP ＋ SP 超過 50 時再 +50) × 3（玩家 2026-10-24 從 ×5 改 ×3）。例：80 MP → (80+50)×3＝390；
+ *     補助、增益、給敵人上狀態的魔法照原價
  *   ‧INT 提供的 SP 不再封頂 33：至少 (INT＋35)÷3（INT 200 → 78）
  *   ‧HP 自然恢復改為每 3 秒一次
  *   ‧治療溢出 → 護盾（上限＝最大 HP 20%），先擋傷害，能防暴斃
@@ -140,6 +141,9 @@
     };
   }
 
+  // 傷害型法術：把技能表的 MP 換成帶標記的數字（算術照常），讓 getMpCost 認得出來；補助、減益魔法不帶標記
+  var isDmgSpell = function (sk) { return !!(sk && sk.type === 'atk' && sk.dmgType === 'magic' && (sk.dmgDice || sk.multiDmg || sk.dmg || sk.valDice || sk.fixedDmg || sk.dmgPct)); };
+  try { Object.keys(DB.skills).forEach(function (k) { var sk = DB.skills[k]; if (isDmgSpell(sk) && Number(sk.mp) > 0 && !(sk.mp && sk.mp._afkDmg)) { var o = Object(Number(sk.mp)); o._afkDmg = true; sk.mp = o; } }); } catch (e) {}
   // ── 轉生面板：魔法消耗、SP、回血間隔；金牛座聖衣的騎士 ──
   if (typeof window.recomputeStats === 'function') {
     var oRe = window.recomputeStats;
@@ -153,9 +157,9 @@
         var og = d.getMpCost;
         if (typeof og === 'function' && !og._afkReborn) {
           var w = function (mp, tier) {
-            var b = Number(mp) || 0; if (!(b > 0)) return og.apply(this, arguments);
+            var b = Number(mp) || 0; if (!(b > 0) || !(mp && mp._afkDmg)) return og.apply(this, arguments);   // 只有傷害型法術才算
             var sp = (Number(d.intSp) || 0) + (Number(d.itemSp) || 0);
-            return Math.round(og.call(this, b + (sp > 50 ? 50 : 0), tier) * 5);
+            return Math.round(og.call(this, b + (sp > 50 ? 50 : 0), tier) * 3);
           };
           w._afkReborn = true; d.getMpCost = w;
         }
@@ -215,6 +219,35 @@
   }
   window.__afkCardExtra = { take: function () { var v = cardExtra; cardExtra = 0; return v; }, reset: function () { cardExtra = 0; } };
 
-  window.__afkRebirthRules = { addShield: addShield, healWithShield: healWithShield, gloryOn: gloryOn, zodiacOf: zodiacOf, shieldCap: shieldCap };
+  // ── 妖精・污濁之水（玩家 2026-10-24）：中了污濁之水的頭目，同時染上全部魔法系負面狀態 ──
+  //   緩速術、木乃伊的詛咒（石化）、壞物術、疾病術、弱化術、闇盲咒術、魔法消除、魔法封印；持續時間照各自的法術
+  var FOUL = [['slow', 'sk_slow'], ['stone', 'sk_mummy_curse'], ['broken', 'sk_break'], ['disease', 'sk_disease'], ['weaken', 'sk_weaken'], ['blind', 'sk_dark_blind'], ['mrhalf', 'sk_elf_magicerase'], ['vacuum', 'sk_seal']];
+  var foulSnap = function () { var ms = (typeof mapState !== 'undefined' && mapState.mobs) || []; return ms.map(function (m) { return m && m.st ? (m.st.muddywater || 0) : 0; }); };
+  var foulApply = function (before) {
+    var ms = (typeof mapState !== 'undefined' && mapState.mobs) || [], base = (DB.skills.sk_elf_muddywater && DB.skills.sk_elf_muddywater.status && DB.skills.sk_elf_muddywater.status.dur) || 32;
+    ms.forEach(function (m, i) {
+      if (!m || !m.st || m._dead || !((m.st.muddywater || 0) > (before[i] || 0))) return;
+      var ratio = m.st.muddywater / base;
+      FOUL.forEach(function (x) {
+        var sk = DB.skills[x[1]], st = sk && sk.status; if (!st) return;
+        var v = Math.round((st.dur || 10) * ratio); if ((m.st[x[0]] || 0) < v) m.st[x[0]] = v;
+        if (x[0] === 'blind' && st.hit) m.st.blindVal = Math.max(m.st.blindVal || 0, st.hit);
+      });
+      try { if (typeof logCombat === 'function' && !(typeof state !== 'undefined' && state.ff)) logCombat('<span class="font-bold" style="color:#7dd3fc;">【污濁之水】</span>濁流滲進 ' + m.n + ' 的每一道傷口——緩速、石化、損壞、疾病、弱化、目盲、魔抗減半、魔法封印一併纏上。', 'magic'); } catch (e) {}
+    });
+  };
+  ['castSkill', 'allyCastMagic'].forEach(function (fn) {
+    var o = window[fn]; if (typeof o !== 'function') return;
+    window[fn] = function () {
+      var skId = fn === 'castSkill' ? arguments[0] : (arguments[1] && (arguments[1].id || arguments[1]));
+      var isFoul = skId === 'sk_elf_muddywater' || (arguments[1] && arguments[1] === DB.skills.sk_elf_muddywater);
+      if (!isFoul) return o.apply(this, arguments);
+      var b = foulSnap(), r = o.apply(this, arguments);
+      try { foulApply(b); } catch (e) {}
+      return r;
+    };
+  });
+
+  window.__afkRebirthRules = { addShield: addShield, healWithShield: healWithShield, gloryOn: gloryOn, zodiacOf: zodiacOf, shieldCap: shieldCap, foulApply: foulApply, FOUL: FOUL };
   console.log('[AFK-rebirth-rules] 已啟用：轉生魔法消耗與 SP、溢補護盾、敗者榮光、聖衣補血、魔法武器加倍、百般武藝首擊');
 })();
