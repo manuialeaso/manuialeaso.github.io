@@ -122,49 +122,32 @@ try {
         results.push({case:'native room #222 shield-before-lethal and deferred recovery', dungeon:key, chargesPerActor:1});
       }
 
-      function dreamReflector(kind) {
-        const m = {n:'夢艷反射回歸目標', uid:uid(), lv:60, hp:1000000, curHp:1000000,
+      // 2026-10-24：夢艷地獄的小怪一律不反彈（60 級以上的夢艷反射移除；小怪自己的血壁空間也不反彈），頭目照舊。
+      function dreamMob(kind, boss) {
+        const m = {n:'夢艷反射回歸目標', uid:uid(), lv:60, hp:1000000, curHp:1000000, boss:!!boss,
           ac:0, mr:0, e:'none', dr:0, dmg:[1,1], db:0, exp:0, noGold:true,
           noAttack:true, _sherine:true, _born:++_mobBornSeq, _magCd:{}, st:newMobStatus()};
-        // Create the flag through the actual dream spawn modifier. Opposite
-        // immunity remains installed and must not reflect the tested hit again.
-        Math.random = () => kind === 'magic' ? .01 : .99;
-        __afkDreamHell.applyDream(m); Math.random = () => .99;
-        same(m._afkDreamReflect.kind, kind, 'The native dream modifier creates the desired reflection');
+        Math.random = () => .99; __afkDreamHell.applyDream(m);
+        check(!m._afkDreamReflect, 'Dream small mobs no longer get a reflection flag');
+        m._reflectWall = {kind, until:state.ticks + 100};   // 非免疫型血壁空間
         mapState.mobs = [m, null, null, null, null]; return m;
       }
       for (const role of ['player', 'mercenary']) for (const kind of ['phys', 'magic']) {
         const ally = fresh({helm:true}), actor = role === 'player' ? player : ally;
         player.sherineMad = player.sherineDream = true;
         const shieldSource = 'test-dream-reflection', hitKind = kind === 'phys' ? 'melee' : 'magic';
-        let m = dreamReflector(kind); setHp(actor, 1000);
+        let m = dreamMob(kind, false); setHp(actor, 1000);
         R.api.shield(actor, 400, {source:shieldSource, duration:60});
+        const before = hurts.filter(row => row.actor === actor && row.origin === 'reflection').length;
         reflectWallOnDamage(m, 250, hitKind, role === 'player' ? null : ally);
-        same(getHp(actor), 1000, 'Dream reflection hits the correct shield before HP');
-        same(R.api.shieldAmount(actor, shieldSource), 338, 'Dream reflection spends the shield once (夢艷反射 −75%)');
-        check(!!m._afkDreamReflect, 'The dream reflection lasts the whole immunity window (2026-10-24)');
-        const count = hurts.filter(row => row.actor === actor && row.origin === 'reflection').length;
-        same(count, 1, 'One native incoming event for the matching reflected hit');
-        reflectWallOnDamage(m, 250, hitKind, role === 'player' ? null : ally);
-        same(getHp(actor), 1000, 'A second hit inside the window still lands on the shield');
-        same(R.api.shieldAmount(actor, shieldSource), 276, 'Each hit inside the window reflects 25% again');
-        same(hurts.filter(row => row.actor === actor && row.origin === 'reflection').length, count + 1, 'One incoming event per reflected hit');
-
-        m = dreamReflector(kind);
-        reflectWallOnDamage(m, 300, hitKind, role === 'player' ? null : ally);
-        same(getHp(actor), 1000, 'A new reflection spends shield remainder and applies only overflow');
-        same(R.api.shieldAmount(actor, shieldSource), 201, 'The reflection shield keeps the remainder (−75%)');
-        setHp(actor, 25); m = dreamReflector(kind);
-        reflectWallOnDamage(m, 10000, hitKind, role === 'player' ? null : ally);
-        same(getHp(actor), 1, 'Dream reflection routes lethal damage through #222');
-        check(!actor.dead && !actor._downed, 'Dream reflection does not bypass reconstruction');
-        same(R.state(actor, source).deathUses, 1, 'Reflection consumes one reconstruction');
-        reflectWallOnDamage(m, 1000, hitKind, role === 'player' ? null : ally);
-        same(getHp(actor), 1, 'Repeated submission of the consumed flag is harmless');
-        same(R.state(actor, source).deathUses, 1, 'Consumed reflection cannot spend another reconstruction');
-        const other = role === 'player' ? ally : player;
-        same(R.state(other, source).deathUses || 0, 0, 'Reflection does not spend the other actor’s protection');
-        results.push({case:'native dream reflection shield, overflow, one-use flag and #222', role, kind});
+        same(getHp(actor), 1000, 'Small dream mob does not reflect');
+        same(R.api.shieldAmount(actor, shieldSource), 400, 'Small dream mob reflection does not touch the shield');
+        same(hurts.filter(row => row.actor === actor && row.origin === 'reflection').length, before, 'No reflected incoming event from a small dream mob');
+        check(!!m._reflectWall, 'The small mob keeps its wall state (only the reflection is suppressed)');
+        m = dreamMob(kind, true);
+        reflectWallOnDamage(m, 200, hitKind, role === 'player' ? null : ally);
+        check(R.api.shieldAmount(actor, shieldSource) < 400, 'Boss blood wall still reflects in dream mode');
+        results.push({case:'dream small mobs never reflect; bosses still do', role, kind});
       }
 
       // Use a mage to exclude the independent knight/warrior/dragon potion

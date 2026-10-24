@@ -13,7 +13,7 @@
  *   ‧一般攻擊與技能傷害：一般怪 再 ×2、頭目 再 ×5（瘋狂席琳的 ×3 之外）；怪物施加的持續傷害 再 ×5
  *   ‧全部隨時處於狂暴狀態（同吉爾塔斯：命中與傷害 ×1.2）
  *   ‧一般怪出生時隨機免疫「物理」或「魔法」傷害 10 秒（血壁空間型免疫；持續傷害、寵物、召喚不受影響）
- *     60 級以上的一般怪出生時同時反射另一類傷害（魔法免疫＋物理反射／物理免疫＋魔法反射），反射跟免疫一樣維持 10 秒，每次反彈 25%（玩家 2026-10-24）
+ *     小怪不反彈（玩家 2026-10-24 關閉）：60 級以上的夢艷反射移除，一般怪自己的血壁空間在夢艷地獄也不反彈
  *   ‧回血：頭目每秒回最大 HP 0.1%；一般怪原本有回血的每秒 +100，沒有的每秒 +500
  *   ‧出怪等待再 −3 秒（下限 0.5 秒）
  *   ‧場上最多 3 隻；王出現時其他怪物離場，王在場時不再出怪（攻城區除外）
@@ -124,8 +124,7 @@
       var kind = Math.random() < 0.5 ? 'phys' : 'magic';
       m._reflectWall = { kind: kind, until: ((typeof state !== 'undefined' && state.ticks) || 0) + 100, block: true };
       // 60 級以上：同時反射另一類傷害（魔法免疫→物理反射；物理免疫→魔法反射）
-      // 玩家 2026-10-24：反射跟隨機免疫同時存在、同樣維持 10 秒（每次反射都只有 25%）
-      if ((m.lv || 0) >= 60) m._afkDreamReflect = { kind: kind === 'phys' ? 'magic' : 'phys', until: ((typeof state !== 'undefined' && state.ticks) || 0) + 100 };
+      // （60 級以上小怪的夢艷反射已於 2026-10-24 依玩家要求關閉）
     }
     m._dreamRegen = boss ? 0 : (m.regenHp ? 100 : 500);
   }
@@ -302,36 +301,18 @@
     };
   }
 
-  // ── 60 級以上一般怪的反射（與免疫同時存在；照血壁空間：反彈同等傷害給攻擊者）──
+  // ── 夢艷地獄的小怪不反彈（玩家 2026-10-24：就算 1 秒也會秒殺人 → 全部關閉）──
+  //   60 級以上小怪原本的「夢艷反射」已移除；一般怪自己放的血壁空間（非免疫型）在夢艷地獄也不反彈。
+  //   隨機免疫（block 型）照舊；頭目的反彈不受影響。
   if (typeof window.reflectWallOnDamage === 'function') {
     var oRW = window.reflectWallOnDamage;
-    window.reflectWallOnDamage = function (mob, dmg, kind, ally) {
-      var r = oRW.apply(this, arguments);
-      try {
-        var rf = mob && mob._afkDreamReflect;
-        if (!rf || !(dmg > 0)) return r;
-        if (state.ticks > rf.until) { mob._afkDreamReflect = null; return r; }
-        if (rf.kind !== kind && !(rf.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))) return r;
-        if (mob._dead || !(mob.curHp > 0)) return r;
-        var k = rf.kind === 'phys' ? '物理' : '魔法', mn = '<span class="' + getMobColor(mob.lv) + '">' + mob.n + '</span>';
-        var actor = ally || player, R = window.AFK_RELIC_RUNTIME;
-        if (ally ? ally._downed || ally.curHp <= 0 : player.dead || player.hp <= 0) return r;
-        dmg = Math.max(1, Math.floor(dmg * 0.25));   // 玩家 2026-10-24：夢艷小怪的反射傷害 −75%
-        var context = { kind: kind, origin: 'reflection', main: false, direct: true };
-        if (R) dmg = R.incoming(actor, dmg, mob, context);
-        if (ally) {
-          ally.curHp -= dmg;
-          if (R) R.afterIncoming(actor, dmg, mob, context);
-          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 將' + k + '傷害折返，協力·' + (ally._allyName || '傭兵') + ' 受到 ' + dmg + ' 點傷害。', 'enemy');
-          if (ally.curHp <= 0) { ally.curHp = 0; ally._downed = true; ally._reviveCd = 150; }
-        } else {
-          player.hp -= dmg;
-          if (R) R.afterIncoming(actor, dmg, mob, context);
-          logCombat('<span class="font-bold" style="color:#f472b6;">【夢艷反射】</span>' + mn + ' 將' + k + '傷害折返，你受到 ' + dmg + ' 點傷害。', 'enemy');
-          if (player.hp <= 0 && typeof killPlayer === 'function') killPlayer();
-        }
-      } catch (e) {}
-      return r;
+    window.reflectWallOnDamage = function (mob) {
+      var w = mob && mob._reflectWall;
+      if (w && !w.block && !mob.boss && dreamOn()) {
+        mob._reflectWall = null;
+        try { return oRW.apply(this, arguments); } finally { if (!mob._reflectWall) mob._reflectWall = w; }
+      }
+      return oRW.apply(this, arguments);
     };
   }
 
