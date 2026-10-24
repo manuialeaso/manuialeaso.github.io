@@ -87,6 +87,18 @@
   };
   var hpOf = function (spec, lv) { return spec.hpPerLv * Math.max(1, lv); };
 
+  // 沒有血盟（或讀不到盟主）時，你自己就是城主：攜帶上限改看你自己的魅力（玩家 2026-10-24：沒血盟招不到、看不到護衛）
+  var oCap = window.castleGuardCapacity, oCha = window.castleGuardLeaderCha;
+  window.castleGuardLeaderCha = function () {
+    var v = 0; try { v = typeof oCha === 'function' ? oCha.apply(this, arguments) : 0; } catch (e) { v = 0; }
+    if (v > 0) return v;
+    var p = P(); if (!p) return 0;
+    return Math.max(0, Math.floor((p.d && Number(p.d.cha)) || Number(p.cha) || 0));
+  };
+  window.castleGuardCapacity = function () {
+    return Math.max(0, Math.min(CASTLE_GUARD_MAX, Math.floor(castleGuardLeaderCha() / 15)));
+  };
+
   // ── 名冊：持有該部隊所屬的城就有效 ──
   window.castleGuardRosterActive = function () {
     var p = P(); if (!p) return null;
@@ -247,7 +259,7 @@
       html += '<div class="text-amber-200 text-xs">融合體：' + line(f, fd) + '</div>'
         + '<div class="text-slate-400 text-xs">能力＝七城部隊相加；不受盟主魅力限制，最多 ' + ELITE_MAX + ' 名。招滿 8 名可融合成一名，HP、傷害、減傷、抗性、AC、魔防、迴避 ×8（上限：魔防 1000、AC −200、迴避 80%、抗性 90%）。</div>';
     } else {
-      html += '<div class="text-slate-400 text-xs">死亡 30 秒自動歸隊（不耗卷軸）。可攜帶＝盟主魅力 ÷ 15（最多 ' + CASTLE_GUARD_MAX + ' 名·目前 ' + castleGuardCapacity() + ' 名）；每名 ' + (CASTLE_GUARD_COST / 10000) + ' 萬金幣。</div>';
+      html += '<div class="text-slate-400 text-xs">死亡 30 秒自動歸隊（不耗卷軸）。可攜帶＝盟主魅力 ÷ 15（沒有血盟時看你自己的魅力；最多 ' + CASTLE_GUARD_MAX + ' 名·目前 ' + castleGuardCapacity() + ' 名）；每名 ' + (CASTLE_GUARD_COST / 10000) + ' 萬金幣。</div>';
     }
     if (rs) html += '<div class="bg-slate-800/70 border border-cyan-700 rounded p-2 text-sm flex items-center justify-between gap-2"><span class="text-cyan-300 font-bold">目前部隊：' + rs.form + (rs.fused ? '' : ' ×' + followOf(r)) + '（' + rs.label + '）</span>'
       + '<button onclick="disbandCastleGuards(\'' + key + '\')" class="btn px-3 py-1 text-xs bg-red-900 hover:bg-red-800 border-red-600 text-red-200 font-bold">遣散全部</button></div>';
