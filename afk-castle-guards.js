@@ -134,6 +134,19 @@
     p.guardsV2.forEach(function (s) { var mx = hpOf(spec, s.lv); if (s.mhp !== mx) { var ratio = s.mhp ? s.hp / s.mhp : 1; s.mhp = mx; if (!s._downed) s.hp = Math.max(1, Math.round(mx * ratio)); } });
   };
 
+  // 核心在「血盟城堡歸屬」重算時，只要名冊城市 ≠ 血盟那一座城就清空護衛（舊版一個血盟只有一座城）。
+  //   七城攻城後持有多座城、或沒有血盟時，這會讓剛招來的護衛立刻消失（玩家 2026-10-24：對話顯示招募了，實際沒出現）。
+  //   改成：名冊仍有效（castleGuardRosterActive 已檢查持有城池）就保留。
+  if (typeof window._castleOwnerApply === 'function') {
+    var oOwner = window._castleOwnerApply;
+    window._castleOwnerApply = function (city) {
+      var p = P(), keep = p && p.guardsV2 && p.guardsV2.length && castleGuardRosterActive() ? p.guardsV2 : null;
+      var r = oOwner.apply(this, arguments);
+      if (keep && p && (!p.guardsV2 || !p.guardsV2.length)) p.guardsV2 = keep;
+      return r;
+    };
+  }
+
   // 宣戰其他城堡不再遣散（城池會留著）
   window.castleGuardsOnSiegeDeclared = function () {};
 
@@ -160,21 +173,25 @@
   };
 
   // ── 招募 ──
-  // 名冊：有血盟就存在血盟共用狀態；沒有血盟（例如用測試工具直接拿到城堡）就存在本機、同模式共用（玩家 2026-10-24：沒血盟時招不到）
   var LKEY = 'afk_castle_guards_v1';
   var modeOf = function () { try { return (typeof clanModeKey === 'function') ? clanModeKey(P()) : 'normal'; } catch (e) { return 'normal'; } };
   var localAll = function () { try { return JSON.parse(localStorage.getItem(LKEY) || '{}') || {}; } catch (e) { return {}; } };
   var clanInfo = function (p) { try { return (typeof clanGetModeInfo === 'function') ? clanGetModeInfo(p) : null; } catch (e) { return null; } };
-  var rosterInfo = function (p) { var c = clanInfo(p); if (c) return c; var all = localAll(); return all[modeOf()] || { guards: null }; };
+  // 名冊一律存本機（同模式、所有角色共用）。血盟共用狀態的核心整理器只認肯特／風木／海音、最多 4 名，
+  //   奇岩以後的部隊、聖十字近衛（8 名、融合）寫進去會被整理掉 → 對話顯示招募成功、實際卻沒有護衛（玩家 2026-10-24）。
+  //   舊存檔放在血盟裡的名冊：本機還沒有時照樣讀得到。
+  var rosterInfo = function (p) {
+    var all = localAll(), m = modeOf();
+    if (Object.prototype.hasOwnProperty.call(all, m)) return all[m] || { guards: null };
+    var c = clanInfo(p); return (c && c.guards) ? { guards: c.guards } : { guards: null };
+  };
   var writeRoster = function (fn) {
-    if (clanInfo(P()) && typeof _clanWithLock === 'function') {
-      var mode = modeOf();
-      return _clanWithLock(function (st) { var info = st.modes[mode]; if (!info) return { commit: false, error: '你尚未加入血盟。' }; return fn(info) || {}; });
-    }
-    var all = localAll(), info = all[modeOf()] || { guards: null };
+    var all = localAll(), m = modeOf(), info = rosterInfo(P());
+    info = { guards: info.guards ? JSON.parse(JSON.stringify(info.guards)) : null };
     var r = fn(info) || {};
     if (r.commit === false) return { ok: false, error: r.error };
-    all[modeOf()] = info; try { localStorage.setItem(LKEY, JSON.stringify(all)); } catch (e) { return { ok: false, error: '名冊寫入失敗。' }; }
+    all[m] = info;
+    try { localStorage.setItem(LKEY, JSON.stringify(all)); } catch (e) { return { ok: false, error: '名冊寫入失敗。' }; }
     return Object.assign({ ok: true }, r);
   };
   var red = function (t) { logSys('<span class="text-red-400">' + t + '</span>'); };
