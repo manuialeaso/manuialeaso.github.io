@@ -559,9 +559,9 @@
 <script src="js/05-kill-progression.js?v=bb5a9b71e6.8.34-merc-trial-class-loot"></script>
     <script src="js/06-status-allies.js?v=bd73a64401.8.34-merc-trial-class-loot"></script>
     <script src="js/07-skills-cast.js?v=258314b415.8.26-flywing-relics"></script>
-<script src="js/08-items-equip.js?v=ae209702e8.8.16-wis-regen-interval"></script>
+<script src="js/08-items-equip.js?v=29365ab77e.8.16-wis-regen-interval"></script>
 <script src="js/09-vfx-render.js?v=733f30f684.8.32-merc-vfx-origin"></script>
-    <script src="js/10-ui-tabs.js?v=e3150ac6b9.8.14-merc-guild"></script>
+    <script src="js/10-ui-tabs.js?v=81cdb24635.8.14-merc-guild"></script>
 <script src="js/11-world-map.js?v=35d1e90d8a.8.17-item-stack-source"></script>
 <script src="js/12-npc-quests.js?v=500a81a03f.8.34-merc-trial-class-loot"></script>
 <script src="js/13-shop-save.js?v=c5b0feb312.8.18-desktop-save-isolation"></script>
@@ -590,7 +590,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=6b17f305fd"></script>
+    <script src="afk-toggles.js?v=9592ab0856"></script>
     <!-- afk-dup-frames：重複動畫幀改指向同一張圖（公開版只留一張；清單由 scripts/build-dup-frames.py 產生） -->
     <script src="afk-dup-frames-data.js?v=d19c412b59"></script>
     <script src="afk-dup-frames.js?v=13521f048b"></script>
@@ -712,12 +712,12 @@
     <script src="afk-stackdot.js?v=e6e7263f25"></script>
     <!-- afk-relicplus：遺物合成（武器 +1～+15，需核心補丁 15 的出血加成）；排在 afk-relicbatch 之後 -->
     <!-- afk-relicfx：遺物特效隨強化成長（玩家的遺物特殊效果清單；需核心補丁 35；必須排在 afk-relicplus 之前） -->
-    <script src="afk-relicfx.js?v=59f1e7c03e"></script>
+    <script src="afk-relicfx.js?v=fdd750c040"></script>
     <!-- 完整遺物階段與事件規則；資料與設定先於遺物合成載入。 -->
-    <script src="afk-relic-catalog.js?v=49ecc87ca3"></script>
-    <script src="afk-relic-weapons.js?v=0a3ef041c5"></script>
-    <script src="afk-relic-defense.js?v=9e9f5c186e"></script>
-    <script src="afk-relic-runtime.js?v=ff9fff361d"></script>
+    <script src="afk-relic-catalog.js?v=7790ef3256"></script>
+    <script src="afk-relic-weapons.js?v=7d81c097a2"></script>
+    <script src="afk-relic-defense.js?v=58b8a4d559"></script>
+    <script src="afk-relic-runtime.js?v=b45ba08e5a"></script>
     <!-- afk-npc-kit：NPC 服務面板共用外觀（哈瑪大師、艾格尼絲、佐爾頓、艾彼迪爾）；排在這些 NPC 外掛之前 -->
     <script src="afk-npc-kit.js?v=0749913a7d"></script>
     <!-- afk-runedata：符文石 32 顆、失去光芒的符文石、哀石系列、瘴骸·破材料與解命石的物品資料（不是開關）；排在 afk-dex-extra、afk-runes、afk-rift2 之前 -->
@@ -732,11 +732,11 @@
     <!-- afk-rebirth：輪迴轉生（需核心補丁 20；裝備不限職業沿用 afk-anyclass） -->
     <script src="afk-rebirth.js?v=fd953eb0a9"></script>
     <!-- afk-ancient：古代藥水系列（天堂透視鏡古代體力恢復劑）、席琳夢域鏡藥水基礎補量 ×3 -->
-    <script src="afk-ancient.js?v=1d1daf7598"></script>
+    <script src="afk-ancient.js?v=6fc73ecd15"></script>
     <!-- afk-arts：轉生技藝（奧拉奇里亞；需 afk-rebirth，排在它之後） -->
     <script src="afk-arts.js?v=847d0f9f53"></script>
     <!-- afk-knight-shock：轉生騎士的衝擊之暈打全畫面（力量加傷害、敏捷加暈眩率，頭目也會暈） -->
-    <script src="afk-knight-shock.js?v=05a1341ffa"></script>
+    <script src="afk-knight-shock.js?v=bc2b4c737b"></script>
     <!-- afk-uifix：切換地區優先飛到村莊 -->
     <script src="afk-uifix.js?v=f0dc17c37c"></script>
     <!-- afk-castlewar：七城攻城、城堡收成、宣戰與統一伺服器（需核心補丁 27；排在 afk-dreamhell／afk-arts 之後） -->
@@ -830,12 +830,12 @@
     <!-- 天堂透視鏡已核對物品；套裝與地圖資料就緒後加入配方與裂痕補給。 -->
     <script src="afk-ttmi-items-data.js?v=3468dd975f"></script>
     <script src="afk-ttmi-icons-data.js?v=601b04b77c"></script>
-    <script src="afk-ttmi-items.js?v=6b63599273"></script>
+    <script src="afk-ttmi-items.js?v=f8a2a797bc"></script>
     <!-- afk-junkquest：奇岩「古物學者 塞勒斯」——雜項素材的劇情委託與常駐委託（新手／中階／高階） -->
-    <script src="afk-junkquest.js?v=227611d120"></script>
+    <script src="afk-junkquest.js?v=be3ebb17ab"></script>
     <!-- 遺物戰鬥掛接、同伴與固定終階 GM 測試道具。 -->
     <script src="afk-relic-weapon-bridge.js?v=d372f29b3b"></script>
-    <script src="afk-relic-companions.js?v=4fad36e080"></script>
+    <script src="afk-relic-companions.js?v=81c43115b0"></script>
     <script src="afk-relic-defense-bridge.js?v=e95df2897e"></script>
     <script src="afk-relic-gm.js?v=705fa51bca"></script>
     <!-- afk-gm-skills：魔改版裝備 GM 專屬武器自動學會全部魔法與技能（卸下也不會遺忘） -->
@@ -880,7 +880,7 @@
     <!-- afk-dropcap：掉落種類下修 30%（必掉不算；需核心補丁 68） -->
     <script src="afk-dropcap.js?v=9118b45eb8"></script>
     <!-- afk-giltas：吉爾塔斯副本「異界祭壇」（長老會議廳・次元裂隙；鑰匙碎片、信仰的寶珠、四色反擊屏障、真．吉爾塔斯之劍、支配者吉爾塔斯變身卡）（需 afk-traitor、afk-card-ascension、afk-relicplus） -->
-    <script src="afk-giltas.js?v=00b44bb8d4"></script>
+    <script src="afk-giltas.js?v=eaad0b2b41"></script>
     <!-- afk-aden-quests：亞丁的陰影（55～75 級任務，近衛隊長 雷歐）、佐姆格祝福卷軸強化亞丁近衛裝備（安定值 +9） -->
     <script src="afk-aden-quests.js?v=da922682ee"></script>
     <!-- afk-class-saga：八職業 55～80 級專屬劇情（第二部；各職業試煉導師發派）、世界觀「八職業／主要人物的現況」資料 -->
@@ -952,7 +952,7 @@
     <!-- afk-savelite：存檔減負——頭目擊殺存檔最多 30 秒一次＋存檔前角色檢查快取（要在包 saveGame 的外掛之後） -->
     <script src="afk-savelite.js?v=45d4f65c56"></script>
     <!-- afk-dreamboss：夢域鏡頭目強化——出場全隊目前 HP 傷害＋流血（戒指王 30%、副本王 20%、一般 10%、霸主 5%）；副本王群體衝擊之暈、相消術、疼痛的歡愉、吸魔、蝕抗 -->
-    <script src="afk-dreamboss.js?v=78ed3f3012"></script>
+    <script src="afk-dreamboss.js?v=d769f08e29"></script>
     <!-- afk-revive：復活規則——復活卷軸自己復活 HP 100%；席琳夢域鏡同一張地圖最多自己復活 3 次 -->
     <script src="afk-revive.js?v=7d4b641d59"></script>
     <!-- afk-bossrules：頭目開場規則——鑰匙／道具頭目房開場 2 秒無敵；多王時只有第一隻放全體 % 傷害 -->
@@ -979,6 +979,8 @@
     <script src="afk-finaltiers.js?v=99054f1d28"></script>
     <!-- afk-caps：轉生雙持的副手武器固定加成計入能力；爆擊率上限 80%（包 recomputeStats 最外層，必須最後載入）；迴避上限見核心補丁 patchEvadeCap -->
     <script src="afk-caps.js?v=ba8e334ab7"></script>
+    <!-- afk-mech1031：戰鬥機制調整（深蝕、戰士雙鈍器暈眩 ×1.5、妖精拿弓幻影、王暈眩破綻）；開關併入夢域鏡模式；傷害倍率排在 afk-caps 之外 -->
+    <script src="afk-mech1031.js?v=d42a430266"></script>
     <!-- afk-art-v3：GPT變身檔（外掛開關，預設關）——神話／天上／時空／十二聖衣改用新繪製的三方向逐幀動畫與聖衣星座翅膀；只換外觀 -->
     <script src="art-v3/game-data.js?v=8e7f81be3f"></script>
     <script src="afk-art-v3.js?v=9ee786c9c0"></script>

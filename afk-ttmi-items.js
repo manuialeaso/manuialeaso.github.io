@@ -287,6 +287,7 @@
     if(player.buffs.ttmi_walk2>0){var current=player.buffs.brave>0?1.33:(player.buffs.elfcookie>0?1.15:1);h*=Math.max(1,(finite(player.ttmiWalkFactor)||1)/current);}
     return r/h;
   });
+  wrap('equipItem',function(old,self,args){var it=args[0],d=it&&DB.items[it.id];if(playerReady()&&d&&((d.ttmiMinLevel&&player.lv<d.ttmiMinLevel)||(d.ttmiMaxLevel&&player.lv>d.ttmiMaxLevel))){say('<span class="text-amber-300">等級不符：「'+esc(d.n)+'」限 '+(d.ttmiMinLevel?'Lv.'+d.ttmiMinLevel+' 以上':'')+(d.ttmiMinLevel&&d.ttmiMaxLevel?'、':'')+(d.ttmiMaxLevel?'Lv.'+d.ttmiMaxLevel+' 以下':'')+'。</span>');return;}return old.apply(self,args);});
   wrap('checkCanEquip',function(old,self,args){var it=args[0],d=it&&DB.items[it.id];if(d&&((d.ttmiMinLevel&&player.lv<d.ttmiMinLevel)||(d.ttmiMaxLevel&&player.lv>d.ttmiMaxLevel)))return false;return old.apply(self,args);});
 
   // Both pet slots may carry magic, protection, and experience bonuses. The
@@ -387,21 +388,22 @@
       if(d.ttmiRiftOnly)rememberRiftBuff('poly');
       player.poly=f?makePolyState(f.form,f.color):getPolyState();putBuff('poly',d.dur,d.ttmiRiftOnly);
     } else if(action==='scroll') {
-      if(silent)return false;var sk=DB.skills[d.ttmiSkill];if(!sk)return false;
+      if(silent)return false;var sk=DB.skills[d.ttmiSkill];if(!sk){say('這張卷軸上的法術已經失傳，無法施放。');return false;}
+      if(sk.type==='passive'){say('「'+esc(sk.n)+'」是被動法術，無法從卷軸施放。');return false;}
       // Reuse the actual skill ID so its antidote/teleport/target branches work.
       // A synchronous temporary scroll definition removes only resource costs.
       var original=sk,granted=player.grantedSkills,copy=Object.assign({},sk,{mp:0,hpCost:0});delete copy.costItem;
       if(d.dur)copy.dur=d.dur;
       DB.skills[d.ttmiSkill]=copy;player.grantedSkills=(granted||[]).concat([d.ttmiSkill]);
       var ok;try{ok=castSkill(d.ttmiSkill);}finally{DB.skills[d.ttmiSkill]=original;player.grantedSkills=granted;}
-      if(!ok)return false;
+      if(!ok){say('現在無法施放「'+esc(sk.n)+'」（沒有目標、沒有需要解除的狀態，或仍在冷卻中），卷軸未消耗。');return false;}
     } else if(action==='returnTown') {
       if(silent)return false;var oldMap=mapState.current;returnToTown();if(mapState.current===oldMap)return false;
     } else if(action==='exchange') {
       if(silent||!DB.items[d.ttmiResult])return false;give(d.ttmiResult,1);
     } else if(action==='box') {
       if(silent)return false;var row=rows[id],out=(row.contents||[]).filter(function(x){var dd=DB.items[resolve(x.sourceId)];return resolve(x.sourceId)&&!(dd&&(dd.ttmiRiftOnly||dd.gmOnly||(dd.ttmiEvent&&!dd.ttmiCurated)));});
-      if(!out.length)return false;
+      if(!out.length){say('「'+esc(d.n)+'」裡的物品已隨活動結束而失效，無法開啟。',silent);return false;}
       var ready=player.ttmiBoxes=player.ttmiBoxes||{};
       if(d.ttmiBoxCooldown&&ready[id]>Date.now()){say('封印尚未重新凝聚，再等等吧。',silent);return false;}
       if(row.contentsMode==='random')out=[out[randomInt(0,out.length-1)]];
@@ -574,7 +576,7 @@
         if(hit>repN&&/^assets\/icons\/ttmi\//.test(d.img||'')){rep=d.img;repN=hit;}});   // 合成品借用「效果最接近的原料」的透視鏡原圖
       if(!Object.keys(st).length)return;
       var id='ttmi_mix_'+m[0]+'_'+m[1],NM={hpR:'HP 自然恢復',mpR:'MP 自然恢復',mhp:'HP 上限',mmp:'MP 上限',meleeHit:'近距離命中',meleeDmg:'近距離傷害',rangedHit:'遠距離命中',rangedDmg:'遠距離傷害',extraDmg:'額外傷害',extraHit:'額外命中',mdmg:'魔法傷害',magicHit:'魔法命中',ac:'防禦',dr:'傷害減免',mr:'魔法防禦',resFire:'火屬性抗性',resWater:'水屬性抗性',resWind:'風屬性抗性',resEarth:'地屬性抗性',str:'力量',dex:'敏捷',con:'體質',int:'智力',wis:'精神',cha:'魅力',weightCap:'負重'};
-      DB.items[id]={n:m[2],type:'misc',req:'all',gachaWeight:0,p:Math.floor(m[5]/3),ttmiAction:'buff',ttmiBuff:st,ttmiBuffFamily:m[0],dur:m[4],ttmiSourceId:'mix',c:'text-slate-200',img:rep||'assets/icons/items/'+m[3],
+      DB.items[id]={n:m[2],type:'misc',eff:'ttmi_item',req:'all',gachaWeight:0,p:Math.floor(m[5]/3),ttmiAction:'buff',ttmiBuff:st,ttmiBuffFamily:m[0],dur:m[4],ttmiSourceId:'mix',c:'text-slate-200',img:rep||'assets/icons/items/'+m[3],
         d:'獲得'+Object.keys(st).map(function(k){return (NM[k]||k)+'+'+st[k];}).join('、')+'；持續 '+m[4]+' 秒；'+(m[0]==='food'?'料理類增益，各種料理可以疊加。':'同類增益僅保留最後使用的一種。')};
       put(id,m[5]);CUR.mix=CUR.mix||{};CUR.mix[id]=1;
     });
@@ -591,6 +593,10 @@
     CUR.ids=Object.keys(keep);
     // 沒上架的同類物品：沒有配方用途＝移除（不掉、不賣）；有用途＝交給怪物掉落
     Object.keys(touched).forEach(function(id){if(!keep[id]&&!usedIn0[id]){DB.items[id].ttmiEvent=true;DB.items[id].ttmiRetired=true;DB.items[id].ttmiCurated=true;}});   // ttmiCurated：只是洛依不上架，道具包裡照樣開得到（玩家 2026-10-29：嘯龍道具包開不出東西）
+    // 🔧 開不出任何東西的道具包（內容全是活動/裂痕/GM 物品，如 糖果禮物盒→白色情人節糖果）、以及施放被動技能的魔法卷軸（返生術）＝用不了 → 一併移除（不掉、不賣；舊存檔保留）
+    imported.forEach(function(id){var d=DB.items[id],row=rows[id];if(!d||d.ttmiEvent)return;
+      if(d.ttmiAction==='box'&&row&&row.contents&&row.contents.length&&!row.contents.some(function(x){var cid=resolve(x.sourceId),cd=cid&&DB.items[cid];return cid&&!(cd&&(cd.ttmiRiftOnly||cd.gmOnly||(cd.ttmiEvent&&!cd.ttmiCurated)));})){d.ttmiEvent=true;d.ttmiRetired=true;}
+      if(d.ttmiAction==='scroll'&&DB.skills[d.ttmiSkill]&&DB.skills[d.ttmiSkill].type==='passive'){d.ttmiEvent=true;d.ttmiRetired=true;}});
     // 已經放進掉落表的移除品要拿掉
     for(var i=addedDrops.length-1;i>=0;i--){var x=addedDrops[i];if(DB.items[x.entry[0]]&&DB.items[x.entry[0]].ttmiRetired){var L=MOB_DROPS[x.mob],j=L?L.indexOf(x.entry):-1;if(j>=0)L.splice(j,1);addedDrops.splice(i,1);}}
   })();

@@ -802,6 +802,7 @@ function darkEquipOk(d, id) {
         if (d.isArrow) return true;
         if (id === 'wpn_siruge') return false;                          // 瑟魯基：禁用
         if (id === 'wpn_demon_sword_hidden') return false;              // 👹 隱藏的魔族之劍：適用王族/騎士/妖精/龍騎士（黑暗妖精改用 隱藏的魔族鋼爪）
+        if (typeof d.req === 'string' && d.req !== 'all' && d.req.split(',').includes('dark')) return true;   /* 🔌 加掛版補丁:req 列出 dark 開放 */
         let tags = getWeaponTags(id);
         if (tags.includes('匕首') || tags.includes('單手劍') || tags.includes('鋼爪') || tags.includes('雙刀') || tags.includes('武士刀')) return true;   // 🔧 黑暗妖精亦可使用武士刀
         if (d.isBow) {

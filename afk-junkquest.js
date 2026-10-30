@@ -83,7 +83,10 @@
     ['ttmiConditional', 'ttmiPeriodic'].forEach(function (k) { if (d[k]) halfObj(d[k]); });
     d.p = Math.floor(num(b.p) / 2); d.n = '殘缺的 ' + b.n; d.jqWeakOf = id; d.gachaWeight = 0;
     d.d = (b.d ? b.d + '\n' : '') + '【殘缺】古物學者從遺跡拼湊回來的仿品，能力只有原品的一半。';
+    delete d._spdFam;   // 攻速家族快取：改由下方複製的 WEAPON_TAGS 重新推得
     DB.items[wid] = d;
+    try { if (typeof WEAPON_TAGS !== 'undefined' && WEAPON_TAGS[id] && !WEAPON_TAGS[wid]) WEAPON_TAGS[wid] = WEAPON_TAGS[id].slice(); } catch (e) {}   // 🔧 殘缺品沿用原品武器種類（否則黑暗妖精裝不上雙刀/鋼爪/單手劍、攻速家族也錯成雙手劍）
+    try { if (typeof ITEM_WEIGHTS !== 'undefined' && ITEM_WEIGHTS[b.n] !== undefined && ITEM_WEIGHTS[d.n] === undefined) ITEM_WEIGHTS[d.n] = ITEM_WEIGHTS[b.n]; } catch (e) {}   // 重量表以名稱為鍵：殘缺品沿用原品重量
     return wid;
   };
   var canWear = function (d, p) { var r = String(d.req || 'all'); return r === 'all' || r.split(',').indexOf(p.cls) >= 0; };

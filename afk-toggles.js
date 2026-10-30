@@ -21,6 +21,14 @@
     // localStorage 原始值快取（'0'/'1'/null=未設過）。同上，熱路徑不能每次同步讀 LS。
     // 唯一寫入者是本檔的 set() 與面板「全部恢復預設」，都會同步更新快取；多分頁同開互改設定不在支援範圍（重新整理即一致）。
     var lsCache = {};
+    // ── 併入「瘋狂席琳＋席琳夢域鏡模式」（玩家 2026-10-31 01:56）：改技能、改戰鬥機制的外掛不再各自有開關，
+    //    一律跟著夢域鏡模式開關（關掉它就全部關掉）；效果範圍不變（一般、席琳、夢域鏡照原本，經典模式照原本不套用）。
+    //    面板不再列出這些項目；舊的個別設定忽略（不會留下關掉卻開不回來的死結）。測試可以用 set() 暫時覆寫（只在記憶體）。
+    var MERGED_TO = 'dreamhell';
+    var MERGED = {};
+    ['illufix', 'magefix', 'knightshock', 'stunfix', 'hitstun', 'debuffresist', 'bossfoul', 'resonancenerf', 'callallycd',
+     'relicfx', 'resist', 'statcap', 'offhandstats', 'petinherit', 'mech1031'].forEach(function (id) { MERGED[id] = MERGED_TO; });
+    var force = {};
 
     function find(id) { return byId[id] || null; }
 
@@ -55,13 +63,15 @@
                 def: spec.def !== false,  // 預設開；傳 def:false 才預設關
                 locked: spec.locked || '', // 非空＝暫時停用：一律當關閉、面板上不可勾，字串是給玩家看的原因
                 parent: spec.parent || '',  // 非空＝這是某支外掛的子選項：面板上縮排排在該支底下（父項關掉時子項一律當關閉）
-                seal: !!(spec.seal || SEAL[spec.id])   // 次元封印：玩家自己改的外掛
+                seal: !!(spec.seal || SEAL[spec.id]),   // 次元封印：玩家自己改的外掛
+                merged: MERGED[spec.id] || ''           // 已併入夢域鏡模式開關：面板不列
             };
             registry.push(entry);
             byId[entry.id] = entry;
         },
         // 這支外掛現在是否啟用（讀 localStorage，未設過→用預設；讀不到 localStorage→啟用）
         enabled: function (id) {
+            if (MERGED[id]) return (id in force) ? force[id] : api.enabled(MERGED[id]);
             var r = find(id), def = r ? r.def : true;
             if (r && r.locked) return false;   // 暫時停用中：不管 localStorage 存過什麼都當關閉
             if (r && r.parent && !api.enabled(r.parent)) return false;   // 父項關掉 → 子選項一律失效（子選項自己不必再問一次父項）
@@ -70,8 +80,9 @@
             else { try { v = lsCache[id] = localStorage.getItem(LS + id); } catch (e) { return def; } }
             return v === null ? def : v === '1';
         },
-        set: function (id, on) { try { localStorage.setItem(LS + id, on ? '1' : '0'); lsCache[id] = on ? '1' : '0'; } catch (e) {} },
+        set: function (id, on) { if (MERGED[id]) { force[id] = !!on; return; } try { localStorage.setItem(LS + id, on ? '1' : '0'); lsCache[id] = on ? '1' : '0'; } catch (e) {} },
         list: function () { return registry.slice(); },
+        merged: function () { return Object.keys(MERGED); },
         openPanel: openPanel
     };
     window.AFK_TOGGLES = api;
@@ -127,9 +138,9 @@
         { id: 'buyerprice', name: '收購 NPC 新定價', desc: '裝備：低於安定值 200 萬、安定值 500 萬、之後每 +1 加 500 萬；+10 以上、8 級以上法術書、卡片改收龍鑽；收購者每小時換一輪', group: '遊戲玩法' },
         { id: 'marketnocard', name: '黑市不賣卡片', desc: '潘朵拉黑市隨機上架不再出現卡片（卡片改由龍鑽收購 NPC 收）；自己掛的收購單照常', group: '遊戲玩法' },
         { id: 'relicplus', name: '遺物合成', desc: '到燃柳村找哈瑪大師合成遺物；武器與防具最高 +15，飾品最高 +10，並可進階為昇華支配。', group: '遊戲玩法' },
-        { id: 'relicfx', name: '遺物強化特效', desc: '啟用各件遺物的分階特效、屬性印記與毒血規則；遺物治療每件至少間隔 10 秒。完整效果可在小百科查閱。', group: '遊戲玩法' },
+        { id: 'relicfx', name: '遺物強化特效', desc: '啟用各件遺物的分階特效、屬性印記與毒血規則；遺物治療每件至少間隔 5 秒。完整效果可在小百科查閱。', group: '遊戲玩法' },
         { id: 'ttmi-items', name: '亞丁古物與材料工坊', desc: '亞丁古物商人洛依、工匠薩克與時空裂痕補給。', group: '遊戲內容' },
-        { id: 'dreamhell', name: '瘋狂席琳＋席琳夢域鏡模式', desc: '席琳神殿多一個祈禱選項：怪物 HP×50、隨時狂暴、會回血、出生隨機免疫；經驗×10、金幣×3，掉落×50、裝備 50% 祝福，並掉落昇華支配材料', group: '遊戲玩法' },
+        { id: 'dreamhell', name: '瘋狂席琳＋席琳夢域鏡模式', desc: '席琳神殿多一個祈禱選項：怪物 HP×50、隨時狂暴、會回血、出生隨機免疫；經驗×10、金幣×3，掉落×50、裝備 50% 祝福，並掉落昇華支配材料。另外統一控制所有改技能、改戰鬥機制的規則（幻術士／法師修補、轉生騎士衝擊之暈、鈍擊暈眩與完全停擺、受擊硬直、負面效果抵抗、頭目汙濁之水、共鳴調整、呼喚盟友冷卻、遺物強化特效、抗性新制、能力上限、副手能力計入、寵物繼承、深蝕與職業調整；在各模式照原本生效），關掉就全部回到原作', group: '遊戲玩法' },
         { id: 'dreamstar', name: '暗夢星迴（單機）', desc: '只在席琳夢域鏡：時空裂痕入口多一個暗夢星迴，只出裂縫夢境者投影頭目，有相消、聖結界、反射、四屬性風暴、15 分自爆等時間軸；掉昇華支配材料、昇華支配遺物、夢域塵', group: '遊戲玩法' },
         { id: 'corrupt', name: '四大龍副本', desc: '威頓村可挑戰四座龍巢；龍王有七階變身，巢穴持續造成屬性傷害，並有反射與治療詛咒。', group: '遊戲玩法' },
         { id: 'cardplus', name: '白金／鑽石卡', desc: '卡片多兩階：白金（瘋狂席琳掉落）與鑽石（席琳夢域鏡掉落），地區加成往上一階；圖鑑全滿在席琳夢域鏡加成 ×3；鑽白金幻化可自選鑽石卡', group: '遊戲玩法' },
@@ -194,9 +205,9 @@
         var groups = {};
         // 次元封印的分組鍵＝「次元封印｜原分類」，排在所有一般分類後面（面板最下面）
         var gkey = function (r) { return r.seal ? SEAL_NAME + '｜' + r.group : r.group; };
-        registry.forEach(function (r) { if (!r.parent) (groups[gkey(r)] = groups[gkey(r)] || []).push(r); });
+        registry.forEach(function (r) { if (!r.parent && !r.merged) (groups[gkey(r)] = groups[gkey(r)] || []).push(r); });
         registry.forEach(function (r) {   // 子選項緊接排在自己的父項後面（同一組內）
-            if (!r.parent) return;
+            if (!r.parent || r.merged) return;
             var pr = find(r.parent), g = groups[pr ? gkey(pr) : gkey(r)];
             if (!g) { (groups[gkey(r)] = groups[gkey(r)] || []).push(r); return; }
             var at = -1;
@@ -324,6 +335,7 @@
     // 「改過」＝存過設定而且跟預設不同。用存進去的值判斷、不是用 enabled()：
     //   子選項在父項關掉時 enabled() 一律是 false，拿它比就會把玩家沒碰過的東西也算成改過。
     function isChanged(r) {
+        if (r.merged) return false;
         var v = null;
         try { v = localStorage.getItem(LS + r.id); } catch (e) { return false; }
         if (v === null) return false;

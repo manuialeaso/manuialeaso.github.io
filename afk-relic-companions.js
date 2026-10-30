@@ -237,7 +237,7 @@
     var s=djinnSource();if(!s||s.stage<3)return;var p=playerNow(),DC=W.__afkDreamCost,mercCd=!!(DC&&DC.active&&DC.active()&&DC.onCd&&DC.onCd());
     var wild=typeof W._petInWild!=='function'||W._petInWild();
     var fallen=downedCompanions(p).filter(function(e){var pet=kindOf(e)==='pet';return pet?wild:(!p.dead&&!mercCd);});
-    if(!fallen.length||!R.api.cooldown(p,s.key,'heal',10))return;
+    if(!fallen.length||!R.api.cooldown(p,s.key,'heal',10,true))return;
     (s.stage>=4?fallen:fallen.slice(0,1)).forEach(function(e){if(revive(e,{owner:p,source:s.key,hpPct:1,free:true})){djinnBonus(e,s);try{W.logSys('<span class="text-emerald-300 font-bold">【巨靈的承諾】免費救回 '+(e._allyName||e.form||'同伴')+'。</span>');}catch(_){}}});
   }
   wrap('playerHasAutoReviveEarring',function(old){return function(){return enabled()&&source(playerNow(),232)?true:old.apply(this,arguments);};});

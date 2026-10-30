@@ -19,6 +19,7 @@
  *     ‧蝕抗：每 45 秒，你與所有傭兵的五屬性抗性（火、水、風、地、無）−50，最多 −300；離開副本或王都倒下就恢復。
  *   三、副本侵蝕（玩家 2026-10-30 21:46）：夢域鏡的副本裡，你與傭兵每秒失去最大 HP 與最大 MP 的 1%；每過 1 分鐘再 +1%
  *       （0～60 秒每秒 1%、60～120 秒每秒 2%……），離開副本就停。四龍副本原本的副本傷害照舊另外算。
+ *       2026-10-31 01:56：只在王在場時扣；王倒下（場上沒有活著的王）就重置，下一隻王從 1% 重新算。
  *       一轉女神（還沒轉生、Lv100 第一次打席琳）也算；時空裂痕、傲慢之塔攀登不算。
  * ========================================================================== */
 (function () {
@@ -238,6 +239,9 @@
     var key = mapState.current, t = tk();
     if (!drainZone()) { drain.map = null; return; }
     if (drain.map !== key) { drain.map = key; drain.t0 = t; drain.lv = 0; return; }
+    // 玩家 2026-10-31 01:56：只在王在場時扣；王倒下（場上沒有活著的王）就重置，下一隻王從 1% 重新算
+    var bossUp = (mapState.mobs || []).some(function (m) { return m && m.boss && !m._dead && m.curHp > 0; });
+    if (!bossUp) { drain.t0 = t; drain.lv = 0; return; }
     var el = t - drain.t0; if (el <= 0 || el % 10 !== 0) return;
     var lv = Math.floor(el / DRAIN.per), pct = DRAIN.base + DRAIN.step * lv, p = P();
     if (lv !== drain.lv || el === 10) { drain.lv = lv; log(tag('副本侵蝕', '#a855f7') + '夢域在副本裡蔓延——全隊每秒失去最大 HP 與 MP 的 ' + Math.round(pct * 100) + '%（每過 1 分鐘 +1%）。'); }
@@ -278,5 +282,5 @@
   }
 
   W.__afkDreamBoss = { on: on, ENTRY: ENTRY, SWARM: SWARM, SWARM_PCT: SWARM_PCT, SK: SK, step: step, everyone: everyone, pctCur: pctCur, inDungeon: inDungeon, classify: classify,
-    resCut: function () { return resCut; }, dots: function () { return dots.slice(); }, _reset: function () { dots.length = 0; lastEntry = {}; clearRes(); drain.map = null; }, DRAIN: DRAIN, drainZone: drainZone };
+    resCut: function () { return resCut; }, dots: function () { return dots.slice(); }, _reset: function () { dots.length = 0; lastEntry = {}; clearRes(); drain.map = null; }, DRAIN: DRAIN, drainZone: drainZone, _drain: drainStep };
 })();

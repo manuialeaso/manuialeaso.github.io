@@ -346,7 +346,7 @@ player.inv.forEach(i => {
         //    裝備（武器/防具/飾品）雙擊直接裝備（equipItem 內建 checkCanEquip 職業判定）。
         //    單擊延遲 230ms 才開 Modal（雙擊時取消·同 js/19 裝備視窗側欄 clickTimer 模式）；回憶蠟燭維持單擊進配點重置（排除雙擊使用）。
         const _dblAct = (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') ? 'equip'
-            : ((i.id !== 'candle' && (d.type === 'pot' || d.type === 'skillbk' || d.type === 'scroll' || (d.type === 'misc' && d.eff && !d.noUse))) ? 'use' : null);
+            : ((i.id !== 'candle' && (d.type === 'pot' || d.type === 'skillbk' || d.type === 'scroll' || ((d.type === 'misc' || d.type === 'etc') && d.eff && !d.noUse))) ? 'use' : null); /* 🔌 加掛版補丁:etc 雙擊使用 */
         if (_dblAct) {
             el.onclick = () => { clearTimeout(window._invClickTimer); window._invClickTimer = setTimeout(() => openModal(i, false), 230); };
             el.ondblclick = (ev) => {

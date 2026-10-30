@@ -137,8 +137,11 @@
     ['plus5','plus10','ascend','ascend5'].forEach(function (k, i) { if (i < stage && c[k] && !/無此終階|未明確列出|階段歸屬/.test(c[k])) parts.push(c[k]); });
     return '【遺物】' + c.design_concept.replace(/原稿|原本|沿用/g, '') + '\n' + parts.map(function (x) { return x.replace(/D×/g, '本次普通攻擊傷害×').replace(/\bCD\b/g, '冷卻').replace(/Boss/g, '首領').replace(/〔本階標籤暫定〕/g, '').replace(/×(\d+(?:\.\d+)?)/g, '$1 倍'); }).join('\n');
   }
-  function cooldown(actor, source, key, seconds) {
+  // 遺物治療冷卻：原本每件至少 10 秒，玩家 2026-10-31 01:56 改成 5 秒（10 秒以下的治療冷卻一律算 5 秒；更長的照原本）。經典模式不變。
+  function healGap(sec) { sec = finite(sec); var cl = false; try { cl = !!(W.player && W.player.classicMode); } catch (e) {} return (!cl && sec > 0 && sec <= 10) ? 5 : sec; }
+  function cooldown(actor, source, key, seconds, exact) {
     if (!actor) return false;
+    if (key === 'heal' && !exact) seconds = healGap(seconds);   // exact＝照傳入的秒數（巨靈的承諾免費救援維持 10 秒）
     var all=cooldowns.get(actor);if(!all){all={};cooldowns.set(actor,all);}
     var st=all[source]||(all[source]={}), k = '_cd_' + key;
     if (finite(st[k]) > now()) return false;

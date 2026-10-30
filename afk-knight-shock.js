@@ -8,6 +8,8 @@
  *   ‧敏捷：暈眩率 = 10% + 敏捷 × 0.5%（最高 60%），暈眩命中加值 = 敏捷 ÷ 10（對抗魔防判定）
  *     主目標原本已擲 10%，再補擲「敏捷那一段」，總機率與範圍目標相同
  *   ‧頭目也能被暈（各自判定抵抗）
+ *   ‧場上只有一隻怪（玩家 2026-10-31 01:56）：這一下衝擊之暈的傷害 +50%，並附加黑暗妖精「破壞盔甲」（8 秒），
+ *     同時那隻怪 AC +100（8 秒，共用 afk-mech1031 的 AC 減益）
  * ========================================================================== */
 (function () {
   'use strict';
@@ -59,16 +61,33 @@
     if (parts.length) clog('<span style="font-weight:700;color:#7dd3fc">衝擊之暈</span>的震波擴散到全畫面：' + parts.join('、') + '。');
   };
 
+  // ── 單體加成：場上只有一隻怪 ──
+  var single = function (main) {
+    var ms = MS(); if (!ms || !main) return false;
+    var alive = ms.mobs.filter(function (m) { return m && !m._dead && m.curHp > 0; });
+    return alive.length === 1 && alive[0] === main && !(W.__afkMech1031 && !W.__afkMech1031.on());
+  };
+  var soloBonus = function (actor, main, hp0) {
+    if (!main || main._dead || !(main.curHp > 0)) return;
+    var dealt = hp0 - main.curHp; if (!(dealt > 0)) return;
+    var v = hurt(actor, main, dealt * 0.5);
+    if (!main.st && typeof newMobStatus === 'function') main.st = newMobStatus();
+    if (main.st) main.st.armorbreak = Math.max(main.st.armorbreak || 0, 80);
+    if (typeof W.__afkAcDebuff === 'function') W.__afkAcDebuff(main, 'kshock', 100, 80);
+    clog('<span style="font-weight:700;color:#7dd3fc">衝擊之暈</span>集中在 ' + nm(main) + ' 身上：追加 ' + v + ' 點傷害，並撕裂護甲（破壞盔甲、AC +100，8 秒）。');
+  };
+
   if (typeof W.castSkill === 'function') {
     var oCast = W.castSkill;
     W.castSkill = function (skId) {
       if (skId !== SK || typeof player === 'undefined' || !ok(player)) return oCast.apply(this, arguments);
-      var main = typeof getTarget === 'function' ? getTarget() : null;
+      var main = typeof getTarget === 'function' ? getTarget() : null, solo = single(main), hp0 = main ? main.curHp : 0;
       var r = oCast.apply(this, arguments);
       try {
         if (r && !player.dead) {
           var wi = player.eq && player.eq.wpn, wpn = wi ? DB.items[wi.id] : null;
           sweep(player, main, wpn, function (m) { var dice = wpn ? (m.s === 'L' ? wpn.dmgL : wpn.dmgS) : 2; return getPhysicalDmg(dice, m, wpn, null); });
+          if (solo) soloBonus(player, main, hp0);
           reap();
         }
       } catch (e) { console.warn('[AFK-knight-shock]', e); }
@@ -79,13 +98,14 @@
     var oAlly = W.allyCastPhysicalSkill;
     W.allyCastPhysicalSkill = function (ally, sk) {
       if (!sk || sk !== DB.skills[SK] || !ok(ally)) return oAlly.apply(this, arguments);
-      var main = typeof getTarget === 'function' ? getTarget() : null;
+      var main = typeof getTarget === 'function' ? getTarget() : null, solo = single(main), hp0 = main ? main.curHp : 0;
       var r = oAlly.apply(this, arguments);
       if (r) {
         var sv = player; player = ally;   // 異常命中以傭兵自己判定（與核心傭兵技能一致）
         try {
           var wi = ally.eq && ally.eq.wpn, wpn = wi ? DB.items[wi.id] : null;
           sweep(ally, main, wpn, function (m) { return allyStrikeRoll(ally, m, {}); });
+          if (solo) soloBonus(ally, main, hp0);
         } catch (e) { console.warn('[AFK-knight-shock]', e); }
         finally { player = sv; }
         reap();   // 換回主玩家後才結算擊殺（經驗、掉落歸隊伍）
@@ -93,6 +113,6 @@
       return r;
     };
   }
-  W.AFK_KNIGHT_SHOCK = { stunChance: stunP };
+  W.AFK_KNIGHT_SHOCK = { stunChance: stunP, single: single, soloBonus: soloBonus };
   console.log('[AFK-knight-shock] 已啟用：轉生騎士的衝擊之暈打全畫面（力量加傷害、敏捷加暈眩率，頭目也會暈）');
 })();

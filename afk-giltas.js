@@ -409,7 +409,7 @@
     if (!t.st && typeof newMobStatus === 'function') t.st = newMobStatus();
     var unit = Math.max(1, Math.floor(lost * 0.05));
     if (t.st && resist(t, actor)) {   // 中毒：一層一層疊（最多 5 層）
-      t.st.poisonStacks = Math.min(5, (t.st.poison > 0 ? (t.st.poisonStacks || 0) : 0) + 1);
+      t.st.poisonStacks = Math.min(5, (t.st.poison > 0 ? (t.st.poisonStacks || 0) : 0) + 1); t.st.poisonCap = 5;
       t.st.poisonUnit = Math.max(t.st.poisonUnit || 0, unit);
       t.st.poisonDmg = t.st.poisonUnit * t.st.poisonStacks;
       t.st.poison = Math.max(t.st.poison || 0, 100); t.st.poisonTick = Math.min(t.st.poisonTick || 30, 10); t.st.poisonSrc = src;

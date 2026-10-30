@@ -27,7 +27,7 @@
   var PACKS = [['potion_anc_pack2_30', 'potion_heal_anc2', 30], ['potion_anc_pack3_30', 'potion_heal_anc3', 30], ['potion_anc_pack2_45', 'potion_heal_anc2', 45], ['potion_anc_pack3_45', 'potion_heal_anc3', 45], ['potion_anc_pack2_300', 'potion_heal_anc2', 300], ['potion_anc_pack3_300', 'potion_heal_anc3', 300]];
   PACKS.forEach(function (x) {
     var t = DB.items[x[1]]; if (!t || DB.items[x[0]]) return;
-    DB.items[x[0]] = { n: t.n + x[2] + '個包', type: 'etc', p: Math.round(t.p * x[2] * 0.95), c: t.c, gachaWeight: 0, afkPack: { id: x[1], n: x[2] }, img: t.img,
+    DB.items[x[0]] = { n: t.n + x[2] + '個包', type: 'etc', p: Math.round(t.p * x[2] * 0.95), c: t.c, gachaWeight: 0, eff: 'afk_pack', afkPack: { id: x[1], n: x[2] }, img: t.img,
       d: '用皮繩捆好的一包' + t.n + '。開啟能獲得' + t.n + ' ' + x[2] + ' 個。' };
   });
   if (typeof window.useItem === 'function') {
