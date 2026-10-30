@@ -28,6 +28,9 @@
  *   ‧離線掛機期間每跨過一次（UTC+8）凌晨 00:00，有 5% 機率隨機一座城被別的血盟攻下（2026-10-28；在線上跨過午夜不判定）
  *   ‧一萬人事件（統一後全伺服器宣戰）只會發生一次：投降、或統一被打破後就永久解除；之後再統一＝直接天下太平
  *   ‧統一天下中（或曾經統一過）：PVP 死亡噴裝不會噴到昇華支配 +5 遺物（含至高的支配）
+ * 2026-10-30 20:43 玩家指定
+ *   ‧收成照現實時間算（關掉遊戲也算），進遊戲馬上結算，一次最多補 7 天
+ *   ‧攻城打輸：30 分鐘內帳號裡所有角色（16 格）都不能宣戰
  * 需要核心補丁 27（新城走舊制攻城、宣戰強制敵對 NPC 的掛點）。
  * ========================================================================== */
 (function () {
@@ -496,13 +499,14 @@
   }
 
   // ── 每小時收成 ──
+  var INCOME_MAX_H = 168;
   var payIncome = function () {
     var p = P(); if (!p) return;
     var d = data(), n = held().length, now = Date.now();
     if (n < 3) { d.lastPay = now; save(d); return; }
     if (!d.lastPay) { d.lastPay = now; save(d); return; }
     var hrs = Math.floor((now - d.lastPay) / 3600000); if (hrs <= 0) return;
-    hrs = Math.min(hrs, 72);
+    hrs = Math.min(hrs, INCOME_MAX_H);   // 現實時間計算（關掉遊戲也算），一次最多補 7 天（玩家 2026-10-30 20:43）
     var gold = 0, dia = 0, cry = 0;
     if (n >= 7) { gold = 10000000; dia = 100; cry = 100; }
     else { if (n >= 3) gold += 5000000; if (n >= 5) dia += 100; }
@@ -522,9 +526,39 @@
     finally {
       var t = S().ticks;
       if (t !== t0 && t % 100 === 0) { try { payIncome(); } catch (e) {} try { syncWar(false); } catch (e) {} try { forcedTick(); } catch (e) {} }
+      if (t !== t0 && t % 10 === 0) { try { watchLose(); } catch (e) {} }
       if (call && (typeof mapState === 'undefined' || call.map !== mapState.current)) call = null;
     }
   };
+
+  // 進遊戲時馬上結算離線期間的收成（不用等第一個 10 秒）
+  if (typeof window.loadGame === 'function') {
+    var oLoadInc = window.loadGame;
+    window.loadGame = function () { var r = oLoadInc.apply(this, arguments); try { setTimeout(function () { try { payIncome(); } catch (e) {} }, 1500); } catch (e) {} return r; };
+    try { loadGame = window.loadGame; } catch (e) {}
+  }
+
+  // ── 戰敗冷卻（玩家 2026-10-30 20:43）：攻城打輸後 30 分鐘內，帳號裡所有角色（16 格）都不能宣戰 ──
+  var LOSE_KEY = 'afk_siege_lose_until', LOSE_MS = 30 * 60 * 1000, lastLoseEnd = 0;
+  var loseUntil = function () { try { return Number(localStorage.getItem(LOSE_KEY)) || 0; } catch (e) { return 0; } };
+  var loseLeft = function () { return Math.max(0, loseUntil() - Date.now()); };
+  var loseText = function () { var m = Math.ceil(loseLeft() / 60000); return '戰敗後 30 分鐘內，帳號裡所有角色都不能宣戰（還要 ' + m + ' 分鐘）。'; };
+  var watchLose = function () {   // 舊制攻城（endSiege）與肯特新制（SiegeV2.finish）都會把結果寫進 player.siege
+    var p = P(), sg = p && p.siege; if (!sg || sg.active || sg.result !== 'lose') return;
+    var end = Number(sg.endTime) || 0; if (!end || end === lastLoseEnd || Date.now() - end > 5000) { lastLoseEnd = end || lastLoseEnd; return; }
+    lastLoseEnd = end;
+    try { localStorage.setItem(LOSE_KEY, String(end + LOSE_MS)); } catch (e) {}
+    sys('<span class="text-red-300 font-bold">攻城戰敗。</span><span class="text-slate-300">30 分鐘內，帳號裡所有角色都不能宣戰。</span>');
+  };
+  var lockGuard = function (fn, msgOnly) {
+    return function () {
+      if (loseLeft() > 0) { sys('<span class="text-amber-300">' + loseText() + '</span>'); try { if (typeof showToast === 'function') showToast(loseText()); } catch (e) {} return; }
+      return fn.apply(this, arguments);
+    };
+  };
+  ['startSiege', 'siegeV2BeginKent'].forEach(function (nm) { if (typeof window[nm] === 'function') window[nm] = lockGuard(window[nm]); });
+  if (typeof window.endSiege === 'function') { var oEndS = window.endSiege; window.endSiege = function () { var r = oEndS.apply(this, arguments); try { watchLose(); } catch (e) {} return r; }; }
+  window.__afkSiegeLose = { left: loseLeft, text: loseText, KEY: LOSE_KEY, MS: LOSE_MS, watch: watchLose };
 
   // ── 介面：攻城選單上方顯示城堡與宣戰狀態 ──
   var panel = function () {
@@ -535,6 +569,7 @@
       '<div class="afk-lore">「城牆會倒，旗幟會換；唯有統一天下的名字，會被刻進亞丁的歷史。」</div><div class="font-bold text-amber-200 mb-1">🏰 持有城堡 ' + n + '／7' + (n >= 7 ? '（' + unifyTitle() + '）' : '') + '</div>' +
       '<div>' + (h.map(function (c) { return SIEGE_CITY[c] ? SIEGE_CITY[c].name : c; }).join('、') || '尚未持有') + '</div>' +
       '<div class="mt-1">收成：' + inc + '</div>' +
+      (loseLeft() > 0 ? '<div class="mt-1 text-red-300">⛔ ' + loseText() + '</div>' : '') +
       '<div>宣戰：' + war + '</div>' +
       (forced() ? '<div class="text-red-300">強制宣戰：「' + forced().name + '」（剩 ' + Math.max(1, Math.ceil((forced().until - Date.now()) / 60000)) + ' 分鐘；狩獵 5% 遇敵、傳送戒指找王必定 2 名）</div>' : '<div class="text-slate-400 text-xs">每 8 小時有 30% 機率被隨機一個血盟強制宣戰 4 小時。</div>') +
       '<div>攻城難度：多 ' + ((n >= 1 ? 1 : 0) + (n >= 3 ? 1 : 0) + (n >= 5 ? 1 : 0)) + ' 波守軍（每波 5 名；1 座城起門口、3 座起進內城、5 座起搶塔）；守軍傷害、命中 +' + (n * 10) + '%、受傷 −' + Math.min(70, n * 10) + '%。每天 00:00 有 10% 機率失去一座城。</div>' +

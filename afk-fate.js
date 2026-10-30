@@ -1,5 +1,5 @@
 /* ============================================================================
- * afk-fate.js — 隱藏規則「命運」（玩家 2026-10-30 14:55；外掛開關 fate，放在「隱藏規則」，預設開）
+ * afk-fate.js — 隱藏規則「命運」（玩家 2026-10-30 14:55；開關併入「隱藏規則」hiddenbonus，預設開）
  *
  *   隊伍＝你＋所有傭兵（依隊伍順序：你第 1 位，傭兵照名單順序）。經典模式不套用。
  *   一、同職業超過 3 位：該職業每一位造成的傷害下降——第 1～3 位 −10%、第 4 位 −20%、第 5 位起 −40%（5 位封頂）。
@@ -16,8 +16,8 @@
 (function () {
   'use strict';
   var W = window, T = W.AFK_TOGGLES;
-  if (T && T.register) T.register({ id: 'fate', name: '命運', group: '隱藏規則', desc: '隊伍的組成會左右戰局（隱藏條件）。' });
-  var on = function () { if (W.__afkTestNoFate) return false; return !T || T.enabled('fate'); };   // 測試瀏覽器預設關（只有 test-fate 打開）
+  // 開關：併入「隱藏規則」hiddenbonus（玩家 2026-10-30：隱藏規則以後都合併在一個開關）
+  var on = function () { if (W.__afkTestNoFate) return false; return !T || T.enabled('hiddenbonus'); };   // 測試瀏覽器預設關（只有 test-fate 打開）
   var P = function () { return (typeof player !== 'undefined' && player && player.cls) ? player : null; };
   var tk = function () { try { return Number(state.ticks) || 0; } catch (e) { return 0; } };
   var CLASS_STEP = [0.10, 0.10, 0.10, 0.20, 0.40];   // 第 1～5 位（之後同第 5 位）

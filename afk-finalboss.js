@@ -209,10 +209,42 @@
     };
   };
 
+  // ── 煙霧：全隊命中 −50%（玩家重算時套；傭兵直接改面板、時間到換回）──
+  var SMOKE = { every: 60, sec: 10, k: 0.5 }, HITS = ['meleeHit', 'rangedHit', 'magicHit'];
+  var smokeOn = function (x) { return !!(x && x._afkSmokeUntil && (S().ticks || 0) <= x._afkSmokeUntil); };
+  var smoke = function () {
+    var until = (S().ticks || 0) + SMOKE.sec * SEC;
+    members().forEach(function (x) {
+      x._afkSmokeUntil = until;
+      if (x === player) return;
+      if (x.d && !(x._afkSmokeSave && x._afkSmokeSave.d === x.d)) { var sv = { d: x.d }; HITS.forEach(function (k) { sv[k] = Number(x.d[k]) || 0; x.d[k] = sv[k] > 0 ? Math.floor(sv[k] * (1 - SMOKE.k)) : sv[k]; }); x._afkSmokeSave = sv; }
+    });
+    try { recomputeStats(); } catch (e) {}
+    log(tag('煙霧', '#94a3b8') + BOSS_NAME + '吐出灰色的煙霧籠罩神殿——全隊所有命中 −' + Math.round(SMOKE.k * 100) + '%（' + SMOKE.sec + ' 秒）。');
+  };
+  var smokeTick = function () {
+    var t = S().ticks || 0;
+    if (player && player._afkSmokeUntil && t > player._afkSmokeUntil) { player._afkSmokeUntil = 0; try { recomputeStats(); } catch (e) {} }
+    (player && player.allies || []).forEach(function (x) {
+      if (!x || !x._afkSmokeSave || smokeOn(x)) return;
+      var sv = x._afkSmokeSave; x._afkSmokeSave = null; x._afkSmokeUntil = 0;
+      if (x.d === sv.d) HITS.forEach(function (k) { x.d[k] = sv[k]; });   // 面板重建過＝已經是原本的了
+    });
+  };
+  if (typeof window.recomputeStats === 'function') {
+    var oReSm = window.recomputeStats;
+    window.recomputeStats = function () {
+      var r = oReSm.apply(this, arguments);
+      try { if (player && player.d && smokeOn(player)) HITS.forEach(function (k) { var v = Number(player.d[k]) || 0; if (v > 0) player.d[k] = Math.floor(v * (1 - SMOKE.k)); }); } catch (e) {}
+      return r;
+    };
+  }
+
   // ── 時間軸 ──
   var every = function (age, sec) { return age > 0 && age % (sec * SEC) === 0; };
   var phaseName = ['', '水之女神的殘影', '死亡的權柄', '被放逐者之怒', '終焉'];
   var timeline = function () {
+    try { smokeTick(); } catch (e) {}
     if (!on() || player.dead) return;
     hookDamage();
     var m = bossOf(); if (!m) return;
@@ -226,6 +258,8 @@
       S()._afkGazeUntil = t + gs * SEC; S()._afkGazePct = gp;
       log(tag('席琳的凝視', '#e879f9') + (late ? '死亡女神的目光變得更冷、更沉，' : '死亡女神的目光掃過神殿，') + '所有人的手都沉重起來（造成的傷害 −' + Math.round(gp * 100) + '%，' + gs + ' 秒）。');
     }
+    // 煙霧（玩家 2026-10-30 20:43，一轉女神＝第一階層 'first'）：每 1 分鐘，100% 命中，全隊所有命中 −50%，10 秒
+    if (mode() === 'first' && every(age, SMOKE.every)) smoke();
     var pct = m.curHp / (m.hp || 1);
     var ph = pct > 0.75 ? 1 : pct > 0.5 ? 2 : pct > 0.25 ? 3 : 4;
     if (ph > (m._fbPhase || 1)) {

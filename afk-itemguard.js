@@ -5,7 +5,8 @@
  *
  *   ‧詞條清單（三邊共用，window.__afkItemGuard.AFFIX／has）：
  *       祝福的（任一階）、昇華的祝福、至高的祝福、屬性、遠古系（任一）、永恆、不朽、太初、覺醒的、創世的、
- *       不屈者意志、龍的印記、龍的傷痕、神樹者的讚禮、闇龍的抵抗者、套裝效果、傳說、遺物、符文孔、已鑲符文
+ *       不屈者意志、龍的印記、龍的傷痕、神樹者的讚禮、闇龍的抵抗者、套裝效果、傳說、遺物、符文孔、已鑲符文、箭矢與箭矢袋
+ *       （箭矢與箭矢袋：預設勾「不能賣」「不能存」，2026-10-30 20:43）
  *     另外各有一個「強化 +N 以上」。
  *   ‧保護設定記在角色上（player.itemGuard），三欄各自勾：
  *       自動廢品（2026-10-29 15:40）：自動販賣開著時，有這個詞條（或強化 +N 以下）的就自動標成廢品，照自動販賣的等待秒數賣；不能賣的優先、個別例外「永遠保留」優先
@@ -31,7 +32,7 @@
     ['bless', '祝福的（任一階）', '#fcd34d'], ['bless2', '昇華的祝福', '#fbbf24'], ['bless3', '至高的祝福', '#fde047'], ['attr', '屬性', '#7dd3fc'],
     ['anc', '遠古系（任一）', '#c4b5fd'], ['eternal', '永恆', '#a5b4fc'], ['immortal', '不朽', '#f0abfc'], ['primordial', '太初', '#fda4af'], ['anc2', '覺醒的（遠古系二階）', '#c4b5fd'], ['anc3', '創世的（遠古系三階）', '#ddd6fe'],
     ['will', '不屈者意志', '#fda4af'], ['dmark', '龍的印記', '#fcd34d'], ['dscar', '龍的傷痕', '#fcd34d'], ['tree', '神樹者的讚禮', '#86efac'], ['dres', '闇龍的抵抗者', '#c4b5fd'],
-    ['set', '套裝效果', '#5eead4'], ['legend', '傳說', '#fb923c'], ['relic', '遺物', '#facc15'], ['socket', '符文孔', '#a78bfa'], ['rune', '已鑲符文', '#e9d5ff']
+    ['set', '套裝效果', '#5eead4'], ['legend', '傳說', '#fb923c'], ['relic', '遺物', '#facc15'], ['socket', '符文孔', '#a78bfa'], ['rune', '已鑲符文', '#e9d5ff'], ['arrow', '箭矢與箭矢袋', '#fde68a']
   ];
   var has = function (i, k) {
     if (!i) return false;
@@ -51,6 +52,7 @@
       case 'relic': return !!(d.relic || (typeof isRelic === 'function' && isRelic(d)));
       case 'socket': return Array.isArray(i.sockets) && i.sockets.length > 0;
       case 'rune': return Array.isArray(i.sockets) && i.sockets.some(Boolean);
+      case 'arrow': return !!(d.isArrow || d.eff === 'afk_arrowbag' || /^afk_arw/.test(String(i.id)));
     }
     return false;
   };
@@ -63,6 +65,7 @@
     if (!g.store || typeof g.store !== 'object') g.store = {};
     if (!g.junk || typeof g.junk !== 'object') g.junk = {};   // 自動廢品（2026-10-29 15:40）：有這個詞條就自動標成廢品（不能賣的優先）
     if (g.sellEn == null) g.sellEn = -1; if (g.storeEn == null) g.storeEn = -1; if (g.junkEn == null) g.junkEn = -1;
+    if (!g.arrowInit) { g.arrowInit = 1; g.sell.arrow = true; g.store.arrow = true; }   // 箭矢與箭矢袋：預設不能賣、不能（批次）存（玩家 2026-10-30 20:43；可以在 🛡 物品保護取消）
     return g;
   };
   // 為什麼被擋（字串）；沒擋＝''
@@ -149,6 +152,7 @@
     var oDep = W.whDeposit;
     W.whDeposit = function (uid) {
       var p = P(), it = p && p.inv.find(function (x) { return x.uid === uid; }), w = it && why(it, 'store');
+      if (w === '箭矢與箭矢袋') w = '';   // 箭矢：只擋批次存入，單件自己存照常
       if (w) { say('<span class="text-amber-300">🛡 物品保護：這件有「' + w + '」，設定成不能存倉庫。</span>'); return; }
       return oDep.apply(this, arguments);
     };

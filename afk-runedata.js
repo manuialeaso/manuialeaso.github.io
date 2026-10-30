@@ -101,6 +101,44 @@
       d: '【符文石・' + STAGE_N[r.stage] + '・' + CAT_N[r.cat] + '】' + r.d + '。在說話之島的符文師佐爾頓那裡鑲進' + (r.cat === 'aid' ? '飾品或腰帶' : (SLOT_CATS.armor.indexOf(r.cat) >= 0 ? '防具' : '武器')) + '的星蝕·解孔。' };
   });
   list.forEach(function (r) { if (r.stage === 4) ITEMS[r.id].d += '取得：說話之島的符文師佐爾頓用解命石 1＋哀石結晶 30 換取；或在時空裂痕（席琳模式）前 12 分鐘，每次擊殺 1% 掉落（一趟最多一顆）。鑲嵌費哀石結晶 40。'; });
+  // ── 升星（玩家 2026-10-30 20:54，設計稿 docs/rune-stars-design.md）──
+  //   ★1 哀石結晶 50、★2 解命石 10、★3 兩顆同名 ★2 合成；階段一每星 +5 個百分點、階段二 +3、階段三見下表；
+  //   魂、傳說符文不能升星；效果還在製作中的（裂、牙、八顆職業符文）等本體做好再開放。符文之語不跟星數。
+  //   每顆星是獨立的物品：afk_rune_<key>_s1～s3（背包疊放、孔裡記錄都照舊），byId 帶 star／base。
+  var NO_STAR = { hun: 1, po_l: 1 }, WIP_STAR = { lie: 1, ya: 1, shi_k: 1, ye: 1, zhi: 1, ying: 1, guan: 1, lin: 1, huan: 1, nu: 1 };
+  var STAR_TXT = {
+    hui: ['材料掉落 +20%', '材料掉落 +25%', '材料掉落 +30%'],
+    feng: ['金幣 +30%、經驗 +15%', '金幣 +35%、經驗 +20%', '金幣 +40%、經驗 +25%'],
+    xun: ['遺物掉落判定 +30%', '遺物掉落判定 +35%', '遺物掉落判定 +40%'],
+    shi: ['夢域專屬材料 +30%', '夢域專屬材料 +35%', '夢域專屬材料 +40%'],
+    quan: ['藥水回復量 +30%', '藥水回復量 +35%', '藥水回復量 +40%'],
+    shun: ['每次喝藥水 30% 不進冷卻', '35% 不進冷卻', '40% 不進冷卻'],
+    ni: ['另外「減少治療」的效果 −5%', '「減少治療」的效果 −10%', '「減少治療」的效果 −15%'],
+    yin: ['5% 機率一次喝四罐', '10% 機率一次喝四罐', '15% 機率一次喝五罐，另有 1% 機率一次喝十罐'],
+    dun: ['受到的物理傷害 −9%', '−12%', '−15%'], zhao: ['受到的魔法傷害 −9%', '−12%', '−15%'],
+    jing: ['受到的屬性傷害 −11%', '−14%', '−17%'], hai: ['受到的真實傷害 −13%', '−16%', '−19%'],
+    zong: ['寵物基本屬性 +18%', '+21%', '+24%'], qi: ['寵物繼承主人面板再 +3%', '再 +6%', '再 +9%'],
+    meng: ['夢域套裝百分比效果 +25%', '+30%', '+40%'], yan: ['夢域套裝的固定數值 ×1.6', '×1.7', '×1.8'],
+    ming: ['夢域套裝吸血 ×1.6、受到的傷害 −6%', '吸血 ×1.7、受到的傷害 −7%', '吸血 ×2.0、受到的傷害 −8%'],
+    lei: ['魔法二次傷害機率 25%', '機率 30%', '機率 30%，二次傷害改成 60%'],
+    jian: ['濺射 25%', '濺射 30%', '濺射 35%，主目標只扣一半'],
+    po: ['無視目標 25% 的減傷與防禦', '無視 30%', '無視 35%，另外造成的傷害 +5%'],
+    zhan: ['對頭目傷害 +18%', '+21%', '+25%，頭目 HP 50% 以下再 +5%']
+  };
+  var STAR_COST = { 1: { afk_lament_gem: 50 }, 2: { afk_fate_unlock: 10 } };   // ★3＝兩顆同名 ★2
+  var starOk = function (r) { return !!(r && !r.star && !r.unique && !NO_STAR[r.key] && !WIP_STAR[r.key] && STAR_TXT[r.key]); };
+  var starId = function (baseId, n) { return n > 0 ? baseId + '_s' + n : baseId; };
+  var STARS = ['', '★1', '★2', '★3'];
+  list.forEach(function (r) {
+    if (!starOk(r)) return;
+    for (var n = 1; n <= 3; n++) {
+      var id = starId(r.id, n);
+      byId[id] = Object.assign({}, r, { id: id, star: n, base: r.id });
+      ITEMS[id] = { n: r.ch + '之符文 ' + STARS[n], c: STAGE_C[r.stage], img: IMG('符文(' + r.ch + ')'),
+        d: '【符文石・' + STAGE_N[r.stage] + '・' + CAT_N[r.cat] + '・' + STARS[n] + '】' + STAR_TXT[r.key][n - 1] + '（原本：' + r.d + '）。'
+          + '升星：★1 哀石結晶 50、★2 解命石 10、★3 兩顆同名 ★2 合成（說話之島的符文師佐爾頓）。符文之語不跟星數。' };
+    }
+  });
   var BOX = { 1: 'afk_runebox_1', 2: 'afk_runebox_2', 3: 'afk_runebox_3' };
   var SRC = { 1: '時空裂痕（席琳模式）', 2: '時空裂痕（瘋狂席琳模式）', 3: '時空裂痕（夢域鏡席琳模式）' };
   [1, 2, 3].forEach(function (s) {
@@ -211,5 +249,6 @@
     // 平衡點數（玩家 2026-10-29：太強就壓縮傷害、太弱就追加傷害）：鑲著這顆符文時，造成的傷害 ×(1＋點數×1%)；0＝不調整
     // 佐爾頓合成（玩家 2026-10-29）：同階段符文 3 顆＋哀石結晶 10 → 隨機一顆高一階的符文。只開放 階段一→二、階段二→三（傳說不從合成出）
     COMBINE: { n: 3, cost: ['afk_lament_gem', 10], from: [1, 2] },
+    STAR_TXT: STAR_TXT, STAR_COST: STAR_COST, NO_STAR: NO_STAR, WIP_STAR: WIP_STAR, starOk: starOk, starId: starId, STARS: STARS,
     BAL: { po_l: 5 }, OPEN_COST: OPEN_COST, REMOVE: ['afk_lament_stone', 500], openBox: openBox, refinePlan: refinePlan };
 })();

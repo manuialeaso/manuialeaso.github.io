@@ -161,10 +161,11 @@
 
   // ── 融合體專屬：聖十字之盾（玩家 2026-10-24）──
   //   你受到的傷害優先由融合體承擔，融合體承受 ×2；融合體倒下時，剩下沒擋住的部分才由你承受。
+  var shaken = function (g) { try { return !!(typeof window.__afkGuardShaken === 'function' && window.__afkGuardShaken(g)); } catch (e) { return false; } };   // 隱藏規則「撼動」（afk-hidden）
   var coverGuard = function () {
     var p = P(); if (!p || p.dead) return null;
     var list = p.guardsV2 || [];
-    for (var i = 0; i < list.length; i++) { var g = list[i]; if (g && !g._downed && (g.hp || 0) > 0 && g.form === CASTLE_GUARD_BOOK.aden_fused.form) return g; }
+    for (var i = 0; i < list.length; i++) { var g = list[i]; if (g && !g._downed && (g.hp || 0) > 0 && g.form === CASTLE_GUARD_BOOK.aden_fused.form && !shaken(g)) return g; }
     return null;
   };
   // 玩家 2026-10-25：一開始只包了怪物普攻／魔法／反彈，百分比傷害、持續傷害、夢域代價都還是扣在玩家身上。
@@ -202,6 +203,27 @@
     if (typeof oKillCover === 'function') window.killPlayer = function () {
       if (coverDepth > 0 && coverGuard()) { coverPend = true; return; }
       return oKillCover.apply(this, arguments);
+    };
+    // ── 禁衛軍代死（玩家 2026-10-30 20:43）：你受到致命傷害時，一名亞丁禁衛軍（聖十字近衛／禁衛軍）代替你倒下一次；
+    //    禁衛軍都已倒下就沒有效果。你的 HP 回到這一拍開始時的量（至少 1）。聖十字之盾還在擋時先讓它擋。
+    var lastHp = 0, oTickHp = window.tick;
+    if (typeof oTickHp === 'function') window.tick = function () { var p = P(); if (p && !p.dead) lastHp = p.hp || 0; return oTickHp.apply(this, arguments); };
+    var oKillSac = window.killPlayer;
+    if (typeof oKillSac === 'function') window.killPlayer = function () {
+      try {
+        var p = P();
+        if (p && !p.dead && (p.hp || 0) <= 0 && !(coverDepth > 0 && coverGuard())) {
+          var g = (p.guardsV2 || []).filter(function (x) { return x && x.city === 'aden_elite' && !x._downed && (x.hp || 0) > 0 && !shaken(x); }).sort(function (a, b) { return (b.hp || 0) - (a.hp || 0); })[0];
+          if (g) {
+            g.hp = 0; try { _guardDown(g); } catch (e) { g._downed = true; g._reviveAt = Date.now() + 30000; }
+            p.hp = Math.max(1, Math.min(p.mhp || 1, lastHp > 0 ? lastHp : Math.floor((p.mhp || 1) * 0.3)));
+            try { logCombat('<span class="font-bold" style="color:#fcd34d">【禁衛軍代死】</span>' + g.form + ' 撲上來替你擋下了致命一擊，倒了下去。', 'magic', 'summon'); } catch (e) {}
+            try { renderGuardPanel(true); updateUI(); } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+      return oKillSac.apply(this, arguments);
     };
   };
   if (document.readyState === 'complete') setTimeout(installCover, 0); else window.addEventListener('load', function () { setTimeout(installCover, 0); });
@@ -429,7 +451,7 @@
     var p = P(); if (!p || p.dead) return;
     if (typeof _petInWild === 'function' && !_petInWild()) return;
     (p.guardsV2 || []).forEach(function (g) {
-      if (!g || g._downed || !((g.hp || 0) > 0)) return;
+      if (!g || g._downed || !((g.hp || 0) > 0) || shaken(g)) return;
       var kind = g.form === '毒蛇之牙' ? 'heine' : (g.form === '聖十字禁衛軍' ? 'fused' : null);
       if (!kind) return;
       g._healCd = (g._healCd == null ? 20 : g._healCd) - 1;
@@ -455,6 +477,8 @@
     window.castleGuardTick = function () { var r = oCGT.apply(this, arguments); try { guardHeals(); } catch (e) {} return r; };
   }
 
+  // 撼動：謀叛者的低語裡亞丁禁衛軍不攻擊
+  if (typeof window.guardAttackOnce === 'function') { var oGAO = window.guardAttackOnce; window.guardAttackOnce = function (s) { if (shaken(s)) return; return oGAO.apply(this, arguments); }; }
   window.__afkCastleGuards = { activeSquads: activeSquads, rosterInfo: rosterInfo, coverGuard: function () { return coverGuard(); }, held: held, unified: unified, specOfRoster: specOfRoster, eliteDerive: eliteDerive, followOf: followOf, CAP: CAP };
   try { castleGuardSync(true); } catch (e) {}
   console.log('[AFK-castle-guards] 已啟用：七城護衛、聖十字近衛與融合');

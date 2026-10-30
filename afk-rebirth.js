@@ -132,6 +132,15 @@
 
   // 等級上限：轉生後 150（Lv100 以上每級需求依 Lv99 需求每級 +10% 遞增）
   window.__afkLvCap = function (p) { return (p && p.rebirth > 0) ? 150 : 100; };
+  // 滿等不再擁有經驗值（玩家 2026-10-30 20:43）：升級判定之後，到達等級上限就把經驗歸零（經典模式不變）
+  if (typeof window.checkLvUp === 'function') {
+    var oLvUp = window.checkLvUp;
+    window.checkLvUp = function () {
+      var r = oLvUp.apply(this, arguments);
+      try { var p = player; if (p && p.cls && !p.classicMode && (p.lv || 1) >= window.__afkLvCap(p) && p.exp > 0) p.exp = 0; } catch (e) {}
+      return r;
+    };
+  }
   if (typeof window.getExpReq === 'function') {
     var oReq = window.getExpReq;
     window.getExpReq = function (lv) {

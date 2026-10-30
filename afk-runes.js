@@ -3,8 +3,8 @@
  *
  * 原本叫「蝕刻」，跟無屬性印記的「蝕刻」撞名，改名「星蝕·解」，並從艾格尼絲那裡獨立出來交給符文師。
  * 符文孔（it.sockets：陣列長度＝開了幾孔，內容是符文 id 或 null）：
- *   武器 3 孔：第一孔「墜蝕·解」同一組原版席琳遺骸 8 套（8 部位各 8 件）→ 主手時該組算滿 5 件
- *              第二孔「刻解·骸」同一組夢域遺骸 8 套 → 主手時該組算滿 5 件且 2／3／5 段都是夢域效果
+ *   武器 3 孔：第一孔「墜蝕·解」同一組原版席琳遺骸 8 套（8 部位各 8 件）；第二孔「刻解·骸」同一組夢域遺骸 8 套
+ *              （2026-10-30 20:54 起這兩孔只有鑲嵌符文的功能，不再讓刻上的套裝算滿 5 件；開過的孔不能改刻）
  *              第三孔「瘴骸·破」解命石 1
  *   防具 2 孔（盔甲、盾、頭盔、斗篷、手套、長靴、脛甲、T恤）：第一孔夢域遺骸 5 套（8 部位各 5 件，不限套裝組）、第二孔回夢水晶 3
  *   戒指、項鍊、耳環 1 孔：哀石結晶 5
@@ -14,7 +14,8 @@
  * 拆下：哀石 500，符文完整取回。
  * 合成（2026-10-29）：同階段符文 3 顆＋哀石結晶 10 → 隨機一顆高一階（階段一→二、二→三）。
  * 兌換：哀石塵埃／哀石碎片／哀石 各 150 → 哀石水晶／哀石精華／哀石結晶；瘴氣魔石 1,000＋骸骨魔石 500＋破空石 100 → 解命石。
- * 效果在 afk-runefx；星蝕·解刻上的套裝計件在 afk-sherine-dream。
+ * 升星（2026-10-30 20:54）：★1 哀石結晶 50、★2 解命石 10、★3 兩顆同名 ★2；鑲著的可以直接升。資料在 afk-runedata（STAR_*）。
+ * 效果在 afk-runefx。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -102,13 +103,13 @@
       var p = P(); if (!p) return '請先進入遊戲。';
       if (GROUPS.indexOf(g) < 0) return '請選一組席琳套裝。';
       var c = find(ref); if (!c || c.kind !== 'weapon') return '先選一把武器。';
-      if (c.it.etch === g) return '第一孔已經刻著「' + g + '」。';
+      if (c.it.etch) return '第一孔已經開了。';
       if (sets(p, g) < 1) return '需要「' + g + '」席琳遺骸 8 套（八個部位各 ' + PER + ' 件，未上鎖）。';
       var it = resolve(ref); if (!it) return '找不到這把武器。';
       SD.migrate(it); SD.etchTake(p, g);
       var re = !!it.etch; it.etch = g; it._starV = 1;
       if (socks(it).length < 1) it.sockets.push(null);
-      done('<span class="c-sherine font-bold">' + NPC_N + '把 8 套「' + esc(g) + '」席琳遺骸碾成星屑，' + (re ? '重新刻進' : '鑿開了') + '武器的第一個符文孔「' + NAMES[0] + '」</span>→ ' + full(it) + '。主手時「' + esc(g) + '」套裝直接算滿 5 件。');
+      done('<span class="c-sherine font-bold">' + NPC_N + '把 8 套「' + esc(g) + '」席琳遺骸碾成星屑，' + (re ? '重新刻進' : '鑿開了') + '武器的第一個符文孔「' + NAMES[0] + '」</span>→ ' + full(it) + '。');
       return null;
     },
     open2: function (ref, g) {
@@ -117,13 +118,13 @@
       var c = find(ref); if (!c || c.kind !== 'weapon') return '先選一把武器。';
       if (!c.it.etch) return '要先開第一孔「' + NAMES[0] + '」。';
       var se = g + '夢';
-      if (c.it.etchD === se) return '第二孔已經刻著「' + SD.etchName(se) + '」。';
+      if (c.it.etchD) return '第二孔已經開了。';
       if (sets(p, se) < 1) return '需要夢域「' + SD.DN[g] + '」席琳遺骸 8 套（八個部位各 ' + PER + ' 件，未上鎖）。';
       var it = resolve(ref); if (!it) return '找不到這把武器。';
       SD.migrate(it); SD.etchTake(p, se);
       var re = !!it.etchD; it.etchD = se; it._starV = 1;
       while (socks(it).length < 2) it.sockets.push(null);
-      done('<span class="c-sherine-dream font-bold">夢域的遺骸在' + NPC_N + '手裡發出紅光，' + (re ? '重新刻進' : '鑿開了') + '第二個符文孔「' + NAMES[1] + '」</span>→ ' + full(it) + '。主手時「' + esc(SD.DN[g]) + '」算滿 5 件，2／3／5 段都是夢域效果。');
+      done('<span class="c-sherine-dream font-bold">夢域的遺骸在' + NPC_N + '手裡發出紅光，' + (re ? '重新刻進' : '鑿開了') + '第二個符文孔「' + NAMES[1] + '」</span>→ ' + full(it) + '。');
       return null;
     },
     // 其餘的孔：武器第三孔、防具兩孔、飾品一孔、腰帶三孔
@@ -160,7 +161,7 @@
       if (!(idx >= 0 && idx < s.length)) return '這個孔還沒打開。';
       if (s[idx]) return '這個孔已經有符文了，要先拆下來。';
       if (KINDS[c.kind].cats.indexOf(r.cat) < 0) return KINDS[c.kind].n + '只能鑲' + KINDS[c.kind].cats.map(function (k) { return RD.CAT_N[k]; }).join('、') + '類的符文。';
-      if (s.indexOf(runeId) >= 0) return '同一件裝備不能鑲兩顆同名符文。';
+      if (s.some(function (x) { var q = x && RD.byId[x]; return q && q.nk === r.nk; })) return '同一件裝備不能鑲兩顆同名符文。';   // 不同星數也算同名
       if (r.unique) { var eqd = Object.keys(p.eq || {}).some(function (k) { var e = p.eq[k]; return e && e !== c.it && Array.isArray(e.sockets) && e.sockets.indexOf(runeId) >= 0; }); if (eqd) return nm(runeId) + '全身只能裝一顆（身上已經有了）。'; }
       if (have(runeId) < 1) return '背包裡沒有' + nm(runeId) + '（上鎖的不算）。';
       var cur = RD.CUR[r.stage], cost = RD.INLAY[r.stage];
@@ -218,6 +219,30 @@
       done('<span class="' + RD.STAGE_C[got.stage] + ' font-bold">' + NPC_N + '把 ' + used.map(nm).join('、') + ' 熔在一起——' + nm(got.id) + '亮了起來。</span>');
       return got.id;
     },
+    // 升星（玩家 2026-10-30 20:54）：loc＝'inv:<符文id>'（背包）或 'sock:<裝備ref>:<孔>'（鑲著的直接升）
+    star: function (loc) {
+      var p = P(); if (!p) return '請先進入遊戲。';
+      var m = /^sock:(.+):(\d+)$/.exec(String(loc || '')), rid = null, idx = -1;
+      if (m) { var c = find(m[1]); if (!c) return '找不到這件裝備。'; idx = Number(m[2]); rid = (c.it.sockets || [])[idx]; if (!rid) return '這個孔沒有符文。'; }
+      else if (String(loc || '').indexOf('inv:') === 0) { rid = String(loc).slice(4); if (have(rid) < 1) return '背包裡沒有' + nm(rid) + '（上鎖的不算）。'; }
+      var r = rid && RD.byId[rid]; if (!r) return '請選一顆符文。';
+      var base = r.base ? RD.byId[r.base] : r, cur = Number(r.star) || 0;
+      if (!RD.starOk(base)) return RD.WIP_STAR[base.key] ? nm(base.id) + '的效果還在製作中，做好後開放升星。' : nm(base.id) + '不能升星。';
+      if (cur >= 3) return '已經是 ★3 了。';
+      var next = RD.starId(base.id, cur + 1);
+      if (cur < 2) {
+        var cost = RD.STAR_COST[cur + 1], miss = Object.keys(cost).filter(function (k) { return have(k) < cost[k]; });
+        if (miss.length) return '材料不足：' + miss.map(function (k) { return nm(k) + ' ' + have(k) + '/' + cost[k]; }).join('、');
+        Object.keys(cost).forEach(function (k) { take(k, cost[k]); });
+      } else {
+        if (have(rid) < (m ? 1 : 2)) return '★3 要兩顆同名 ★2 合成：背包裡還需要一顆' + nm(rid) + '（未上鎖）。';
+        take(rid, 1);   // 合成用掉的另一顆
+      }
+      if (m) { var it = resolve(m[1]); if (!it) return '找不到這件裝備。'; socks(it)[idx] = next; }
+      else { take(rid, 1); gainItem(next, 1, true, true); }
+      done('<span class="' + RD.STAGE_C[r.stage] + ' font-bold">' + NPC_N + '在' + nm(rid) + '上刻下新的星紋——' + nm(next) + '。</span>' + (m ? '（鑲著直接升星）' : ''));
+      return null;
+    },
     fate: function () {
       var need = RD.FATE.need, miss = Object.keys(need).filter(function (id) { return have(id) < need[id]; });
       if (miss.length) return '材料不足：' + miss.map(function (id) { return nm(id) + ' ' + have(id) + '/' + need[id]; }).join('、');
@@ -258,7 +283,7 @@
     var it = c.it, n = (it.sockets || []).length, K2 = KINDS[c.kind];
     return '<div class="ax-socks">' + K2.names.map(function (name, i) {
       if (i >= n) return '<span class="ax-sock' + (c.kind === 'weapon' && i === 2 ? ' lock' : '') + '">◇ ' + name + '（未開）</span>';
-      var rid = it.sockets[i], extra = c.kind === 'weapon' ? (i === 0 && it.etch ? '［' + esc(SD.etchName(it.etch)) + '］' : i === 1 && it.etchD ? '［' + esc(SD.etchName(it.etchD)) + '］' : '') : '';
+      var rid = it.sockets[i], extra = '';   // 2026-10-30：孔只鑲符文，不再顯示刻上的套裝組
       return '<span class="ax-sock ' + (rid ? 'filled' : 'open') + '">' + (rid ? '◆ ' : '○ ') + name + extra + (rid ? '：' + esc(nm(rid)) : '（空）') + '</span>';
     }).join('') + '</div>';
   };
@@ -289,7 +314,7 @@
       var ws = W.__afkRuneFx && W.__afkRuneFx.wordsOf ? W.__afkRuneFx.wordsOf(x.it) : [];
       h += '<div class="ax-h">已選擇</div><div class="ax-sel">' + K.invIco(x.it, x.ref.indexOf('eq:') === 0 ? 'eq' : 'inv') + '<div style="min-width:0"><div>' + K.fullName(x.it) + '</div><div class="ax-where">' + esc(x.where) + '・' + KINDS[x.kind].n + '（可鑲：' + KINDS[x.kind].cats.map(function (k) { return RD.CAT_N[k]; }).join('、') + '）</div>'
         + sockChips(x) + (ws.length ? '<div class="ax-note" style="color:#fcd34d">符文之語：' + ws.map(function (w) { return '「' + esc(w.n) + '」' + esc(w.d); }).join('；') + '</div>' : '')
-        + (x.kind === 'weapon' && x.ref !== 'eq:wpn' ? '<div class="ax-note">武器要裝在主手，刻上的套裝與符文才會生效。</div>' : '') + '</div></div>';
+        + (x.kind === 'weapon' && x.ref !== 'eq:wpn' ? '<div class="ax-note">武器要裝在主手，符文才會生效。</div>' : '') + '</div></div>';
     }
     h += '<div class="ax-err">' + esc(ui.err) + '</div><div class="ax-msg">' + ui.msg + '</div>';
     h += '<div class="ax-h">② 開孔與鑲嵌</div>';
@@ -299,13 +324,13 @@
       var s2 = groupSelect('afk-zo-g2', true, ui.g2); ui.g2 = s2.cur;
       var have1 = sets(p, ui.g1), have2 = sets(p, ui.g2 + '夢');
       h += K.rowHtml({ key: 'open1', ico: remIco(), name: '武器第一孔「' + NAMES[0] + '」', color: '#4ade80',
-        desc: '消耗同一組原版席琳遺骸 8 套（爪、眼、血、肉、心、骨、牙、鱗各 ' + PER + ' 件），把那一組刻進武器。裝在主手時，該組套裝直接算滿 5 件。已經開過可以改刻別組，材料照扣（孔裡的符文不受影響）。',
-        req: K.reqTxt(have1, 1, '套 × 8（' + esc(ui.g1) + '）'), why: !x ? noSel : (it.etch === ui.g1 ? '已經刻著這一組' : ''),
-        pick: s1.html, btns: [['open1', it && it.etch ? '改刻' : '開孔', have1 >= 1]] }, 'data-zo');
+        desc: '消耗同一組原版席琳遺骸 8 套（爪、眼、血、肉、心、骨、牙、鱗各 ' + PER + ' 件），鑿開第一個符文孔（只用來鑲嵌符文）。',
+        req: K.reqTxt(have1, 1, '套 × 8（' + esc(ui.g1) + '）'), why: !x ? noSel : (it.etch ? '已經開了' : ''),
+        pick: s1.html, btns: [['open1', '開孔', have1 >= 1 && !(it && it.etch)]] }, 'data-zo');
       h += K.rowHtml({ key: 'open2', ico: remIco(), name: '武器第二孔「' + NAMES[1] + '」', color: '#fb7185',
-        desc: '要先開第一孔。消耗同一組夢域席琳遺骸 8 套，把那一組夢域刻進武器。裝在主手時，該組算滿 5 件，而且 2／3／5 段都是夢域效果。',
-        req: K.reqTxt(have2, 1, '套 × 8（夢域' + esc(SD.DN[ui.g2] || '') + '）'), why: !x ? noSel : !it.etch ? '要先開第一孔「' + NAMES[0] + '」' : (it.etchD === ui.g2 + '夢' ? '已經刻著這一組' : ''), off: !!(x && !it.etch),
-        pick: s2.html, btns: [['open2', it && it.etchD ? '改刻' : '開孔', have2 >= 1]] }, 'data-zo');
+        desc: '要先開第一孔。消耗同一組夢域席琳遺骸 8 套，鑿開第二個符文孔（只用來鑲嵌符文）。',
+        req: K.reqTxt(have2, 1, '套 × 8（夢域' + esc(SD.DN[ui.g2] || '') + '）'), why: !x ? noSel : !it.etch ? '要先開第一孔「' + NAMES[0] + '」' : (it.etchD ? '已經開了' : ''), off: !!(x && !it.etch),
+        pick: s2.html, btns: [['open2', '開孔', have2 >= 1 && !(it && it.etchD)]] }, 'data-zo');
       h += K.rowHtml({ key: 'open3', ico: K.itemIco(RD.FATE.id), name: '武器第三孔「' + NAMES[2] + '」', color: '#facc15',
         desc: '要先開第一、二孔。解命石 1 顆鑿開最後一個孔。',
         req: K.reqTxt(have(RD.FATE.id), 1, '解命石'), why: !x ? noSel : n < 2 ? '要先開第一、二孔' : n >= 3 ? '已經打開了' : '', off: !!(x && n < 2), btns: [['open', '開孔', have(RD.FATE.id) >= 1]] }, 'data-zo');
@@ -326,7 +351,7 @@
     var empties = it ? (it.sockets || []).map(function (r, i) { return r ? -1 : i; }).filter(function (i) { return i >= 0; }) : [];
     if (empties.indexOf(ui.slot) < 0) ui.slot = empties.length ? empties[0] : 0;
     var cats = x ? KINDS[x.kind].cats : [];
-    var owned = RD.list.filter(function (r) { return (!x || cats.indexOf(r.cat) >= 0) && have(r.id) > 0; });
+    var owned = Object.keys(RD.byId).map(function (k) { return RD.byId[k]; }).filter(function (r) { return (!x || cats.indexOf(r.cat) >= 0) && have(r.id) > 0; });   // 含升星過的
     if (!owned.some(function (r) { return r.id === ui.rune; })) ui.rune = owned.length ? owned[0].id : '';
     var rr = RD.byId[ui.rune], cur = rr ? RD.CUR[rr.stage] : RD.CUR[1], cost = rr ? RD.INLAY[rr.stage] : 0;
     var pick = '<select id="afk-zo-slot" aria-label="鑲在第幾孔">' + (empties.length ? empties.map(function (i) { return '<option value="' + i + '"' + (i === ui.slot ? ' selected' : '') + '>第 ' + (i + 1) + ' 孔</option>'; }).join('') : '<option value="">沒有空孔</option>') + '</select>'
@@ -363,7 +388,22 @@
       h += K.rowHtml({ key: 'lg-' + id, ico: K.itemIco(id), name: nm(id), color: '#fcd34d', desc: '傳說符文：' + esc(r ? r.d : ''),
         req: Object.keys(nd).map(function (k) { return K.reqTxt(have(k), nd[k], nm(k)); }).join('　'), btns: [['lg:' + id, '兌換', ok]] }, 'data-zo');
     });
-    h += '<div class="ax-note">只用背包裡未上鎖的材料。武器的套裝與符文只在主手生效；防具、飾品、腰帶裝備在身上就生效。</div>';
+    // 升星
+    h += '<div class="ax-h">④ 符文升星</div>';
+    var stars = [], seenInv = {};
+    (p.inv || []).forEach(function (q) { var r = q && !q.lock && RD.byId[q.id]; if (!r || seenInv[q.id]) return; var bs = r.base ? RD.byId[r.base] : r; if (!RD.starOk(bs) || (r.star || 0) >= 3) return; seenInv[q.id] = 1; stars.push({ loc: 'inv:' + q.id, r: r, bs: bs, where: '背包 ×' + have(q.id) }); });
+    candidates().forEach(function (c) { (c.it.sockets || []).forEach(function (rid, i) { var r = rid && RD.byId[rid]; if (!r) return; var bs = r.base ? RD.byId[r.base] : r; if (!RD.starOk(bs) || (r.star || 0) >= 3) return; stars.push({ loc: 'sock:' + c.ref + ':' + i, r: r, bs: bs, where: c.where + '・' + plain(c.it) + ' 第 ' + (i + 1) + ' 孔' }); }); });
+    if (!stars.length) h += '<div class="ax-note">背包和裝備上沒有可以升星的符文。</div>';
+    stars.slice(0, 40).forEach(function (x) {
+      var cur = Number(x.r.star) || 0, nx = cur + 1, cost = RD.STAR_COST[nx], req, ok;
+      if (cost) { req = Object.keys(cost).map(function (k) { return K.reqTxt(have(k), cost[k], nm(k)); }).join('　'); ok = Object.keys(cost).every(function (k) { return have(k) >= cost[k]; }); }
+      else { var need3 = x.loc.indexOf('inv:') === 0 ? 2 : 1, h3 = have(x.r.id); req = K.reqTxt(h3, need3, nm(x.r.id) + '（背包）'); ok = h3 >= need3; }
+      h += K.rowHtml({ key: 'st-' + x.loc, ico: K.itemIco(x.r.id), name: nm(x.r.id) + ' → ' + RD.STARS[nx], color: '#fde68a',
+        desc: esc(x.where) + '<br>' + esc(RD.STAR_TXT[x.bs.key][nx - 1]) + (nx === 3 ? '（兩顆同名 ★2 合成一顆）' : ''), req: req, btns: [['st:' + x.loc, '升星', ok]] }, 'data-zo');
+    });
+    if (stars.length > 40) h += '<div class="ax-note">還有 ' + (stars.length - 40) + ' 顆，先升上面的。</div>';
+    h += '<div class="ax-note">★1 哀石結晶 50、★2 解命石 10、★3 兩顆同名 ★2 合成。魂、傳說符文不能升星；裂、牙、職業符文等效果做好後開放。鑲著的符文可以直接升星（★3 另一顆要在背包）。符文之語不跟星數。</div>';
+    h += '<div class="ax-note">只用背包裡未上鎖的材料。武器的符文只在主手生效；防具、飾品、腰帶裝備在身上就生效。</div>';
     K.repaint(box, h, '.ax-list');
   };
   var bind = function (host) {
@@ -379,6 +419,7 @@
       else if (a === 'inlay') err = ACT.inlay(ui.sel, Number(ui.slot), ui.rune);
       else if (a === 'remove') err = ACT.remove(ui.sel, Number(ui.rm));
       else if (a === 'fate') err = ACT.fate();
+      else if (a.indexOf('st:') === 0) err = ACT.star(a.slice(3));
       else if (a.indexOf('lg:') === 0) err = ACT.legend(a.slice(3));
       else if (a.indexOf('cb:') === 0) { err = ACT.combine(a.slice(3)); if (err && RD.byId[err]) err = null; }
       else if (a.indexOf('ex1:') === 0) err = ACT.exchange(a.slice(4), false);
@@ -408,7 +449,7 @@
     render(host); bind(host);
   };
   K.addNpc('town_talking', { id: NPC_ID, n: NPC_N, title: '符文師', type: 'runesmith',
-    d: '流浪到說話之島的符文師佐爾頓，能替武器、防具、飾品、腰帶鑿出「星蝕·解」符文孔，鑲嵌或拆下符文石；武器的孔還能刻上席琳套裝。' });
+    d: '流浪到說話之島的符文師佐爾頓，能替武器、防具、飾品、腰帶鑿出「星蝕·解」符文孔，鑲嵌、拆下符文石，也能替符文升星。' });
   K.hookNpc(NPC_ID, NPC_N, '符文師', embed);
   W.__afkRunes = { NPC_ID: NPC_ID, act: ACT, ui: ui, embed: embed, render: render, candidates: candidates, kindOf: kindOf, KINDS: KINDS, COST: COST };
   console.log('[AFK-runes] 已啟用：說話之島符文師佐爾頓（星蝕·解、符文石）');

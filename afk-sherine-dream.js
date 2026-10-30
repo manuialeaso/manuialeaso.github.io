@@ -266,8 +266,9 @@
 
   // ── 星蝕·解（玩家 2026-10-29 晚；原名「蝕刻」，跟無屬性印記的「蝕刻」撞名所以改名）──
   //   武器的三個符文孔，在說話之島的符文師佐爾頓開（介面在 afk-runes.js）：
-  //     第一孔「墜蝕·解」：消耗同一組原版席琳遺骸 8 套（8 個部位各 8 件）→ 刻上那一組，主手時該組算滿 5 件
-  //     第二孔「刻解·骸」：要先開第一孔；消耗同一組夢域遺骸 8 套 → 刻上那一組夢域，主手時該組算滿 5 件且 2／3／5 段都是夢域效果
+  //     第一孔「墜蝕·解」：消耗同一組原版席琳遺骸 8 套（8 個部位各 8 件）
+  //     第二孔「刻解·骸」：要先開第一孔；消耗同一組夢域遺骸 8 套
+  //     （玩家 2026-10-30 20:54：這兩孔的功能只有鑲嵌符文；原本「刻上的組算滿 5 件、夢域 2／3／5 段」拿掉）
   //     第三孔「瘴骸·破」：鎖定中
   //   資料：it.etch＝第一孔的組名、it.etchD＝第二孔的組名＋「夢」、it.sockets＝已開的孔（陣列長度＝開了幾個，內容留給符文石）
   var ETCH_PER = 8, SOCKET_NAMES = ['墜蝕·解', '刻解·骸', '瘴骸·破'], SOCKET_MAX_OPEN = 2;
@@ -292,8 +293,9 @@
   };
   var mainW = function (p) { var w = p && p.eq && p.eq.wpn; return w ? migrate(w) : null; };
   var mainEtch = function (p) { var w = mainW(p); return w && w.etch ? w.etch : null; };
-  // 計件：刻上的組算滿 5 件
-  if (W.AFK_RELIC_GM && typeof W.AFK_RELIC_GM.sherine === 'function') {
+  // 計件：刻上的組算滿 5 件——2026-10-30 20:54 拿掉（ETCH_SET_FULL＝false）
+  var ETCH_SET_FULL = false;
+  if (ETCH_SET_FULL && W.AFK_RELIC_GM && typeof W.AFK_RELIC_GM.sherine === 'function') {
     var oSh2 = W.AFK_RELIC_GM.sherine;
     W.AFK_RELIC_GM.sherine = function (p, c) {
       var r = oSh2.apply(this, arguments);
@@ -304,7 +306,7 @@
   var oTiers = dreamTiers;
   dreamTiers = function (p) {
     var out = oTiers(p);
-    try { var w = mainW(p); if (w && w.etchD) out[String(w.etchD).slice(0, 2)] = [2, 3, 5]; } catch (er) {}
+    try { var w = ETCH_SET_FULL && mainW(p); if (w && w.etchD) out[String(w.etchD).slice(0, 2)] = [2, 3, 5]; } catch (er) {}
     return out;
   };
   // 物品簽章帶上星蝕（不會跟一般的同款武器疊在一起）
@@ -320,11 +322,11 @@
     var oDesc2 = W.buildItemDescHTML;
     W.buildItemDescHTML = function (it) {
       var h = oDesc2.apply(this, arguments);
-      try { if (it && (it.etch || it.etchD)) h = '<span class="' + (it.etchD ? 'c-sherine-dream' : 'c-sherine') + ' font-bold">✠ 星蝕·解：' + starText(it) + '</span><br><span class="text-slate-300 text-sm">裝在主手時，刻上的套裝直接算滿 5 件' + (it.etchD ? '（夢域的那一組 2／3／5 段都是夢域效果）' : '') + '。</span><br>' + h; } catch (e) {}
+      try { if (ETCH_SET_FULL && it && (it.etch || it.etchD)) h = '<span class="' + (it.etchD ? 'c-sherine-dream' : 'c-sherine') + ' font-bold">✠ 星蝕·解：' + starText(it) + '</span><br><span class="text-slate-300 text-sm">裝在主手時，刻上的套裝直接算滿 5 件' + (it.etchD ? '（夢域的那一組 2／3／5 段都是夢域效果）' : '') + '。</span><br>' + h; } catch (e) {}
       return h;
     };
   }
-  (W.__afkAxLines = W.__afkAxLines || []).push(function (it) { return it && (it.etch || it.etchD) ? '<span class="' + (it.etchD ? 'c-sherine-dream' : 'c-sherine') + '">星蝕·解：' + starText(it) + '</span>' : null; });
+  (W.__afkAxLines = W.__afkAxLines || []).push(function (it) { return ETCH_SET_FULL && it && (it.etch || it.etchD) ? '<span class="' + (it.etchD ? 'c-sherine-dream' : 'c-sherine') + '">星蝕·解：' + starText(it) + '</span>' : null; });
 
   W.__afkSherineDream = { SOUL: SOUL, SOUL_COST: SOUL_COST, soulOn: soulOn, ETCH_PER: ETCH_PER, SOCKET_NAMES: SOCKET_NAMES, SOCKET_MAX_OPEN: SOCKET_MAX_OPEN, PARTS: PARTS, etchReady: etchReady, etchTake: etchTake, etchName: etchName, migrate: migrate, mainEtch: mainEtch, DREAM: DREAM, DN: DN, isDream: isDream, dreamTiers: dreamTiers, soulOn: soulOn, setCut: setCut, COST: COST, SOUL: SOUL, SOUL_RATE: SOUL_RATE };
   console.log('[AFK-sherine-dream] 已載入：夢域席琳遺骸與之魂');

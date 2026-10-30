@@ -81,7 +81,7 @@
         if (m.curHp <= 0) { try { killMob(i); } catch (e) {} }
       });
     } finally { splashing = false; }
-    return hits && !rule.keep ? amt : 0;
+    return hits && !rule.keep ? Math.floor(amt * (rule.deduct != null ? rule.deduct : 1)) : 0;   // deduct：主目標扣多少（濺 ★3＝一半）
   };
   var C = W.AFK_CARD_COMBAT;
   if (capOn && C && typeof C.damage === 'function') {
