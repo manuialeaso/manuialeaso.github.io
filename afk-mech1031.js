@@ -1,21 +1,21 @@
 /* ============================================================================
- * afk-mech1031.js — 戰鬥機制調整（玩家 2026-10-31 01:56；開關併入「瘋狂席琳＋席琳夢域鏡模式」，經典模式不套用）
+ * afk-mech1031.js — 戰鬥機制調整（玩家 2026-10-31 01:56；02:50 改數值並歸入隱藏規則）
+ *   開關：併入「隱藏規則」hiddenbonus（afk-toggles 的 MERGED 表）；經典模式不套用。隱藏規則，不寫進小百科。
  *
- *   一、深蝕：王身上的中毒或出血疊滿層數後，持續疊滿 30 秒就發動「深蝕」——之後每 5 秒，王的火、水、風、地抗性
- *       與魔防各 −10，最多各 −200。層數掉下來就停（已扣的保留到王倒下），重新疊滿再從 30 秒算起。
- *       「疊滿」：出血＝層數到達這一段出血的上限；中毒＝層數到達上限（一般中毒只有 1 層，中毒中就算滿；遺物毒照遺物的上限）。
+ *   一、深蝕：王身上的中毒或出血疊到 5 層，持續 20 秒後發動——之後每 5 秒，王的火、水、風、地抗性
+ *       與魔防各 −5，最多各 −100（魔防最低到 0）。層數掉到 5 層以下就暫停（已扣的保留到王倒下），重新疊到 5 層再從 20 秒算起。
  *   二、戰士左右手都拿鈍器：造成的暈眩時間 ×1.5。
- *   三、妖精拿弓：幻影——角色造成的傷害計算兩次（持續傷害、反彈不算）。
- *   四、王暈眩破綻：王進入暈眩（含完全停擺）時，15 秒內 AC +200、受到的物理傷害 +150%、受到的傷害全部算爆擊
- *       （物理用攻擊者的近距離／遠距離爆擊傷害；已經爆擊的不重複算；魔法照攻擊者魔法爆擊傷害換算成「每一下都爆擊」的期望值）。
- *       破綻結束後，下一次新的暈眩才會再觸發。
- *   （騎士衝擊之暈單體加成在 afk-knight-shock.js；共用這裡的 AC 減益 W.__afkAcDebuff）
+ *   三、妖精拿弓：幻影箭——每一發遠距離攻擊（每一支箭）30% 機率再射出一支幻影箭，對場上所有敵人造成這一發 50% 的傷害；
+ *       這一發打的是王時改成 15% 機率、35% 傷害。
+ *   四、王暈眩破綻：王被暈住時發動，10 秒內 AC +50、受到的物理傷害 +50%、被爆擊時爆擊傷害再 +50%（加在攻擊者的爆擊傷害上）。
+ *       發動後冷卻 45 秒，冷卻中被暈住就只是單純不能動。
+ *   五、轉生騎士衝擊之暈（場上只有一隻怪）：那隻怪 AC +50、破壞盔甲 5 秒；5 秒內牠在暈眩中受到的傷害 +20%
+ *       （本體在 afk-knight-shock.js，共用這裡的 AC 減益 W.__afkAcDebuff 與 _afkKsVuln 標記）
  * ========================================================================== */
 (function () {
   'use strict';
   var W = window, T = W.AFK_TOGGLES;
-  if (T && T.register) T.register({ id: 'mech1031', name: '戰鬥機制調整（深蝕、雙鈍器、弓的幻影、王暈眩破綻）', group: '遊戲玩法', seal: true,
-    desc: '中毒／出血疊滿 30 秒後深蝕王的抗性與魔防；戰士雙鈍器暈眩 ×1.5；妖精拿弓傷害算兩次；王暈眩時 15 秒 AC +200、受物理 +150%、全部爆擊' });
+  if (T && T.register) T.register({ id: 'mech1031', name: '戰鬥機制調整', group: '隱藏規則', seal: true, desc: '（內容不公開）' });
   var P = function () { return (typeof player !== 'undefined' && player && player.cls) ? player : null; };
   var S = function () { return (typeof state !== 'undefined' && state) ? state : {}; };
   var tk = function () { return Number(S().ticks) || 0; };
@@ -27,6 +27,7 @@
   var tag = function (t, c) { return '<span class="font-bold" style="color:' + c + '">【' + t + '】</span>'; };
   var item = function (inst) { return inst && typeof DB !== 'undefined' ? DB.items[inst.id] : null; };
   var tags = function (inst) { try { return inst && typeof getWeaponTags === 'function' ? getWeaponTags(inst.id) : []; } catch (e) { return []; } };
+  var PHYS = { melee: 1, ranged: 1, phys: 1 };
 
   // ── AC 減益（同一隻怪可同時有多個來源，各自計時）──
   var acDebuff = function (m, key, amt, ticks) {
@@ -43,15 +44,14 @@
   W.__afkAcDebuff = acDebuff;
 
   // ── 一、深蝕 ──
-  var DS = { wait: 300, iv: 50, step: 10, max: 200 }, RES4 = ['resFire', 'resWater', 'resWind', 'resEarth'];
+  var DS = { stacks: 5, wait: 200, iv: 50, step: 5, max: 100 }, RES4 = ['resFire', 'resWater', 'resWind', 'resEarth'];
   var full = function (m) {
     var st = m.st || {};
-    if (m.bleeds && m.bleeds.length > 0 && m.bleeds.length >= Math.max(1, m._bleedCap || 5)) return true;
-    if ((st.poison || 0) > 0 && (st.poisonStacks || 0) >= Math.max(1, st.poisonCap || 1)) return true;
+    if (m.bleeds && m.bleeds.length >= DS.stacks) return true;
+    if ((st.poison || 0) > 0 && (st.poisonStacks || 0) >= DS.stacks) return true;
     return false;
   };
   var deepStep = function (m, t) {
-    var st = m.st; if (st && !((st.poison || 0) > 0)) st.poisonCap = 0;
     if (!m.boss) return;
     if (!full(m)) { m._afkDsFull = 0; return; }
     if (!m._afkDsFull) { m._afkDsFull = t; return; }
@@ -63,8 +63,7 @@
     RES4.forEach(function (k) { m[k] = (Number(m[k]) || 0) - add; });
     var mr = Number(m.mr) || 0, mrCut = Math.min(add, Math.max(0, mr)); m.mr = mr - mrCut;
     m._afkDsCut = cut + add; m._afkDsMr = (m._afkDsMr || 0) + mrCut;
-    if (cut === 0) clog(tag('深蝕', '#a3e635') + '毒血滲進 ' + nm(m) + ' 的骨髓——每 5 秒四屬性抗性與魔防各 −' + DS.step + '（最多 −' + DS.max + '）。');
-    else if (m._afkDsCut >= DS.max) clog(tag('深蝕', '#a3e635') + nm(m) + ' 的四屬性抗性與魔防已被侵蝕 −' + DS.max + '。');
+    if (cut === 0) clog(tag('深蝕', '#a3e635') + '毒血滲進 ' + nm(m) + ' 的骨髓，抗性與魔防開始崩解。');
   };
 
   // ── 二、戰士雙鈍器：暈眩 ×1.5 ──
@@ -81,31 +80,33 @@
     }
   };
 
-  // ── 三、妖精拿弓：幻影 ──
+  // ── 三、妖精拿弓：幻影箭 ──
+  var PH = { chance: 0.30, pct: 0.50, bossChance: 0.15, bossPct: 0.35 };
   var bowElf = function (a) { var d = a && a.cls === 'elf' && a.eq && item(a.eq.wpn); return !!(d && (d.isBow || (tags(a.eq.wpn) || []).indexOf('弓') >= 0)); };
   var phantomLog = new WeakMap();
 
   // ── 四、王暈眩破綻 ──
-  var BR = { dur: 150, ac: 200, phys: 2.5 };
+  var BR = { dur: 100, cd: 450, ac: 50, phys: 1.5, critAdd: 50 };
   var breached = function (m) { return !!(m && m._afkBreachUntil && tk() <= m._afkBreachUntil); };
   var breachStep = function (m, t) {
-    var stun = !!(m.st && m.st.stun > 0) || !!(W.__afkHalted && W.__afkHalted(m));
     if (!m.boss) return;
-    if (!stun) { m._afkBreachSeen = false; return; }
-    if (m._afkBreachSeen || breached(m)) return;
-    m._afkBreachSeen = true; m._afkBreachUntil = t + BR.dur;
+    var stun = !!(m.st && m.st.stun > 0) || !!(W.__afkHalted && W.__afkHalted(m));
+    if (!stun || breached(m) || t < (m._afkBreachCd || 0)) return;
+    m._afkBreachUntil = t + BR.dur; m._afkBreachCd = t + BR.cd;
     acDebuff(m, 'breach', BR.ac, BR.dur);
-    clog(tag('破綻', '#fbbf24') + nm(m) + ' 被暈住露出破綻——15 秒內 AC +200、受到的物理傷害 +150%、所有傷害都算爆擊！');
+    clog(tag('破綻', '#fbbf24') + nm(m) + ' 被暈住，露出了破綻！');
   };
-  var critMult = function (actor, target, kind, c) {
-    var d = (actor && actor.d) || {};
-    if (kind === 'melee' || kind === 'ranged' || kind === 'phys') {
-      if (c && c.t === target && c.at === tk()) return 1;   // 這一下本來就爆擊（進傷害掛點前先記下：afk-caps 會把爆擊標記用掉）
-      return 1 + Math.max(0, Number(kind === 'ranged' ? d.rangedCritDmg : d.meleeCritDmg) || 0) / 100;
+  // 被爆擊時爆擊傷害 +50%：物理看這一下有沒有爆擊；魔法無從得知單下是否爆擊 → 照攻擊者魔法爆擊率換算成期望值
+  var critBoost = function (actor, target, kind, c) {
+    var d = (actor && actor.d) || {}, add = BR.critAdd / 100;
+    if (PHYS[kind]) {
+      if (!(c && c.t === target && c.at === tk())) return 1;
+      var cd = Math.max(0, Number(kind === 'ranged' ? d.rangedCritDmg : d.meleeCritDmg) || 0) / 100;
+      return (1 + cd + add) / (1 + cd);
     }
     if (kind === 'magic') {
       var m = 1 + Math.max(0, Number(d.magicCritDmg) || 0) / 100, p = Math.min(0.8, Math.max(0, Number(d.magicCrit) || 0) / 100);
-      return m / (1 + p * (m - 1));   // 原本只有 p 的機率爆擊 → 換算成每一下都爆擊
+      return (1 + p * (m + add - 1)) / (1 + p * (m - 1));
     }
     return 1;
   };
@@ -113,6 +114,25 @@
   // ── 傷害掛點（排在其他卡片／符文倍率之外）──
   var C = W.AFK_CARD_COMBAT, inner = false;
   var reflected = function (o) { return !!(o && (o.reflection || o.redirected || o.origin === 'reflection' || o.origin === 'self' || o.origin === 'redirect')); };
+  var phantom = function (self, actor, target, v) {
+    var boss = !!target.boss, ch = boss ? PH.bossChance : PH.chance;
+    if (!(Math.random() < ch)) return;
+    var amt = Math.floor(v * (boss ? PH.bossPct : PH.pct)); if (!(amt > 0)) return;
+    var ms = mobs(), hit = 0;
+    inner = true;
+    try {
+      for (var i = 0; i < ms.length; i++) {
+        var m = ms[i]; if (!live(m)) continue;
+        var v2 = 0; try { v2 = Math.floor(oDmg.call(self, actor, m, amt, { kind: 'ranged', second: true }) || 0); } catch (e) {}
+        if (!(v2 > 0)) continue;
+        if (m === target) { m._afkPhantomPend = (m._afkPhantomPend || 0) + v2; hit++; continue; }   // 主目標：交給外層一起扣（避免在外層扣血前就倒下）
+        m.curHp -= v2; hit++;
+        if (m.curHp <= 0 && typeof killMob === 'function') { var idx = ms.indexOf(m); if (idx >= 0) try { killMob(idx); } catch (e) {} }
+      }
+    } finally { inner = false; }
+    var lt = phantomLog.get(actor) || -1e9;
+    if (hit && tk() - lt >= 50) { phantomLog.set(actor, tk()); clog(tag('幻影箭', '#67e8f9') + (actor === P() ? '你' : (actor._allyName || '妖精')) + ' 的箭影一分為眾，掃過 ' + hit + ' 個敵人。'); }
+  };
   if (C && typeof C.damage === 'function') {
     var oDmg = C.damage;
     C.damage = function (actor, target, amount, opt) {
@@ -124,15 +144,15 @@
         target._afkHitBy = { a: actor, t: tk() };
         if (kind === 'dot') return v;
         if (breached(target)) {
-          if (kind === 'melee' || kind === 'ranged' || kind === 'phys') v *= BR.phys;
-          v *= critMult(actor, target, kind, crit0);
+          if (PHYS[kind]) v *= BR.phys;
+          v *= critBoost(actor, target, kind, crit0);
         }
-        if (bowElf(actor)) {
-          v *= 2;
-          var lt = phantomLog.get(actor) || -1e9;
-          if (tk() - lt >= 100) { phantomLog.set(actor, tk()); clog(tag('幻影', '#67e8f9') + (actor === P() ? '你' : (actor._allyName || '妖精')) + ' 的幻影隨弓齊射——造成的傷害計算兩次。'); }
-        }
+        if (target._afkKsVuln && tk() <= target._afkKsVuln && target.st && target.st.stun > 0) v *= 1.2;   // 騎士單體衝暈：暈眩中受到的傷害 +20%（5 秒）
         v = Math.floor(v);
+        if (kind === 'ranged' && !(opt && opt.second) && bowElf(actor)) {
+          phantom(this, actor, target, v);
+          if (target._afkPhantomPend) { v += target._afkPhantomPend; target._afkPhantomPend = 0; }
+        }
       } catch (e) {}
       return v;
     };
@@ -159,6 +179,6 @@
     };
   }
 
-  W.__afkMech1031 = { on: on, full: full, dualBlunt: dualBlunt, bowElf: bowElf, breached: breached, critMult: critMult, DS: DS, BR: BR,
+  W.__afkMech1031 = { on: on, full: full, dualBlunt: dualBlunt, bowElf: bowElf, breached: breached, critBoost: critBoost, DS: DS, BR: BR, PH: PH,
     _deep: deepStep, _breach: breachStep, _stunScale: stunScale, _acStep: acStep, _inner: function (v) { inner = !!v; } };
 })();

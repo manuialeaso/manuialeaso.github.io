@@ -7,6 +7,9 @@
  *   三、騎士的負重（玩家 2026-10-29 21:07）：騎士（你或騎士傭兵）每 10 秒一次，物理攻擊的基礎傷害加上「負重上限 ×0.05」（加在卡片倍率等之前）。
  *   四、撼動（玩家 2026-10-30 20:43）：帶著亞丁禁衛軍（聖十字近衛／聖十字禁衛軍）進「謀叛者的低語」，禁衛軍沒有作用——不攻擊、不補血、不代扣傷害、不代死。
  *   五、不動怒威（同上）：謀叛者的低語裡的反王肯恩、魔女賽尼斯，HP 第一次掉到 50% 以下時發動：5 秒內造成的傷害 +50%、受到的傷害 −50%。
+ *   六、觸發者（玩家 2026-10-31 02:50）：16 人隊伍（你＋15 名傭兵），八個職業各 2 人，而且 16 人的轉生技藝全部不同（＝16 門技藝都到齊）
+ *       → 觸發者光環，只在一般區域（副本、時空裂痕、暗夢星迴、攀登、最終決戰不算）：全隊造成的傷害 +30%、受到的傷害 −30%；
+ *       對手是王（打王、被王打）時改成 +10%／−10%。
  *   都不寫在任何說明裡（小百科只寫「有隱藏條件」）。
  *   開關：隱藏規則全部合併成一個開關 hiddenbonus「隱藏規則」（玩家 2026-10-30：以後新的隱藏規則也放進來；命運 afk-fate 也看這個開關）。
  * ========================================================================== */
@@ -85,9 +88,58 @@
       try { if (typeof logCombat === 'function') logCombat('<span class="font-bold" style="color:#f97316">【不動怒威】</span>' + m.n + ' 的怒氣化成了鎧甲——5 秒內造成的傷害 +50%、受到的傷害 −50%！', 'enemy'); } catch (e) {}
     });
   };
+  // ── 觸發者 ──
+  var TRIG = { n: 16, perCls: 2, k: 0.30, bossK: 0.10 }, CLS8 = ['royal', 'knight', 'elf', 'mage', 'dark', 'dragon', 'illusion', 'warrior'];
+  var DG_PLUGIN = { afk_traitor_whisper: 1, afk_hardin_time: 1, afk_giltas_altar: 1, afk_flame_depth: 1, afk_halpas_nest: 1, afk_final_sea: 1 };
+  var trigT = -1, trigOk = false;
+  var artOf = function (a) { var A = W.__afkArts && W.__afkArts.ARTS, id = a && a.rebirth > 0 && a.rebirthArt; return (id && A && A[id] && A[id].cls === a.cls) ? id : null; };
+  var trigger = function () {
+    var t = tk(); if (t === trigT) return trigOk;
+    trigT = t; trigOk = false;
+    var p = P(); if (!p) return false;
+    var party = [p].concat(p.allies || []).filter(Boolean);
+    if (party.length !== TRIG.n) return false;
+    var cnt = {}, arts = {};
+    for (var i = 0; i < party.length; i++) {
+      var a = party[i], c = a.cls, art = artOf(a);
+      if (CLS8.indexOf(c) < 0 || !art || arts[art]) return false;
+      cnt[c] = (cnt[c] || 0) + 1; arts[art] = 1;
+    }
+    trigOk = CLS8.every(function (c) { return cnt[c] === TRIG.perCls; });
+    return trigOk;
+  };
+  var normalArea = function () {
+    var key = (typeof mapState !== 'undefined' && mapState && mapState.current) || '';
+    if (!key || /^town_/.test(key) || DG_PLUGIN[key]) return false;
+    try { var C = W.AFK_CARD_COMBAT; if (C && C.inDungeon && C.inDungeon()) return false; } catch (e) {}
+    try { if (state.riftRun || state.dreamStar || state.prideClimb) return false; } catch (e) {}
+    return true;
+  };
+  var trigK = function (foe) { if (T && !T.enabled('hiddenbonus')) return 0; return (trigger() && normalArea()) ? (foe && foe.boss ? TRIG.bossK : TRIG.k) : 0; };
+  (W.__afkTakenMods = W.__afkTakenMods || []).push(function (ent, mob) { var k = isMember(ent) ? trigK(mob) : 0; return k ? 1 - k : 1; });
+  var hookTrig = function () {
+    var C = W.AFK_CARD_COMBAT; if (!C || typeof C.damage !== 'function' || C.damage.__afkTrig) return;
+    var o = C.damage;
+    C.damage = function (actor, target, amount, opt) {
+      var v = o.apply(this, arguments);
+      try { if (v > 0 && isMember(actor) && !(opt && opt.kind === 'dot')) { var k = trigK(target); if (k) v = Math.floor(v * (1 + k)); } } catch (e) {}
+      return v;
+    };
+    C.damage.__afkTrig = true;
+  };
+  hookTrig();
+  var trigLog = null;
+  var trigStep = function () {
+    var key = (typeof mapState !== 'undefined' && mapState && mapState.current) || '', on2 = trigger() && normalArea();
+    if (on2 && trigLog !== key) {
+      trigLog = key;
+      try { if (typeof logCombat === 'function' && !state.ff) logCombat('<span class="font-bold" style="color:#e879f9">【觸發者】</span>十六門技藝在隊伍裡共鳴，光環展開。', 'magic'); } catch (e) {}
+    } else if (!on2) trigLog = null;
+  };
+
   if (typeof W.tick === 'function') {
     var oTick = W.tick;
-    W.tick = function () { var t0 = tk(), r = oTick.apply(this, arguments); if (tk() !== t0) { try { step(); } catch (e) {} } return r; };
+    W.tick = function () { var t0 = tk(), r = oTick.apply(this, arguments); if (tk() !== t0) { try { step(); } catch (e) {} try { trigStep(); } catch (e) {} } return r; };
   }
-  W.__afkHidden = { trio: trio, male: male, kingFoe: kingFoe, KNIGHT_LOAD: KNIGHT_LOAD, KNIGHT_CD: KNIGHT_CD, wrath: wrath, step: step, WRATH: WRATH };
+  W.__afkHidden = { trigger: trigger, normalArea: normalArea, trigK: trigK, TRIG: TRIG, trio: trio, male: male, kingFoe: kingFoe, KNIGHT_LOAD: KNIGHT_LOAD, KNIGHT_CD: KNIGHT_CD, wrath: wrath, step: step, WRATH: WRATH };
 })();

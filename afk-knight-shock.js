@@ -8,8 +8,8 @@
  *   ‧敏捷：暈眩率 = 10% + 敏捷 × 0.5%（最高 60%），暈眩命中加值 = 敏捷 ÷ 10（對抗魔防判定）
  *     主目標原本已擲 10%，再補擲「敏捷那一段」，總機率與範圍目標相同
  *   ‧頭目也能被暈（各自判定抵抗）
- *   ‧場上只有一隻怪（玩家 2026-10-31 01:56）：這一下衝擊之暈的傷害 +50%，並附加黑暗妖精「破壞盔甲」（8 秒），
- *     同時那隻怪 AC +100（8 秒，共用 afk-mech1031 的 AC 減益）
+ *   ‧場上只有一隻怪（玩家 2026-10-31 01:56；02:50 改數值、歸入隱藏規則）：那隻怪 AC +50、附加黑暗妖精「破壞盔甲」5 秒，
+ *     5 秒內牠在暈眩中受到的傷害 +20%（afk-mech1031 的 AC 減益與傷害掛點；開關跟隱藏規則）
  * ========================================================================== */
 (function () {
   'use strict';
@@ -69,12 +69,12 @@
   };
   var soloBonus = function (actor, main, hp0) {
     if (!main || main._dead || !(main.curHp > 0)) return;
-    var dealt = hp0 - main.curHp; if (!(dealt > 0)) return;
-    var v = hurt(actor, main, dealt * 0.5);
+    if (!(hp0 - main.curHp > 0)) return;   // 這一下沒打中
     if (!main.st && typeof newMobStatus === 'function') main.st = newMobStatus();
-    if (main.st) main.st.armorbreak = Math.max(main.st.armorbreak || 0, 80);
-    if (typeof W.__afkAcDebuff === 'function') W.__afkAcDebuff(main, 'kshock', 100, 80);
-    clog('<span style="font-weight:700;color:#7dd3fc">衝擊之暈</span>集中在 ' + nm(main) + ' 身上：追加 ' + v + ' 點傷害，並撕裂護甲（破壞盔甲、AC +100，8 秒）。');
+    if (main.st) main.st.armorbreak = Math.max(main.st.armorbreak || 0, 50);
+    if (typeof W.__afkAcDebuff === 'function') W.__afkAcDebuff(main, 'kshock', 50, 50);
+    main._afkKsVuln = ((typeof state !== 'undefined' && state && state.ticks) || 0) + 50;
+    clog('<span style="font-weight:700;color:#7dd3fc">衝擊之暈</span>集中在 ' + nm(main) + ' 身上，撕裂了牠的護甲。');
   };
 
   if (typeof W.castSkill === 'function') {

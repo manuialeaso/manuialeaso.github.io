@@ -590,7 +590,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=9592ab0856"></script>
+    <script src="afk-toggles.js?v=2e96ef3f4b"></script>
     <!-- afk-dup-frames：重複動畫幀改指向同一張圖（公開版只留一張；清單由 scripts/build-dup-frames.py 產生） -->
     <script src="afk-dup-frames-data.js?v=d19c412b59"></script>
     <script src="afk-dup-frames.js?v=13521f048b"></script>
@@ -675,7 +675,7 @@
     <script src="afk-dex.js?v=b38de95516"></script>
     <!-- afk-illufix：幻術士修補（疼痛的歡愉 −50%、反彈、蝕刻印記；立方：燃燒 每 2 秒 5～50 火傷、灼熱印記、吸血回魔；立方：和諧回 MP 5 → 15，原 afk-classtweak）；排在 afk-wiki 之前（小百科說明跟著改）；需核心補丁 69 -->
     <script src="afk-illufix.js?v=1d6832eb95"></script>
-    <script src="afk-wiki.js?v=6c411056d1"></script>
+    <script src="afk-wiki.js?v=9f015edc05"></script>
     <!-- 設定選單 / 存檔 / 診斷 / 離線紀錄 -->
     <script src="afk-storage.js?v=302890a0df"></script>
     <!-- 整包備份／還原（本機檔案）：入口掛在 afk-storage 的設定選單裡，必須排在它之後 -->
@@ -736,7 +736,7 @@
     <!-- afk-arts：轉生技藝（奧拉奇里亞；需 afk-rebirth，排在它之後） -->
     <script src="afk-arts.js?v=847d0f9f53"></script>
     <!-- afk-knight-shock：轉生騎士的衝擊之暈打全畫面（力量加傷害、敏捷加暈眩率，頭目也會暈） -->
-    <script src="afk-knight-shock.js?v=bc2b4c737b"></script>
+    <script src="afk-knight-shock.js?v=6a4935fbd9"></script>
     <!-- afk-uifix：切換地區優先飛到村莊 -->
     <script src="afk-uifix.js?v=f0dc17c37c"></script>
     <!-- afk-castlewar：七城攻城、城堡收成、宣戰與統一伺服器（需核心補丁 27；排在 afk-dreamhell／afk-arts 之後） -->
@@ -876,7 +876,7 @@
     <!-- afk-traitor：亞丁城副本「謀叛者的低語」（持有亞丁城＋統一七城，經由亞丁城的伊菈進入；冥皇丹特斯、反王肯恩、魔女賽尼斯＋四大軍王與長老）（需 afk-castlewar、afk-sets） -->
     <script src="afk-traitor.js?v=d8f03594ff"></script>
     <!-- afk-hidden：隱藏條件（謀叛三人組、王族之敵）；需 afk-card-combat、afk-affix-plus 的受傷掛點 -->
-    <script src="afk-hidden.js?v=349279e415"></script>
+    <script src="afk-hidden.js?v=ea275d7879"></script>
     <!-- afk-dropcap：掉落種類下修 30%（必掉不算；需核心補丁 68） -->
     <script src="afk-dropcap.js?v=9118b45eb8"></script>
     <!-- afk-giltas：吉爾塔斯副本「異界祭壇」（長老會議廳・次元裂隙；鑰匙碎片、信仰的寶珠、四色反擊屏障、真．吉爾塔斯之劍、支配者吉爾塔斯變身卡）（需 afk-traitor、afk-card-ascension、afk-relicplus） -->
@@ -902,7 +902,7 @@
     <!-- 小百科從目前物品與變身資料生成分階說明。 -->
     <!-- afk-icon-fix：道具圖示對齊天堂透視鏡（由 scripts/gen-icon-fix.mjs 依 data/ttmi-icon-check.json 產生） -->
     <script src="afk-icon-fix.js?v=f74421a931"></script>
-    <script src="afk-game-guide.js?v=94f7b5525d"></script>
+    <script src="afk-game-guide.js?v=554f3930ee"></script>
     <script src="afk-readability.js?v=fccbd2ca1e"></script>
     <!-- afk-craftinfo：製作清單每列多一行「成品能力」（點開看成品資料，手機不用長按）；手機版製作按鈕換到下一行 -->
     <script src="afk-craftinfo.js?v=8a51de9e7a"></script>
@@ -980,7 +980,9 @@
     <!-- afk-caps：轉生雙持的副手武器固定加成計入能力；爆擊率上限 80%（包 recomputeStats 最外層，必須最後載入）；迴避上限見核心補丁 patchEvadeCap -->
     <script src="afk-caps.js?v=ba8e334ab7"></script>
     <!-- afk-mech1031：戰鬥機制調整（深蝕、戰士雙鈍器暈眩 ×1.5、妖精拿弓幻影、王暈眩破綻）；開關併入夢域鏡模式；傷害倍率排在 afk-caps 之外 -->
-    <script src="afk-mech1031.js?v=d42a430266"></script>
+    <script src="afk-mech1031.js?v=49e457d279"></script>
+    <!-- afk-fix1031：實測回報修正（equipItem 容錯、抵達地圖提示、+N 遺物登錄收集冊）；要在其他包 equipItem 的外掛之後（最外層） -->
+    <script src="afk-fix1031.js?v=4abe2109fc"></script>
     <!-- afk-art-v3：GPT變身檔（外掛開關，預設關）——神話／天上／時空／十二聖衣改用新繪製的三方向逐幀動畫與聖衣星座翅膀；只換外觀 -->
     <script src="art-v3/game-data.js?v=8e7f81be3f"></script>
     <script src="afk-art-v3.js?v=9ee786c9c0"></script>

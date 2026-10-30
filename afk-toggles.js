@@ -27,7 +27,8 @@
     var MERGED_TO = 'dreamhell';
     var MERGED = {};
     ['illufix', 'magefix', 'knightshock', 'stunfix', 'hitstun', 'debuffresist', 'bossfoul', 'resonancenerf', 'callallycd',
-     'relicfx', 'resist', 'statcap', 'offhandstats', 'petinherit', 'mech1031'].forEach(function (id) { MERGED[id] = MERGED_TO; });
+     'relicfx', 'resist', 'statcap', 'offhandstats', 'petinherit'].forEach(function (id) { MERGED[id] = MERGED_TO; });
+    MERGED.mech1031 = 'hiddenbonus';   // 深蝕、幻影箭、騎士單體衝暈、王暈眩破綻：隱藏規則（玩家 2026-10-31 02:50）
     var force = {};
 
     function find(id) { return byId[id] || null; }
@@ -140,7 +141,7 @@
         { id: 'relicplus', name: '遺物合成', desc: '到燃柳村找哈瑪大師合成遺物；武器與防具最高 +15，飾品最高 +10，並可進階為昇華支配。', group: '遊戲玩法' },
         { id: 'relicfx', name: '遺物強化特效', desc: '啟用各件遺物的分階特效、屬性印記與毒血規則；遺物治療每件至少間隔 5 秒。完整效果可在小百科查閱。', group: '遊戲玩法' },
         { id: 'ttmi-items', name: '亞丁古物與材料工坊', desc: '亞丁古物商人洛依、工匠薩克與時空裂痕補給。', group: '遊戲內容' },
-        { id: 'dreamhell', name: '瘋狂席琳＋席琳夢域鏡模式', desc: '席琳神殿多一個祈禱選項：怪物 HP×50、隨時狂暴、會回血、出生隨機免疫；經驗×10、金幣×3，掉落×50、裝備 50% 祝福，並掉落昇華支配材料。另外統一控制所有改技能、改戰鬥機制的規則（幻術士／法師修補、轉生騎士衝擊之暈、鈍擊暈眩與完全停擺、受擊硬直、負面效果抵抗、頭目汙濁之水、共鳴調整、呼喚盟友冷卻、遺物強化特效、抗性新制、能力上限、副手能力計入、寵物繼承、深蝕與職業調整；在各模式照原本生效），關掉就全部回到原作', group: '遊戲玩法' },
+        { id: 'dreamhell', name: '瘋狂席琳＋席琳夢域鏡模式', desc: '席琳神殿多一個祈禱選項：怪物 HP×50、隨時狂暴、會回血、出生隨機免疫；經驗×10、金幣×3，掉落×50、裝備 50% 祝福，並掉落昇華支配材料。另外統一控制改技能、改戰鬥機制的規則（在各模式照原本生效），關掉就全部回到原作', group: '遊戲玩法' },
         { id: 'dreamstar', name: '暗夢星迴（單機）', desc: '只在席琳夢域鏡：時空裂痕入口多一個暗夢星迴，只出裂縫夢境者投影頭目，有相消、聖結界、反射、四屬性風暴、15 分自爆等時間軸；掉昇華支配材料、昇華支配遺物、夢域塵', group: '遊戲玩法' },
         { id: 'corrupt', name: '四大龍副本', desc: '威頓村可挑戰四座龍巢；龍王有七階變身，巢穴持續造成屬性傷害，並有反射與治療詛咒。', group: '遊戲玩法' },
         { id: 'cardplus', name: '白金／鑽石卡', desc: '卡片多兩階：白金（瘋狂席琳掉落）與鑽石（席琳夢域鏡掉落），地區加成往上一階；圖鑑全滿在席琳夢域鏡加成 ×3；鑽白金幻化可自選鑽石卡', group: '遊戲玩法' },
