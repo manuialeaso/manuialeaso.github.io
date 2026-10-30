@@ -6,8 +6,8 @@
  *      夢域遺骸跟原版算同一組件數；某一段門檻（2／3／5）若「夢域遺骸」的件數也達到，那一段改用夢域的強化效果。
  *      資料上 seteff＝組名＋「夢」（例如「紅獅夢」），slice(0,2) 仍是組名，核心的計件、顯示都照舊。
  * 二、之魂（第 9 格遺骸，rem_soul）：瘋狂席琳模式的謀叛者的低語裡每隻頭目 5% 掉落（2026-10-29 起只在瘋狂席琳，夢域鏡不掉）。
- *      2026-10-30 17:45 起：名字就叫「之魂」、不算任何套裝的件數；沒粹煉前看似沒有效果（說明：好像還需要些什麼）；
- *      伊奧「之魂粹煉」（席琳結晶 500＋夢艷結晶 500，不限世界）後才有效：所有席琳套裝需要的件數少 1（2／3／5 → 1／2／4），原版與夢域版都吃得到。
+ *      2026-10-30 起：名字就叫「之魂」、不算任何套裝的件數；裝上就讓所有席琳套裝需要的件數少 1（2／3／5 → 1／2／4），原版與夢域版都吃得到。
+ *      伊奧「之魂粹煉」（席琳結晶 500＋夢艷結晶 500，不限世界）：效果不變，說明多一行「看似沒有任何效果……但好像還需要些什麼。」（伏筆，玩家 18:10）。
  *      伊奧不兌換之魂；裝備視窗第二頁右上角（核心補丁 65）與裝備分頁都多一格。
  * 夢域效果的數值見 DREAM 表；只動數值的部分在 recomputeStats 之後加上，攻擊／受傷的倍率走 AFK_CARD_COMBAT.damage 與 __afkTakenMods。
  * 須排在 afk-relic-gm、afk-card-combat、afk-affix-plus、afk-traitor、afk-dreamhell 之後、afk-caps 之前。
@@ -50,9 +50,9 @@
   var srcIcon = (DB.items.rem_heart && DB.items.rem_heart.img) || 'assets/icons/items/靈魂之球.png';
   DB.items[SOUL] = { n: '之魂', type: 'acc', slot: SOUL, remains: true, noEnhance: true, noJunk: true, req: 'all', safe: 0, p: 0, gachaWeight: 0, img: srcIcon,
     d: '【席琳遺骸】謀叛者臨死前被瘋狂的席琳奪走的魂魄，凝成一顆仍在低語的遺骸。裝備於遺骸欄的第 9 格。' };
-  // 玩家 2026-10-30 17:45：名字就叫「之魂」（不帶套裝詞）；不算任何套裝的件數；沒粹煉前看似沒有效果，
-  //   到伊奧那裡「之魂粹煉」（席琳結晶 500＋夢艷結晶 500）後才發揮：所有席琳套裝需要的件數少 1。
-  //   內部仍保留一個套裝詞（核心的遺骸欄需要），只是不顯示、不計件；粹煉過＝夢域版（seteff 結尾「夢」），之前用舊價淬鍊過的照樣算粹煉過。
+  // 玩家 2026-10-30：名字就叫「之魂」（不帶套裝詞）；不算任何套裝的件數；裝上就讓所有席琳套裝需要的件數少 1。
+  //   之魂粹煉（伊奧，席琳結晶 500＋夢艷結晶 500）效果不變，只是說明多一行「看似沒有任何效果……但好像還需要些什麼。」（18:10 更正）
+  //   內部仍保留一個套裝詞（核心的遺骸欄需要），只是不顯示、不計件；粹煉過＝seteff 結尾「夢」，之前用舊價淬鍊過的照樣算粹煉過。
   var SOUL_GROUP = function () { return (typeof SHERINE_EFFECTS !== 'undefined' && SHERINE_EFFECTS[0]) || '紅獅'; };
   if (!SHERINE_REMAINS.some(function (r) { return r.id === SOUL; })) SHERINE_REMAINS.push({ id: SOUL, n: '之魂', eqSlot: null, soul: true });
   var withoutSoul = function (fn) {   // 伊奧兌換與菈克希絲拆分不碰之魂
@@ -65,7 +65,7 @@
   });
 
   // 件數少 1：核心計件後（AFK_RELIC_GM.sherine 掛點）給每一組有件數的 +1
-  var soulOn = function (p) { var e = p && p.eq && p.eq[SOUL]; return !!(e && e.seteff && isDream(e)); };   // 粹煉過才有效
+  var soulOn = function (p) { var e = p && p.eq && p.eq[SOUL]; return !!(e && e.seteff); };   // 裝上就有效（粹煉與否都一樣）
   // 件數減免：之魂 1 ＋ 符文「魂」1（afk-runefx 的 W.__afkRuneSetCut，2026-10-29 晚：可以疊加），全身最多 −2
   var setCut = function (p) { var n = soulOn(p) ? 1 : 0; try { if (typeof W.__afkRuneSetCut === 'function') n += W.__afkRuneSetCut(p) || 0; } catch (e) {} return Math.min(2, n); };
   if (W.AFK_RELIC_GM && typeof W.AFK_RELIC_GM.sherine === 'function') {
@@ -171,8 +171,8 @@
       try {
         if (it && it.id === SOUL) {   // 之魂：不顯示套裝詞與套裝效果
           return '<span class="text-slate-300">' + esc(DB.items[SOUL].d) + '</span><br>'
-            + (isDream(it) ? '<span class="c-sherine-dream font-bold">✦ 之魂粹煉：所有席琳套裝需要的件數 −1</span>'
-              : '<span class="text-slate-400 italic">看似沒有任何效果……但好像還需要些什麼。</span>');
+            + '<span class="c-sherine-dream font-bold">✦ 所有席琳套裝需要的件數 −1</span>'
+            + (isDream(it) ? '<br><span class="text-slate-400 italic">看似沒有任何效果……但好像還需要些什麼。</span>' : '');
         }
         if (isDream(it)) {
           var g = grp(it);
@@ -211,7 +211,7 @@
     if (!it || !it.seteff || isDream(it)) return;
     take('sherine_crystal', cost.crystal); take('afk_dream_crystal', cost.dream);
     it.seteff = grp(it) + '夢';
-    try { logSys(isSoul ? '<span class="c-sherine-dream font-bold">✦ 之魂粹煉</span>：魂魄低語的聲音忽然清晰了起來——所有席琳套裝需要的件數 −1。（消耗 席琳結晶 ×' + cost.crystal + '、夢艷結晶 ×' + cost.dream + '）'
+    try { logSys(isSoul ? '<span class="c-sherine-dream font-bold">✦ 之魂粹煉</span>：魂魄的低語安靜了下來……好像還缺了些什麼。（消耗 席琳結晶 ×' + cost.crystal + '、夢艷結晶 ×' + cost.dream + '）'
       : '<span class="c-sherine-dream font-bold">✦ 夢域淬鍊</span>：' + getItemFullName(it) + ' 在席琳的夢裡甦醒了。（消耗 席琳結晶 ×' + cost.crystal + '、夢艷結晶 ×' + cost.dream + '）'); } catch (e) {}
     try { if (typeof calcStats === 'function') calcStats(); renderTabs(); updateUI(); saveGame(); } catch (e) {}
     var c = document.getElementById('interaction-content'); if (c && typeof W.renderIoExchange === 'function') W.renderIoExchange(c);

@@ -6,7 +6,8 @@
  *       （= 3 位以內共同的 10%＋第 4 位單獨 10%＋第 5 位單獨再 20%）
  *   二、王族＋騎士：隊伍裡有王族時，騎士超過 3 位反過來是增傷——第 1～3 位 +10%、第 4 位 +20%、第 5 位起 +40%；
  *       第 4 位騎士：全隊受到的傷害 −10%；第 5 位騎士：再 −5%（合計 −15%）。
- *   三、隊伍裡沒有王族（有傭兵才算隊伍）：全隊造成的傷害 −20%、受到的傷害 +20%、AC +50（變差）、魔防 −50、
+ *   三、隊伍裡沒有王族（隊伍 5 人以上才算——你＋4 名以上傭兵；玩家 2026-10-30 18:10，原本帶 1 名傭兵就算）：
+ *       全隊造成的傷害 −20%、受到的傷害 +20%、AC +50（變差）、魔防 −50、
  *       掉落機率 ×0.4（掉落種類下修到 40%）。
  *   作用點：造成的傷害＝卡片戰鬥的最後結算（AFK_CARD_COMBAT.damage，玩家、傭兵、召喚物都經過這裡，含終焉）；
  *           受到的傷害＝核心受擊（AFK_RELIC_RUNTIME.incoming）＋外掛頭目的機制傷害（__afkIncomingMod：世界事件、霸主、幽靈船、終焉…）；
@@ -21,7 +22,7 @@
   var tk = function () { try { return Number(state.ticks) || 0; } catch (e) { return 0; } };
   var CLASS_STEP = [0.10, 0.10, 0.10, 0.20, 0.40];   // 第 1～5 位（之後同第 5 位）
   var KNIGHT_GUARD = [0.10, 0.05];                     // 第 4、5 位騎士給全隊的減傷
-  var NO_ROYAL = { out: 0.8, inc: 1.2, ac: 50, mr: -50, drop: 0.4 };
+  var NO_ROYAL = { out: 0.8, inc: 1.2, ac: 50, mr: -50, drop: 0.4, min: 5 };   // min：隊伍至少幾人才算（玩家 2026-10-30 18:10：5 人以上）
 
   // ── 計算（每個 tick、隊伍不變就重用）──
   var cache = { key: '', v: null };
@@ -30,7 +31,7 @@
     var allies = (p.allies || []).filter(Boolean), members = [p].concat(allies);
     var key = tk() + '|' + members.map(function (m) { return (m._slot || 'p') + ':' + m.cls; }).join(',');
     if (cache.key === key) return cache.v;
-    var hasRoyal = members.some(function (m) { return m.cls === 'royal'; }), party = members.length >= 2;
+    var hasRoyal = members.some(function (m) { return m.cls === 'royal'; }), party = members.length >= NO_ROYAL.min;
     var out = new Map(), byCls = {};
     members.forEach(function (m) { (byCls[m.cls] = byCls[m.cls] || []).push(m); out.set(m, 1); });
     var knights = 0;
