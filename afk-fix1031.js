@@ -9,6 +9,9 @@
  *       開收集冊前先把背包、身上、倉庫的遺物補登錄（任何方式拿到的都算）。
  *   四、無法裝備的原因（2026-10-31 03:43）：有等級限制的裝備（亞丁古物的 Lv.45 巴拉卡斯的魅惑等 40 件）原本只寫「無法裝備」，
  *       現在背包標籤、物品視窗、按鈕都寫出「Lv.45 才能裝備（目前 Lv.36）」，物品效果也列出限制等級（核心補丁 77 呼叫這裡）。
+ *   五、暗夢星迴（2026-10-31 04:24：花 1000 顆龜裂之核進去，23 秒就離開，領取獎勵是空的）：
+ *       ‧暗夢星迴本來就沒有停留獎勵（只有擊倒夢境者的投影才有掉落）；離開時改寫清楚，不再叫你去入口「領取獎勵」。
+ *       ‧在暗夢星迴裡換地圖、換地區、撤離，先跳確認視窗（離開沒有獎勵、龜裂之核不退還），避免誤觸。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -47,10 +50,48 @@
     });
   }
 
+  // ── 五、暗夢星迴：離開確認 ──
+  var leaveOk = false;
+  var inDream = function () { try { return !!(state.dreamStar && state.riftRun); } catch (e) { return false; } };
+  var askLeave = function (go) {
+    var run = function () { leaveOk = true; try { go(); } finally { leaveOk = false; } };
+    var stay = function () { try { if (typeof syncMapSelectors === 'function') syncMapSelectors(); } catch (e) {} };
+    var msg = '暗夢星迴沒有停留獎勵——只有擊倒夢境者的投影才會留下掉落。\n現在離開，這次的 1000 顆龜裂之核不會退還。\n\n確定要離開嗎？';
+    if (W.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '離開暗夢星迴？', message: msg, okText: '離開', cancelText: '留下來', danger: true, onOk: run, onCancel: stay, onDismiss: stay });
+    else if (W.confirm(msg)) run(); else stay();
+  };
+  if (typeof W.riftEvacuate === 'function') {
+    var oEvac = W.riftEvacuate;
+    rebind('riftEvacuate', function () {
+      var self = this, args = arguments;
+      if (on() && !leaveOk && inDream()) { askLeave(function () { return oEvac.apply(self, args); }); return; }
+      return oEvac.apply(this, arguments);
+    });
+  }
+  if (typeof W.riftEndRun === 'function') {
+    var oEnd = W.riftEndRun;
+    rebind('riftEndRun', function () {
+      if (!on() || !inDream()) return oEnd.apply(this, arguments);
+      var t0 = Date.now() - (Number(state.riftStartMs) || Date.now()), oLog = W.logSys, r;
+      if (typeof oLog === 'function') W.logSys = function (h) { if (/你離開了時空裂痕|你自夢境中醒轉/.test(String(h))) return; return oLog.apply(this, arguments); };
+      try { r = oEnd.apply(this, arguments); } finally { if (typeof oLog === 'function') W.logSys = oLog; }
+      try {
+        var tm = typeof fmtPrideTime === 'function' ? fmtPrideTime(Math.max(0, t0)) : '';
+        logSys('<span class="font-bold" style="color:#c4b5fd;">🌀 你離開了暗夢星迴' + (tm ? '（停留 ' + tm + '）' : '') + '。星迴試煉沒有停留獎勵，只有擊倒夢境者的投影才會留下掉落。</span>');
+      } catch (e) {}
+      return r;
+    });
+  }
+
   // ── 二、換地圖提示 ──
   if (typeof W.changeMap === 'function') {
     var oChange = W.changeMap;
-    rebind('changeMap', function () {
+    rebind('changeMap', function (force) {
+      var self = this, args = arguments;
+      if (on() && !force && !leaveOk && inDream()) {
+        var tgt = (document.getElementById('map-select') || {}).value;
+        if (tgt && tgt !== mapState.current) { askLeave(function () { return oChange.apply(self, args); }); return; }
+      }
       var before = (typeof mapState !== 'undefined' && mapState.current) || '';
       var r = oChange.apply(this, arguments);
       try {
