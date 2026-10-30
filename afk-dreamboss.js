@@ -14,7 +14,7 @@
  *   二、副本王的招式（只在副本裡、王還在場時）：
  *     ‧群體衝擊之暈：每 20 秒，你與所有傭兵暈眩 2 秒（照常判定暈眩抵抗）。
  *     ‧相消術：每 30 秒，驅散你與所有傭兵的增益（保留變身、迷魅、誘捕、召喚，跟原本的集體相消一樣）。
- *     ‧疼痛的歡愉：每 20 秒對隨機一名角色（你或傭兵）施放 10 秒：那名角色打這隻王的傷害，50% 反彈給他自己（物理、魔法都算）。
+ *     ‧疼痛的歡愉：每 20 秒對隨機一名角色（你或傭兵）施放 10 秒：那名角色下一次打這隻王的傷害 25% 反彈給他自己（物理、魔法都算），反彈一次就消失（2026-10-31 00:47：50% → 25%、只反彈一下）。
  *     ‧吸魔：每 30 秒吸走你與所有傭兵最大 MP 的 5%。
  *     ‧蝕抗：每 45 秒，你與所有傭兵的五屬性抗性（火、水、風、地、無）−50，最多 −300；離開副本或王都倒下就恢復。
  *   三、副本侵蝕（玩家 2026-10-30 21:46）：夢域鏡的副本裡，你與傭兵每秒失去最大 HP 與最大 MP 的 1%；每過 1 分鐘再 +1%
@@ -42,7 +42,7 @@
     region:  { pct: 0.05, dot: [10, 5, 0.03], n: '地區霸主' }
   };
   var SWARM = 0.05, SWARM_PCT = 0.30, ENTRY_CD = 30;
-  var SK = { stun: 200, stunDur: 20, cancel: 300, pain: 200, painDur: 100, painRf: 0.5, mp: 300, mpPct: 0.05, res: 450, resStep: 50, resMax: 300 };
+  var SK = { stun: 200, stunDur: 20, cancel: 300, pain: 200, painDur: 100, painRf: 0.25, mp: 300, mpPct: 0.05, res: 450, resStep: 50, resMax: 300 };
   var RES_KEYS = ['resFire', 'resWater', 'resWind', 'resEarth', 'resNone'];
 
   // ── 全隊（含寵物、召喚物、城堡護衛）──
@@ -154,7 +154,7 @@
     var cs = chars(); if (!cs.length) return;
     var c = cs[Math.floor(Math.random() * cs.length)];
     m._dbPain = { who: c, until: tk() + SK.painDur };
-    log(tag('疼痛的歡愉', '#e879f9') + esc(m.n) + ' 對' + nameOf(c) + '施放疼痛的歡愉——10 秒內' + nameOf(c) + '打它的傷害 50% 會反彈回去！');
+    log(tag('疼痛的歡愉', '#e879f9') + esc(m.n) + ' 對' + nameOf(c) + '施放疼痛的歡愉——10 秒內' + nameOf(c) + '下一次打它的傷害 25% 會反彈回去（反彈一次就消失）！');
   };
   var drainMp = function (m) {
     var sum = 0;
@@ -211,6 +211,7 @@
       try {
         var pn = target && target._dbPain;
         if (pn && r > 0 && actor && actor === pn.who && tk() <= pn.until && !(opt && opt.origin === 'reflection') && on()) {
+          target._dbPain = null;   // 只反彈一下就消失（玩家 2026-10-31 00:47）
           var d = Math.max(1, Math.floor(r * SK.painRf)), L = W.__afkLore;
           if (L && L.boss && L.boss.hurt) L.boss.hurt(actor, d);
           else if (actor === P()) { actor.hp -= d; if (actor.hp <= 0 && typeof killPlayer === 'function') killPlayer(); }

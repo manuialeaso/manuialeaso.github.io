@@ -6,7 +6,7 @@
  *     補助、增益、給敵人上狀態的魔法照原價
  *   ‧INT 提供的 SP 不再封頂 33：至少 (INT＋35)÷3（INT 200 → 78）
  *   ‧HP 自然恢復改為每 3 秒一次
- *   ‧治療溢出 → 護盾（上限＝最大 HP 20%），先擋傷害，能防暴斃
+ *   ‧治療溢出 → 護盾（上限＝最大 HP 40%；2026-10-31 前 20%），先擋傷害，能防暴斃
  * 敗者榮光（隊長轉生後，全隊光環）
  *   ‧所有武器都有擦傷：本來沒命中的一般攻擊改成擦傷，傷害 50%
  *   ‧屬性抗性滿（免疫）時，原本轉成物理的那份傷害減半，而且這一半改成回復 HP（＝不受傷，反而回血）
@@ -34,7 +34,7 @@
   var ELE_KEY = { fire: 'resFire', water: 'resWater', wind: 'resWind', earth: 'resEarth' };
 
   // ── 護盾 ──
-  var shieldCap = function (e) { return Math.floor((Number(e.mhp) || 0) * 0.2); };
+  var shieldCap = function (e) { return Math.floor((Number(e.mhp) || 0) * 0.4); };   // 溢補護盾上限：最大 HP 40%（玩家 2026-10-31 00:47；原本 20%）
   var addShield = function (e, over) {
     if (!e || !reborn(e) || !(over > 0)) return;
     e._afkShield = Math.min(shieldCap(e), (Number(e._afkShield) || 0) + Math.floor(over));
