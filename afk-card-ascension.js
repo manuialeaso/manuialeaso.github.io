@@ -251,8 +251,7 @@
     actor=actor||player;var s=data(actor),ns=monsterNames();
     return {diamonds:ns.filter(function(n){return diamondOwned(n,actor);}).length,total:ns.length,completedRegions:completedRegions(actor),excess:excessCount(actor),fragments:itemCount(FRAGMENT,actor),diamondShards:itemCount(DSHARD,actor),spacetimeShards:itemCount(STSHARD,actor),tiers:TIERS.map(function(t){var fail=Math.min(10,integer((s.failures||{})[t]));return {tier:t,n:RULES[t].n,rate:rateOf(t,actor),unlocked:unlocked(t,actor),failures:fail,guaranteed:fail>=10,attempts:integer((s.attempts||{})[t]),mat:matCount(t,actor),owned:poolOf(t).filter(function(r){return owned(r.id,actor);}).length,total:poolOf(t).length};})};
   }
-  function synthesize(tier) {
-    var result=transaction(function(){
+  function synthStep(tier) {
       if(TIERS.indexOf(tier)<0 || !catalog[tier].length)return {ok:false,msg:'此階卡片尚未開放。'};
       if(!unlocked(tier,player))return {ok:false,msg:tier==='mythic'?'請先讓任一地區的怪物圖鑑全部達到白金卡。':tier==='samsara'?'請先收集全部 '+poolOf('spacetime').length+' 種時空變身。':'請先收集一半的神話變身（'+Math.ceil(catalog.mythic.length/2)+' 種）。'};
       if(matCount(tier,player)<5)return {ok:false,msg:'需要 5 張未鎖定的'+RULES[tier].mat+'。'};
@@ -274,9 +273,30 @@
       }
       else if(tier==='samsara'){gainItem(STSHARD,1,true,true);reward={kind:'item',id:STSHARD,n:'時空變身碎片'};}
       return {ok:true,tier:tier,success:success,guaranteed:pity,spent:5,failures:s.failures[tier],reward:reward};
-    });
+  }
+  function synthesize(tier) {
+    var result=transaction(function(){return synthStep(tier);});
     if(result.ok){say(result.success?rewardText(result.reward):'光芒潰散，五張'+RULES[tier].mat+'在掌中化為塵埃'+(result.reward?'；餘燼裡留下了「'+result.reward.n+'」。':'。')+(tier==='spacetime'?'時空的縫隙又鬆動了些（下次成功率 '+Math.round(rateOf('spacetime',player)*100)+'%）。':''));}
     else if(result.msg)say(result.msg);
+    return result;
+  }
+  // 一口氣合成（玩家 2026-10-31 06:37）：把這一階的材料卡全部用完（每次 5 張，跟一張一張按一樣的機率、連敗保底、失敗補償），整批只存一次檔
+  var ALL_CAP=2000;
+  function synthesizeAll(tier) {
+    var result=transaction(function(){
+      var first=synthStep(tier);if(!first.ok)return first;
+      var runs=[first];
+      while(runs.length<ALL_CAP&&unlocked(tier,player)&&matCount(tier,player)>=5){var r=synthStep(tier);if(!r.ok)break;runs.push(r);}
+      return {ok:true,tier:tier,runs:runs,spent:runs.length*5};
+    });
+    if(result.ok){
+      var runs=result.runs,ok=runs.filter(function(r){return r.success;}),items={};
+      runs.forEach(function(r){if(r.reward&&r.reward.kind==='item')items[r.reward.n]=(items[r.reward.n]||0)+1;});
+      var lines=ok.map(function(r){return rewardText(r.reward);}).filter(Boolean);
+      var head='一口氣合成'+RULES[tier].n+'卡 '+runs.length+' 次（用掉 '+result.spent+' 張'+RULES[tier].mat+'）：成功 '+ok.length+' 次、失敗 '+(runs.length-ok.length)+' 次。';
+      var tail=Object.keys(items).map(function(n){return '「'+n+'」×'+items[n];}).join('、');
+      say(head+(lines.length?'<br>'+lines.join('<br>'):'')+(tail?'<br>失敗的餘燼留下：'+tail+'。':''));
+    }else if(result.msg)say(result.msg);
     return result;
   }
   function acquire(id) {
@@ -622,7 +642,14 @@
       line.innerHTML='<strong style="color:'+RULES[t.tier].color+'">'+t.n+'卡</strong><span>成功率 '+Math.round(t.rate*100)+'%'+(t.tier==='spacetime'&&t.rate>RULES.spacetime.rate?'（失敗累加，最高 50%）':'')+' · '+(t.guaranteed?'本次必定成功':'連敗 '+t.failures+'/10')+'</span><small>'+escape(RULES[t.tier].fail)+'</small>';
       var b=document.createElement('button');b.type='button';b.className='btn';b.dataset.ascendTier=t.tier;b.disabled=!t.unlocked||t.mat<5||!t.total;
       b.textContent=!t.unlocked?(t.tier==='mythic'?'任一地區圖鑑全白金後開放':t.tier==='samsara'?'時空變身收集滿 '+poolOf('spacetime').length+' 種後開放':'神話收集 '+Math.ceil(catalog.mythic.length/2)+' 種後開放'):'合成'+t.n+'卡'+(t.mat<5?'（材料 '+t.mat+'/5）':'')+' · 已收集 '+t.owned+'/'+t.total+' 種';
-      b.onclick=function(){synthesize(t.tier);};line.appendChild(b);box.appendChild(line);
+      b.onclick=function(){synthesize(t.tier);};line.appendChild(b);
+      var times=Math.floor(t.mat/5);
+      if(t.unlocked&&t.total&&times>=2){var ball=document.createElement('button');ball.type='button';ball.className='btn';ball.dataset.ascendAll=t.tier;ball.textContent='全部合成（'+times+' 次，用掉 '+times*5+' 張）';
+        ball.onclick=function(){var go=function(){synthesizeAll(t.tier);};
+          if(window.AFK_UI&&AFK_UI.confirm)AFK_UI.confirm({title:'一口氣合成'+t.n+'卡',message:'把背包裡未鎖定的'+RULES[t.tier].mat+'全部拿去合成：最多 '+times+' 次、用掉 '+times*5+' 張。\n機率、連敗保底與失敗補償都跟一次一次按一樣。',okText:'全部合成',cancelText:'取消',onOk:go});
+          else if(confirm('把未鎖定的'+RULES[t.tier].mat+'全部拿去合成（'+times+' 次）？'))go();};
+        line.appendChild(ball);}
+      box.appendChild(line);
     });
     var bottom=document.createElement('div');bottom.className='afk-ca-actions';
     var open=document.createElement('button');open.type='button';open.className='btn';open.textContent='查看變身收藏';open.onclick=openCollection;bottom.appendChild(open);
@@ -686,6 +713,6 @@
 
   var style=document.createElement('style');style.textContent='.afk-ca-tip{font-size:12.5px;color:#94a3b8;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:6px 8px;margin:0 0 8px;line-height:1.5}.afk-ca-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;margin:4px 0 8px}.afk-ca-form.afk-ca-tile{align-items:center;text-align:center;padding:6px 4px!important;margin:0}.afk-ca-tile .afk-th{width:64px;height:68px}.afk-ca-tile strong{font-size:12.5px;line-height:1.25;margin-top:2px;word-break:keep-all}.afk-ca-tile small.afk-ca-lv{font-size:10.5px;color:#94a3b8}.afk-ca-tile .afk-ca-off{font-size:10.5px}.afk-ca-tile.afk-ca-cur{border-color:#facc15!important;box-shadow:inset 0 0 8px rgba(250,204,21,.25)}.afk-ca-viewbtn{display:block;margin:-4px 0 8px auto;padding:4px 10px!important;font-size:12.5px}.afk-ca-form.afk-ca-dim{opacity:.45;filter:grayscale(1);cursor:not-allowed}.afk-ca-off{color:#94a3b8;font-weight:700}.afk-ca-panel{padding:14px;border-top:1px solid #334155;color:#e2e8f0}.afk-ca-panel h3,.afk-ca-dialog h3{font-weight:700;margin:8px 0}.afk-ca-panel p,.afk-ca-dialog p{font-size:12px;color:#94a3b8;margin:8px 0}.afk-ca-tier{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #334155;background:#0f172a;padding:10px;border-radius:8px;margin:8px 0}.afk-ca-tier small{flex-basis:100%;color:#94a3b8;font-size:12px}.afk-ca-tier .btn{margin-left:auto}.afk-ca-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.afk-ca-overlay{position:fixed;inset:0;z-index:10001;background:#020617cf;display:flex;align-items:center;justify-content:center;padding:14px 12px 12px;box-sizing:border-box}.afk-ca-dialog{width:min(620px,100%);max-height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #64748b;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px}#afk-card-ascension-body{min-height:0;overflow:auto;overscroll-behavior:contain}.afk-ca-dialog header{flex-shrink:0;padding-bottom:8px}.afk-ca-dialog header{display:flex;justify-content:space-between;align-items:center;gap:12px}.afk-ca-dialog header button{padding:6px 10px;color:#cbd5e1}.afk-ca-form{display:flex;flex-direction:column;text-align:left;padding:10px!important;white-space:normal;margin:3px 0;width:100%}.afk-ca-form span{font-size:11px;color:#94a3b8;margin-top:4px}.afk-ca-search{background:#020617;color:#e2e8f0;border:1px solid #475569;padding:8px;margin:0 0 10px;border-radius:6px}.afk-ca-panel button:disabled{opacity:.45;cursor:not-allowed}.afk-ca-tabs{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 8px}.afk-ca-tab{padding:4px 10px!important;font-size:12px;border:1px solid #475569;border-radius:6px;color:#cbd5e1}#afk-card-poly-tabs .afk-ca-tab.on{background:#854d0e!important;border-color:#f59e0b!important;color:#fef3c7!important}.afk-ca-tab:disabled{opacity:.35}.afk-ca-sub{font-weight:700;color:#fcd34d;margin:10px 0 4px;font-size:13px;border-bottom:1px solid #334155}.afk-ca-sub.minor{color:#94a3b8;font-size:12px;font-weight:600}.afk-ca-lv{color:#94a3b8;font-weight:400}.afk-ca-sec>summary{cursor:pointer;list-style:revert}';document.head.appendChild(style);
   var publicRules={};TIERS.forEach(function(t){publicRules[t]=Object.freeze(Object.assign({},RULES[t]));});Object.freeze(publicRules);
-  window.AFK_CARD_ASCENSION={formOk:formOk,nativeLv:nativeLv,matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,exchangeDiamondShards:exchangeDiamondShards,chooseSpacetime:chooseSpacetime,unsealSpacetime:unsealSpacetime,openSpacetimePick:openSpacetimePick,sealed:sealed,rateOf:rateOf,samsaraCd:samsaraCd,samsaraTick:samsaraTick,samsaraFightMax:SAMSARA_FIGHT,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE,diamondShard:DSHARD,spacetimeShard:STSHARD}};
+  window.AFK_CARD_ASCENSION={synthesizeAll:synthesizeAll,formOk:formOk,nativeLv:nativeLv,matCount:matCount,platinumRegion:platinumRegion,copiesOf:copiesOf,starsOf:starsOf,maxCopies:MAX_COPIES,renderSynth:renderSynth,rules:publicRules,cost:5,pityFailures:10,catalog:catalog,registerCatalog:registerCatalog,status:status,owned:owned,listOwned:listOwned,diamondOwned:diamondOwned,diamondFull:diamondFull,completedRegions:completedRegions,canUseForm:canUseForm,active:active,resolve:resolve,synthesize:synthesize,acquire:acquire,chooseReward:chooseReward,chooseDiamondReward:chooseDiamondReward,exchangeFragments:exchangeFragments,exchangeDiamondShards:exchangeDiamondShards,chooseSpacetime:chooseSpacetime,unsealSpacetime:unsealSpacetime,openSpacetimePick:openSpacetimePick,sealed:sealed,rateOf:rateOf,samsaraCd:samsaraCd,samsaraTick:samsaraTick,samsaraFightMax:SAMSARA_FIGHT,openCollection:openCollection,openChoice:openChoice,close:closeCollection,renderSynth:renderSynth,items:{choice:CHOICE,fragment:FRAGMENT,diamondChoice:DIAMOND_CHOICE,diamondShard:DSHARD,spacetimeShard:STSHARD}};
   if(forms()&&forms().catalog)registerCatalog(forms().catalog);
 })();
