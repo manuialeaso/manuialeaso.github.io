@@ -895,6 +895,31 @@
     [9589,9590,9591,9592,9593].forEach(function(sid){var d=DB.items[resolve(sid)];if(!d||!d.ttmiBuff||!(d.ttmiBuff.ttmiExpMult>2))return;
       d.ttmiOrigExpMult=d.ttmiBuff.ttmiExpMult;d.ttmiBuff.ttmiExpMult=2;d.d=String(d.d||'').replace(/×\s*[\d.]+/,'×2.0');});
   })();
+
+  // ── 變身卷軸系列全部移除（玩家 2026-10-31 05:09）：只留遊戲原本的「變形卷軸」（scroll_poly）——
+  //    透視鏡匯入的各式變形／變身卷軸（邊境的、Lv52～65、黃金、英雄之、黑帝斯之、潘朵拉、少女賽尼斯、裂痕專用…）、變身石、修練者解咒卷軸、
+  //    只裝這些卷軸的道具包；薩克那邊做這些東西的配方；只被這些配方用到的材料——全部不掉、不賣、不能做。舊存檔裡已有的保留。
+  var polyGone=Object.create(null);
+  (function(){
+    var RE=/變形卷軸|變身卷軸|變身石|少女賽尼斯|^修練者解咒卷軸$/;
+    imported.forEach(function(id){var d=DB.items[id];if(d&&(d.ttmiAction==='poly'||RE.test(d.n||'')))polyGone[id]=1;});
+    imported.forEach(function(id){var d=DB.items[id],row=rows[id];if(!d||polyGone[id]||d.ttmiAction!=='box'||!row||!row.contents||!row.contents.length)return;
+      if(row.contents.every(function(x){var c=resolve(x.sourceId);return !c||polyGone[c];}))polyGone[id]=1;});
+    var reqOf=Object.create(null);
+    for(var i=recipes.length-1;i>=0;i--){var r=recipes[i];if(polyGone[r.result]){r.req.forEach(function(q){reqOf[q.id]=1;});recipes.splice(i,1);}}
+    var used=Object.create(null);
+    try{Object.keys(CRAFT_RECIPES).forEach(function(k){(CRAFT_RECIPES[k]||[]).forEach(function(r){(r.req||[]).forEach(function(q){used[q.id]=1;});});});}catch(e){}
+    recipes.forEach(function(r){r.req.forEach(function(q){used[q.id]=1;});});
+    Object.keys(reqOf).forEach(function(id){var d=DB.items[id];if(id!=='gold'&&d&&!used[id]&&d.ttmiMaterial&&imported.indexOf(id)>=0&&!stock.some(function(x){return x===id;}))polyGone[id]=1;});
+    Object.keys(polyGone).forEach(function(id){var d=DB.items[id];if(!d)return;d.ttmiEvent=true;d.ttmiRetired=true;d.ttmiPolyRemoved=true;d.gachaWeight=0;});
+    var strip=function(t){if(!t)return;Object.keys(t).forEach(function(m){var L=t[m];if(!Array.isArray(L))return;for(var j=L.length-1;j>=0;j--){var e=L[j],eid=Array.isArray(e)?e[0]:e;if(polyGone[eid])L.splice(j,1);}});};
+    try{strip(MOB_DROPS);}catch(e){}try{strip(DARK_WEAPON_DROPS);}catch(e){}try{strip(DARK_CRYSTAL_DROPS);}catch(e){}try{strip(DRAGON_DROPS);}catch(e){}try{strip(WARRIOR_DROPS);}catch(e){}try{strip(MEM_DROPS);}catch(e){}
+    for(var k=addedDrops.length-1;k>=0;k--)if(polyGone[addedDrops[k].entry[0]])addedDrops.splice(k,1);
+    stock=stock.filter(function(id){return !polyGone[id];});
+    for(var q=riftIds.length-1;q>=0;q--)if(polyGone[riftIds[q]])riftIds.splice(q,1);
+    for(var g=gachaPool.length-1;g>=0;g--)if(polyGone[gachaPool[g]])gachaPool.splice(g,1);
+  })();
+
   syncAvailability();
   if(T&&typeof T.set==='function'){
     var oldToggle=T.set;
@@ -906,7 +931,7 @@
 
   window.AFK_TTMI_ITEMS={
     sourceIds:sourceIds,items:imported,recipes:recipes,source:data,resolve:resolve,bonus:bonus,conditional:conditional,price:price,buy:buy,buyQty:function(id){var el=typeof document!=='undefined'&&document.getElementById('ttmi-qty-'+id),q=Math.max(1,Math.min(100,Math.floor(Number(el&&el.value)||1)));return buy(id,q);},craft:craft,riftBuy:riftBuy,enabled:enabled,
-    acquisition:acquisition,priceDia:priceDia,gacha:gacha,gachaPool:function(){return gachaPool.slice();},isEvent:isEvent,whyNot:whyNot,refineCost:function(id){return refineCost[id]||null;},junk:function(){return Object.keys(junkTier).map(function(id){return {id:id,tier:junkTier[id]};});},gearMax:function(){return GEAR_MAX;},shopStock:function(){return stock.slice();},
+    acquisition:acquisition,polyGone:function(){return Object.keys(polyGone);},priceDia:priceDia,gacha:gacha,gachaPool:function(){return gachaPool.slice();},isEvent:isEvent,whyNot:whyNot,refineCost:function(id){return refineCost[id]||null;},junk:function(){return Object.keys(junkTier).map(function(id){return {id:id,tier:junkTier[id]};});},gearMax:function(){return GEAR_MAX;},shopStock:function(){return stock.slice();},
     beginRift:beginRift,clearRift:clearRift,inRift:inRift,openRift:openRiftSupplies,closeRift:closeRiftSupplies,
     coverage:function(){return {registered:imported.length,catalogueCandidates:data.items.length,reusedCandidates:data.items.filter(function(r){return resolve(r.sourceId)!==r.id;}).map(function(r){return {sourceId:r.sourceId,id:resolve(r.sourceId),n:r.n};}),sourceItems:data.sourceItems,sourcePages:data.sourcePages,recipes:recipes.length,dropMobs:Object.keys(dropPools).length,riftItems:riftIds.length,rejectedRecipes:rejectedRecipes.slice()};},
     mode:function(m){if(!enabled()||!atTown())return;catalogue.mode=m==='craft'?'craft':'shop';catalogue.page=0;catalogue.kind='all';redrawCatalogue();},
