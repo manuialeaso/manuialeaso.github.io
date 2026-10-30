@@ -258,8 +258,8 @@
       S()._afkGazeUntil = t + gs * SEC; S()._afkGazePct = gp;
       log(tag('席琳的凝視', '#e879f9') + (late ? '死亡女神的目光變得更冷、更沉，' : '死亡女神的目光掃過神殿，') + '所有人的手都沉重起來（造成的傷害 −' + Math.round(gp * 100) + '%，' + gs + ' 秒）。');
     }
-    // 煙霧（玩家 2026-10-30 20:43，一轉女神＝第一階層 'first'）：每 1 分鐘，100% 命中，全隊所有命中 −50%，10 秒
-    if (mode() === 'first' && every(age, SMOKE.every)) smoke();
+    // 煙霧（玩家 2026-10-30 20:43，一轉女神＝初次輪迴）：每 1 分鐘，100% 命中，全隊所有命中 −50%，10 秒
+    if (novice() && every(age, SMOKE.every)) smoke();   // 一轉女神＝還沒轉生、Lv100 第一次打席琳（初次輪迴）；第一階層（通往二轉）不放（玩家 2026-10-30 21:46）
     var pct = m.curHp / (m.hp || 1);
     var ph = pct > 0.75 ? 1 : pct > 0.5 ? 2 : pct > 0.25 ? 3 : 4;
     if (ph > (m._fbPhase || 1)) {

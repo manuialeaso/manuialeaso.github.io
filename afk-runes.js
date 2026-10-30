@@ -402,7 +402,15 @@
         desc: esc(x.where) + '<br>' + esc(RD.STAR_TXT[x.bs.key][nx - 1]) + (nx === 3 ? '（兩顆同名 ★2 合成一顆）' : ''), req: req, btns: [['st:' + x.loc, '升星', ok]] }, 'data-zo');
     });
     if (stars.length > 40) h += '<div class="ax-note">還有 ' + (stars.length - 40) + ' 顆，先升上面的。</div>';
-    h += '<div class="ax-note">★1 哀石結晶 50、★2 解命石 10、★3 兩顆同名 ★2 合成。魂、傳說符文不能升星；裂、牙、職業符文等效果做好後開放。鑲著的符文可以直接升星（★3 另一顆要在背包）。符文之語不跟星數。</div>';
+    h += '<div class="ax-note">★1 哀石結晶 50、★2 解命石 10、★3 兩顆同名 ★2 合成。魂、傳說符文不能升星。鑲著的符文可以直接升星（★3 另一顆要在背包）。符文之語不跟星數。</div>';
+    // 職業符文：指定技能
+    var FX = W.__afkRuneFx, cr = FX && FX.classRune ? FX.classRune(p) : null, rs = FX && FX.skillsOf ? FX.skillsOf(p) : { main: '', cd: '' };
+    var mySk = (p.skills || []).filter(function (id) { return DB.skills[id] && !DB.skills[id].passive; });
+    var opt = function (cur) { return '<option value="">（不指定）</option>' + mySk.map(function (id) { return '<option value="' + esc(id) + '"' + (id === cur ? ' selected' : '') + '>' + esc(DB.skills[id].n) + '</option>'; }).join(''); };
+    h += '<div class="ax-h">⑤ 職業符文：指定技能</div>'
+      + '<div class="ax-note">' + (cr ? '主手鑲著<b>' + esc(nm(cr.id)) + '</b>：' : '主手武器鑲上自己職業的職業符文才有效。') + '傷害格＝職業符文的技能（增益到期自動重放、攻擊每 8 秒自動施放），也是專精、極意、王道的指定技能；冷卻格＝覺醒的指定技能。</div>'
+      + '<div class="ax-filter"><label style="font-size:13px">傷害格 <select id="afk-zo-skm" aria-label="傷害格">' + opt(rs.main) + '</select></label>'
+      + '<label style="font-size:13px">冷卻格 <select id="afk-zo-skc" aria-label="冷卻格">' + opt(rs.cd) + '</select></label></div>';
     h += '<div class="ax-note">只用背包裡未上鎖的材料。武器的符文只在主手生效；防具、飾品、腰帶裝備在身上就生效。</div>';
     K.repaint(box, h, '.ax-list');
   };
@@ -430,6 +438,7 @@
     });
     host.addEventListener('change', function (ev) {
       var id = ev.target.id, v = ev.target.value;
+      if (id === 'afk-zo-skm' || id === 'afk-zo-skc') { var pp = P(), FXs = W.__afkRuneFx; if (pp && FXs && FXs.skillsOf) { FXs.skillsOf(pp)[id === 'afk-zo-skm' ? 'main' : 'cd'] = v; try { saveGame(); } catch (e) {} } render(host); return; }
       if (id === 'afk-zo-g1') ui.g1 = v; else if (id === 'afk-zo-g2') ui.g2 = v; else if (id === 'afk-zo-slot') ui.slot = Number(v); else if (id === 'afk-zo-rune') ui.rune = v; else if (id === 'afk-zo-rm') ui.rm = Number(v); else return;
       render(host);
     });

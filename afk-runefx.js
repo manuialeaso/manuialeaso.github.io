@@ -13,7 +13,7 @@
  *   寵物：鬃（寵物能力 +15%）、契（繼承 30% → 40／50%）
  *   套裝：夢、魘、魂（跟之魂疊加）、冥；夢魘、冥契、永夢、席琳的眷顧
  *   攻擊：雷（魔法二次傷害）、濺（濺射 A）、破、斬；碎陣（濺射 B）、天崩（濺射 C）、雷裂、雷霆審判、弒王、獵夢、屠龍、冥河
- * 製作中（說明上有標）：牙、裂（含「二次傷害鎖爆擊」）、八顆職業符文與指定技能、獸王、同心、專精、覺醒、極意、王道
+ * 2026-10-30 21:46 做好：裂（符文二次傷害可以爆擊）、牙（寵物多學技能）、八顆職業符文與指定技能（傷害格／冷卻格）、獸王、同心、專精、覺醒、極意、王道
  * ========================================================================== */
 (function () {
   'use strict';
@@ -154,6 +154,11 @@
         if (DRAGON.test(String(target.n || '')) && Wd(actor, 'dragonslay')) mult *= 1.25;
         var add = N(actor, '破') ? BY([0.2, 0.25, 0.30, 0.35], actor, '破') * (Number(target.dr) || 0) : 0;
         if (N(actor, '破') && SM(actor, '破') >= 3) mult *= 1.05;   // 破 ★3：傷害 +5%
+        if (cast && cast.actor === actor) {   // 職業符文的指定技能（傷害格）施放中：專精 +30%、王道 +50%＋無視 20% 減傷、職業符文 ★3 +20%
+          if (Wd(actor, 'mastery')) mult *= 1.3;
+          if (Wd(actor, 'kingsway')) { mult *= 1.5; add += 0.2 * (Number(target.dr) || 0); }
+          if (cast.star >= 3) mult *= 1.2;
+        }
         var bal = RD.BAL || {}; Object.keys(bal).forEach(function (k) { var c = N(actor, k); if (c && bal[k]) mult *= Math.max(0, 1 + bal[k] / 100 * c); });   // 平衡點數：每點 ±1%
         if (mult !== 1 || add) amount = floor(amount * mult + add);
       }
@@ -167,13 +172,18 @@
             if (gain > 0 && mx > 0) { poCd.set(actor, t0 + PO_CD); actor.mp = Math.min(mx, (Number(actor.mp) || 0) + gain); }
           }
         }
-        // 雷：魔法二次傷害（不會爆擊）
-        if (!extra && v > 0 && actor && actor.eq && opt && opt.kind === 'magic' && N(actor, '雷') && target && target.curHp > 0) {
-          var ch = Math.max(Wd(actor, 'thunder') ? 0.35 : 0, BY([0.20, 0.25, 0.30, 0.30], actor, '雷'));
+        // 二次傷害：雷（魔法命中）、極意（指定技能）——沒有「裂」不會爆擊；有裂照魔法爆擊率／爆擊傷害算（2026-10-30 21:46）
+        var zen = !!(cast && cast.actor === actor && Wd(actor, 'zenith'));
+        if (!extra && v > 0 && actor && actor.eq && opt && target && target.curHp > 0 && ((opt.kind === 'magic' && N(actor, '雷')) || zen)) {
+          var ch = zen ? 0.35 : Math.max(Wd(actor, 'thunder') ? 0.35 : 0, BY([0.20, 0.25, 0.30, 0.30], actor, '雷'));
           if (Math.random() < ch) {
             extra = true;
             var amt = floor(v * (Wd(actor, 'judgment') ? 1 : SM(actor, '雷') >= 3 ? 0.6 : 0.5));
-            var v2 = 0; try { v2 = oDmg.call(this, actor, target, amt, { kind: 'magic', second: true }); } finally { extra = false; }
+            if (N(actor, '裂')) {
+              var cr = Math.min(80, (Number(actor.d && actor.d.magicCrit) || 0) + (SM(actor, '裂') >= 3 ? 10 : 0));
+              if (Math.random() * 100 < cr) amt = floor(amt * (1 + ((Number(actor.d && actor.d.magicCritDmg) || 0) + 10 * SM(actor, '裂')) / 100));
+            }
+            var v2 = 0; try { v2 = oDmg.call(this, actor, target, amt, { kind: opt.kind || 'magic', second: true }); } finally { extra = false; }
             if (v2 > 0) { target.curHp -= v2; if (target.curHp <= 0) { var i = (mapState.mobs || []).indexOf(target); if (i >= 0) try { killMob(i); } catch (e) {} } }
           }
         }
@@ -257,5 +267,100 @@
       return r;
     };
   }
-  W.__afkRuneFx = { bump: bump, stateOf: stateOf, wordsOf: wordsOf, wordsOn: wordsOn, N: N, Wd: Wd, SS: SS, SM: SM };
+  // ── 職業符文（2026-10-30 21:46）：指定技能（傷害格／冷卻格，記在 p.afkRuneSkill）──
+  //   增益技能：到期就自動重放（常駐），MP 照扣（★1 −30%、★2 −60%、★3 不扣，而且也套用到全部傭兵）
+  //   攻擊技能：每 8 秒自動施放一次（★1 7 秒、★2 6 秒、★3 5 秒＋傷害 +20%），MP 照扣、不吃掉自動攻擊技能的冷卻
+  //   職業不符（例：騎士的「誓」鑲在法師身上）沒有效果。目前只有你自己（傭兵身上的職業符文不動作）。
+  var classRune = function (p) { var c = stateOf(p).cls; return c && c.cls === p.cls ? c : null; };
+  var skillsOf = function (p) { var r = p.afkRuneSkill; if (!r || typeof r !== 'object') r = p.afkRuneSkill = { main: '', cd: '' }; return r; };
+  var cast = null, CLS_IV = [80, 70, 60, 50];
+  var support = function (sk) { try { return typeof isSupportSkill === 'function' ? !!isSupportSkill(sk) : sk.type === 'buff'; } catch (e) { return false; } };
+  var inTown = function () { var m = (typeof mapState !== 'undefined' && mapState.current) || ''; return /^town_/.test(m); };
+  var castAs = function (p, skId, star) {
+    var snap = p.cds && p.cds.atkSk !== undefined ? p.cds.atkSk : undefined, r = false;
+    cast = { actor: p, sk: skId, star: star };
+    try { r = (typeof castSkill === 'function') ? castSkill(skId) : false; }
+    finally { cast = null; if (snap !== undefined && p.cds) p.cds.atkSk = snap; }
+    return r;
+  };
+  var classTick = function () {
+    var p = P(); if (!p || p.dead || !on() || p.classicMode) return;
+    var c = classRune(p); if (!c) return;
+    var sel = skillsOf(p), skId = sel.main, sk = skId && DB.skills[skId];
+    if (!sk || (p.skills || []).indexOf(skId) < 0) return;
+    if (p.statuses && (p.statuses.silence > 0 || p.statuses.magicseal > 0 || p.statuses.stun > 0 || p.statuses.freeze > 0 || p.statuses.sleep > 0 || p.statuses.stone > 0 || p.statuses.paralyze > 0)) return;
+    var star = Number(c.star) || 0, t = S().ticks || 0;   // 職業符文全身只算一顆，星數看那一顆
+    if (support(sk)) {
+      if (!((p.buffs || {})[skId] > 5)) {
+        var mp0 = p.mp, ok = castAs(p, skId, star);
+        if (ok && p.mp < mp0) { var back = star >= 3 ? 1 : star === 2 ? 0.6 : star === 1 ? 0.3 : 0; if (back) p.mp = Math.min(p.mmp || p.mp, p.mp + Math.floor((mp0 - p.mp) * back)); }
+      }
+      if (star >= 3 && t % 10 === 0 && (p.buffs || {})[skId] > 0) (p.allies || []).forEach(function (a) { if (!a || a._downed) return; a.buffs = a.buffs || {}; var had = (a.buffs[skId] || 0) > 0; a.buffs[skId] = Math.max(a.buffs[skId] || 0, p.buffs[skId]); if (!had) try { if (typeof _allyLevelRecompute === 'function') _allyLevelRecompute(a); } catch (e) {} });
+      return;
+    }
+    if (inTown() || !(typeof getTarget === 'function' && getTarget())) return;
+    if (!p._afkClsAt) p._afkClsAt = t;
+    if (t - p._afkClsAt < CLS_IV[Math.min(3, star)]) return;
+    p._afkClsAt = t;
+    castAs(p, skId, star);
+  };
+  // 覺醒：指定技能（冷卻格）施放後冷卻 −30%
+  var awakenAfter = function (skId) {
+    var p = P(); if (!p || !Wd(p, 'awaken')) return;
+    var sel = skillsOf(p); if (!sel.cd || sel.cd !== skId) return;
+    if (p.manualCd && p.manualCd[skId] > 0) p.manualCd[skId] = Math.ceil(p.manualCd[skId] * 0.7);
+    try { var auto = document.getElementById('sel-atk-skill'); if (auto && auto.value === skId && p.cds && p.cds.atkSk > 0) p.cds.atkSk = Math.ceil(p.cds.atkSk * 0.7); } catch (e) {}
+  };
+  ['castSkill', 'manualCast'].forEach(function (fn) {
+    var o = W[fn]; if (typeof o !== 'function') return;
+    W[fn] = function (skId) { var r = o.apply(this, arguments); try { if (r !== false) awakenAfter(skId); } catch (e) {} return r; };
+  });
+  if (typeof W.tick === 'function') {
+    var oTickC = W.tick;
+    W.tick = function () { var t0 = S().ticks, r = oTickC.apply(this, arguments); if (S().ticks !== t0 && !S().ff) { try { classTick(); } catch (e) {} } return r; };
+  }
+
+  // ── 牙（寵物多學技能）、牙的星數與獸王（觸發率）、同心（寵物受到的傷害 −30%）──
+  var PET_POOL = null;
+  var petPool = function () {
+    if (PET_POOL) return PET_POOL; PET_POOL = [];
+    try { Object.keys(PET_BOOK).forEach(function (f) { (PET_BOOK[f].sk || []).forEach(function (sk) { if (sk && sk.kind === 'magic' && (sk.d || sk.dmg)) PET_POOL.push({ form: f, sk: sk }); }); }); } catch (e) {}
+    return PET_POOL;
+  };
+  var hash = function (str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  var extraSkills = function (pet, n) {
+    var pool = petPool().filter(function (x) { return x.form !== pet.form; }); if (!pool.length || n <= 0) return [];
+    var out = [], h = hash(String(pet.uid || pet.form));
+    for (var i = 0; i < n && i < pool.length; i++) { var k = (h + i * 7919) % pool.length; if (out.indexOf(pool[k].sk) >= 0) k = (k + 1) % pool.length; out.push(pool[k].sk); }
+    return out;
+  };
+  if (typeof W.petCastSkill === 'function') {
+    var oPCS = W.petCastSkill;
+    var petCast = function (pet, d, target) {
+      var p = P(), n = p ? N(p, '牙') : 0, def = (typeof PET_BOOK !== 'undefined') ? PET_BOOK[pet.form] : null;
+      if (!n || !def || !Array.isArray(def.sk)) return oPCS.apply(this, arguments);
+      var orig = def.sk; def.sk = orig.concat(extraSkills(pet, n));
+      try { return oPCS.apply(this, arguments); } finally { def.sk = orig; }
+    };
+    W.petCastSkill = function (pet, d, target) {
+      var r = petCast.apply(this, arguments);
+      try {
+        var p = P(), more = p ? 0.03 * SS(p, '牙') + 0.30 * Math.min(1, Wd(p, 'beastking')) : 0;
+        if (r && more > 0 && Math.random() < more && target && target.curHp > 0) petCast.apply(this, arguments);
+      } catch (e) {}
+      return r;
+    };
+    try { petCastSkill = W.petCastSkill; } catch (e) {}
+  }
+  ['enemyAttackPet', 'applyMobMagicToPet'].forEach(function (fn) {
+    var o = W[fn]; if (typeof o !== 'function') return;
+    W[fn] = function () {
+      var p = P(), pet = arguments[fn === 'enemyAttackPet' ? 1 : 2], h0 = pet ? Number(pet.hp) || 0 : 0;
+      var r = o.apply(this, arguments);
+      try { if (pet && p && Wd(p, 'bond') && pet.hp > 0 && pet.hp < h0) pet.hp += Math.floor((h0 - pet.hp) * 0.3); } catch (e) {}
+      return r;
+    };
+  });
+
+  W.__afkRuneFx = { bump: bump, stateOf: stateOf, wordsOf: wordsOf, wordsOn: wordsOn, N: N, Wd: Wd, SS: SS, SM: SM, classRune: classRune, skillsOf: skillsOf, classTick: classTick, extraSkills: extraSkills, castAs: castAs };
 })();

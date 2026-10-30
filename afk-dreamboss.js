@@ -17,6 +17,9 @@
  *     ‧疼痛的歡愉：每 20 秒對隨機一名角色（你或傭兵）施放 10 秒：那名角色打這隻王的傷害，50% 反彈給他自己（物理、魔法都算）。
  *     ‧吸魔：每 30 秒吸走你與所有傭兵最大 MP 的 5%。
  *     ‧蝕抗：每 45 秒，你與所有傭兵的五屬性抗性（火、水、風、地、無）−50，最多 −300；離開副本或王都倒下就恢復。
+ *   三、副本侵蝕（玩家 2026-10-30 21:46）：夢域鏡的副本裡，你與傭兵每秒失去最大 HP 與最大 MP 的 1%；每過 1 分鐘再 +1%
+ *       （0～60 秒每秒 1%、60～120 秒每秒 2%……），離開副本就停。四龍副本原本的副本傷害照舊另外算。
+ *       一轉女神（還沒轉生、Lv100 第一次打席琳）也算；時空裂痕、傲慢之塔攀登不算。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -221,12 +224,39 @@
   };
   hookPain();
 
+  // ── 副本侵蝕 ──
+  var DRAIN = { base: 0.01, step: 0.01, per: 600 }, drain = { map: null, t0: 0, lv: 0 };
+  var FINAL_MAP = 'afk_final_sea';
+  var drainZone = function () {
+    var key = (typeof mapState !== 'undefined' && mapState.current) || '';
+    if (key === FINAL_MAP) return !!(S()._afkFinal && S()._afkFinalNovice);   // 一轉女神
+    if (key === 'rift_battle' || S().prideClimb) return false;
+    return inDungeon();
+  };
+  var drainStep = function () {
+    var key = mapState.current, t = tk();
+    if (!drainZone()) { drain.map = null; return; }
+    if (drain.map !== key) { drain.map = key; drain.t0 = t; drain.lv = 0; return; }
+    var el = t - drain.t0; if (el <= 0 || el % 10 !== 0) return;
+    var lv = Math.floor(el / DRAIN.per), pct = DRAIN.base + DRAIN.step * lv, p = P();
+    if (lv !== drain.lv || el === 10) { drain.lv = lv; log(tag('副本侵蝕', '#a855f7') + '夢域在副本裡蔓延——全隊每秒失去最大 HP 與 MP 的 ' + Math.round(pct * 100) + '%（每過 1 分鐘 +1%）。'); }
+    chars().forEach(function (c) {
+      var mh = Number(c === p ? c.mhp : c.mhp) || 0, mm = Number(c.mmp) || 0;
+      if (mm > 0) c.mp = Math.max(0, (Number(c.mp) || 0) - Math.floor(mm * pct));
+      var d = Math.max(1, Math.floor(mh * pct));
+      if (c === p) { p.hp -= d; if (p.hp <= 0 && !p.dead && typeof killPlayer === 'function') killPlayer(); }
+      else { c.curHp = (Number(c.curHp) || 0) - d; if (c.curHp <= 0) { c.curHp = 0; c._downed = true; c._reviveCd = 150; } }
+    });
+    try { if (!S().ff && typeof updateUI === 'function') updateUI(); } catch (e) {}
+  };
+
   // ── 每個 tick ──
   var lastMap = null;
   var step = function () {
     var cur = (typeof mapState !== 'undefined' && mapState.current) || '';
     if (cur !== lastMap) { lastMap = cur; dots.length = 0; lastEntry = {}; }
-    if (!on()) { dots.length = 0; clearRes(); return; }
+    if (!on()) { dots.length = 0; clearRes(); drain.map = null; return; }
+    drainStep();
     var dgBossAlive = false;
     (mapState.mobs || []).forEach(function (m) {
       if (!m || m._dead || !(m.curHp > 0)) return;
@@ -246,5 +276,5 @@
   }
 
   W.__afkDreamBoss = { on: on, ENTRY: ENTRY, SWARM: SWARM, SWARM_PCT: SWARM_PCT, SK: SK, step: step, everyone: everyone, pctCur: pctCur, inDungeon: inDungeon, classify: classify,
-    resCut: function () { return resCut; }, dots: function () { return dots.slice(); }, _reset: function () { dots.length = 0; lastEntry = {}; clearRes(); } };
+    resCut: function () { return resCut; }, dots: function () { return dots.slice(); }, _reset: function () { dots.length = 0; lastEntry = {}; clearRes(); drain.map = null; }, DRAIN: DRAIN, drainZone: drainZone };
 })();
