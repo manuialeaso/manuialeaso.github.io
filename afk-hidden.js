@@ -10,6 +10,8 @@
  *   六、觸發者（玩家 2026-10-31 02:50）：16 人隊伍（你＋15 名傭兵），八個職業各 2 人，而且 16 人的轉生技藝全部不同（＝16 門技藝都到齊）
  *       → 觸發者光環，只在一般區域（副本、時空裂痕、暗夢星迴、攀登、最終決戰不算）：全隊造成的傷害 +30%、受到的傷害 −30%；
  *       對手是王（打王、被王打）時改成 +10%／−10%。
+ *   七、戰士的臂力（玩家 2026-10-31 04:05）：轉生後的戰士，雙手武器當單手用（可以和盾牌一起裝），也可以裝盾牌。
+ *       可用的武器種類照原本戰士的規則（鈍器、開放清單），只是不再算雙手；經典模式不套用。
  *   都不寫在任何說明裡（小百科只寫「有隱藏條件」）。
  *   開關：隱藏規則全部合併成一個開關 hiddenbonus「隱藏規則」（玩家 2026-10-30：以後新的隱藏規則也放進來；命運 afk-fate 也看這個開關）。
  * ========================================================================== */
@@ -137,9 +139,25 @@
     } else if (!on2) trigLog = null;
   };
 
+  // ── 戰士的臂力 ──
+  var mightyWarrior = function () { var p = P(); return !!(p && p.cls === 'warrior' && p.rebirth > 0 && !p.classicMode); };
+  if (typeof W.effTwoHanded === 'function') {
+    var oTwo = W.effTwoHanded;
+    W.effTwoHanded = function (d, id) { if (mightyWarrior() && d && d.type === 'wpn' && !d.isBow && !d.isArrow) return false; return oTwo.apply(this, arguments); };
+    try { effTwoHanded = W.effTwoHanded; } catch (e) {}
+  }
+  if (typeof W.warriorEquipOk === 'function') {
+    var oWar = W.warriorEquipOk;
+    W.warriorEquipOk = function (d, id) {
+      if (oWar.apply(this, arguments)) return true;
+      return !!(mightyWarrior() && d && d.type === 'arm' && d.slot === 'shield' && !d.reqAvatar);
+    };
+    try { warriorEquipOk = W.warriorEquipOk; } catch (e) {}
+  }
+
   if (typeof W.tick === 'function') {
     var oTick = W.tick;
     W.tick = function () { var t0 = tk(), r = oTick.apply(this, arguments); if (tk() !== t0) { try { step(); } catch (e) {} try { trigStep(); } catch (e) {} } return r; };
   }
-  W.__afkHidden = { trigger: trigger, normalArea: normalArea, trigK: trigK, TRIG: TRIG, trio: trio, male: male, kingFoe: kingFoe, KNIGHT_LOAD: KNIGHT_LOAD, KNIGHT_CD: KNIGHT_CD, wrath: wrath, step: step, WRATH: WRATH };
+  W.__afkHidden = { mightyWarrior: mightyWarrior, trigger: trigger, normalArea: normalArea, trigK: trigK, TRIG: TRIG, trio: trio, male: male, kingFoe: kingFoe, KNIGHT_LOAD: KNIGHT_LOAD, KNIGHT_CD: KNIGHT_CD, wrath: wrath, step: step, WRATH: WRATH };
 })();
