@@ -15,7 +15,7 @@
  *     直接沿用原本的怪物資料，能力值與技能都不改
  *   ‧三層（玩家 2026-10-26 二）：第一層八位長老 → 第二層四大軍王 → 第三層丹特斯＋肯恩＋賽尼斯。
  *     每層的頭目各出一次、打完全部才進下一層（同時在場：一、二層最多 2 隻，第三層 3 隻一起出）；
- *     第三層打完＝通關，回到亞丁。中途離開就重來。這張圖禁止離線掛機。
+ *     第三層打完＝通關，回到亞丁城堡（持有亞丁城時；2026-10-30 起，原本回亞丁城鎮；沒有城的人仍回亞丁城鎮）。中途離開就重來。這張圖禁止離線掛機。
  * 掉落（主謀三人另外掉）：席琳結晶 20～40 顆；30% 昇華支配碎片 1～3 個
  * ========================================================================== */
 (function () {
@@ -148,6 +148,10 @@
       if (typeof TOWN_NPC_POS_OVERRIDE !== 'undefined') (TOWN_NPC_POS_OVERRIDE.town_aden = TOWN_NPC_POS_OVERRIDE.town_aden || {})[NPC_ID2] = [52, 40];
     }
   } catch (e) { console.warn('[AFK-traitor] npc', e); }
+  var clearDest = function () {   // 通關後回哪裡：持有亞丁城＝亞丁城堡（城堡安全區只有持有的血盟能待）；否則亞丁城鎮
+    try { if (ownsAden() && DB.towns && DB.towns[CASTLE_TOWN]) return CASTLE_TOWN; } catch (e) {}
+    return 'town_aden';
+  };
   var enterDungeon = function () {
     if (!unlocked()) return false;
     entering = true;
@@ -248,8 +252,9 @@
             if (run.layer + 1 < LAYERS.length) { var nx = run.layer + 1; sysMsg('<span class="text-emerald-300">' + LAYERS[run.layer].n.split('・')[0] + '肅清完畢，你推開通往更深處的門。</span>'); startLayer(nx); }
             else {
               run = { done: true, layer: LAYERS.length - 1, queue: [], killed: 0, need: 0 };
-              sysMsg('<span class="text-yellow-300 font-bold">🏆 謀叛者全數伏誅！亞丁的王座保住了。</span>你帶著戰果回到亞丁。');
-              setTimeout(function () { try { if (mapState.current === MAP) { setMapSelectors('town_aden'); changeMap(true); try { saveGame(); } catch (e) {} } } catch (e) {} }, 1500);
+              var backTo = clearDest();   // 玩家 2026-10-30 17:24：打完回亞丁城堡（持有亞丁城時；沒有城的人照城堡規則回亞丁城鎮）
+              sysMsg('<span class="text-yellow-300 font-bold">🏆 謀叛者全數伏誅！亞丁的王座保住了。</span>你帶著戰果回到' + (backTo === CASTLE_TOWN ? '亞丁城堡' : '亞丁') + '。');
+              setTimeout(function () { try { if (mapState.current === MAP) { setMapSelectors(backTo); changeMap(true); try { saveGame(); } catch (e) {} } } catch (e) {} }, 1500);
             }
           }
         }
@@ -258,6 +263,6 @@
     };
   }
 
-  W.AFK_TRAITOR = { weak: WEAK, modeHp: MODE_HP, modeKey: modeKey, map: MAP, name: NAME, ownsAden: ownsAden, unlocked: unlocked, npc: NPC_ID, enter: enterDungeon, renderIra: renderIra, main: Object.keys(MAIN), followers: FOLLOW, pool: pool, layers: LAYERS, run: function () { return run; }, startLayer: startLayer };
+  W.AFK_TRAITOR = { weak: WEAK, modeHp: MODE_HP, modeKey: modeKey, map: MAP, name: NAME, ownsAden: ownsAden, clearDest: clearDest, castleTown: CASTLE_TOWN, unlocked: unlocked, npc: NPC_ID, enter: enterDungeon, renderIra: renderIra, main: Object.keys(MAIN), followers: FOLLOW, pool: pool, layers: LAYERS, run: function () { return run; }, startLayer: startLayer };
   console.log('[AFK-traitor] 已啟用：亞丁城副本「謀叛者的低語」（持有亞丁城＋統一七城，經由亞丁城的伊菈進入）');
 })();
