@@ -75,6 +75,8 @@
         openPanel: openPanel
     };
     window.AFK_TOGGLES = api;
+    // 核心原始函式的原始碼快照（這支最先載入，其他外掛還沒包過）：有外掛要從核心原始碼讀資料時用這份（afk-trackinfo 讀套裝門檻；2026-10-30 QA）
+    try { window.__afkCoreSrc = { recomputeStats: typeof recomputeStats === 'function' ? String(recomputeStats) : '' }; } catch (e) {}
 
     // ── 內建外掛目錄：先自動登錄，面板一定列得出來（就算某支外掛載入失敗也能被關/開）──
     //   id = 外掛檔名去掉 afk- 前綴；def:false 才預設關。infra(afk-ui/extradata/sw/toggles)刻意不列＝不可關。

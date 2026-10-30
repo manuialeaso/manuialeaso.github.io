@@ -285,7 +285,14 @@
     function doLogout() {
         var m = document.getElementById('m-logout-modal') || buildLogoutModal();
         renderLogoutRoster();   // 每次打開都重讀：別的分頁改過名字/刪過角色時不要顯示舊的
+        try { var mm = m.querySelector('#m-logout-msg'); if (mm) mm.innerHTML = logoutMsg(); } catch (e) {}   // 2026-10-30 QA：依狀態說明會不會離線掛機
         m.classList.add('open');
+    }
+    function logoutMsg() {
+        var cap = (window.__afk && window.__afk.capHours) || 48, why = '';
+        try { if (typeof currentRoleIsMercenary === 'function' && currentRoleIsMercenary()) why = '這隻角色目前受僱為其他角色的傭兵，登出後<b>不會</b>離線掛機。'; } catch (e) {}
+        try { if (!why && typeof mapState !== 'undefined' && String(mapState.current || '').indexOf('town_') === 0) why = '目前人在村莊（安全區），登出後<b>不會</b>有離線收益；要離線掛機請先到狩獵地圖。'; } catch (e) {}
+        return '回首頁前會<b>自動幫你存檔</b>，進度不會遺失。<br>' + (why || '登出後會開始離線掛機（上限 ' + cap + ' 小時）。') + '<br>確定回首頁？';
     }
     function buildLogoutModal() {
         var m = document.createElement('div');

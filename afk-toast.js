@@ -112,7 +112,7 @@
         });
         setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, 400);
       }
-      card.addEventListener('click', kill);   // 點 toast 一下提早關
+      // 2026-10-30 QA：toast 不吃點擊（原本點一下提早關，但它疊在視窗右上角的「關閉」上，第一下會被吃掉）
       setTimeout(kill, TOAST_MS);
     }
 
@@ -121,7 +121,7 @@
         /* 浮在畫面最頂端,刻意不讓開官方版指引橫幅——直接蓋在它上面(使用者要求),把遊戲畫面完整留給遊戲。
            z-index 用 int 上限與橫幅打平,再靠 DOM 順序壓過它(見 ensureContainer)。toast 是點擊回饋、3.5 秒自動消失。 */
         '#m-toast-wrap{position:fixed;left:50%;transform:translateX(-50%);top:14px;z-index:2147483647;display:flex;flex-direction:column;gap:8px;width:min(92vw,420px);pointer-events:none;}',
-        '#m-toast-wrap .m-toast{pointer-events:auto;background:rgba(15,23,42,.96);border:1px solid #334155;border-left:3px solid #38bdf8;border-radius:10px;padding:10px 14px;box-shadow:0 6px 20px rgba(0,0,0,.5);color:#e2e8f0;font-size:14px;line-height:1.5;word-break:break-word;opacity:0;transform:translateY(-10px);transition:opacity .22s ease,transform .22s ease;}',
+        '#m-toast-wrap .m-toast{pointer-events:none;background:rgba(15,23,42,.96);border:1px solid #334155;border-left:3px solid #38bdf8;border-radius:10px;padding:10px 14px;box-shadow:0 6px 20px rgba(0,0,0,.5);color:#e2e8f0;font-size:14px;line-height:1.5;word-break:break-word;opacity:0;transform:translateY(-10px);transition:opacity .22s ease,transform .22s ease;}',
         '#m-toast-wrap .m-toast.m-toast-in{opacity:1;transform:translateY(0);}',
         '#m-toast-wrap .m-toast-line + .m-toast-line{margin-top:4px;}',
         '#m-toast-wrap .m-toast-more{color:#94a3b8;font-size:12px;margin-bottom:4px;}'

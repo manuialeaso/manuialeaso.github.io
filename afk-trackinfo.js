@@ -86,7 +86,7 @@
     if (_thr) return _thr;
     _thr = {};
     try {
-      var re = /setCheck\[['"]([A-Za-z_0-9]+)['"]\]\s*>=\s*(\d+)/g, src = String(recomputeStats), m;
+      var re = /setCheck\[['"]([A-Za-z_0-9]+)['"]\]\s*>=\s*(\d+)/g, src = (window.__afkCoreSrc && window.__afkCoreSrc.recomputeStats) || String(recomputeStats), m;   // 2026-10-30：其他外掛包過 recomputeStats 後原始碼讀不到門檻 → 用 afk-toggles 先存的核心原始碼
       while ((m = re.exec(src))) { var n = +m[2]; if (!_thr[m[1]] || n < _thr[m[1]]) _thr[m[1]] = n; }   // 同一組有多階時取最低（＝開始有效果的那階）
     } catch (e) {}
     if (!Object.keys(_thr).length) console.warn('[AFK-trackinfo] 讀不到核心的套裝件數門檻（上游可能改了 recomputeStats 的寫法），狀態欄不顯示套裝。');

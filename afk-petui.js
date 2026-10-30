@@ -59,11 +59,12 @@
     var checked = false;
     function selfCheck(div) {
         if (checked) return;
-        checked = true;
         var root = div && div.querySelector(ROOT);
         if (!root) return;   // 不是寵物面板(其他 NPC 共用同一個容器)
-        var row = root.querySelector(LIST + ' > div');
-        if (!row) return;    // 保管箱是空的,沒有列可對
+        // 保管箱是空的時只有一個「空空如也」的佔位 div（沒有按鈕）→ 不算寵物列，等有寵物再檢查（2026-10-30 QA）
+        var row = [].slice.call(root.querySelectorAll(LIST + ' > div')).filter(function (x) { return x.querySelector('button'); })[0];
+        if (!row) return;
+        checked = true;
         var last = row.lastElementChild;
         if (!last || last.tagName !== 'SPAN' || !last.querySelector('button')) {
             console.warn('[AFK-petui] 寵物列的結構跟預期不同（上游可能改了 renderPetStorageNPC），兩排版面可能沒生效。');
