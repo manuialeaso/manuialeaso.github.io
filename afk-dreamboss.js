@@ -256,11 +256,12 @@
     var cur = (typeof mapState !== 'undefined' && mapState.current) || '';
     if (cur !== lastMap) { lastMap = cur; dots.length = 0; lastEntry = {}; }
     if (!on()) { dots.length = 0; clearRes(); drain.map = null; return; }
+    if (typeof W.__afkGraceOn === 'function' && W.__afkGraceOn()) return;   // 開場保護中（afk-bossrules）：出場傷害、侵蝕延後
     drainStep();
     var dgBossAlive = false;
     (mapState.mobs || []).forEach(function (m) {
       if (!m || m._dead || !(m.curHp > 0)) return;
-      if (!m._dbSeen) { m._dbSeen = true; var k = classify(m); m._dbKind = k; if (k) entrance(m, k); }
+      if (!m._dbSeen) { m._dbSeen = true; var k = classify(m); m._dbKind = k; if (k && (typeof W.__afkBossRankOk !== 'function' || W.__afkBossRankOk(m))) entrance(m, k); }   // 多王：只有第一隻放（afk-bossrules）
       if (m._dbKind === 'dungeon') { dgBossAlive = true; bossSkills(m); }
     });
     tickDots();

@@ -196,6 +196,7 @@
   var scanBossEntry = function () {
     try {
       if (!dreamOn() || siege()) return;
+      if (typeof window.__afkGraceOn === 'function' && window.__afkGraceOn()) return;   // 開場保護中：衝擊延到保護結束（afk-bossrules）
       var ms = mapState.mobs || [], ring = !!mapState._afkRingBoss, any = false;
       for (var i = 0; i < ms.length; i++) {
         var m = ms[i];
@@ -203,6 +204,7 @@
         m._afkEntryBlast = true; any = true;
         // 時空裂痕裡頭目一半機率出場、很快就一隻接一隻：登場衝擊最多每 10 秒一次（2026-10-29 晚，裂痕有自己的暴走與崩塌）
         if (state.riftRun) { if ((state.ticks || 0) < (state._dhBlastCd || 0)) continue; state._dhBlastCd = (state.ticks || 0) + 100; }
+        if (typeof window.__afkBossRankOk === 'function' && !window.__afkBossRankOk(m)) continue;   // 多王：第二、三隻不放（afk-bossrules）
         bossEntryBlast(m, ring ? 0.15 : 0.10);
       }
       if (any && ring) mapState._afkRingBoss = false;   // 戒指引來的那一波（可能 3 隻同時）都算 15%

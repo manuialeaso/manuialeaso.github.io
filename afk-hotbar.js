@@ -6,11 +6,12 @@
  * ‧點空格＝選要放什麼；點已放的格子＝使用（裝備類＝穿上／卸下切換）；右鍵或長按＝重新選擇；🔒 鎖住時不能改
  * ‧鍵盤 F5～F8 同樣觸發（打字中、按住 Ctrl／Alt 時不攔，瀏覽器的 Ctrl+F5 照常）
  * ‧每個角色各自記住（player._afkHotbar）
+ * ‧魔法也能放（玩家 2026-10-30 22:21）：格子記 'sk:<技能 id>'，按下去＝施放（手動技能走 manualCast，其他走 castSkill，MP、冷卻照原本）
  * ========================================================================== */
 (function () {
   'use strict';
   var W = window, T = W.AFK_TOGGLES;
-  if (T && T.register) T.register({ id: 'hotbar', name: '道具熱鍵列 F5～F8', desc: '左欄最底下四格熱鍵，任何道具裝備都能放，鍵盤 F5～F8 可用', group: '遊戲介面' });
+  if (T && T.register) T.register({ id: 'hotbar', name: '道具熱鍵列 F5～F8', desc: '左欄最底下四格熱鍵，任何道具、裝備、魔法都能放，鍵盤 F5～F8 可用', group: '遊戲介面' });
   var on = function () { return !T || T.enabled('hotbar'); };
   var P = function () { return (typeof player !== 'undefined' && player && player.cls) ? player : null; };
   var KEYS = ['F5', 'F6', 'F7', 'F8'], N = 4;
@@ -70,12 +71,25 @@
   var countOf = function (id) { var p = P(); return p ? (p.inv || []).reduce(function (s, i) { return s + ((i && i.id === id) ? (i.cnt || 1) : 0); }, 0) : 0; };
   var wornSlot = function (id) { var p = P(); if (!p || !p.eq) return null; for (var k in p.eq) if (p.eq[k] && p.eq[k].id === id) return k; return null; };
   var isEquip = function (d) { return !!d && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc'); };
+  var skOf = function (id) { return (typeof id === 'string' && id.indexOf('sk:') === 0) ? (DB.skills[id.slice(3)] || null) : null; };
+  var learned = function (skId) { var p = P(); return !!(p && (p.skills || []).indexOf(skId) >= 0); };
+  var skIcon = function (sk) { try { return getIconUrl(sk, true); } catch (e) { return ''; } };
+  var castable = function (id) { var sk = DB.skills[id]; return !!(sk && sk.type !== 'passive' && !sk.passive && sk.n); };
 
   // ── 觸發 ──
   var fire = function (i) {
     if (!on()) return;
     var p = P(), b = bar(); if (!p || !b) return;
     var id = b[i]; if (!id) { pick(i); return; }
+    var sk = skOf(id);
+    if (sk) {   // 魔法
+      var skId = id.slice(3);
+      if (!learned(skId)) { sys('<span class="text-slate-400">還沒學會 ' + esc(sk.n) + '。</span>'); return; }
+      var el0 = document.querySelector('#afk-hotbar .hb-slot[data-i="' + i + '"]'); if (el0) { el0.classList.remove('flash'); void el0.offsetWidth; el0.classList.add('flash'); }
+      try { if (sk.type === 'manual') manualCast(skId); else if (typeof castSkill === 'function' && !castSkill(skId)) sys('<span class="text-slate-400">' + esc(sk.n) + ' 現在無法施放（MP、冷卻或目標）。</span>'); } catch (e) { console.warn('[AFK-hotbar]', e); }
+      try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
+      schedule(); return;
+    }
     var d = DB.items[id]; if (!d) { b[i] = null; render(); return; }
     var el = document.querySelector('#afk-hotbar .hb-slot[data-i="' + i + '"]'); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
     if (isEquip(d)) {
@@ -94,7 +108,7 @@
   var layer = null;
   var closePick = function () { var m = document.getElementById('afk-hotbar-pick'); if (m) m.remove(); if (layer && W.AFK_UI && AFK_UI.closeLayer) { var l = layer; layer = null; try { AFK_UI.closeLayer(l); } catch (e) {} } layer = null; };
   var groupOf = function (d) { if (d.type === 'wpn') return '武器'; if (d.type === 'arm') return '防具'; if (d.type === 'acc') return '飾品'; if (d.type === 'pot') return '藥水'; if (d.type === 'scroll') return '卷軸'; if (d.type === 'skillbk') return '技能書'; return '道具'; };
-  var ORDER = ['藥水', '卷軸', '道具', '武器', '防具', '飾品', '技能書'];
+  var ORDER = ['魔法', '藥水', '卷軸', '道具', '武器', '防具', '飾品', '技能書'];
   var pick = function (i) {
     if (locked()) { sys('<span class="text-amber-300">熱鍵列已鎖住，先解鎖再改。</span>'); return; }
     var p = P(); if (!p) return; css(); closePick();
@@ -107,11 +121,12 @@
       var seen = {}, rows = [];
       (p.inv || []).forEach(function (it) { if (!it || !it.id || seen[it.id]) return; var d = DB.items[it.id]; if (!d) return; seen[it.id] = 1; if (q && String(d.n).toLowerCase().indexOf(q) < 0) return; rows.push({ id: it.id, d: d, g: groupOf(d), cnt: countOf(it.id) }); });
       if (p.eq) Object.keys(p.eq).forEach(function (k) { var it = p.eq[k]; if (!it || !it.id || seen[it.id]) return; var d = DB.items[it.id]; if (!d) return; seen[it.id] = 1; if (q && String(d.n).toLowerCase().indexOf(q) < 0) return; rows.push({ id: it.id, d: d, g: groupOf(d), cnt: 0, worn: true }); });
+      (p.skills || []).forEach(function (sid) { if (!castable(sid)) return; var sk = DB.skills[sid]; if (q && String(sk.n).toLowerCase().indexOf(q) < 0) return; rows.push({ id: 'sk:' + sid, d: sk, g: '魔法', sk: true }); });
       rows.sort(function (a, b) { return (ORDER.indexOf(a.g) - ORDER.indexOf(b.g)) || String(a.d.n).localeCompare(String(b.d.n), 'zh-Hant'); });
       var h = '', last = null;
       rows.forEach(function (r) {
         if (r.g !== last) { last = r.g; h += '<div class="grp">' + r.g + '</div>'; }
-        h += '<div class="it" data-id="' + esc(r.id) + '" title="' + esc(r.d.n) + '"><img src="' + esc(getIconUrl(r.d)) + '" alt="" onerror="this.style.visibility=\'hidden\'"><span>' + esc(r.d.n) + (r.worn ? '（裝備中）' : (r.cnt > 1 ? ' ×' + r.cnt : '')) + '</span></div>';
+        h += '<div class="it" data-id="' + esc(r.id) + '" title="' + esc(r.d.n) + '"><img src="' + esc(r.sk ? skIcon(r.d) : getIconUrl(r.d)) + '" alt="" onerror="this.style.visibility=\'hidden\'"><span>' + esc(r.d.n) + (r.worn ? '（裝備中）' : (r.cnt > 1 ? ' ×' + r.cnt : '')) + '</span></div>';
       });
       ls.innerHTML = h || '<div class="grp">背包裡沒有東西</div>';
     };
@@ -124,7 +139,7 @@
       var id = it.getAttribute('data-id'); var b = bar();
       for (var k = 0; k < N; k++) if (k !== i && b[k] === id) b[k] = null;   // 同一樣東西只放一格
       b[i] = id; closePick(); render(); save();
-      sys('<span class="text-emerald-300">F' + (5 + i) + ' 設為 ' + esc((DB.items[id] || {}).n || id) + '。</span>');
+      sys('<span class="text-emerald-300">F' + (5 + i) + ' 設為 ' + esc((skOf(id) || DB.items[id] || {}).n || id) + '。</span>');
     });
     layer = (W.AFK_UI && AFK_UI.openLayer) ? AFK_UI.openLayer(closePick) : null;
     try { inp.focus(); } catch (e) {}
@@ -158,12 +173,18 @@
     var b = bar(), lk = locked();
     var h = '<div class="hb-top">' + (W.AFK_SCREEN ? '<div class="hb-moon" title="掛機模式：螢幕常亮＋全黑省電畫面，遊戲照常 100% 戰鬥（點兩下螢幕回來）" onclick="window.AFK_SCREEN&&AFK_SCREEN.start()">🌙</div>' : '<div style="width:22px"></div>') + '<div class="hb-title">熱 鍵</div><div class="hb-lock' + (lk ? ' on' : '') + '" title="' + (lk ? '已鎖住：熱鍵照常可以按，但不能換內容（右鍵／長按無效）。點一下解鎖，沒有其他條件。' : '未鎖：右鍵或長按格子可以換內容。點一下鎖住，避免誤改。') + '">' + (lk ? '🔒' : '🔓') + '</div></div><div class="hb-row">';
     for (var i = 0; i < N; i++) {
-      var id = b[i], d = id ? DB.items[id] : null;
+      var id = b[i], skd = skOf(id);
+      if (skd) {
+        var lr = learned(id.slice(3)), mpc = 0; try { mpc = P().d && P().d.getMpCost ? P().d.getMpCost(skd.mp || 0, skd.tier) : (skd.mp || 0); } catch (e) { mpc = skd.mp || 0; }
+        h += '<div class="hb-slot' + (lr ? '' : ' none') + '" data-i="' + i + '" title="' + esc(skd.n) + '（魔法' + (mpc ? '，MP ' + mpc : '') + '）"><span class="hb-key">F' + (5 + i) + '</span><img src="' + esc(skIcon(skd)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' + (mpc ? '<span class="hb-cnt">' + mpc + '</span>' : '') + '</div>';
+        continue;
+      }
+      var d = id ? DB.items[id] : null;
       if (!d) { h += '<div class="hb-slot empty" data-i="' + i + '" title="點一下放東西"><span class="hb-key">F' + (5 + i) + '</span></div>'; continue; }
       var cnt = countOf(id), ws = wornSlot(id), none = !cnt && !ws;
       h += '<div class="hb-slot' + (none ? ' none' : '') + (ws ? ' worn' : '') + '" data-i="' + i + '" title="' + esc(d.n) + (ws ? '（裝備中，按一下卸下）' : (isEquip(d) ? '（按一下裝備）' : '')) + '"><span class="hb-key">F' + (5 + i) + '</span><img src="' + esc(getIconUrl(d)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' + (isEquip(d) ? '' : '<span class="hb-cnt">' + cnt + '</span>') + '</div>';
     }
-    h += '</div><div class="hb-names">' + b.map(function (id) { var dd = id && DB.items[id]; return '<span>' + (dd ? esc(dd.n) : '') + '</span>'; }).join('') + '</div>';
+    h += '</div><div class="hb-names">' + b.map(function (id) { var dd = id && (skOf(id) || DB.items[id]); return '<span>' + (dd ? esc(dd.n) : '') + '</span>'; }).join('') + '</div>';
     if (h !== lastHtml) { host.innerHTML = h; lastHtml = h; }
   };
   var pending = false;

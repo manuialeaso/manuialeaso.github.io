@@ -270,7 +270,7 @@
   // ── 職業符文（2026-10-30 21:46）：指定技能（傷害格／冷卻格，記在 p.afkRuneSkill）──
   //   增益技能：到期就自動重放（常駐），MP 照扣（★1 −30%、★2 −60%、★3 不扣，而且也套用到全部傭兵）
   //   攻擊技能：每 8 秒自動施放一次（★1 7 秒、★2 6 秒、★3 5 秒＋傷害 +20%），MP 照扣、不吃掉自動攻擊技能的冷卻
-  //   職業不符（例：騎士的「誓」鑲在法師身上）沒有效果。目前只有你自己（傭兵身上的職業符文不動作）。
+  //   職業不符（例：騎士的「誓」鑲在法師身上）沒有效果。傭兵也會用（2026-10-30 22:21，見 allyClassTick）。
   var classRune = function (p) { var c = stateOf(p).cls; return c && c.cls === p.cls ? c : null; };
   var skillsOf = function (p) { var r = p.afkRuneSkill; if (!r || typeof r !== 'object') r = p.afkRuneSkill = { main: '', cd: '' }; return r; };
   var cast = null, CLS_IV = [80, 70, 60, 50];
@@ -304,6 +304,42 @@
     p._afkClsAt = t;
     castAs(p, skId, star);
   };
+  // 傭兵的職業符文（玩家 2026-10-30 22:21）：傭兵自己存檔裡指定的技能（他那一格在佐爾頓設定的 afkRuneSkill）
+  //   增益：到期自動重放（MP 照扣，★1 −30%、★2 −60%、★3 不扣）；攻擊：每 8／7／6／5 秒自動施放（MP 照扣）
+  var allyClassTick = function () {
+    var p = P(); if (!p || p.dead) return;
+    var t = S().ticks || 0;
+    (p.allies || []).forEach(function (a) {
+      if (!a || a._downed || !(a.curHp > 0)) return;
+      var c = classRune(a); if (!c) return;
+      var sel = a.afkRuneSkill || {}, skId = sel.main, sk = skId && DB.skills[skId];
+      if (!sk || (a.skills || []).indexOf(skId) < 0) return;
+      var st = a.statuses || {};
+      if (st.silence > 0 || st.magicseal > 0 || st.stun > 0 || st.freeze > 0 || st.sleep > 0 || st.stone > 0 || st.paralyze > 0) return;
+      var star = Number(c.star) || 0, base = 0;
+      try { base = a.d && a.d.getMpCost ? a.d.getMpCost(sk.mp || 0, sk.tier) : (sk.mp || 0); } catch (e) { base = sk.mp || 0; }
+      if (support(sk)) {
+        a.buffs = a.buffs || {};
+        if ((a.buffs[skId] || 0) > 5) return;
+        var cost = Math.ceil(base * (star >= 3 ? 0 : star === 2 ? 0.4 : star === 1 ? 0.7 : 1));
+        if ((a.mp || 0) < cost) return;
+        a.mp -= cost; a.buffs[skId] = Number(sk.dur) || 600;
+        try { if (typeof _allyLevelRecompute === 'function') _allyLevelRecompute(a); } catch (e) {}
+        return;
+      }
+      if (inTown() || !(typeof getTarget === 'function' && getTarget())) return;
+      if (!a._afkClsAt) a._afkClsAt = t;
+      if (t - a._afkClsAt < CLS_IV[Math.min(3, star)]) return;
+      if ((a.mp || 0) < base) return;
+      a._afkClsAt = t; a.mp -= base;
+      cast = { actor: a, sk: skId, star: star };
+      try {
+        if (sk.dmgType === 'physical' && typeof allyCastPhysicalSkill === 'function') allyCastPhysicalSkill(a, sk);
+        else if (sk.dmgDice && typeof allyCastMagic === 'function') allyCastMagic(a, sk);
+        else if (typeof allyCastNonDamage === 'function') allyCastNonDamage(a, sk);
+      } catch (e) {} finally { cast = null; }
+    });
+  };
   // 覺醒：指定技能（冷卻格）施放後冷卻 −30%
   var awakenAfter = function (skId) {
     var p = P(); if (!p || !Wd(p, 'awaken')) return;
@@ -317,7 +353,7 @@
   });
   if (typeof W.tick === 'function') {
     var oTickC = W.tick;
-    W.tick = function () { var t0 = S().ticks, r = oTickC.apply(this, arguments); if (S().ticks !== t0 && !S().ff) { try { classTick(); } catch (e) {} } return r; };
+    W.tick = function () { var t0 = S().ticks, r = oTickC.apply(this, arguments); if (S().ticks !== t0 && !S().ff) { try { classTick(); } catch (e) {} try { allyClassTick(); } catch (e) {} } return r; };
   }
 
   // ── 牙（寵物多學技能）、牙的星數與獸王（觸發率）、同心（寵物受到的傷害 −30%）──
@@ -362,5 +398,5 @@
     };
   });
 
-  W.__afkRuneFx = { bump: bump, stateOf: stateOf, wordsOf: wordsOf, wordsOn: wordsOn, N: N, Wd: Wd, SS: SS, SM: SM, classRune: classRune, skillsOf: skillsOf, classTick: classTick, extraSkills: extraSkills, castAs: castAs };
+  W.__afkRuneFx = { bump: bump, stateOf: stateOf, wordsOf: wordsOf, wordsOn: wordsOn, N: N, Wd: Wd, SS: SS, SM: SM, classRune: classRune, skillsOf: skillsOf, classTick: classTick, allyClassTick: allyClassTick, extraSkills: extraSkills, castAs: castAs };
 })();

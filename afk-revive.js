@@ -3,7 +3,7 @@
  *
  *   一、復活卷軸讓自己原地復活：HP 100%（原本 1～200）。返生術照原本。
  *       （夢域鏡轉生後「吸走 MP 10%」的代價照 afk-dreamcost。）
- *   二、席琳夢域鏡：自己原地復活（返生術、復活卷軸）同一張地圖最多 3 次；換地圖重算。用完只能回村復活。
+ *   二、席琳夢域鏡：自己原地復活（返生術、復活卷軸）同一張地圖最多 3 次；換地圖重算（重新整理不重算）。用完只能回村復活。
  *   經典模式不套用。
  * ========================================================================== */
 (function () {
@@ -13,8 +13,9 @@
     desc: '復活卷軸讓自己原地復活時 HP 回滿；席琳夢域鏡裡同一張地圖最多自己原地復活 3 次（換地圖重算）' });
   var on = function () { try { return (!T || T.enabled('revivefix')) && !!(player && player.cls && !player.classicMode); } catch (e) { return false; } };
   var dream = function () { try { if (W.__afkDreamHell && W.__afkDreamHell.on) return !!W.__afkDreamHell.on(); return !!(player.sherineDream && player.sherineMad); } catch (e) { return false; } };
-  var LIMIT = 3, rec = { map: null, n: 0 };
-  var cur = function () { var m = (typeof mapState !== 'undefined' && mapState.current) || ''; if (rec.map !== m) { rec.map = m; rec.n = 0; } return rec; };
+  var LIMIT = 3;
+  // 次數記在角色身上（存進存檔）：重新整理不會重算，換地圖才重算（2026-10-30 QA：原本重新整理就又有 3 次）
+  var cur = function () { var p = player, m = (typeof mapState !== 'undefined' && mapState.current) || ''; var rec = p._afkRevive; if (!rec || typeof rec !== 'object') rec = p._afkRevive = { map: m, n: 0 }; if (rec.map !== m) { rec.map = m; rec.n = 0; } return rec; };
   var blocked = function () { return on() && dream() && cur().n >= LIMIT; };
   var scrolls = function () { return (player.inv || []).reduce(function (s, i) { return s + (i && i.id === 'scroll_revive' ? (Number(i.cnt) || 0) : 0); }, 0); };
   if (typeof W.reviveInPlace === 'function') {
@@ -44,5 +45,5 @@
     };
     try { updateReviveInPlaceBtn = W.updateReviveInPlaceBtn; } catch (e) {}
   }
-  W.__afkRevive = { LIMIT: LIMIT, used: function () { return cur().n; }, blocked: blocked, _reset: function () { rec = { map: null, n: 0 }; } };
+  W.__afkRevive = { LIMIT: LIMIT, used: function () { return cur().n; }, blocked: blocked, _reset: function () { try { player._afkRevive = null; } catch (e) {} } };
 })();

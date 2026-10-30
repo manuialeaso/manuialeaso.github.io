@@ -621,7 +621,7 @@
     <!-- afk-update：網站有新版本時提示更新（按一下存檔重整回原角色；閒置時由 afk-autoreload 自動更新） -->
     <script src="afk-update.js?v=632fceedc3"></script>
     <!-- afk-dreamhell：瘋狂席琳席琳夢域鏡模式（需核心補丁 18）；排在 afk-droplog／afk-dropcount 之前，讓它們看得到新掉落 -->
-    <script src="afk-dreamhell.js?v=700d48f716"></script>
+    <script src="afk-dreamhell.js?v=cd3c53dd98"></script>
     <!-- afk-cardplus：白金／鑽石卡、圖鑑全滿夢域 ×3、鑽白金幻化（需核心補丁 20）；排在 afk-dropcount 之前，讓掉落統計數得到白金／鑽石卡 -->
     <script src="afk-cardplus.js?v=ae0c57bc69"></script>
     <!-- afk-droplog：短暫卡頓補跑中的擊殺／掉落照常顯示（原版 <3 秒補跑完全不印） -->
@@ -740,7 +740,7 @@
     <!-- afk-uifix：切換地區優先飛到村莊 -->
     <script src="afk-uifix.js?v=f0dc17c37c"></script>
     <!-- afk-castlewar：七城攻城、城堡收成、宣戰與統一伺服器（需核心補丁 27；排在 afk-dreamhell／afk-arts 之後） -->
-    <script src="afk-castlewar.js?v=b8d463f06a"></script>
+    <script src="afk-castlewar.js?v=5012713c68"></script>
     <!-- afk-castle-guards：持有的每座城都能招該城部隊、四座新城部隊、統一七城後亞丁「聖十字近衛」（最多 8 名，湊滿 4 名可融合 ×4，融合體替玩家擋傷害） -->
     <script src="afk-castle-guards.js?v=3711b62320"></script>
     <script src="afk-bmprice.js?v=ec643849be"></script>
@@ -907,7 +907,7 @@
     <!-- afk-classic：經典模式補正（256K 撥接：斷線／LAG／怪中BUG、頭目皆不死系＋起死回生、古魯丁地監 1～7 樓攀爬與歐林、黑妖之後職業封印、影子打法、歐林房、無敵狗、開服夜爆機、等級上限、時代地圖、席琳神殿進入黑妖三部曲、原版經驗表／組隊分配／死亡懲罰／掉錢、一般轉經典、能力值上限、四人隊伍、贖回冷卻）；包 tick，放在後面 -->
     <script src="afk-classic.js?v=77fdab1506"></script>
     <!-- afk-hotbar：道具熱鍵列 F5～F8（左欄最底下；任何道具裝備都能放） -->
-    <script src="afk-hotbar.js?v=24c9b45ae3"></script>
+    <script src="afk-hotbar.js?v=14faac01ef"></script>
     <!-- afk-npcspace：村莊 NPC 名牌重疊時自動換到附近空位（包 renderTownNPCMap，排在所有加 NPC 的外掛之後） -->
     <script src="afk-npcspace.js?v=a5c3b52f88"></script>
     <!-- afk-dex-extra：掉落查詢的「外掛掉落」登記表（副本／席琳夢域鏡等用程式發的掉落，不在掉落表裡；排在所有加怪加物品的外掛之後） -->
@@ -950,9 +950,13 @@
     <!-- afk-savelite：存檔減負——頭目擊殺存檔最多 30 秒一次＋存檔前角色檢查快取（要在包 saveGame 的外掛之後） -->
     <script src="afk-savelite.js?v=45d4f65c56"></script>
     <!-- afk-dreamboss：夢域鏡頭目強化——出場全隊目前 HP 傷害＋流血（戒指王 30%、副本王 20%、一般 10%、霸主 5%）；副本王群體衝擊之暈、相消術、疼痛的歡愉、吸魔、蝕抗 -->
-    <script src="afk-dreamboss.js?v=0eeeab3a96"></script>
+    <script src="afk-dreamboss.js?v=02f8c9a86c"></script>
     <!-- afk-revive：復活規則——復活卷軸自己復活 HP 100%；席琳夢域鏡同一張地圖最多自己復活 3 次 -->
-    <script src="afk-revive.js?v=9219b21d56"></script>
+    <script src="afk-revive.js?v=7d4b641d59"></script>
+    <!-- afk-bossrules：頭目開場規則——鑰匙／道具頭目房開場 2 秒無敵；多王時只有第一隻放全體 % 傷害 -->
+    <script src="afk-bossrules.js?v=68bd7cf8e0"></script>
+    <!-- afk-fix1030：第二輪 QA 修正——攻城 0 血結算、時空裂痕重複進場、最終決戰視窗與中途重整、手機版面提示、戰敗鎖住停用宣戰 -->
+    <script src="afk-fix1030.js?v=687abb1fa4"></script>
     <!-- afk-arrowsmith：箭矢工匠 門蘇（歐瑞村莊）——屬性箭矢與一萬支箭矢袋；箭用完自動開同種箭矢袋 -->
     <script src="afk-arrowsmith.js?v=7a3de71f84"></script>
     <!-- afk-radio：📻 電台——首頁外掛按鈕旁，登入畫面音樂可選原本或電台歌曲（玩家提供的音檔） -->
@@ -968,7 +972,7 @@
     <!-- afk-rift2：時空裂痕改用遊戲時間；席琳三模式新規則（80 分鐘完全通關、頭目暴走、60 分鐘起壓力牆、哀石系列、結算符文石、瘴骸·破材料）；需 afk-runedata、核心補丁 67 -->
     <script src="afk-rift2.js?v=c91fb4d448"></script>
     <!-- afk-runefx：符文石與符文之語的效果（減傷、藥水、寵物、套裝、攻擊、補助）；排在 afk-runes、afk-rift2、afk-caps、afk-sherine-dream 之後 -->
-    <script src="afk-runefx.js?v=05af4a038b"></script>
+    <script src="afk-runefx.js?v=6e77f1c155"></script>
     <!-- afk-finaltiers：終焉三階層（席琳夢境／席琳幻影 ×1.25／席琳伴身 ×1.5625 只能一次）；需 afk-finalboss -->
     <script src="afk-finaltiers.js?v=99054f1d28"></script>
     <!-- afk-caps：轉生雙持的副手武器固定加成計入能力；爆擊率上限 80%（包 recomputeStats 最外層，必須最後載入）；迴避上限見核心補丁 patchEvadeCap -->
