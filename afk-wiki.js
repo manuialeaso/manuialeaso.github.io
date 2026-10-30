@@ -3699,6 +3699,19 @@
           ['位置', '裝備分頁遺骸欄最後一格；裝備視窗第二頁右上角']
         ]));
     })();
+    (function () {   // 2026-10-30 19:09：夢域鏡頭目強化（afk-dreamboss）
+      var DBS = window.__afkDreamBoss; if (!DBS) return;
+      var E = DBS.ENTRY, pc = function (x) { return Math.round(x * 100) + '%'; }, dot = function (e) { return '之後每 ' + (e.dot[0] / 10) + ' 秒 ' + pc(e.dot[2]) + '，共 ' + e.dot[1] + ' 次'; };
+      out += wCard('🌑 席琳夢域鏡的頭目出場',
+        wDesc('只在<b>席琳夢域鏡</b>。「全隊」＝你、傭兵、出戰寵物、召喚物、城堡護衛；傷害都是<b>目前 HP</b> 的百分比（不會因此倒下）。')
+        + wTbl(['頭目', '出場', '流血'], [
+          ['傳送控制戒指找到的王', pc(E.ring.pct), dot(E.ring) + '；場上其他怪物 1 秒物理＋魔法反彈'],
+          ['副本王', pc(E.dungeon.pct), dot(E.dungeon)],
+          ['其他頭目', pc(E.normal.pct), dot(E.normal)],
+          ['地區霸主', pc(E.region.pct), dot(E.region) + '；' + pc(DBS.SWARM) + ' 機率叫出霸主群（場上 5 隻都是霸主），再受到 ' + pc(DBS.SWARM_PCT)]
+        ])
+        + wDesc('<b>副本王</b>的招式：群體衝擊之暈（每 20 秒，全隊暈眩 2 秒）、相消術（每 30 秒，驅散增益）、疼痛的歡愉（每 20 秒選一名角色，10 秒內他打王的傷害 50% 反彈給自己）、吸魔（每 30 秒，最大 MP 5%）、蝕抗（每 45 秒五屬性抗性 −50，最多 −300，離開副本或王倒下就恢復）。'));
+    })();
     (function () {   // 2026-10-29 晚：艾彼迪爾（afk-relicreroll）
       var RR = window.__afkRelicReroll; if (!RR) return;
       out += wCard('🌙 艾彼迪爾：遺物第二詞綴重洗',

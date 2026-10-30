@@ -13,6 +13,7 @@
  *     再生：每 10 秒回復最大 HP 2%；
  *     魔法屏障／物理屏障：每 40 秒張開 6 秒，該類傷害無效（幻術士「粉碎能量」打破魔法屏障、妖精「污濁之水」沖散物理屏障）。
  *   打倒：經驗、金幣 ×3、原型的掉落表、「地區霸主的寶箱」×1、該地區的「霸主的證明」×1（特殊收藏用）。
+ *   席琳夢域鏡（afk-dreamboss）：出場全隊目前 HP 5%＋5 秒內每秒 3%；5% 機率「霸主群」——場上 5 隻都變成這名霸主（各自掉寶箱與證明，全倒才算打倒），全隊再受目前 HP 30%。
  *   外掛開關 regionboss（預設開）。
  * ========================================================================== */
 (function () {
@@ -182,11 +183,23 @@
     var m = scale(DB.mobs[b.id], Lv, 1 + 0.15 * allyCount());
     var mob = L.boss.place(idx, m, { mobId: b.id, _afkRb: r, _rbBoss: true, _rbL: Lv });
     if (!mob) return false;
-    act = { r: r, map: cur, left: DUR, L: Lv, summonAt: tk() + 150, quakeAt: tk() + 300, regenAt: tk() + 100, shieldAt: tk() + 200, shieldKind: 0, enraged: false };
+    // 霸主群（玩家 2026-10-30 19:09，只在席琳夢域鏡）：5% 機率場上 5 隻都變成這名霸主（各自掉寶箱與證明；全倒才算打倒）
+    var DBS = W.__afkDreamBoss, swarm = 0;
+    try {
+      if (DBS && DBS.on && DBS.on() && Math.random() < DBS.SWARM) {
+        (mapState.mobs || []).forEach(function (o, j) {
+          if (j === idx || (o && !o._dead && (o.boss || o._afkFinal))) return;
+          if (L.boss.place(j, scale(DB.mobs[b.id], Lv, 1 + 0.15 * allyCount()), { mobId: b.id, _afkRb: r, _rbBoss: true, _rbL: Lv, _rbSwarmCopy: true })) swarm++;
+        });
+        if (swarm) mob._rbSwarm = swarm;
+      }
+    } catch (e) { console.warn('[AFK-region-boss] swarm', e); }
+    act = { r: r, map: cur, left: DUR, L: Lv, summonAt: tk() + 150, quakeAt: tk() + 300, regenAt: tk() + 100, shieldAt: tk() + 200, shieldKind: 0, enraged: false, swarm: swarm };
     store().cd[r] = Date.now() + CD_MS; store().gap = Date.now() + GAP_MS; stat(r).met++;
     try { if (typeof vfxBossEntrance === 'function' && !S().ff) vfxBossEntrance(mob); } catch (e) {}
     try { if (!S().ff) renderMobs(); } catch (e) {}
     sys('<span class="font-bold" style="color:#fcd34d;text-shadow:0 0 8px #000">👑 ' + esc(b.label) + '的霸主「' + esc(b.n) + '」出現了！</span><span class="text-slate-300">（Lv' + Lv + '，' + b.mech.map(function (k) { return MECH_N[k]; }).join('、') + '；5 分鐘內打倒，換地圖它就回巢穴）</span>');
+    if (swarm) sys('<span class="font-bold" style="color:#fcd34d;text-shadow:0 0 8px #000">👑 霸主群！場上 ' + (swarm + 1) + ' 隻都是「' + esc(b.n) + '」！</span>');
     badge();
     return true;
   };
@@ -281,7 +294,7 @@
           gainItem(b.trophyId, 1, true, true); got.push(b.trophy);
           st.kills++; if (!st.first) st.first = Date.now();
           sys('<span class="text-amber-300">' + esc(m.n) + ' 留下了：' + got.join('、') + '</span>');
-          end('kill');
+          if (!onField('boss').length) end('kill');   // 霸主群：全部倒下才算打倒
         }
       } catch (e) { console.warn('[AFK-region-boss] kill', e); }
       return r;

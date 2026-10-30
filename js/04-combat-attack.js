@@ -1803,6 +1803,7 @@ function reflectWallOnDamage(mob, dmg, kind, ally) {
     if (!mob || !mob._reflectWall || !(dmg > 0)) return;
     let rw = mob._reflectWall;
     if (state.ticks > rw.until) { mob._reflectWall = null; return; }
+    if (rw.kind === 'all') rw = Object.assign({}, rw, { kind: kind });   /* 🔌 加掛版補丁:all＝物理＋魔法 */
     if (rw.kind !== kind && !(rw.kind === 'phys' && (kind === 'melee' || kind === 'ranged'))) return;   /* 🔌 加掛版補丁:phys＝近距離＋遠距離 */
     // 🌅 恐怖的面貌（block:true·巨大骷髏）：攔截該類傷害——把剛扣的血補回（含致死打擊：所有掛點的 killMob 判定都在本呼叫之後，故補血先於死亡判定）；訊息每秒節流
     if (rw.block) {

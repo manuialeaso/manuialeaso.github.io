@@ -97,6 +97,22 @@
     body.innerHTML = h;
   };
 
+  // ── 完成度（給終焉第三階層的入場資格用：隊伍每個角色的特殊收藏要滿，玩家 2026-10-30 19:09）──
+  //   每一區「分子＝分母」才算滿；分母是 0 的區（外掛關著、經典模式）不算。p 可以是傭兵的來源存檔（_roleReadSavePlayer）。
+  var progress = function (p) {
+    var out = [];
+    if (!p || !p.cls) return out;
+    var wr = worldRows(p); out.push({ k: 'world', n: '世界事件', a: wr.filter(function (r) { return r.kills > 0; }).length, b: wr.length });
+    var br = bossRows(p); out.push({ k: 'boss', n: '地區霸主', a: br.filter(function (r) { return r.kills > 0; }).length, b: br.length });
+    var sd = 0, sn = 0; storyGroups(p).forEach(function (g) { g.ch.forEach(function (c) { sn++; if (c.done) sd++; }); }); out.push({ k: 'story', n: '劇情', a: sd, b: sn });
+    var qr = questRows(p); out.push({ k: 'quest', n: '任務', a: qr.filter(function (q) { return q.done; }).length, b: qr.length });
+    var HU = W.__afkHunter;
+    if (HU && !p.classicMode) { try { out.push({ k: 'hunter', n: '冒險者等級', a: HU.rankIdx(p), b: HU.RANKS.length - 1 }); } catch (e) {} }
+    return out;
+  };
+  var full = function (p) { var pr = progress(p); return pr.length > 0 && pr.every(function (x) { return !x.b || x.a >= x.b; }); };
+  W.__afkSpecialCollection = { progress: progress, full: full };
+
   var css = document.createElement('style');
   css.textContent = '.afk-sc-sec{border:1px solid #4e3526;border-radius:.4rem;background:#1b1a20;margin-bottom:10px}'
     + '.afk-sc-sec>summary{cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;color:#fde68a;font-size:16px;list-style:none}'

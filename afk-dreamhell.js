@@ -324,11 +324,12 @@
   // ── 席琳夢域鏡的小怪不反彈（玩家 2026-10-24：就算 1 秒也會秒殺人 → 全部關閉）──
   //   60 級以上小怪原本的「夢域反射」已移除；一般怪自己放的血壁空間（非免疫型）在席琳夢域鏡也不反彈。
   //   隨機免疫（block 型）照舊；頭目的反彈不受影響。
+  //   例外：傳送控制戒指的王出場時給其他怪物的 1 秒物理魔法反彈（afk-dreamboss，玩家 2026-10-30 19:09）照常反彈。
   if (typeof window.reflectWallOnDamage === 'function') {
     var oRW = window.reflectWallOnDamage;
     window.reflectWallOnDamage = function (mob) {
       var w = mob && mob._reflectWall;
-      if (w && !w.block && !mob.boss && dreamOn()) {
+      if (w && !w.block && !w.afkDb && !mob.boss && dreamOn()) {   // afkDb＝夢域鏡頭目強化：傳送控制戒指的王出場給的 1 秒反彈（玩家 2026-10-30 19:09 指定，照常反彈）
         mob._reflectWall = null;
         try { return oRW.apply(this, arguments); } finally { if (!mob._reflectWall) mob._reflectWall = w; }
       }

@@ -4,6 +4,7 @@
  *   第一階層「席琳夢境」：原本的最終決戰（每個角色一次）。打贏才開放第二階層。
  *   第二階層「席琳幻影」：HP、傷害 ×1.25（使徒同比例），可以重複挑戰直到打贏；打贏後才開放第三階層，不能再回頭打第二階層。
  *   第三階層「席琳伴身」：HP、傷害 ×1.5625（再 ×1.25），只能挑戰一次（進場就算用掉）。
+ *     入場資格（玩家 2026-10-30 19:09）：統一伺服器（七座城都是你的）＋隊伍裡每個角色（你與每名傭兵的來源存檔）的特殊收藏全滿。
  *   時間封印（10 分鐘）、凝視、死亡之潮照舊。
  *   第一次打贏的獎勵（暫定，可再調）：第二階層＝失去光芒的符文石（階段三）1；第三階層＝解命石 1。
  * 紀錄：player.afkFinalTier = { t2: 'win'|'lose'|null, t3: 'win'|'lose'|null, pending: 'tier2'|'tier3'|null }
@@ -32,6 +33,20 @@
     if (t === 2) { if (r.t2 === 'win') return '已經打贏了'; if (W.__afkHunter && !W.__afkHunter.isS(p)) return '要先成為 S 級冒險者（冒險者公會）'; return ''; }   // 魔物獵人模式（玩家 2026-10-30）：第二階層要 S 級
     if (r.t2 !== 'win') return '要先打贏第二階層「席琳幻影」';
     if (r.t3) return r.t3 === 'win' ? '已經打贏了' : '已經挑戰過了（只有一次）';
+    return tier3Gate(p);
+  };
+  // 第三階層入場資格（玩家 2026-10-30 19:09）：統一伺服器（七座城都是你的）＋隊伍裡每個角色的特殊收藏全滿
+  var tier3Gate = function (p) {
+    var CG = W.__afkCastleGuards;
+    var held = 0; try { held = CG && CG.held ? CG.held().length : 0; } catch (e) {}
+    if (!(CG && CG.unified && CG.unified())) return '要先統一伺服器（七座城都是你的，目前 ' + held + ' 座）';
+    var SC = W.__afkSpecialCollection; if (!SC || !SC.full) return '';
+    if (!SC.full(p)) return '你的特殊收藏還沒滿';
+    var miss = (p.allies || []).filter(Boolean).filter(function (a) {
+      var src = null; try { src = typeof _roleReadSavePlayer === 'function' ? _roleReadSavePlayer(a._slot) : null; } catch (e) {}
+      return !src || !SC.full(src);
+    });
+    if (miss.length) return '協力·' + miss.map(function (a) { return a._allyName || ('存檔 ' + a._slot); }).join('、') + ' 的特殊收藏還沒滿';
     return '';
   };
   W.afkFinalTierEnter = function (t) {
@@ -77,12 +92,12 @@
             + (ok ? '🌑 終焉第' + (t === 2 ? '二' : '三') + '階層：' + FB.TIER[md].n + '（×' + FB.TIER[md].k + '）' : '終焉第' + (t === 2 ? '二' : '三') + '階層：' + why) + (res === 'win' ? '（已通關）' : '') + '</button>';
         };
         box.insertAdjacentHTML('beforeend', '<div class="bg-slate-950/80 border border-fuchsia-700 rounded p-3 text-sm leading-relaxed"><div class="font-bold mb-1 text-fuchsia-300">🌑 終焉階層</div>'
-          + '<div class="text-slate-200 text-xs">第一階層「席琳夢境」就是最終決戰。打贏後開放第二階層「席琳幻影」（×1.25，可重複挑戰到贏），再開放第三階層「席琳伴身」（×1.5625，只能挑戰一次）。打贏一層後不能回頭打前一層。</div></div>'
+          + '<div class="text-slate-200 text-xs">第一階層「席琳夢境」就是最終決戰。打贏後開放第二階層「席琳幻影」（×1.25，可重複挑戰到贏），再開放第三階層「席琳伴身」（×1.5625，只能挑戰一次）。打贏一層後不能回頭打前一層。第三階層的入場資格：統一伺服器（七座城都是你的），而且隊伍裡每個角色的特殊收藏都要全滿。</div></div>'
           + row(2) + row(3));
       } catch (e) {}
       return r;
     };
   }
-  W.__afkFinalTiers = Object.assign(API, { can: can, finish: finish, rec: rec, REWARD: REWARD });
+  W.__afkFinalTiers = Object.assign(API, { can: can, finish: finish, rec: rec, REWARD: REWARD, tier3Gate: tier3Gate });
   console.log('[AFK-finaltiers] 已啟用：終焉三階層');
 })();
