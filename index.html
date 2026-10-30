@@ -554,10 +554,10 @@
     <script src="js/00-data.js?v=2f8dce5aab.8.34-merc-trial-class-loot"></script>
 <script src="js/01-drops-config.js?v=5e761b4d43.8.26-flywing-relics"></script>
 <script src="js/02-stats-recompute.js?v=76fb7400cf.8.26-flywing-relics"></script>
-    <script src="js/03-combat-core.js?v=0a68aa7e31.8.26-flywing-relics"></script>
+    <script src="js/03-combat-core.js?v=3e6920f079.8.26-flywing-relics"></script>
     <script src="js/04-combat-attack.js?v=a62a33fcaa.8.26-flywing-relics"></script>
 <script src="js/05-kill-progression.js?v=bb5a9b71e6.8.34-merc-trial-class-loot"></script>
-    <script src="js/06-status-allies.js?v=35ab701f0f.8.34-merc-trial-class-loot"></script>
+    <script src="js/06-status-allies.js?v=bd73a64401.8.34-merc-trial-class-loot"></script>
     <script src="js/07-skills-cast.js?v=258314b415.8.26-flywing-relics"></script>
 <script src="js/08-items-equip.js?v=ae209702e8.8.16-wis-regen-interval"></script>
 <script src="js/09-vfx-render.js?v=733f30f684.8.32-merc-vfx-origin"></script>
@@ -652,7 +652,7 @@
     <script src="afk-allyslim.js?v=6b4a8e1e98"></script>
     <!-- 共用基礎：自製彈窗/確認、dex/wiki 共用資料表（其他外掛依賴，排前面） -->
     <script src="afk-ui.js?v=db35758978"></script>
-    <script src="afk-extradata.js?v=08875d92f5"></script>
+    <script src="afk-extradata.js?v=f421b3fc17"></script>
     <!-- 離線快速結算（自己 monkey-patch 包核心 saveGame/loadGame/changeMap/killMob/gainItem；搭配 maybeSpawnMobs 補丁） -->
     <script src="afk-offline.js?v=8eebcc2371"></script>
     <!-- 手機版面 / 返回鍵 -->
@@ -675,7 +675,7 @@
     <script src="afk-dex.js?v=b38de95516"></script>
     <!-- afk-illufix：幻術士修補（疼痛的歡愉 −50%、反彈、蝕刻印記；立方：燃燒 每 2 秒 5～50 火傷、灼熱印記、吸血回魔；立方：和諧回 MP 5 → 15，原 afk-classtweak）；排在 afk-wiki 之前（小百科說明跟著改）；需核心補丁 69 -->
     <script src="afk-illufix.js?v=1d6832eb95"></script>
-    <script src="afk-wiki.js?v=9aad1a3f10"></script>
+    <script src="afk-wiki.js?v=0b5fce7504"></script>
     <!-- 設定選單 / 存檔 / 診斷 / 離線紀錄 -->
     <script src="afk-storage.js?v=302890a0df"></script>
     <!-- 整包備份／還原（本機檔案）：入口掛在 afk-storage 的設定選單裡，必須排在它之後 -->
@@ -919,7 +919,7 @@
     <!-- afk-killlog：同一隻怪的掉落合併成一行「擊敗 X：物品 ×數量、…」（包 killMob 最外層，必須放在所有包 killMob 的外掛之後） -->
     <script src="afk-killlog.js?v=9c2bea76c9"></script>
     <!-- afk-sherine-dream：夢域席琳遺骸（伊奧夢域淬鍊，紅字、效果強化）與第 9 格遺骸「之魂」（謀叛者的低語頭目 5%；套裝件數 −1）；須在 afk-caps 之前 -->
-    <script src="afk-sherine-dream.js?v=30ef1e8591"></script>
+    <script src="afk-sherine-dream.js?v=bd7604e03f"></script>
     <!-- afk-runes：說話之島符文師佐爾頓——武器的星蝕·解三個符文孔（墜蝕·解、刻解·骸、瘴骸·破）；需 afk-sherine-dream -->
     <script src="afk-runes.js?v=2130a9ab64"></script>
     <!-- afk-redguard：避免紅人持續追殺（席琳神殿「女神嘆息信徒 京」：10 龍鑽或 100 萬金幣，正義值歸 0、追殺散去、追殺永久解除）；需 afk-npc-kit -->
@@ -945,6 +945,8 @@
     <script src="afk-fate.js?v=a8da4e12d6"></script>
     <!-- afk-callally：王族「呼喚盟友」冷卻 3 秒＋每名傭兵被呼喚最多一秒一次 -->
     <script src="afk-callally.js?v=3e2da814a1"></script>
+    <!-- afk-resonance：共鳴調整——共鳴光箭傷害與回魔 −50%（核心補丁 72 的倍率掛點） -->
+    <script src="afk-resonance.js?v=282514f88f"></script>
     <!-- afk-arrowsmith：箭矢工匠 門蘇（歐瑞村莊）——屬性箭矢與一萬支箭矢袋；箭用完自動開同種箭矢袋 -->
     <script src="afk-arrowsmith.js?v=7a3de71f84"></script>
     <!-- afk-radio：📻 電台——首頁外掛按鈕旁，登入畫面音樂可選原本或 YouTube 歌曲（官方嵌入播放器） -->

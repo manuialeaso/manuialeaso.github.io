@@ -1616,6 +1616,7 @@ function allyProcLightArrow(ally, t) {
     if (_allyReso) dmg = Math.max(1, dmg + 5);
     dmg = Math.max(1, Math.floor(dmg * equipSkillDmgMult(sk, 'sk_lightarrow', ally)));   // 🏺 v3.2.42 稽核修：傭兵共鳴光箭也吃技能傷害倍率遺物（鏡像玩家 procLightArrow）
     dmg = Math.max(1, Math.floor(dmg * allyRlFuryMult(ally)));   // 🔴😡 v2.6.18 紅獅5×狂怒5造傷（共鳴光箭·原全無·鏡像玩家 procLightArrow rlFuryMult）
+    if (typeof window.__afkResoMult === 'function') dmg = Math.max(1, Math.floor(dmg * window.__afkResoMult(ally))); /* 🔌 加掛版補丁:共鳴倍率 */
     // 🔮 共鳴本身已有回魔，不觸發幻覺2/5與5/5（鏡像玩家 procLightArrow）
     if (t.st && t.st.mrhalf > 0) t.st.mrhalf = 0;
     ally.mp = Math.min(ally.mmp||0, (ally.mp||0) + Math.max(1, Math.floor(dmg/(_allyReso ? 5 : 10))));   // 共鳴回魔 → 傭兵自身

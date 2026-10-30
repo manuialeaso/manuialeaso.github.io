@@ -2499,6 +2499,7 @@ function procLightArrow(t) {
     if (hasMastery('m_resonance')) d = Math.max(1, d + 5);   // 🏅 共鳴精通：光箭傷害 +5
     if (typeof equipSkillDmgMult === 'function') d = Math.max(1, Math.floor(d * equipSkillDmgMult(sk, 'sk_lightarrow')));   // 🏺 v3.2.42 稽核修：共鳴光箭也吃技能傷害倍率遺物（光束強化魔杖 skillDmgMult 自身 proc 原本不生效）
     d = Math.max(1, Math.floor(d * rlFuryMult()));   // 🔮 紅獅5/5＋😡狂怒5/5：最終傷害
+    if (typeof window.__afkResoMult === 'function') d = Math.max(1, Math.floor(d * window.__afkResoMult(player))); /* 🔌 加掛版補丁:共鳴倍率 */
     d = illusionMagicDmg(d, false);   // 🔮 共鳴本身已有回魔，不觸發幻覺2/5與5/5
     if (window.AFK_RELIC_WEAPON_BRIDGE) d=window.AFK_RELIC_WEAPON_BRIDGE.nativeSpellHit(t,d,sk,{skillId:'sk_lightarrow',origin:'resonance'});
     t.curHp -= (d=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,t,d,{nativeRefund:'terror',kind:'magic'}):d)); /* card-combat:refund-procLightArrow */ /* card-combat:settle-procLightArrow */
