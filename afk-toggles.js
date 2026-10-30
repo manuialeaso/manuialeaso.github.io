@@ -24,6 +24,25 @@
 
     function find(id) { return byId[id] || null; }
 
+    // ── 次元封印（玩家 2026-10-30 18:45）：玩家自己改的外掛全部集中在面板最下面的「次元封印」分類 ──
+    //   判準：開關第一次出現在 Ping 的提交（2026-10-20 起）。原本的分類（遊戲玩法、遊戲介面…）在次元封印底下當小標題保留。
+    //   ⚠ 之後新增的外掛開關要加進這張表（或 register 時帶 seal:true），才會排進次元封印。
+    var SEAL_NAME = '次元封印';
+    var SEAL_ORDER = ['遊戲內容', '遊戲玩法', '隱藏規則', '遊戲介面', '查詢與資訊', '自動化', '效能', '存檔工具', '系統與其他', '其他'];
+    var SEAL = {};
+    [
+        'readability', 'autoreload', 'droplog', 'dropcount', 'worldchat', 'buyerprice', 'marketnocard', 'relicplus', 'relicfx', 'ttmi-items',
+        'dreamhell', 'dreamstar', 'corrupt', 'cardplus', 'card-ascension', 'card-aura', 'rebirth', 'arts', 'uifix', 'castlewar', 'sets', 'polys',
+        'maps', 'hitstun', 'ringany', 'resist', 'stunfix', 'mapsync', 'perf', 'perf-log', 'perf-mem', 'perf-dom', 'perf-tabs', 'perf-vfx',
+        'perf-pot', 'perf-render', 'art-v3', 'fpscap', 'updatenotice', 'autoupdate', 'offlinenodeath', 'uiscale', 'mobile-scale', 'illufix',
+        'lowend', 'hades', 'knightshock', 'batchenh', 'junkquest', 'itemguard', 'dollaffix', 'saintcloth', 'debuffresist', 'bossfoul', 'affixplus',
+        'traitor', 'hiddenbonus', 'dropcap', 'giltas', 'rebirth-quest', 'matprice', 'screen', 'petinherit', 'poly-codex', 'craftinfo', 'hotbar',
+        'npcspace', 'heartbeat', 'clickaway', 'staticglow', 'killlog', 'sherinedream', 'runes', 'redguard', 'kurthunt', 'loremain', 'lorehardin',
+        'lorehalpas', 'wesenis', 'weslayer', 'wedragon', 'wekenn', 'wewinter', 'ghostship', 'regionboss', 'hunter', 'fate', 'callallycd',
+        'resonancenerf', 'savelite', 'arrowsmith', 'radio', 'relicreroll', 'bosstrack', 'noviceecon', 'rift2', 'finaltiers', 'statcap',
+        'offhandstats', 'art-v3-wings', 'batchopen', 'boxkey'
+    ].forEach(function (id) { SEAL[id] = 1; });
+
     var api = {
         // 外掛自我登錄（重複 id 忽略）
         register: function (spec) {
@@ -35,7 +54,8 @@
                 group: spec.group || '其他',
                 def: spec.def !== false,  // 預設開；傳 def:false 才預設關
                 locked: spec.locked || '', // 非空＝暫時停用：一律當關閉、面板上不可勾，字串是給玩家看的原因
-                parent: spec.parent || ''  // 非空＝這是某支外掛的子選項：面板上縮排排在該支底下（父項關掉時子項一律當關閉）
+                parent: spec.parent || '',  // 非空＝這是某支外掛的子選項：面板上縮排排在該支底下（父項關掉時子項一律當關閉）
+                seal: !!(spec.seal || SEAL[spec.id])   // 次元封印：玩家自己改的外掛
             };
             registry.push(entry);
             byId[entry.id] = entry;
@@ -170,11 +190,13 @@
         card.style.maxHeight = 'calc(100dvh - ' + (bannerPadPx() + 16) + 'px - env(safe-area-inset-bottom, 0px))';
 
         var groups = {};
-        registry.forEach(function (r) { if (!r.parent) (groups[r.group] = groups[r.group] || []).push(r); });
+        // 次元封印的分組鍵＝「次元封印｜原分類」，排在所有一般分類後面（面板最下面）
+        var gkey = function (r) { return r.seal ? SEAL_NAME + '｜' + r.group : r.group; };
+        registry.forEach(function (r) { if (!r.parent) (groups[gkey(r)] = groups[gkey(r)] || []).push(r); });
         registry.forEach(function (r) {   // 子選項緊接排在自己的父項後面（同一組內）
             if (!r.parent) return;
-            var pr = find(r.parent), g = groups[(pr && pr.group) || r.group];
-            if (!g) { (groups[r.group] = groups[r.group] || []).push(r); return; }
+            var pr = find(r.parent), g = groups[pr ? gkey(pr) : gkey(r)];
+            if (!g) { (groups[gkey(r)] = groups[gkey(r)] || []).push(r); return; }
             var at = -1;
             for (var i = 0; i < g.length; i++) if (g[i].id === r.parent) { at = i; break; }
             if (at < 0) g.push(r); else g.splice(at + 1, 0, r);
@@ -198,8 +220,14 @@
         if (!registry.length) {
             html += '<div style="color:#94a3b8;padding:14px;text-align:center;">目前沒有任何外掛登錄開關。</div>';
         } else {
-            Object.keys(groups).forEach(function (g) {
-                html += '<div data-tggroup="' + esc(g) + '" style="font-size:12px;color:#7dd3fc;font-weight:700;margin:12px 4px 6px;">' + esc(g) + '</div>';
+            var sealRank = function (g) { var i = SEAL_ORDER.indexOf(g.slice(SEAL_NAME.length + 1)); return i < 0 ? SEAL_ORDER.length : i; };
+            var gks = Object.keys(groups), plain = gks.filter(function (g) { return g.indexOf(SEAL_NAME + '｜') !== 0; }),
+                sealed = gks.filter(function (g) { return g.indexOf(SEAL_NAME + '｜') === 0; }).sort(function (a, b) { return sealRank(a) - sealRank(b); });
+            plain.concat(sealed).forEach(function (g) {
+                var isSeal = g.indexOf(SEAL_NAME + '｜') === 0;
+                if (isSeal && g === sealed[0]) html += '<div data-tgseal="1" style="margin:22px 2px 4px;padding:9px 12px;border-radius:10px;background:linear-gradient(90deg,#3b0764,#1e1b4b);border:1px solid #7c3aed;color:#e9d5ff;font-weight:800;font-size:15px;letter-spacing:2px;">🔮 ' + esc(SEAL_NAME) + '</div>';
+                html += isSeal ? '<div data-tggroup="' + esc(g) + '" style="font-size:11px;color:#c4b5fd;font-weight:700;margin:10px 4px 5px 8px;">・' + esc(g.slice(SEAL_NAME.length + 1)) + '</div>'
+                    : '<div data-tggroup="' + esc(g) + '" style="font-size:12px;color:#7dd3fc;font-weight:700;margin:12px 4px 6px;">' + esc(g) + '</div>';
                 groups[g].forEach(function (r) {
                     var on = api.enabled(r.id);
                     html += '<label data-tgrow="' + esc(r.id) + '" data-tggrp="' + esc(g) + '" data-tgchanged="' + (isChanged(r) ? '1' : '0') + '"'
@@ -247,7 +275,7 @@
 
         function matchQuery(r) {   // 空白分隔＝全部都要中；名稱／說明／分類／id 都算
             if (!query) return true;
-            var hay = ((r.name || '') + ' ' + (r.desc || '') + ' ' + (r.group || '') + ' ' + r.id).toLowerCase();
+            var hay = ((r.name || '') + ' ' + (r.desc || '') + ' ' + (r.group || '') + ' ' + (r.seal ? SEAL_NAME : '') + ' ' + r.id).toLowerCase();
             var toks = query.split(/\s+/);
             for (var i = 0; i < toks.length; i++) if (toks[i] && hay.indexOf(toks[i]) < 0) return false;
             return true;
@@ -270,6 +298,8 @@
                     .some(function (row) { return row.style.display !== 'none'; });
                 h.style.display = any ? '' : 'none';
             });
+            var sealHead = card.querySelector('[data-tgseal]');   // 次元封印底下全被濾掉 → 大標題一起收
+            if (sealHead) sealHead.style.display = [].slice.call(card.querySelectorAll('[data-tggroup^="' + SEAL_NAME + '｜"]')).some(function (h) { return h.style.display !== 'none'; }) ? '' : 'none';
             if (emptyEl) {
                 emptyEl.textContent = query ? '找不到符合的外掛。' : '目前全部都是預設值。';
                 emptyEl.style.display = (registry.length && n === 0) ? '' : 'none';
