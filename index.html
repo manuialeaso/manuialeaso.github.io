@@ -594,6 +594,9 @@
     <!-- afk-dup-frames：重複動畫幀改指向同一張圖（公開版只留一張；清單由 scripts/build-dup-frames.py 產生） -->
     <script src="afk-dup-frames-data.js?v=d19c412b59"></script>
     <script src="afk-dup-frames.js?v=13521f048b"></script>
+    <!-- afk-gptart-icons：GPT新美術——裝備圖示光影修補 837 張（原圖 → assets/icons/gpt/）；要早於其他外掛，開關 art-v3 -->
+    <script src="afk-gptart-icons-data.js?v=3329e66de2"></script>
+    <script src="afk-gptart-icons.js?v=acd80baa2d"></script>
     <!-- afk-txnsave：玩家操作（倉庫、寵物、血盟、遺物合成…）的存檔不因補跑延後 -->
     <script src="afk-txnsave.js?v=2fd33e0818"></script>
     <!-- afk-mobborn：讀檔後場上的怪重新排出生序（存檔留下來的怪不會永遠排不到自動目標） -->
@@ -922,7 +925,7 @@
     <!-- afk-redguard：避免紅人持續追殺（席琳神殿「女神嘆息信徒 京」：10 龍鑽或 100 萬金幣，正義值歸 0、追殺散去、追殺永久解除）；需 afk-npc-kit -->
     <script src="afk-redguard.js?v=d7fcf19c46"></script>
     <!-- afk-kurt-hunt：世界事件「克特的追殺令」（隊伍有王族、Lv30+、每次出怪 5%、冷卻 15 分；地圖等級縮放；副本不出現）＋克特技能組 -->
-    <script src="afk-kurt-hunt.js?v=90d059648c"></script>
+    <script src="afk-kurt-hunt.js?v=49cbfb0460"></script>
     <!-- afk-lore-kit：劇情任務線與新 Boss 共用工具（試煉接取制、套裝、召喚） -->
     <script src="afk-lore-kit.js?v=ddc6ef840c"></script>
     <!-- afk-lore-main：主線劇情「紅獅之誓」Lv10～55（甘特）＋通緝犯庫傑；需 afk-lore-kit、afk-kurt-hunt（紅獅王的守護） -->
@@ -932,16 +935,18 @@
     <!-- afk-halpas：終章劇情「闇龍的低語」Lv85～100（燃柳村 奧拉奇里亞）＋火焰之影（真身）＋闇龍 哈爾巴斯＋反王肯恩／死亡騎士重做；需 afk-lore-kit、afk-npc-kit、afk-arts -->
     <script src="afk-halpas.js?v=801012865d"></script>
     <!-- afk-world-events：世界事件第二批（魔女賽尼斯「血的誓約詛咒」、暗殺軍王史雷佛「刺殺令」、魔族的獵龍隊、反王肯恩「篡位者的懸賞」）；需 afk-lore-kit，和 afk-kurt-hunt 共用規則 -->
-    <script src="afk-world-events.js?v=ef42be0885"></script>
+    <script src="afk-world-events.js?v=77bcf2a39e"></script>
     <script src="afk-ghostship.js?v=8138088f3f"></script>
     <!-- afk-region-boss：地區霸主（十五個地區各一名，該地區野外／地監每次出怪 1%、同地區 30 分鐘一次，守在原地 5 分鐘；寶箱＋霸主的證明）；需 afk-lore-kit -->
-    <script src="afk-region-boss.js?v=7dd291f38f"></script>
+    <script src="afk-region-boss.js?v=e24b4fc793"></script>
     <!-- afk-hunter：魔物獵人模式（冒險者公會、冒險者等級 F～S、狩獵委託、冒險者套裝、S 級在終焉第二／三階層的加成）；需 afk-lore-kit -->
     <script src="afk-hunter.js?v=bff8c28bd5"></script>
     <!-- afk-fate：隱藏規則「命運」（同職業超過 3 位減傷害、王族＋騎士反轉成增傷與全隊減傷、沒有王族的隊伍全面下修）；需 afk-card-combat、afk-relic-runtime -->
     <script src="afk-fate.js?v=a8da4e12d6"></script>
     <!-- afk-callally：王族「呼喚盟友」冷卻 3 秒＋每名傭兵被呼喚最多一秒一次 -->
     <script src="afk-callally.js?v=3e2da814a1"></script>
+    <!-- afk-arrowsmith：箭矢工匠 門蘇（歐瑞村莊）——屬性箭矢與一萬支箭矢袋；箭用完自動開同種箭矢袋 -->
+    <script src="afk-arrowsmith.js?v=7a3de71f84"></script>
     <!-- afk-special-collection：收藏面板第 6 本「特殊收藏」（世界事件、地區霸主、劇情、任務、冒險者等級） -->
     <script src="afk-special-collection.js?v=2900effe19"></script>
     <!-- afk-relicreroll：銀騎士村艾彼迪爾——+10 遺物＋回夢水晶重洗遺物第二詞綴（保留或替換）；回夢香塵（夢域四龍巢穴）20 換 1 回夢水晶；需 afk-relicplus -->
@@ -960,7 +965,7 @@
     <script src="afk-caps.js?v=58da77bad7"></script>
     <!-- afk-art-v3：GPT變身檔（外掛開關，預設關）——神話／天上／時空／十二聖衣改用新繪製的三方向逐幀動畫與聖衣星座翅膀；只換外觀 -->
     <script src="art-v3/game-data.js?v=8e7f81be3f"></script>
-    <script src="afk-art-v3.js?v=3545966d91"></script>
+    <script src="afk-art-v3.js?v=9ee786c9c0"></script>
     <!-- afk-batchopen：禮盒、袋子、寶箱一次開多個（物品視窗「開 10 個」「全部開啟」；開完只重畫、存檔一次，列出總共拿到的東西） -->
     <script src="afk-batchopen.js?v=5eb499ec54"></script>
     <!-- afk-boxkey：歐西里斯／庫庫爾坎寶箱碎片各 50 合成、席琳結晶 50 也能開箱（包 openOsirisBox／doOpenOsirisBox） -->
@@ -972,7 +977,7 @@
     <!-- afk-returnfast：回城不卡——主動回城先換好村莊畫面，隊員刷新（重建快照＋結算經驗＋存檔）延到下一個空檔 -->
     <script src="afk-returnfast.js?v=43012f0a6e"></script>
     <!-- afk-hdmobs：29 隻新怪物改用自己的動畫（寫實復古版；放最後：要等所有新怪物都登錄完借圖別名才拿掉） -->
-    <script src="afk-hdmobs.js?v=77182ab674"></script>
+    <script src="afk-hdmobs.js?v=1a1d954096"></script>
     <!-- ═══════════ 加掛版外掛層 END ═══════════ -->
 </body>
 </html>

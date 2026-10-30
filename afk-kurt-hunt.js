@@ -47,7 +47,7 @@
   var ITEMS = {};
   ITEMS[ORDER] = { n: '黑騎士團的追殺令', type: 'etc', c: 'text-red-300', img: 'assets/icons/items/法令軍團印記.png', noUse: true, p: 0,
     d: '黑騎士隊長克特隨身帶著的追殺令，上面寫滿亞丁王族的名字。交給說話之島的甘特：10 張換「紅獅王的守護」、50 張換「克特的牛角頭盔」。' };
-  ITEMS[SCROLL] = { n: '紅獅王的守護', type: 'misc', c: 'text-amber-300', img: 'assets/icons/items/古代的卷軸.png', p: 0,
+  ITEMS[SCROLL] = { n: '紅獅王的守護', type: 'misc', eff: 'afk_kurt_guard', c: 'text-amber-300', img: 'assets/icons/items/古代的卷軸.png', p: 0,   /* eff：道具視窗才會出現「使用」按鈕（2026-10-30 修） */
     d: '杜克‧德比的紅獅紋章封在卷軸裡。使用後 30 分鐘內，全隊受到黑騎士隊長克特的傷害 −30%。' };
   ITEMS[HELM] = { n: '克特的牛角頭盔', type: 'arm', slot: 'helm', c: 'text-red-300', img: 'assets/icons/armors/克特頭盔.png', p: 0, req: 'royal',
     ac: 5, mhp: 100, mr: 10, extraDmg: 1, safe: 4,

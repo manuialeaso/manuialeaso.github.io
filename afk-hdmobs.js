@@ -1,5 +1,5 @@
 /* ============================================================================
- * afk-hdmobs.js — 新怪物專屬動畫（寫實復古版，29 隻；玩家 2026-10-30 15:40 提供；外掛開關 hdmobs，預設開）
+ * afk-hdmobs.js — GPT新美術：新怪物專屬動畫（寫實復古版，29 隻；玩家 2026-10-30 15:40 提供；開關併入「GPT新美術」art-v3，預設開）
  *
  *   這 29 隻原本借用現有怪物的圖（庫傑＝強盜頭目、歐林＝玩家男法師…，見 docs/gpt-art-brief.md），
  *   現在改用自己的動畫：assets/anim/<怪物名稱>/ idle_0～11、attack_0～7、skill_0～7（施法角色）、hurt_0～3、death_0～11。
@@ -10,8 +10,7 @@
 (function () {
   'use strict';
   var W = window, T = W.AFK_TOGGLES;
-  if (T && T.register) T.register({ id: 'hdmobs', name: '新怪物專屬動畫（寫實復古版 29 隻）', group: '遊戲介面',
-    desc: '地區霸主、世界事件、幽靈船、哈汀／哈爾巴斯等 29 隻新怪物改用自己的動畫；關掉換回原本借用的圖' });
+  // 開關：併入「GPT新美術」（art-v3，玩家 2026-10-30 16:27），由 afk-gptart-icons／afk-art-v3 登錄
   var NAMES = ['通緝犯 庫傑', '大魔法師 歐林', '黑翼賽尼斯', '失控的巴風特', '大魔法師 哈汀', '火焰之影（真身）', '闇龍 哈爾巴斯',
     '幽靈船長', '船舶之墓的溺死者', '溺死的水手', '詛咒的媒介', '魔族獵龍隊長', '魔族獵龍隊員', '篡位者的刺客頭目',
     '背誓的銀騎士 歐德', '腐化的卡司特之王', '蛛巢之母', '沉沒的海賊王 德雷克', '古魯丁的守墓人', '肯特草原的狂暴歐吉',
@@ -49,12 +48,12 @@
     });
     saved = null;
   };
-  var on = function () { return !T || T.enabled('hdmobs'); };
+  var on = function () { return !T || T.enabled('art-v3'); };
   var sync = function () { if (on()) apply(); else restore(); try { if (typeof renderMobs === 'function' && typeof state !== 'undefined' && !state.ff) renderMobs(); } catch (e) {} };
   sync();
   if (T && typeof T.set === 'function') {
     var oSet = T.set;
-    T.set = function (id) { var r = oSet.apply(this, arguments); if (id === 'hdmobs') sync(); return r; };
+    T.set = function (id) { var r = oSet.apply(this, arguments); if (id === 'art-v3') sync(); return r; };
   }
   W.__afkHdMobs = { NAMES: NAMES, SKILL: SKILL, applied: function () { return !!saved; }, apply: apply, restore: restore };
 })();

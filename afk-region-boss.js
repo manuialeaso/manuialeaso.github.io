@@ -94,7 +94,7 @@
 
   // ── 寶箱 ──
   var BOX = 'afk_rb_box';
-  L.addItem(BOX, { n: '地區霸主的寶箱', type: 'misc', c: 'text-amber-300', img: IC('items/戰士的印記(亡命之徒)'), p: 0, afkRbBox: true,
+  L.addItem(BOX, { n: '地區霸主的寶箱', type: 'misc', eff: 'afk_rb_box', c: 'text-amber-300', img: IC('items/戰士的印記(亡命之徒)'), p: 0, afkRbBox: true,   /* eff：道具視窗才會出現「使用」按鈕（2026-10-30 修） */
     d: '打倒地區霸主得到的寶箱。打開隨機得到：魔法結晶體 20～40（55%）、金幣（霸主等級×1,000，10%）、祝福的 對盔甲施法的卷軸（20%）、祝福的 對武器施法的卷軸（10%）、龍之鑽石 ×3（5%）。' });
   var CRYSTAL = function () { try { return W.AFK_TTMI_ITEMS.resolve(7102); } catch (e) { return null; } };
   var rint = function (a, b) { return a + Math.floor(Math.random() * (b - a + 1)); };

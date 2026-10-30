@@ -1,9 +1,9 @@
-/* afk-art-v3.js — GPT變身檔（外掛開關 art-v3，預設關）：神話、天上、時空與十二聖衣改用新繪製的三方向逐幀動畫。
+/* afk-art-v3.js — GPT新美術：變身動畫（外掛開關 art-v3，2026-10-30 起預設開，與新怪物動畫、裝備圖示光影共用）：神話、天上、時空與十二聖衣改用新繪製的三方向逐幀動畫。
  * 只換外觀，不改能力與存檔。圖檔在 art-v3/frames/<角色>-<方向>[-wing]/，已壓縮、去掉遊戲用不到的變身動作。 */
 (function(W){'use strict';
   var D=W.AFK_ART_V3_DATA,T=W.AFK_TOGGLES;
   if(!D||typeof W._actorBattleForm!=='function'||typeof ANIM_MANIFEST==='undefined')return;
-  if(T){T.register({id:'art-v3',name:'GPT變身檔',desc:'神話、天上、時空與十二聖衣改用新繪製的三方向動畫（只換外觀，不影響能力與存檔）。',group:'遊戲介面',def:false});T.register({id:'art-v3-wings',name:'聖衣星座翅膀',desc:'GPT變身檔的十二聖衣顯示星座翅膀（封印或在副本中不顯示）。',group:'遊戲介面',parent:'art-v3'});}
+  if(T){T.register({id:'art-v3',name:'GPT新美術',desc:'GPT 重新繪製的美術：神話、天上、時空與十二聖衣的變身動畫，29 隻新怪物的專屬動畫，以及 837 件裝備圖示的光影修補（只換外觀，不影響能力與存檔）。',group:'遊戲介面'});   /* 玩家 2026-10-30 16:27：GPT變身檔、新怪物專屬動畫、裝備圖示光影合成一個開關，預設開（afk-gptart-icons 先登錄，這裡內容相同） */T.register({id:'art-v3-wings',name:'聖衣星座翅膀',desc:'GPT新美術的十二聖衣顯示星座翅膀（封印或在副本中不顯示）。',group:'遊戲介面',parent:'art-v3'});}
   function enabled(){return !T||T.enabled('art-v3');}
   var byName=Object.create(null),directions=['right','left','rear'];
   D.characters.forEach(function(c){

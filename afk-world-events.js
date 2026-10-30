@@ -94,7 +94,7 @@
 
   // ── 戰利品袋 ──
   var BAG = 'afk_we_bag';
-  L.addItem(BAG, { n: '世界事件的戰利品袋', type: 'misc', c: 'text-amber-300', img: IC('items/戰士的印記(亡命之徒)'), p: 0, afkWeBag: true,
+  L.addItem(BAG, { n: '世界事件的戰利品袋', type: 'misc', eff: 'afk_we_bag', c: 'text-amber-300', img: IC('items/戰士的印記(亡命之徒)'), p: 0, afkWeBag: true,   /* eff：道具視窗才會出現「使用」按鈕（2026-10-30 修） */
     d: '打倒世界事件頭目得到的袋子。打開隨機得到：魔法結晶體 30～60（60%）、祝福的 對盔甲施法的卷軸（20%）、祝福的 對武器施法的卷軸（15%）、龍之鑽石 ×5（5%）。' });
   var CRYSTAL = function () { try { return W.AFK_TTMI_ITEMS.resolve(7102); } catch (e) { return null; } };
   var openBag = function (it) {
