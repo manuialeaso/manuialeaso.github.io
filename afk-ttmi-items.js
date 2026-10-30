@@ -896,13 +896,15 @@
       d.ttmiOrigExpMult=d.ttmiBuff.ttmiExpMult;d.ttmiBuff.ttmiExpMult=2;d.d=String(d.d||'').replace(/×\s*[\d.]+/,'×2.0');});
   })();
 
-  // ── 變身卷軸系列全部移除（玩家 2026-10-31 05:09）：只留遊戲原本的「變形卷軸」（scroll_poly）——
+  // ── 變身卷軸系列、優惠箱／戒指盒／永恆禮盒系列全部移除（玩家 2026-10-31 05:09、05:26）：只留遊戲原本的「變形卷軸」（scroll_poly）——
   //    透視鏡匯入的各式變形／變身卷軸（邊境的、Lv52～65、黃金、英雄之、黑帝斯之、潘朵拉、少女賽尼斯、裂痕專用…）、變身石、修練者解咒卷軸、
   //    只裝這些卷軸的道具包；薩克那邊做這些東西的配方；只被這些配方用到的材料——全部不掉、不賣、不能做。舊存檔裡已有的保留。
   var polyGone=Object.create(null);
   (function(){
     var RE=/變形卷軸|變身卷軸|變身石|少女賽尼斯|^修練者解咒卷軸$/;
-    imported.forEach(function(id){var d=DB.items[id];if(d&&(d.ttmiAction==='poly'||RE.test(d.n||'')))polyGone[id]=1;});
+    // 2026-10-31 05:26：天堂優惠箱、潘朵拉的箱子、各種戒指盒、永恆戒指兌換袋、永恆禮盒（含抗魔／集中／體力／魔力）、變身頭盔箱系列也一起移除（裡面的戒指、頭盔本身保留）
+    var RE2=/天堂優惠|^潘朵拉的箱子$|永恆戒指兌換袋|戒指盒$|變身頭盔箱|永恆禮盒$/;
+    imported.forEach(function(id){var d=DB.items[id];if(d&&(d.ttmiAction==='poly'||RE.test(d.n||'')||RE2.test(d.n||'')))polyGone[id]=1;});
     imported.forEach(function(id){var d=DB.items[id],row=rows[id];if(!d||polyGone[id]||d.ttmiAction!=='box'||!row||!row.contents||!row.contents.length)return;
       if(row.contents.every(function(x){var c=resolve(x.sourceId);return !c||polyGone[c];}))polyGone[id]=1;});
     var reqOf=Object.create(null);
