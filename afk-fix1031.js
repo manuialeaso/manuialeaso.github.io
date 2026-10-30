@@ -7,6 +7,8 @@
  *   二、換地圖提示：抵達野外／地監／副本時，戰鬥日誌多一行「抵達 ○○」，看得出已經離開村莊。
  *   三、遺物收集冊：+N、昇華、詞綴重洗後的遺物（id 帶 ~ 的衍生物品）也登錄成原本那件遺物；
  *       開收集冊前先把背包、身上、倉庫的遺物補登錄（任何方式拿到的都算）。
+ *   四、無法裝備的原因（2026-10-31 03:43）：有等級限制的裝備（亞丁古物的 Lv.45 巴拉卡斯的魅惑等 40 件）原本只寫「無法裝備」，
+ *       現在背包標籤、物品視窗、按鈕都寫出「Lv.45 才能裝備（目前 Lv.36）」，物品效果也列出限制等級（核心補丁 77 呼叫這裡）。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -101,6 +103,23 @@
       return oOpen.apply(this, arguments);
     });
   }
+
+  // ── 四、無法裝備的原因 ──
+  var lvRange = function (d) { return d ? { min: Number(d.ttmiMinLevel) || 0, max: Number(d.ttmiMaxLevel) || 0 } : { min: 0, max: 0 }; };
+  var lvText = function (r) { return (r.min ? 'Lv.' + r.min + ' 以上' : '') + (r.min && r.max ? '、' : '') + (r.max ? 'Lv.' + r.max + ' 以下' : ''); };
+  W.__afkEquipReqText = function (d) { var r = lvRange(d); return (r.min || r.max) ? '限制等級：' + lvText(r) : ''; };
+  W.__afkEquipWhy = function (item, short) {
+    try {
+      var p = P(), d = item && DB.items[item.id]; if (!p || !d) return '';
+      var r = lvRange(d), lv = Number(p.lv) || 0;
+      if ((r.min && lv < r.min) || (r.max && lv > r.max)) {
+        if (short) return r.min && lv < r.min ? 'Lv.' + r.min + ' 才能裝備' : 'Lv.' + r.max + ' 以下才能裝備';
+        return '限制等級 ' + lvText(r) + '（目前 Lv.' + lv + '）';
+      }
+      if (!d.reqAvatar && typeof d.req === 'string' && d.req !== 'all' && d.req.split(',').indexOf(p.cls) < 0) return '職業不符';
+    } catch (e) {}
+    return '';
+  };
 
   W.__afkFix1031 = { resolveItem: resolveItem, baseId: baseId, scanDerived: scanDerived };
 })();

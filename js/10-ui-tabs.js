@@ -301,7 +301,7 @@ player.inv.forEach(i => {
     let canEquip = checkCanEquip(i);
     
     if (!canEquip) {
-        statusTag = '<span class="text-red-500 text-[10px] font-bold">[無法裝備]</span>';
+        statusTag = '<span class="text-red-500 text-[10px] font-bold">[' + ((window.__afkEquipWhy && window.__afkEquipWhy(i, true)) || '無法裝備') + ']</span>'; /* 🔌 加掛版補丁:無法裝備原因 */
         itemBg = 'bg-red-950/40'; // 職業/技能不符，顯示暗紅色底
         dimIcon = true; // 🔅 圖示黯淡化
     }
@@ -773,6 +773,7 @@ function relicPurposeLabels(d) {
     const pctText = v => `${Math.round(v * 100)}%`;
 
     if (d.reqAvatar) out.push(`裝備限制（僅限${d.reqAvatar}；其他角色無法裝備）`);
+    if (window.__afkEquipReqText) { let _lt = window.__afkEquipReqText(d); if (_lt) out.push(_lt); } /* 🔌 加掛版補丁:無法裝備原因 */
     if (d.petDmgReduce) out.push(`寵物護甲（裝備的寵物受到傷害-${Math.round(d.petDmgReduce * 100)}%）`);
     if (d.petBleed) out.push('寵物出血（一般攻擊命中疊加8秒出血；每層每秒造成該次傷害20%，最多5層）');
     if (d.armguard) out.push('臂甲（裝於副手，可與雙手武器並用）');
@@ -1308,7 +1309,7 @@ function openModal(item, isEq, slot) {
     let desc = buildItemDescHTML(item);
     let _modalEquipItem = d.type === 'wpn' || d.type === 'arm' || d.type === 'acc';
     let _modalCanEquip = !_modalEquipItem || checkCanEquip(item);
-    if (!isEq && _modalEquipItem && !_modalCanEquip) desc += `<br><span class="text-red-400 font-bold">無法裝備${d.reqAvatar ? `：僅限${d.reqAvatar}` : ''}</span>`;
+    if (!isEq && _modalEquipItem && !_modalCanEquip) desc += `<br><span class="text-red-400 font-bold">無法裝備${(window.__afkEquipWhy && window.__afkEquipWhy(item)) ? '：' + window.__afkEquipWhy(item) : (d.reqAvatar ? `：僅限${d.reqAvatar}` : '')}</span>`; /* 🔌 加掛版補丁:無法裝備原因 */
     
     let sellPrice = getSellPrice(item);
 
@@ -1337,7 +1338,7 @@ function openModal(item, isEq, slot) {
         }
         if(d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') {
             if (_modalCanEquip) act += `<button class="col-span-2 w-full btn border-blue-700 bg-blue-900 hover:bg-blue-800 text-blue-200 py-3 text-lg font-bold" onclick="equipItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">裝備</button>`;
-            else act += `<button class="col-span-2 w-full btn border-red-900 bg-red-950 text-red-400 py-3 text-lg font-bold cursor-not-allowed" disabled>無法裝備${d.reqAvatar ? `・僅限${d.reqAvatar}` : ''}</button>`;
+            else act += `<button class="col-span-2 w-full btn border-red-900 bg-red-950 text-red-400 py-3 text-lg font-bold cursor-not-allowed" disabled>${(window.__afkEquipWhy && window.__afkEquipWhy(item, true)) || ('無法裝備' + (d.reqAvatar ? `・僅限${d.reqAvatar}` : ''))}</button>`; /* 🔌 加掛版補丁:無法裝備原因 */
         }
         
         // 把販賣按鈕移出來，讓所有道具都可以賣
