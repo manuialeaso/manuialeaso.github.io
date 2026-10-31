@@ -15,6 +15,8 @@
  *   六、血盟盟主遺失（2026-10-31 11:11：「此模式沒有創立血盟的王族，無法攻城」）：血盟記的盟主身分碼對不到任何存檔裡的王族
  *       （創盟的王族被刪除或覆蓋、從備份匯入成新身分…；換發身分證只會換「還找得到的」舊碼，所以救不回來）時，
  *       由目前登入、同模式的王族接任盟主，並在系統訊息說明。血盟名稱、城堡、成員貢獻都不變。
+ *   七、精通之證沒掉的提示（2026-10-31 11:30）：精通任務是每個角色各自的——打倒精通頭目（飛龍）卻沒拿到精通之證時，
+ *       系統訊息說明原因：還沒向威頓村的漢接任務、身上已經有一枚（含上鎖的）、已經完成精通、等級未滿 50、經典模式不開放。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -197,6 +199,32 @@
   if (typeof W.loadGame === 'function') {
     var oLoadC = W.loadGame;
     rebind('loadGame', function () { var r = oLoadC.apply(this, arguments); setTimeout(function () { clanHeal('load'); }, 1500); return r; });
+  }
+
+  // ── 七、精通之證沒掉的提示 ──
+  if (typeof W.killMob === 'function') {
+    var oKillM = W.killMob, mqTold = Object.create(null);
+    rebind('killMob', function (idx) {
+      var p = P(), m = (typeof mapState !== 'undefined' && mapState.mobs) ? mapState.mobs[idx] : null, check = false;
+      try { check = !!(on() && p && m && !m._dead && typeof MASTERY_DATA !== 'undefined' && MASTERY_DATA[p.cls] && m.n === MASTERY_DATA[p.cls].boss); } catch (e) {}
+      var had = check && (p.inv || []).some(function (i) { return i && i.id === 'item_mastery_proof'; });
+      var r = oKillM.apply(this, arguments);
+      try {
+        if (check && !had && !(p.inv || []).some(function (i) { return i && i.id === 'item_mastery_proof'; })) {
+          var why = p.classicMode ? '經典模式沒有精通任務。'
+            : p.masteryQuest === 'done' ? '這個角色已經完成精通任務了（精通之證只在任務進行中掉）。'
+            : (p.lv || 1) < 50 ? '精通任務要 Lv50 以上才能接。'
+            : p.masteryQuest !== 'active' ? '這個角色還沒向威頓村的「漢」接下精通任務——精通任務是每個角色各自的，換角色要重新接。'
+            : '';
+          var key = (p.enSeed || '') + '|' + why;
+          if (why && !mqTold[key]) { mqTold[key] = 1; logSys('<span class="text-amber-300">打倒了' + m.n + '，但沒有拿到精通之證：' + why + '</span>'); }
+        } else if (check && had) {
+          var k2 = (p.enSeed || '') + '|had';
+          if (!mqTold[k2]) { mqTold[k2] = 1; var lk = (p.inv || []).some(function (i) { return i && i.id === 'item_mastery_proof' && i.lock; }); logSys('<span class="text-amber-300">你身上已經有一枚精通之證' + (lk ? '（上鎖中，要先解鎖才能交付）' : '') + '，不會再掉第二枚；回威頓村交給漢吧。</span>'); }
+        }
+      } catch (e) {}
+      return r;
+    });
   }
 
   W.__afkFix1031 = { clanHeal: clanHeal, resolveItem: resolveItem, baseId: baseId, scanDerived: scanDerived };
