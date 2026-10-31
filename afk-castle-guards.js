@@ -94,7 +94,15 @@
 
   // 沒有血盟（或讀不到盟主）時，你自己就是城主：攜帶上限改看你自己的魅力（玩家 2026-10-24：沒血盟招不到、看不到護衛）
   var oCap = window.castleGuardCapacity, oCha = window.castleGuardLeaderCha;
+  // 2026-11-01（謀叛者的低語實測）：盟主魅力每次都要找盟主＝把 16 個存檔位全部解壓掃一遍（核心只快取 3 秒），
+  //   護衛每拍都會問上限 → 4 分鐘掃 134 次。盟主魅力不太會變，記 30 秒（換角色、換模式就重問）。
+  var chaCache = null;
   window.castleGuardLeaderCha = function () {
+    var p0 = P(), key = p0 ? (currentSlot + ':' + (typeof clanModeKey === 'function' ? clanModeKey(p0) : '')) : '', now = Date.now();
+    if (chaCache && chaCache.key === key && now - chaCache.t < 30000) return chaCache.v;
+    var v0 = chaLive.apply(this, arguments); chaCache = { key: key, t: now, v: v0 }; return v0;
+  };
+  var chaLive = function () {
     var v = 0; try { v = typeof oCha === 'function' ? oCha.apply(this, arguments) : 0; } catch (e) { v = 0; }
     if (v > 0) return v;
     var p = P(); if (!p) return 0;

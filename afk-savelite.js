@@ -14,6 +14,7 @@
  *       判斷結果跟原本完全一樣，只是不用每次重讀。
  *   二、頭目擊殺存檔節流：殺頭目觸發的存檔，距離上一次存檔不到 30 秒就先記著，30 秒到了再補存一次。
  *       關頁、切到背景、回城、換地圖、手動存檔、5 分鐘定時存檔都照樣立刻存；最壞情況（瀏覽器當掉）少存最多 30 秒。
+ *   三、（2026-11-01）傭兵被復活、補跑結束、傭兵經驗結算觸發的存檔也一樣 30 秒節流（謀叛者的低語 4 分鐘原本存 119 次）。
  *   關掉開關＝完全原本的行為。
  * ========================================================================== */
 (function () {
@@ -83,10 +84,18 @@
     W.killMob = function () { inKill++; try { return oKill.apply(this, arguments); } finally { inKill--; } };
     try { killMob = W.killMob; } catch (e) {}
   }
+  // 三、（2026-11-01：謀叛者的低語實測 4 分鐘存了 119 次）傭兵倒下被復活（復活卷軸、返生術）每復活一名就整份存一次（73 次）、
+  //     補跑結束時補存殺頭目延後的存檔（19 次，每次約 80 ms）、傭兵經驗結算（7 次）——跟殺頭目一樣歸進 30 秒節流。
+  var inSoft = 0;
+  ['_reviveAllyDone', '_ffFinishCatchup', '_settleAllyExpDirect'].forEach(function (fn) {
+    var o = W[fn]; if (typeof o !== 'function') return;
+    W[fn] = function () { inSoft++; try { return o.apply(this, arguments); } finally { inSoft--; } };
+    try { (0, eval)(fn + ' = window.' + fn); } catch (e) {}
+  });
   var oSave = W.saveGame;
   W.saveGame = function () {
     var now = Date.now();
-    if (on() && inKill && !W.__fb5CloseFlush && now - lastSave < GAP) { pending = true; pendSlot = currentSlot; st.skipped++; return true; }
+    if (on() && (inKill || inSoft) && !W.__fb5CloseFlush && now - lastSave < GAP) { pending = true; pendSlot = currentSlot; st.skipped++; return true; }
     inSave++; try { saveFp = (typeof _roleFingerprint === 'function' && player) ? _roleFingerprint(player) : ''; } catch (e) { saveFp = ''; }
     var r;
     try { r = oSave.apply(this, arguments); } finally { inSave--; if (!inSave) saveFp = ''; }

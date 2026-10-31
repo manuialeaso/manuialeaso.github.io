@@ -50,17 +50,25 @@
     }
     return s;
   }
+  var sharedDexCache = Object.create(null);
   function diamondOwned(name, actor) {
     actor = actor || player;
     if (!actor || !isMonster(name)) return false;
     // Native mercenary recomputation temporarily borrows the same-mode dex and
     // removes it afterward. Read its own mode's shared collection when absent.
     var dex = actor.cardDex;
-    if (!dex) try {
-      var raw = _lzGet(_dexKey(CARDDEX_KEY,actor));
-      dex = raw ? JSON.parse(raw) : {};
+    if (!dex) {
+      // 2026-11-01（謀叛者的低語實測：60 秒裡光這裡就花 2 秒）：傭兵沒有 cardDex，原本每問一次就從儲存空間解壓、解析整份卡冊；
+      //   傭兵每一拍都會問（變身維持），8 人隊每秒上百次。改成同一個模式的卡冊記 3 秒（卡冊只會變多，3 秒內晚一點看到新卡不影響）。
+      var key = null; try { key = _dexKey(CARDDEX_KEY, actor); } catch (e) {}
+      var hit = key && sharedDexCache[key], now = Date.now();
+      if (hit && now - hit.t < 3000) dex = hit.dex;
+      else {
+        try { var raw = _lzGet(key); dex = raw ? JSON.parse(raw) : {}; } catch (e) { dex = {}; }
+        if (key) sharedDexCache[key] = { t: now, dex: dex };
+      }
       if (dex._v !== 2) return false;
-    } catch (e) { dex = {}; }
+    }
     return Number(dex[name]) >= 10000;
   }
   // 怪物型態（玩家 2026-10-24）：等級夠就能變身（原版卷軸表有這個型態就用它的等級，否則用怪物本身的等級）；鑽石卡仍是合成材料
