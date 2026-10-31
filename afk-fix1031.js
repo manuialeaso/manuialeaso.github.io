@@ -12,6 +12,9 @@
  *   五、暗夢星迴（2026-10-31 04:24：花 1000 顆龜裂之核進去，23 秒就離開，領取獎勵是空的）：
  *       ‧暗夢星迴本來就沒有停留獎勵（只有擊倒夢境者的投影才有掉落）；離開時改寫清楚，不再叫你去入口「領取獎勵」。
  *       ‧在暗夢星迴裡換地圖、換地區、撤離，先跳確認視窗（離開沒有獎勵、龜裂之核不退還），避免誤觸。
+ *   六、血盟盟主遺失（2026-10-31 11:11：「此模式沒有創立血盟的王族，無法攻城」）：血盟記的盟主身分碼對不到任何存檔裡的王族
+ *       （創盟的王族被刪除或覆蓋、從備份匯入成新身分…；換發身分證只會換「還找得到的」舊碼，所以救不回來）時，
+ *       由目前登入、同模式的王族接任盟主，並在系統訊息說明。血盟名稱、城堡、成員貢獻都不變。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -162,5 +165,39 @@
     return '';
   };
 
-  W.__afkFix1031 = { resolveItem: resolveItem, baseId: baseId, scanDerived: scanDerived };
+  // ── 六、血盟盟主遺失 → 目前的王族接任 ──
+  var clanHeal = function (why) {
+    try {
+      var p = P();
+      if (!on() || !p || p.cls !== 'royal' || typeof clanGetModeInfo !== 'function' || typeof clanScanRoles !== 'function' || typeof clanRoleId !== 'function') return false;
+      var info = clanGetModeInfo(p); if (!info) return false;
+      var mode = typeof clanModeKey === 'function' ? clanModeKey(p) : 'normal';
+      try { _clanScanCache = { mode: null, at: 0, roles: null }; } catch (e) {}
+      var roles = clanScanRoles(mode);
+      if (roles.some(function (r) { return r.id === info.leaderId && r.player && r.player.cls === 'royal'; })) return false;   // 盟主還在
+      var me = clanRoleId(p); if (!me) return false;
+      var res = _clanWithLock(function (st) {
+        var m = st.modes[mode]; if (!m || m.leaderId !== info.leaderId) return { commit: false, error: '血盟資料已變更' };
+        m.leaderId = me; return {};
+      });
+      if (!res || !res.ok) return false;
+      try { _clanScanCache = { mode: null, at: 0, roles: null }; } catch (e) {}
+      try { logSys('<span class="text-amber-300 font-bold">血盟「' + (info.name || '') + '」原本的盟主角色已經找不到了（可能被刪除、覆蓋，或從備份匯入成新的身分），由你接任盟主。</span><span class="text-slate-300">血盟名稱、城堡與成員貢獻都不變。</span>'); } catch (e) {}
+      return true;
+    } catch (e) { return false; }
+  };
+  if (typeof W.clanCanSiege === 'function') {
+    var oCan = W.clanCanSiege;
+    rebind('clanCanSiege', function (p) {
+      var r = oCan.apply(this, arguments);
+      if (!r && (!p || p === P()) && clanHeal('siege')) r = oCan.apply(this, arguments);
+      return r;
+    });
+  }
+  if (typeof W.loadGame === 'function') {
+    var oLoadC = W.loadGame;
+    rebind('loadGame', function () { var r = oLoadC.apply(this, arguments); setTimeout(function () { clanHeal('load'); }, 1500); return r; });
+  }
+
+  W.__afkFix1031 = { clanHeal: clanHeal, resolveItem: resolveItem, baseId: baseId, scanDerived: scanDerived };
 })();
