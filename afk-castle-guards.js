@@ -216,7 +216,7 @@
     if (typeof oKillSac === 'function') window.killPlayer = function () {
       try {
         var p = P();
-        if (p && !p.dead && (p.hp || 0) <= 0 && !(coverDepth > 0 && coverGuard())) {
+        if (p && !p.dead && (p.hp || 0) <= 0 && !(coverDepth > 0 && coverGuard()) && !window.__afkForceDeath) {   // __afkForceDeath：劇情必死（暗夢星迴 15 分鐘自爆）不代死
           var g = (p.guardsV2 || []).filter(function (x) { return x && x.city === 'aden_elite' && !x._downed && (x.hp || 0) > 0 && !shaken(x); }).sort(function (a, b) { return (b.hp || 0) - (a.hp || 0); })[0];
           if (g) {
             g.hp = 0; try { _guardDown(g); } catch (e) { g._downed = true; g._reviveAt = Date.now() + 30000; }

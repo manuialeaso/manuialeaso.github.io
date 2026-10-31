@@ -420,7 +420,7 @@
           try { _lootMobInfo = { n: m.n, lv: m.lv, boss: !!m.boss }; } catch (e) {}
           try { gainItem('afk_abyss_key', 1); } finally { try { _lootMobInfo = keepInfo; } catch (e) {} }
         }
-        if (dream) {
+        if (dream && !(m.race === '建築' && m.noAutoTeleport)) {   // 2026-10-31：傲慢之塔的樓梯、遺忘之島傳送門不掉夢域材料
           var savedInfo = (typeof _lootMobInfo !== 'undefined') ? _lootMobInfo : null;
           try { _lootMobInfo = { n: m.n, lv: m.lv, boss: !!m.boss }; } catch (e) {}
           try {

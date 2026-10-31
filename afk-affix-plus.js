@@ -289,7 +289,7 @@
         if (m && m._dead && !m._afkAxPaid && P()) {
           m._afkAxPaid = true;
           var dream = !!(m._dream || (player.sherineDream && player.sherineMad));
-          if (dream && !(typeof state !== 'undefined' && state._afkFinal)) {
+          if (dream && !(typeof state !== 'undefined' && state._afkFinal) && !(m.race === '建築' && m.noAutoTeleport) && !m._dreamStar) {   // 2026-10-31：傲慢之塔的樓梯／遺忘之島傳送門、暗夢星迴頭目不掉
             var k = m.boss ? 1 : (Math.random() < 0.001 ? 1 : 0);
             if (k) { gainItem(DRES, k, true); if (m.boss) sys('<span class="text-violet-300">' + esc(m.n) + ' 身上飄出 1 個闇龍的抵抗者意志傳承碎片。</span>'); }
           }

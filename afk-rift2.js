@@ -42,7 +42,7 @@
 
   // ── 模式與時間 ──
   var modeNow = function () { var p = P(); if (!p || p.classicMode) return 'plain'; if (p.sherineMad && p.sherineDream) return 'dream'; if (p.sherineMad) return 'mad'; if (p.sherineWorld) return 'sherine'; return 'plain'; };
-  var inRift = function () { return !!(S().riftRun && mapState && mapState.current === 'rift_battle'); };
+  var inRift = function () { return !!(S().riftRun && !S().dreamStar && mapState && mapState.current === 'rift_battle'); };   // 暗夢星迴不套用（2026-10-31：原本 HP ×0.15、時空暴走也套進去）
   var rule = function () { return ON && inRift() && S()._r2Mode && S()._r2Mode !== 'plain'; };
   var minutes = function () { var s = S(); return s._r2Start == null ? 0 : Math.max(0, ((s.ticks || 0) - s._r2Start) / 600); };
   var sync = function () {
@@ -72,7 +72,7 @@
     var s = S(), p = P();
     if (!s.riftRun) return oEnd.apply(this, arguments);
     sync();
-    var info = { mode: s._r2Mode || 'plain', min: minutes(), clear: !!s._r2Clear };
+    var info = { mode: s.dreamStar ? 'plain' : (s._r2Mode || 'plain'), min: minutes(), clear: !!s._r2Clear };   // 暗夢星迴沒有裂痕獎勵
     var r = oEnd.apply(this, arguments);
     try { if (ON && p && info.mode !== 'plain') p.afkRift2Reward = info; } catch (e) {}
     s._r2Start = null; s._r2BossDue = null;

@@ -96,6 +96,7 @@
   window.spawnRiftMob = function (idx) {
     if (!on()) return oSpawn.apply(this, arguments);
     if (idx !== 1) return;
+    if (S()._dsOver) return;   // 打倒後到離場前（0.3 秒）不再出新頭目
     if (mapState.mobs.some(function (m) { return m && !m._dead && m.curHp > 0; })) return;
     var ids = pool(); if (!ids.length) return;
     var id = (window.__afkDsForceBoss && DB.mobs[window.__afkDsForceBoss]) ? window.__afkDsForceBoss : ids[Math.floor(Math.random() * ids.length)], base = DB.mobs[id];
@@ -273,7 +274,7 @@
       m.rageDmgMult = m._dsRage * rageOf(m) * (m._dsIllu ? 1.5 : 1) * (full(m) ? 1 : 0.5);
       if (!full(m)) {   // 瘋狂席琳版：只有每 20 秒的星蝕
         if (age >= 10 * SEC && every(age - 10 * SEC, 20)) { pctAll(DS.eclipse, '星蝕'); log(tag('星蝕', '#a78bfa') + '星光一暗，全隊失去最大 HP ' + Math.round(DS.eclipse * 100) + '% 的生命。'); }
-        if (age >= 900 * SEC) { m.curHp = 0; m._dsBlast = true; sys('<span class="text-red-500 font-bold">' + NAME + ' 的身軀化為光焰炸裂，夢境隨之崩塌——無人生還。</span>'); (player.allies || []).forEach(function (x) { if (x && !x._downed) { x.curHp = 0; x._downed = true; x._reviveCd = 150; } }); player.hp = 0; if (typeof killPlayer === 'function') killPlayer(); return; }
+        if (age >= 900 * SEC) { m.curHp = 0; m._dsBlast = true; sys('<span class="text-red-500 font-bold">' + NAME + ' 的身軀化為光焰炸裂，夢境隨之崩塌——無人生還。</span>'); (player.allies || []).forEach(function (x) { if (x && !x._downed) { x.curHp = 0; x._downed = true; x._reviveCd = 150; } }); player.hp = 0; forceDie(); return; }
         continue;
       }
       if (age > 0 && age % (60 * SEC) === 0) {
@@ -328,10 +329,16 @@
         sys('<span class="text-red-500 font-bold">' + NAME + ' 的身軀化為光焰炸裂，夢境隨之崩塌——無人生還。</span>');
         (player.allies || []).forEach(function (x) { if (x && !x._downed) { x.curHp = 0; x._downed = true; x._reviveCd = 150; } });
         m.curHp = 0; m._dsBlast = true;
-        player.hp = 0; if (typeof killPlayer === 'function') killPlayer();
+        player.hp = 0; forceDie();
         return;
       }
     }
+  };
+  // 15 分鐘自爆＝必死：禁衛軍代死不擋（2026-10-31 實測：被代死吃掉，試煉結束不了、又出新頭目）
+  var forceDie = function () {
+    window.__afkForceDeath = true;
+    try { if (typeof killPlayer === 'function') killPlayer(); } finally { window.__afkForceDeath = false; }
+    try { if (S().dreamStar && S().riftRun && player && !player.dead) { riftEndRun(); setMapSelectors('town_rift'); changeMap(true); saveGame(); } } catch (e) {}
   };
   var oTick = window.tick;
   window.tick = function () {
@@ -421,6 +428,7 @@
         if (Math.random() < 0.0001 && DB.items.afk_card_pick) { gainItem('afk_card_pick', 1); got.push(DB.items.afk_card_pick.n); }
         sys('<span class="font-bold" style="color:#c084fc;">' + NAME + ' 化作星屑散去。</span>' + (got.length ? '<span class="text-fuchsia-200">它遺下了：' + got.join('、') + '</span>' : '<span class="text-slate-400">夢境什麼也沒有留下。</span>'));
       } finally { try { _lootMobInfo = info; } catch (e) {} }
+      S()._dsOver = true;
       // 跟四龍副本一樣：打倒一隻頭目就結束，回到時空裂痕入口（擊殺流程跑完再走，避免在怪物迴圈中途換圖）
       setTimeout(function () {
         try {
@@ -440,7 +448,7 @@
     var ds = !!(S().dreamStar && S().riftRun);
     var keep = player.riftRewardMs;
     var r = oEnd.apply(this, arguments);
-    if (ds) { player.riftRewardMs = keep; S().dreamStar = false; sys('<span class="text-fuchsia-300">你自夢境中醒轉，離開了暗夢星迴。</span>'); }
+    if (ds) { player.riftRewardMs = keep; S().dreamStar = false; S()._dsOver = false; sys('<span class="text-fuchsia-300">你自夢境中醒轉，離開了暗夢星迴。</span>'); }
     return r;
   };
 
@@ -466,7 +474,7 @@
     }
     var p = player, snap = p.inv.slice(), cnts = p.inv.map(function (x) { return x && x.cnt; });
     takeN('mat_crack_core', SOLO_CORES - 1);   // 剩下 1 顆由 enterRift 自己扣
-    S().dreamStar = true;
+    S().dreamStar = true; S()._dsOver = false;
     try { window.enterRift(); } finally {
       if (!S().riftRun) { S().dreamStar = false; p.inv = snap; snap.forEach(function (x, j2) { if (x) x.cnt = cnts[j2]; }); }
     }

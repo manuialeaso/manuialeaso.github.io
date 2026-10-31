@@ -822,6 +822,7 @@
         var m = mapState.mobs[idx];
         if (s && m && m.siegeEnemy && !m._afkSiegeX && sieged()) {
           m._afkSiegeX = true;
+          try { siegeDefenderScale(m); } catch (e) {}
           var k = s._afkMult || 1, red = Math.min(0.7, k - 1);
           if (k > 1) {
             if (Array.isArray(m.dmg)) m.dmg = [m.dmg[0], Math.max(1, Math.round(m.dmg[1] * k))];
@@ -834,6 +835,44 @@
       return r;
     };
   }
+  // ── 攻城守軍改看你的面板（玩家 2026-10-31 14:11：手機實測外門、內城各 4 秒就打完）──
+  //   原本守軍跟城門／守護塔只看你的等級（HP 約 10～15×等級、城門 300×等級、守護塔 500×等級），後期一碰就倒。
+  //   改成跟敵對血盟一樣看「脫掉變身、拿掉卡冊後的面板」：
+  //   ‧守軍：面板 ×2 再 ×SIEGE_PANEL.r（HP、一般攻擊、命中、AC、魔防）
+  //   ‧城門 HP＝面板 HP ×SIEGE_PANEL.gate、守護塔＝×SIEGE_PANEL.tower（只會變硬，不會比原本少）
+  //   持有城數的 +10%／座、多波守軍照舊疊在上面。
+  var SIEGE_PANEL = { r: 1.5, gate: 600, tower: 800 };
+  //   人數：HP 再乘「隊伍人數÷8」（你＋傭兵；一人 ×0.125、8 人 ×1、16 人 ×2；守軍、城門、守護塔都一樣），一個人打不會被卡死
+  var partyF = function () { var p = P(); var n = 1 + ((p && p.allies) || []).filter(function (a) { return a && !a._downed; }).length; return Math.max(0.125, Math.min(2, n / 8)); };
+  if (typeof window.applySiegeEnemyScaling === 'function') {
+    var oSiegeScale = window.applySiegeEnemyScaling;
+    window.applySiegeEnemyScaling = function (mob) {
+      var r = oSiegeScale.apply(this, arguments);
+      try {
+        var p = P(), pn = panelOf(); if (!mob || !p || !pn || p.classicMode) return r;
+        var sg = mob.siege || {};
+        if (sg.fixed) {
+          var k = mob.race === '建築' && /守護塔/.test(String(mob.n || '')) ? SIEGE_PANEL.tower : SIEGE_PANEL.gate;
+          var hp = Math.round(pn.hp * k * partyF()); if (hp > (mob.hp || 0)) { mob.hp = hp; mob.curHp = hp; }
+        }
+      } catch (e) {}
+      return r;
+    };
+    try { (0, eval)('applySiegeEnemyScaling = window.applySiegeEnemyScaling'); } catch (e) {}
+  }
+  // 守軍（含扮成玩家的守軍）：生出來當下換成面板基準，之後才疊持有城數的 +10%／座（見上面的 spawnMob）
+  var siegeDefenderScale = function (mob) {
+    var p = P(), pn = panelOf(); if (!mob || !p || !pn || p.classicMode || isBuilding(mob) || mob.race === '建築') return;
+    var rr = SIEGE_PANEL.r, e = Math.max(1, Math.round(pn.hit * 2 * rr));
+    mob.hp = mob.curHp = Math.max(mob.hp || 1, Math.round(pn.hp * 2 * rr * partyF()));
+    mob.dmg = [1, Math.max(1, Math.round(e * 0.4))]; mob.db = Math.max(Number(mob.db) || 0, Math.round(e * 0.8));
+    mob.ac = Math.min(Number(mob.ac) || 0, Math.round(pn.ac * 2 * rr));
+    mob.mr = Math.max(Number(mob.mr) || 0, Math.round(pn.mr * 2 * rr));
+    mob.hit = Math.max(Number(mob.hit) || 0, Math.round(pn.acc * 2 * rr));
+    mob._afkSiegePanel = true;
+  };
+  window.__afkSiegePanel = SIEGE_PANEL;
+
   // 搶塔那一波沒打完時，守護塔不是目標：自動改打護塔守軍（不然會一直打 1 HP 的塔）
   var shiftOffTower = function () {
     try {

@@ -81,7 +81,7 @@
         if (m && m._dead && !m._afkLostPaid && P()) {
           m._afkLostPaid = true;
           var dream = !!(m._dream || (player.sherineDream && player.sherineMad));
-          if (dream && !(typeof state !== 'undefined' && state._afkFinal)) {
+          if (dream && !(typeof state !== 'undefined' && state._afkFinal) && !(m.race === '建築' && m.noAutoTeleport) && !m._dreamStar) {   // 2026-10-31：傲慢之塔的樓梯／遺忘之島傳送門、暗夢星迴頭目不掉
             var k = m.boss ? BOSS_N : (Math.random() < NORMAL_RATE ? 1 : 0), got = {};
             for (var i = 0; i < k; i++) { var id = rollOne(); got[id] = (got[id] || 0) + 1; }
             Object.keys(got).forEach(function (id) { gainItem(id, got[id], true); });

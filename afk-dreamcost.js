@@ -83,7 +83,7 @@
     var was = !!(m && !m._dead);
     var r = oKill.apply(this, arguments);
     try {
-      if (was && m._dead && dreamOn() && m.race !== '建築') {
+      if (was && m._dead && dreamOn() && m.race !== '建築' && !m._dsBlast) {   // 暗夢星迴自爆的那隻不算擊殺
         if (!m.boss) mobCurse();
         if (m.boss) {
           var hit = teamHit(0.10, m.n + '的死亡詛咒'), mp = [];

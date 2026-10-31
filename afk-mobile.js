@@ -69,6 +69,13 @@
             + '}\n'
             //   ③ B 型·置中彈窗容器(含內聯 position:fixed 與 .fixed.inset-0 兩種都有的)：padding 夾安全區 + 內卡壓 max-height。
             + 'body.m-mobile :is(' + MODAL_HOSTS + '){ padding-top: calc(var(--orig-bar-h, 0px) + 8px) !important; padding-bottom: calc(var(--m-nav-h, 0px) + 8px) !important; }\n'
+            // 手機橫拿（高度 ≤520px，玩家 2026-10-31 14:11）：「冒險地圖」標題列兩排大按鈕吃掉一半高度、把戰場擠到熱鍵底下 → 縮成一排小按鈕
+            + '@media (orientation: landscape) and (max-height: 520px){'
+            + 'body.m-mobile #map-view-panel>.panel-header{display:flex !important;align-items:center !important;padding:3px 8px !important;flex-wrap:nowrap !important;gap:8px !important;min-height:38px !important;height:auto !important;flex:0 0 auto !important;}'
+            + 'body.m-mobile #map-view-panel>.panel-header>span:first-child{font-size:14px !important;white-space:nowrap !important;gap:6px !important;}'
+            + 'body.m-mobile #map-view-panel>.panel-header>div{display:flex !important;flex-wrap:nowrap !important;gap:6px !important;width:auto !important;flex:1 1 auto !important;justify-content:flex-end !important;}'
+            + 'body.m-mobile #map-view-panel>.panel-header>div>:is(button,select,span){padding:2px 8px !important;font-size:13px !important;min-height:0 !important;height:30px !important;width:auto !important;min-width:0 !important;flex:0 1 auto !important;}'
+            + '}\n'
             + 'body.m-mobile :is(' + MODAL_BOXES + '){ max-height: calc(100dvh - var(--orig-bar-h, 0px) - var(--m-nav-h, 0px) - 16px) !important; }\n'
             //   ④ transform 置中的裝備視窗「獨立模式」：中心對齊安全區中線、封頂高度。
             //      ⚠ 必須排除嵌入模式(.equipment-window-embedded·js/19 init 就掛上、現行永遠嵌入)：嵌入時 frame 由 JS 內聯

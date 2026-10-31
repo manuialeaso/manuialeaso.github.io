@@ -17,6 +17,8 @@
  *       （創盟的王族被刪除或覆蓋、從備份匯入成新身分…；換發身分證只會換「還找得到的」舊碼，所以救不回來）時，
  *       由目前登入、同模式的王族接任盟主，並在系統訊息說明。血盟名稱、城堡、成員貢獻都不變。
  *   八、職業專屬武器（2026-10-31 12:53）：龍騎士、幻術士「不能用匕首／矛」的通則，遇到 req 明確列出該職業的武器（潘朵拉神劍）以 req 為準。
+ *   九、傲慢之塔攀登狀態殘留（2026-10-31 14:11）：被強制換圖帶離塔後攀登旗標還留著，之後在別的地圖打倒任何頭目（區域霸主…）
+ *       就被傳進傲慢之塔；現在人不在塔的樓層時一律清掉攀登旗標。
  *   七、精通之證沒掉的提示（2026-10-31 11:30）：精通任務是每個角色各自的——打倒精通頭目（飛龍）卻沒拿到精通之證時，
  *       系統訊息說明原因：還沒向威頓村的漢接任務、身上已經有一枚（含上鎖的）、已經完成精通、等級未滿 50、經典模式不開放。
  * ========================================================================== */
@@ -66,6 +68,37 @@
       return o.apply(this, arguments);
     });
   });
+
+  // ── 九、傲慢之塔攀登狀態殘留（2026-10-31 14:11：在地圖掛機、打贏區域霸主後，自己跑去爬傲慢之塔）──
+  //    原因：攀登旗標 state.prideClimb 只有「主動換地圖、在塔裡倒下」才會清掉；被其他流程用強制換圖帶離塔（傳送、副本結束、
+  //    回城等 changeMap(true)）時旗標留著 → 之後在任何地圖打倒任何頭目（區域霸主、地圖王）都被當成「打倒樓梯」，
+  //    直接傳進傲慢之塔下一層；離線結算也會照殘留的旗標把你送回塔裡。
+  //    修正：人不在傲慢之塔的樓層（pride_f…）時，攀登旗標一律清掉（排名挑戰照原本先記錄樓層），打倒頭目也不會往上爬。
+  var inPrideFloor = function () { try { return /^pride_f\d+/.test(String(mapState.current || '')); } catch (e) { return false; } };
+  var clearStaleClimb = function (why) {
+    try {
+      if (!state.prideClimb || inPrideFloor()) return false;
+      if (state.prideRanked && typeof prideRecord === 'function') { try { prideRecord(state.prideFloor || 2); } catch (e) {} }
+      state.prideClimb = false; state.prideRanked = false; state.prideFloor = 0; state._prideAdvance = false;
+      console.info('[AFK-fix1031] 清掉殘留的傲慢之塔攀登狀態（' + why + '）');
+      return true;
+    } catch (e) { return false; }
+  };
+  if (typeof W.prideOnBossKill === 'function') {
+    var oPride = W.prideOnBossKill;
+    rebind('prideOnBossKill', function () {
+      if (on() && clearStaleClimb('不在塔裡打倒頭目')) return;
+      return oPride.apply(this, arguments);
+    });
+  }
+  if (typeof W.changeMap === 'function') {
+    var oChangeP = W.changeMap;
+    rebind('changeMap', function () {
+      var r = oChangeP.apply(this, arguments);
+      if (on()) clearStaleClimb('換地圖');
+      return r;
+    });
+  }
 
   // ── 五、暗夢星迴：離開確認 ──
   var leaveOk = false, REFUND = { id: 'mat_crack_core', n: 200 };
