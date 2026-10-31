@@ -31,11 +31,32 @@
  *   這條沒有核心框可借(核心只會畫 .tip-host 那種),所以自己畫一個小框,內容就是 title 純文字。
  *   兩條路互斥:先找 .tip-host,沒有才找 title,畫面上永遠只有一個框。
  *
+ * 🚫 點一下不閃框(2026-10-31):手指點一下時瀏覽器補送的假 mousemove 會讓核心資料框閃一下(快速廢品勾選時很礙事),
+ *   放開手指 800ms 內的真 mousemove 一律攔下;長按看資料不受影響。
+ *
  * 優雅降級:非觸控裝置直接不啟用;長按後核心沒把框叫出來就什麼都不做(也不攔 click),
  *   任何一步失敗都不影響遊戲原本操作。
  * ========================================================================== */
 (function () {
     'use strict';
+
+    // 🚫 點一下不閃資料框（玩家 2026-10-31 15:30：手機快速廢品勾選時，點一下就跳出物品說明，礙事又多餘——點物品本來就會開完整說明）。
+    //    原因：手指點一下，瀏覽器會補送一個「真的」mousemove → 核心的懸停資訊框以為滑鼠移上去而顯示。
+    //    放開手指後 800ms 內的真 mousemove 一律攔下（不管「手機長按看資料」開不開都生效，只在觸控裝置）；
+    //    長按看資料是本檔自己派的合成事件（isTrusted=false），不受影響。
+    (function () {
+        var touchDev = false;
+        try { touchDev = ('ontouchstart' in window) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches); } catch (e) {}
+        if (!touchDev) return;
+        var tapEndAt = 0, TAP_MOUSE_MS = 800;
+        document.addEventListener('touchend', function () { tapEndAt = Date.now(); }, { passive: true, capture: true });
+        window.addEventListener('mousemove', function (e) {
+            if (!e.isTrusted || !tapEndAt) return;
+            if (Date.now() - tapEndAt > TAP_MOUSE_MS) { tapEndAt = 0; return; }
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            e.stopPropagation();
+        }, true);
+    })();
 
     // 先登錄再問開關:關掉時本檔提早 return,但面板仍列得出這一項(玩家才有辦法開回來)
     if (window.AFK_TOGGLES) {
