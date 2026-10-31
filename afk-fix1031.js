@@ -218,6 +218,15 @@
             : '';
           var key = (p.enSeed || '') + '|' + why;
           if (why && !mqTold[key]) { mqTold[key] = 1; logSys('<span class="text-amber-300">打倒了' + m.n + '，但沒有拿到精通之證：' + why + '</span>'); }
+          if (!why && p.masteryQuest === 'active' && !p.classicMode && (p.lv || 1) >= 50) {
+            // 任務進行中卻沒拿到（2026-10-31 11:50 玩家回報：同職業第二隻角色接了任務仍打不到）：直接補發，並把當下狀態記到主控台方便追查
+            var ctx = { cls: p.cls, lv: p.lv, quest: p.masteryQuest, inv: (p.inv || []).length, mob: m.n, map: (typeof mapState !== 'undefined' && mapState.current) || '', ff: !!(typeof state !== 'undefined' && state.ff) };
+            var got = null; try { got = gainItem('item_mastery_proof', 1); } catch (e) { ctx.err = String(e && e.message || e); }
+            if (!(p.inv || []).some(function (i) { return i && i.id === 'item_mastery_proof'; })) { p.inv.push({ id: 'item_mastery_proof', cnt: 1, en: 0, uid: 'mq' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }); ctx.pushed = true; }
+            try { console.warn('[AFK-fix1031] 精通之證補發', ctx, got); } catch (e) {}
+            logSys('<span class="text-amber-300 font-bold">✦ 你從強敵的殘骸中拾起了「精通之證」——回威頓村找漢吧。</span><span class="text-slate-400">（補發）</span>');
+            try { if (typeof saveGame === 'function') saveGame(); } catch (e) {}
+          }
         } else if (check && had) {
           var k2 = (p.enSeed || '') + '|had';
           if (!mqTold[k2]) { mqTold[k2] = 1; var lk = (p.inv || []).some(function (i) { return i && i.id === 'item_mastery_proof' && i.lock; }); logSys('<span class="text-amber-300">你身上已經有一枚精通之證' + (lk ? '（上鎖中，要先解鎖才能交付）' : '') + '，不會再掉第二枚；回威頓村交給漢吧。</span>'); }
