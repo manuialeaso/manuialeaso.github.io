@@ -33,6 +33,9 @@
  *   afk-sellguard 存在的理由(手機點兩下裝備、第二下落在販賣鈕上,實測賣掉過玩家的斗篷);
  *   何況疊數逼近件數時逐件按等於要按幾百次,根本沒解決玩家的痛點。
  *
+ * 2026-11-01:合成過的 +N、第二詞綴、昇華、至高的支配(衍生 id「基底~r…」)也列進來,跟基底遺物同一組;
+ *   每組照樣自動留最好的 1 件(+N、昇華越高越好)。
+ *
  * 優雅降級:缺 player / DB / isRelic / getSellPrice 就 console.warn 後安靜停用。
  *   龍鑽 API(pandoraGetSharedDiamonds / pandoraAdjustSharedDiamonds)不在時**只收起換鑽那顆鈕**,
  *   賣金幣照常可用。
@@ -66,8 +69,15 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  // 2026-11-01（玩家：有詞條的遺物也要能一起賣）：合成過的 +N、第二詞綴、昇華、至高的支配（afk-relicplus 的衍生 id「基底~r…」）
+  //   也列進來，跟同一件基底遺物放在同一組；「每件遺物自動留最好的 1 件」照舊（+N、昇華越高越好）。原本 +N 遺物整個不列入。
+  function baseIdOf(id) { return String(id || '').split('~')[0]; }
   function isRelicId(id) {
-    try { var d = ITEMS()[id]; return !!(d && !d.relicPlus && typeof isRelic === 'function' && isRelic(d)); } catch (e) { return false; }   // 🔨 合成過的 +N 遺物（afk-relicplus）不列入整理，避免被一起賣掉
+    try { var d = ITEMS()[id], b = ITEMS()[baseIdOf(id)]; return !!(d && b && typeof isRelic === 'function' && isRelic(b)); } catch (e) { return false; }
+  }
+  function plusInfo(id) {
+    var m = /~r(\d{1,2})(?:~((?:relic_|wpn_)[a-z0-9_]+))?(?:~a(\d))?(?:~e(\d))?/.exec(String(id || ''));
+    return m ? { n: +m[1], fx: !!m[2], asc: m[3] != null ? +m[3] : null, evo: m[4] != null ? +m[4] : null } : null;
   }
   function fullNameHtml(it) {
     try {
@@ -84,10 +94,12 @@
     if (it.bless === true) s++;
     if (it.anc) s++;
     if (it.attr) s++;
+    var pi = plusInfo(it.id);   // +N／第二詞綴／昇華／至高的支配：排在白板與一般詞綴前面（保留的是最好的那件）
+    if (pi) s += 10 * pi.n + (pi.fx ? 5 : 0) + (pi.asc != null ? 200 + 20 * pi.asc : 0) + (pi.evo != null ? 300 : 0);
     return s;
   }
   function variantKey(it) {
-    return (it.bless === true ? 'B' : '') + '|' + (it.anc || '') + '|' + (it.attr || '') + '|' + (Math.floor(Number(it.en) || 0));
+    return (it.id && it.id.indexOf('~') > 0 ? it.id + '#' : '') + (it.bless === true ? 'B' : '') + '|' + (it.anc || '') + '|' + (it.attr || '') + '|' + (Math.floor(Number(it.en) || 0));
   }
   function affixPills(it) {
     var out = '';
@@ -145,8 +157,8 @@
 
     function add(it, source) {
       if (!it || !it.id || !isRelicId(it.id)) return;
-      if (it.lock) { (byId[it.id] = byId[it.id] || newGroup(it.id)).locked += entryCnt(it); return; }   // 上鎖的只計數、不列入
-      var g = byId[it.id] = byId[it.id] || newGroup(it.id);
+      if (it.lock) { (byId[baseIdOf(it.id)] = byId[baseIdOf(it.id)] || newGroup(baseIdOf(it.id))).locked += entryCnt(it); return; }   // 上鎖的只計數、不列入
+      var gid = baseIdOf(it.id), g = byId[gid] = byId[gid] || newGroup(gid);
       var k = variantKey(it);
       var v = g.vmap[k];
       if (!v) {
@@ -391,7 +403,7 @@
     for (var i = 0; i < p.inv.length; i++) {
       var it = p.inv[i];
       if (!it || it.lock || !isRelicId(it.id)) continue;
-      var k = rowKey(it.id, variantKey(it));
+      var k = rowKey(baseIdOf(it.id), variantKey(it));
       if (!want[k]) continue;
       var take = Math.min(entryCnt(it), want[k]);
       if (take <= 0) continue;
@@ -413,7 +425,7 @@
       for (var j = 0; j < w.items.length; j++) {
         var wi = w.items[j];
         if (!wi || wi.lock || !isRelicId(wi.id)) continue;
-        var wk = rowKey(wi.id, variantKey(wi));
+        var wk = rowKey(baseIdOf(wi.id), variantKey(wi));
         if (!want[wk]) continue;
         var wtake = Math.min(entryCnt(wi), want[wk]);
         if (wtake <= 0) continue;
@@ -704,7 +716,7 @@
       if (okNav || ++tries > 40) clearInterval(t);
     }, 250);
     injectAutoNav();
-    window.AFK_RELICBATCH = { open: open, close: close };
+    window.AFK_RELICBATCH = { open: open, close: close, groups: function () { scan(); return groups; } };
     console.log('[AFK-relicbatch] hooks OK — 遺物整理（賣金幣／回收換龍鑽 ' + DIA_PER_RELIC + ' 顆・每個遺物自動留 ' + KEEP_PER_ID + ' 件）'
       + (okBook ? '' : '・收集冊入口未掛上'));
   }

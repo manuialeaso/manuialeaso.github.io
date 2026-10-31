@@ -173,7 +173,9 @@
         { id: 'synccompress', name: '存檔即時壓縮', desc: '避免存檔爆掉害角色或倉庫消失；代價是存檔時多花一點時間', group: '系統與其他', def: false },
         { id: 'powersave', name: '省電模式', desc: '提供完整效果、流暢顯示與極省電三種設定；也可分別關閉動畫、光暈、特效及聲音。', group: '系統與其他' },
         { id: 'skin', name: '首頁外掛入口/資訊', desc: '整理首頁的外掛入口，並顯示原作者連結與最後同步原版的時間', group: '系統與其他' },
-        { id: 'nobanner', name: '隱藏非官方版本橫幅', desc: '藏掉頂端那條「非官方轉載版本」橫幅，把畫面空間讓回來', group: '系統與其他', def: false },
+        // 2026-11-01：手機預設開（橫幅在手機上吃掉一大塊畫面）——沒設過開關的手機玩家第一次進來會跳確認視窗（要讀過那句話、打「了解」才藏，取消就維持顯示、不再問）；電腦照舊預設關
+        { id: 'nobanner', name: '隱藏非官方版本橫幅', desc: '藏掉頂端那條「非官方轉載版本」橫幅，把畫面空間讓回來（手機預設開，第一次會先確認）', group: '系統與其他',
+          def: (function () { try { return !!((window.matchMedia && matchMedia('(pointer:coarse)').matches) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '')); } catch (e) { return false; } })() },
         { id: 'offline', name: '離線快速結算', desc: '關掉遊戲回來自動結算掛機收益', group: '遊戲玩法' },
         { id: 'traditional', name: '傳統模式(偽)', desc: '打到或做出來的裝備自帶隨機強化值（在選角卡右上角逐角色開關）', group: '遊戲玩法' },
         { id: 'dograce', name: '賽狗場', desc: '賭哪隻狗第一，押金幣或龍鑽、中了自動入袋（自動化分頁開啟）', group: '遊戲玩法' },
