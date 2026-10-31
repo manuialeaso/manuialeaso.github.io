@@ -9,9 +9,11 @@
  *   五、不動怒威（同上）：謀叛者的低語裡的反王肯恩、魔女賽尼斯，HP 第一次掉到 50% 以下時發動：5 秒內造成的傷害 +50%、受到的傷害 −50%。
  *   六、觸發者（玩家 2026-10-31 02:50）：16 人隊伍（你＋15 名傭兵），八個職業各 2 人，而且 16 人的轉生技藝全部不同（＝16 門技藝都到齊）
  *       → 觸發者光環，只在一般區域（副本、時空裂痕、暗夢星迴、攀登、最終決戰不算）：全隊造成的傷害 +30%、受到的傷害 −30%；
- *       對手是王（打王、被王打）時改成 +10%／−10%。
+ *       對手是王（打王、被王打）時改成 +10%／−10%。2026-10-31 12:53：席琳夢域鏡裡全部區域都算（副本、裂痕、暗夢星迴、攀登、最終決戰）。
  *   七、戰士的臂力（玩家 2026-10-31 04:05）：轉生後的戰士，雙手武器當單手用（可以和盾牌一起裝），也可以裝盾牌。
  *       可用的武器種類照原本戰士的規則（鈍器、開放清單），只是不再算雙手；經典模式不套用。
+ *       （轉生角色本來就不限職業，所以武器種類、盾牌其實全部都能用。）
+ *   八、轉生者的單手（玩家 2026-10-31 12:53，跟七合併）：所有職業轉生後，雙手武器（含弓、遺物雙手武器）都當單手用，可以另外裝盾牌或副手；經典模式不套用。
  *   都不寫在任何說明裡（小百科只寫「有隱藏條件」）。
  *   開關：隱藏規則全部合併成一個開關 hiddenbonus「隱藏規則」（玩家 2026-10-30：以後新的隱藏規則也放進來；命運 afk-fate 也看這個開關）。
  * ========================================================================== */
@@ -110,9 +112,12 @@
     trigOk = CLS8.every(function (c) { return cnt[c] === TRIG.perCls; });
     return trigOk;
   };
+  var dreamWorld = function () { var p = P(); return !!(p && !p.classicMode && p.sherineDream && p.sherineMad); };
   var normalArea = function () {
     var key = (typeof mapState !== 'undefined' && mapState && mapState.current) || '';
-    if (!key || /^town_/.test(key) || DG_PLUGIN[key]) return false;
+    if (!key || /^town_/.test(key)) return false;
+    if (dreamWorld()) return true;   // 2026-10-31 12:53：席琳夢域鏡裡全部區域都算（副本、時空裂痕、暗夢星迴、攀登、最終決戰）
+    if (DG_PLUGIN[key]) return false;
     try { var C = W.AFK_CARD_COMBAT; if (C && C.inDungeon && C.inDungeon()) return false; } catch (e) {}
     try { if (state.riftRun || state.dreamStar || state.prideClimb) return false; } catch (e) {}
     return true;
@@ -141,9 +146,11 @@
 
   // ── 戰士的臂力 ──
   var mightyWarrior = function () { var p = P(); return !!(p && p.cls === 'warrior' && p.rebirth > 0 && !p.classicMode); };
+  // 八、轉生者的單手（2026-10-31 12:53）：所有轉生角色的雙手武器（含弓）都當單手用，可以另外裝盾牌或副手。
+  var rebornOneHand = function () { var p = P(); return !!(p && p.rebirth > 0 && !p.classicMode && (!T || T.enabled('hiddenbonus'))); };
   if (typeof W.effTwoHanded === 'function') {
     var oTwo = W.effTwoHanded;
-    W.effTwoHanded = function (d, id) { if (mightyWarrior() && d && d.type === 'wpn' && !d.isBow && !d.isArrow) return false; return oTwo.apply(this, arguments); };
+    W.effTwoHanded = function (d, id) { if (rebornOneHand() && d && d.type === 'wpn' && !d.isArrow) return false; return oTwo.apply(this, arguments); };
     try { effTwoHanded = W.effTwoHanded; } catch (e) {}
   }
   if (typeof W.warriorEquipOk === 'function') {
@@ -159,5 +166,5 @@
     var oTick = W.tick;
     W.tick = function () { var t0 = tk(), r = oTick.apply(this, arguments); if (tk() !== t0) { try { step(); } catch (e) {} try { trigStep(); } catch (e) {} } return r; };
   }
-  W.__afkHidden = { mightyWarrior: mightyWarrior, trigger: trigger, normalArea: normalArea, trigK: trigK, TRIG: TRIG, trio: trio, male: male, kingFoe: kingFoe, KNIGHT_LOAD: KNIGHT_LOAD, KNIGHT_CD: KNIGHT_CD, wrath: wrath, step: step, WRATH: WRATH };
+  W.__afkHidden = { mightyWarrior: mightyWarrior, rebornOneHand: rebornOneHand, dreamWorld: dreamWorld, trigger: trigger, normalArea: normalArea, trigK: trigK, TRIG: TRIG, trio: trio, male: male, kingFoe: kingFoe, KNIGHT_LOAD: KNIGHT_LOAD, KNIGHT_CD: KNIGHT_CD, wrath: wrath, step: step, WRATH: WRATH };
 })();

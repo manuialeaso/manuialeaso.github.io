@@ -11,10 +11,12 @@
  *       現在背包標籤、物品視窗、按鈕都寫出「Lv.45 才能裝備（目前 Lv.36）」，物品效果也列出限制等級（核心補丁 77 呼叫這裡）。
  *   五、暗夢星迴（2026-10-31 04:24：花 1000 顆龜裂之核進去，23 秒就離開，領取獎勵是空的）：
  *       ‧暗夢星迴本來就沒有停留獎勵（只有擊倒夢境者的投影才有掉落）；離開時改寫清楚，不再叫你去入口「領取獎勵」。
- *       ‧在暗夢星迴裡換地圖、換地區、撤離，先跳確認視窗（離開沒有獎勵、龜裂之核不退還），避免誤觸。
+ *       ‧在暗夢星迴裡換地圖、換地區、撤離，先跳確認視窗（離開沒有獎勵），避免誤觸。
+ *       ‧2026-10-31 12:53：按確認自己離開，退還 200 顆龜裂之核；打輸（倒下、15 分鐘自爆）不退。
  *   六、血盟盟主遺失（2026-10-31 11:11：「此模式沒有創立血盟的王族，無法攻城」）：血盟記的盟主身分碼對不到任何存檔裡的王族
  *       （創盟的王族被刪除或覆蓋、從備份匯入成新身分…；換發身分證只會換「還找得到的」舊碼，所以救不回來）時，
  *       由目前登入、同模式的王族接任盟主，並在系統訊息說明。血盟名稱、城堡、成員貢獻都不變。
+ *   八、職業專屬武器（2026-10-31 12:53）：龍騎士、幻術士「不能用匕首／矛」的通則，遇到 req 明確列出該職業的武器（潘朵拉神劍）以 req 為準。
  *   七、精通之證沒掉的提示（2026-10-31 11:30）：精通任務是每個角色各自的——打倒精通頭目（飛龍）卻沒拿到精通之證時，
  *       系統訊息說明原因：還沒向威頓村的漢接任務、身上已經有一枚（含上鎖的）、已經完成精通、等級未滿 50、經典模式不開放。
  * ========================================================================== */
@@ -55,13 +57,28 @@
     });
   }
 
+  // ── 八、職業專屬武器的 req 優先（2026-10-31 12:53：潘朵拉神劍 req 寫了龍騎士，卻被「龍騎士不能用匕首」擋掉）──
+  //    龍騎士、幻術士的「不能用匕首／矛」是通則；武器的 req 明確列出這個職業時，以 req 為準。
+  [['dragonEquipOk', 'dragon'], ['illusionEquipOk', 'illusion']].forEach(function (x) {
+    var o = W[x[0]]; if (typeof o !== 'function') return;
+    rebind(x[0], function (d, id) {
+      if (on() && d && d.type === 'wpn' && typeof d.req === 'string' && d.req !== 'all' && d.req.split(',').indexOf(x[1]) >= 0) return true;
+      return o.apply(this, arguments);
+    });
+  });
+
   // ── 五、暗夢星迴：離開確認 ──
-  var leaveOk = false;
+  var leaveOk = false, REFUND = { id: 'mat_crack_core', n: 200 };
   var inDream = function () { try { return !!(state.dreamStar && state.riftRun); } catch (e) { return false; } };
   var askLeave = function (go) {
-    var run = function () { leaveOk = true; try { go(); } finally { leaveOk = false; } };
+    var run = function () {
+      var was = inDream(); leaveOk = true;
+      try { go(); } finally { leaveOk = false; }
+      // 2026-10-31 12:53：自己離開（按了確認）退還 200 顆龜裂之核；打輸（倒下、15 分鐘自爆）不退
+      try { if (was && !inDream() && P() && !P().dead && DB.items[REFUND.id] && typeof gainItem === 'function') { gainItem(REFUND.id, REFUND.n); logSys('<span class="text-fuchsia-200">夢境退回了 ' + REFUND.n + ' 顆龜裂之核。</span>'); if (typeof saveGame === 'function') saveGame(); } } catch (e) {}
+    };
     var stay = function () { try { if (typeof syncMapSelectors === 'function') syncMapSelectors(); } catch (e) {} };
-    var msg = '暗夢星迴沒有停留獎勵——只有擊倒夢境者的投影才會留下掉落。\n現在離開，這次的 1000 顆龜裂之核不會退還。\n\n確定要離開嗎？';
+    var msg = '暗夢星迴沒有停留獎勵——只有擊倒夢境者的投影才會留下掉落。\n現在自己離開，只退還 ' + REFUND.n + ' 顆龜裂之核（共花 1000 顆）。\n\n確定要離開嗎？';
     if (W.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '離開暗夢星迴？', message: msg, okText: '離開', cancelText: '留下來', danger: true, onOk: run, onCancel: stay, onDismiss: stay });
     else if (W.confirm(msg)) run(); else stay();
   };

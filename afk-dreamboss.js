@@ -10,7 +10,8 @@
  *     ‧其他正常出場的王：全隊目前 HP 10%；之後每 5 秒 5%，持續 15 秒。
  *     ‧地區霸主：全隊目前 HP 5%；之後 5 秒內每秒 3%。另有 5% 機率叫出霸主群（afk-region-boss：場上 5 隻都變成霸主），
  *       這時再追加全隊目前 HP 30%。
- *     同一類出場 3 秒內只算一次（雙頭目祭壇兩位神一起出場＝一次）。
+ *     同一類出場 30 秒內只算一次（雙頭目祭壇兩位神一起出場＝一次；王房打倒後重生也算在內，2026-10-31 12:53 由 3 秒改 30 秒）。
+ *     這裡的出場傷害取代 afk-dreamhell 的「王登場衝擊」——同一隻王登場不再兩種都吃（2026-10-31 12:53）。
  *   二、副本王的招式（只在副本裡、王還在場時）：
  *     ‧群體衝擊之暈：每 20 秒，你與所有傭兵暈眩 2 秒（照常判定暈眩抵抗）。
  *     ‧相消術：每 30 秒，驅散你與所有傭兵的增益（保留變身、迷魅、誘捕、召喚，跟原本的集體相消一樣）。
@@ -19,6 +20,7 @@
  *     ‧蝕抗：每 45 秒，你與所有傭兵的五屬性抗性（火、水、風、地、無）−50，最多 −300；離開副本或王都倒下就恢復。
  *   三、副本侵蝕（玩家 2026-10-30 21:46）：夢域鏡的副本裡，你與傭兵每秒失去最大 HP 與最大 MP 的 1%；每過 1 分鐘再 +1%
  *       （0～60 秒每秒 1%、60～120 秒每秒 2%……），離開副本就停。四龍副本原本的副本傷害照舊另外算。
+ *       聖十字之盾只擋侵蝕的一半（2026-10-31 12:53），另一半直接扣在你身上。
  *       2026-10-31 01:56：只在王在場時扣；王倒下（場上沒有活著的王）就重置，下一隻王從 1% 重新算。
  *       一轉女神（還沒轉生、Lv100 第一次打席琳）也算；時空裂痕、傲慢之塔攀登不算。
  * ========================================================================== */
@@ -42,7 +44,7 @@
     normal:  { pct: 0.10, dot: [50, 3, 0.05], n: '頭目' },
     region:  { pct: 0.05, dot: [10, 5, 0.03], n: '地區霸主' }
   };
-  var SWARM = 0.05, SWARM_PCT = 0.30, ENTRY_CD = 30;
+  var SWARM = 0.05, SWARM_PCT = 0.30, ENTRY_CD = 300;   // 2026-10-31 12:53：3 秒 → 30 秒（王房重生不再一直重複出場傷害）
   var SK = { stun: 200, stunDur: 20, cancel: 300, pain: 200, painDur: 100, painRf: 0.25, mp: 300, mpPct: 0.05, res: 450, resStep: 50, resMax: 300 };
   var RES_KEYS = ['resFire', 'resWater', 'resWind', 'resEarth', 'resNone'];
 
@@ -249,7 +251,7 @@
       var mh = Number(c === p ? c.mhp : c.mhp) || 0, mm = Number(c.mmp) || 0;
       if (mm > 0) c.mp = Math.max(0, (Number(c.mp) || 0) - Math.floor(mm * pct));
       var d = Math.max(1, Math.floor(mh * pct));
-      if (c === p) { p.hp -= d; if (p.hp <= 0 && !p.dead && typeof killPlayer === 'function') killPlayer(); }
+      if (c === p) { p.hp -= d; W.__afkDrainHit = (Number(W.__afkDrainHit) || 0) + d; if (p.hp <= 0 && !p.dead && typeof killPlayer === 'function') killPlayer(); }   // __afkDrainHit：聖十字之盾只擋一半（afk-castle-guards）
       else { c.curHp = (Number(c.curHp) || 0) - d; if (c.curHp <= 0) { c.curHp = 0; c._downed = true; c._reviveCd = 150; } }
     });
     try { if (!S().ff && typeof updateUI === 'function') updateUI(); } catch (e) {}

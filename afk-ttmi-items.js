@@ -904,7 +904,9 @@
     var RE=/變形卷軸|變身卷軸|變身石|少女賽尼斯|^修練者解咒卷軸$/;
     // 2026-10-31 05:26：天堂優惠箱、潘朵拉的箱子、各種戒指盒、永恆戒指兌換袋、永恆禮盒（含抗魔／集中／體力／魔力）、變身頭盔箱系列也一起移除（裡面的戒指、頭盔本身保留）
     var RE2=/天堂優惠|^潘朵拉的箱子$|永恆戒指兌換袋|戒指盒$|變身頭盔箱|永恆禮盒$/;
-    imported.forEach(function(id){var d=DB.items[id];if(d&&(d.ttmiAction==='poly'||RE.test(d.n||'')||RE2.test(d.n||'')))polyGone[id]=1;});
+    // 2026-10-31 12:53：五種永恆戒指（抗魔／集中／體力／魔力／回覆）、德雷克／艾莉絲變身頭盔本身也移除（舊存檔裡已有的保留、不更改）
+    var RE3=/永恆戒指$|^(德雷克|艾莉絲)變身頭盔$/;
+    imported.forEach(function(id){var d=DB.items[id];if(d&&(d.ttmiAction==='poly'||RE.test(d.n||'')||RE2.test(d.n||'')||RE3.test(d.n||'')))polyGone[id]=1;});
     imported.forEach(function(id){var d=DB.items[id],row=rows[id];if(!d||polyGone[id]||d.ttmiAction!=='box'||!row||!row.contents||!row.contents.length)return;
       if(row.contents.every(function(x){var c=resolve(x.sourceId);return !c||polyGone[c];}))polyGone[id]=1;});
     var reqOf=Object.create(null);

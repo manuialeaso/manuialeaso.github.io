@@ -205,6 +205,8 @@
         // 時空裂痕裡頭目一半機率出場、很快就一隻接一隻：登場衝擊最多每 10 秒一次（2026-10-29 晚，裂痕有自己的暴走與崩塌）
         if (state.riftRun) { if ((state.ticks || 0) < (state._dhBlastCd || 0)) continue; state._dhBlastCd = (state.ticks || 0) + 100; }
         if (typeof window.__afkBossRankOk === 'function' && !window.__afkBossRankOk(m)) continue;   // 多王：第二、三隻不放（afk-bossrules）
+        // 2026-10-31 12:53：夢域鏡頭目強化（afk-dreamboss）開著、這隻王歸它管時，只吃那邊的出場傷害（30 秒冷卻），不再兩種疊加
+        try { var DBo = window.__afkDreamBoss; if (DBo && DBo.on && DBo.on() && DBo.classify && DBo.classify(m)) continue; } catch (e) {}
         bossEntryBlast(m, ring ? 0.15 : 0.10);
       }
       if (any && ring) mapState._afkRingBoss = false;   // 戒指引來的那一波（可能 3 隻同時）都算 15%

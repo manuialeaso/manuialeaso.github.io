@@ -5,11 +5,13 @@
  * 這裡在圖片網址設定的當下（img.src、setAttribute('src')、new Image().src）把被拿掉的那張改成留下來的那張；
  * 萬一有圖從別的路徑（例如 innerHTML 直接寫 <img src>）載入失敗，再補一次改指向。
  * 畫面完全不變；同一張圖也只需要下載一次。第 0 格（*_0.png）一律保留，所以縮圖、圖鑑不受影響。
+ * 2026-10-31（#161）：公開版另外把第 1 格以後的幀換成 WebP 無損（afk-webp-frames-data.js 開著時，網址 *_N.png → *_N.webp；
+ *   載入失敗退回 PNG）。開發版（perf）是關的，照讀 PNG。
  * ========================================================================== */
 (function () {
   'use strict';
-  var W = window, M = W.AFK_DUP_FRAMES;
-  if (!M || !M.F || !M.D || typeof HTMLImageElement === 'undefined') return;
+  var W = window, M = W.AFK_DUP_FRAMES || { F: [], D: {} }, WEBP = !!(W.AFK_WEBP_FRAMES && W.AFK_WEBP_FRAMES.on);
+  if (typeof HTMLImageElement === 'undefined') return;
   var F = M.F, D = M.D, fIdx = null, cache = Object.create(null), hits = 0;
   var folderMap = function (dir) {
     if (!fIdx) { fIdx = Object.create(null); for (var i = 0; i < F.length; i++) fIdx[F[i]] = i; }
@@ -22,7 +24,16 @@
     return m;
   };
   var RE_TREE = /(?:^|\/)(assets\/(?:anim|classanim|morphanim)\/|art-v3\/frames\/)/;
-  var map = function (v) {
+  // 公開版：動畫樹第 1 格以後的幀改讀 .webp（無損，像素完全相同；scripts/build-webp-frames.py，玩家 2026-10-31 #161）
+  var RE_WEBP = /_[1-9]\d*\.png(?=[?#]|$)/;
+  var toWebp = function (v) {
+    if (!WEBP || typeof v !== 'string' || !RE_WEBP.test(v)) return v;
+    var p = v; try { if (v.indexOf('%') >= 0) p = decodeURIComponent(v); } catch (e) {}
+    if (!RE_TREE.test(p)) return v;
+    return v.replace(RE_WEBP, function (x) { return x.slice(0, -4) + '.webp'; });
+  };
+  var map = function (v) { return toWebp(dupMap(v)); };
+  var dupMap = function (v) {
     if (typeof v !== 'string' || v.length < 12) return v;
     if (v.indexOf('anim') < 0 && v.indexOf('art-v3') < 0) return v;
     if (!/_[1-9]\d*\.png(?:[?#]|$)/.test(v)) return v;   // 只有「第 1 格以後」的幀可能被合併
@@ -43,8 +54,9 @@
     return (enc ? encodeURI(head) : head) + out + q;
   };
   // 1) img.src／new Image().src
+  var d = null;
   try {
-    var d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    d = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
     if (d && d.set && d.configurable) Object.defineProperty(HTMLImageElement.prototype, 'src', {
       configurable: true, enumerable: d.enumerable, get: d.get,
       set: function (v) { d.set.call(this, map(v)); }
@@ -59,10 +71,17 @@
     };
   } catch (e) {}
   // 3) 保險：<img> 載入失敗而且是被拿掉的那張 → 改指向留下來的那張
+  //    WebP 那張載入失敗（對照表漏了的新幀）→ 退回原本的 PNG，只退一次
   document.addEventListener('error', function (e) {
     var t = e.target; if (!t || t.tagName !== 'IMG') return;
-    var s = t.getAttribute('src'), m2 = map(s); if (m2 && m2 !== s) t.src = m2;
+    var s = t.getAttribute('src');
+    if (WEBP && typeof s === 'string' && /_[1-9]\d*\.webp(?=[?#]|$)/.test(s) && !t.__afkPngBack) {
+      t.__afkPngBack = true; var back = s.replace(/\.webp(?=[?#]|$)/, '.png');
+      if (d && d.set) d.set.call(t, back); else t.setAttribute('data-afk', '1');
+      return;
+    }
+    var m2 = map(s); if (m2 && m2 !== s) t.src = m2;
   }, true);
-  W.__afkDupSrc = map;
+  W.__afkDupSrc = map; W.__afkWebpOn = function () { return WEBP; };
   W.__afkDupStats = function () { return { folders: F.length, hits: hits }; };
 })();

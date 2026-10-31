@@ -87,7 +87,7 @@
     if (!ent || !ent.eq) return 1;
     var m = 1;
     var vj = 0.04 * Wd(ent, 'vajra');
-    if (kind === 'magic') { m *= 1 - 0.06 * N(ent, '罩') - 0.03 * SS(ent, '罩') - 0.03 * Wd(ent, 'bulwark') - vj; m *= 1 - 0.08 * N(ent, '淨') - 0.03 * SS(ent, '淨') - 0.05 * Wd(ent, 'pure') - vj; }
+    if (kind === 'magic') { m *= 1 - 0.06 * N(ent, '罩') - 0.03 * SS(ent, '罩') - 0.03 * Wd(ent, 'bulwark') - vj; m *= 1 - 0.08 * N(ent, '淨') - 0.03 * SS(ent, '淨') - 0.05 * Wd(ent, 'pure'); }   // 2026-10-31：金剛在魔法只算一次（原本扣兩次）
     else m *= 1 - 0.06 * N(ent, '盾') - 0.03 * SS(ent, '盾') - 0.03 * Wd(ent, 'bulwark') - vj;
     if (Wd(ent, 'soulreturn')) m *= 0.95;
     if (N(ent, '冥')) m *= 1 - (0.05 + 0.01 * SM(ent, '冥'));
@@ -107,10 +107,21 @@
       var d = oDerive.apply(this, arguments);
       try {
         var p = P(), k = p ? 0.15 * N(p, '鬃') + 0.03 * SS(p, '鬃') + 0.15 * Wd(p, 'menagerie') : 0;
-        if (k > 0 && d) { var s = d._afkInherit || {}; ['hit', 'flat', 'skillFlat', 'dr', 'er', 'mr'].forEach(function (f) { var own = (Number(d[f]) || 0) - (Number(s[f === 'flat' ? 'dmg' : f === 'skillFlat' ? 'mdmg' : f]) || 0); d[f] = (Number(d[f]) || 0) + floor(own * k); }); }
+        if (k > 0 && d) { d.dice = Math.max(1, Math.round((Number(d.dice) || 1) * (1 + k))); var s = d._afkInherit || {}; ['hit', 'flat', 'skillFlat', 'dr', 'er', 'mr'].forEach(function (f) { var own = (Number(d[f]) || 0) - (Number(s[f === 'flat' ? 'dmg' : f === 'skillFlat' ? 'mdmg' : f]) || 0); d[f] = (Number(d[f]) || 0) + floor(own * k); }); }
       } catch (e) {}
       return d;
     };
+  }
+
+  // 鬃／百獸：寵物 HP 上限也 +15%（2026-10-31：原本只加命中、傷害、減傷、迴避、魔防；基本攻擊骰在上面一起加）
+  if (typeof W.petMhpEff === 'function') {
+    var oPetHp = W.petMhpEff;
+    W.petMhpEff = function (pt) {
+      var v = oPetHp.apply(this, arguments);
+      try { var p = P(), k = p ? 0.15 * N(p, '鬃') + 0.03 * SS(p, '鬃') + 0.15 * Wd(p, 'menagerie') : 0; if (k > 0) v = Math.floor(v * (1 + k)); } catch (e) {}
+      return v;
+    };
+    try { (0, eval)('petMhpEff = window.petMhpEff'); } catch (e) {}
   }
 
   // ── 套裝 ──
@@ -129,7 +140,7 @@
           fx.taken = 1 - (1 - fx.taken) * (1 + boost);
           fx.leech = fx.leech * (1 + boost);
         }
-        var lm = 1; if (N(p, '冥')) lm *= BY([1.5, 1.6, 1.7, 2.0], p, '冥'); if (Wd(p, 'pact')) lm *= 1.3; if (Wd(p, 'soulreturn')) lm *= 1.3; if (Wd(p, 'grace')) lm = Math.max(lm, 2);
+        var lm = 1; if (N(p, '冥')) lm *= BY([1.5, 1.6, 1.7, 2.0], p, '冥'); if (Wd(p, 'pact')) lm *= 1.3; if (Wd(p, 'soulreturn')) lm *= 1.3; if (Wd(p, 'grace')) lm *= 2;   // 2026-10-31：席琳的眷顧照設計「吸血 ×2」疊乘（原本取 max，跟冥 ★3 不疊）
         fx.leech *= lm;
         // 魘：夢域套裝的能力加成（固定數值）×1.5
         if (N(p, '魘') && W.__afkSherineDream) {
@@ -340,6 +351,28 @@
       } catch (e) {} finally { cast = null; }
     });
   };
+  // 指定技能（傷害格）不論怎麼放（手動、自動攻擊技能、職業符文自動施放）都吃專精／王道／極意／職業符文 ★3（2026-10-31：原本只有職業符文自動施放才吃）
+  var designated = function (a, skId) { var sel = a === P() ? skillsOf(a) : (a.afkRuneSkill || {}); return !!(skId && sel.main === skId); };
+  var starOf = function (a) { var c = classRune(a); return c ? Number(c.star) || 0 : 0; };
+  ['castSkill', 'manualCast'].forEach(function (fn) {
+    var o = W[fn]; if (typeof o !== 'function') return;
+    W[fn] = function (skId) {
+      var p = P(); if (cast || !p || !designated(p, skId)) return o.apply(this, arguments);
+      cast = { actor: p, sk: skId, star: starOf(p) };
+      try { return o.apply(this, arguments); } finally { cast = null; }
+    };
+    try { (0, eval)(fn + ' = window.' + fn); } catch (e) {}
+  });
+  ['allyCastPhysicalSkill', 'allyCastMagic'].forEach(function (fn) {
+    var o = W[fn]; if (typeof o !== 'function') return;
+    W[fn] = function (a, sk) {
+      var id = null; try { if (a && sk && a.afkRuneSkill && a.afkRuneSkill.main && DB.skills[a.afkRuneSkill.main] === sk) id = a.afkRuneSkill.main; } catch (e) {}
+      if (cast || !id) return o.apply(this, arguments);
+      cast = { actor: a, sk: id, star: starOf(a) };
+      try { return o.apply(this, arguments); } finally { cast = null; }
+    };
+    try { (0, eval)(fn + ' = window.' + fn); } catch (e) {}
+  });
   // 覺醒：指定技能（冷卻格）施放後冷卻 −30%
   var awakenAfter = function (skId) {
     var p = P(); if (!p || !Wd(p, 'awaken')) return;

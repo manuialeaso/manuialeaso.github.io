@@ -171,20 +171,24 @@
   // 玩家 2026-10-25：一開始只包了怪物普攻／魔法／反彈，百分比傷害、持續傷害、夢域代價都還是扣在玩家身上。
   //   改成以「每個遊戲 tick」為單位：tick 前後玩家 HP 的淨損失全部改由融合體承擔（×2），
   //   在所有外掛都載入之後才包在最外層，確保任何來源的傷害都算進去。
-  var coverDepth = 0, coverPend = false, oKillCover = null;
+  var coverDepth = 0, coverPend = false, oKillCover = null, DRAIN_THROUGH = 0.5;
   var coverSettle = function (h0) {
     var p = P(), g = coverGuard(); if (!p || !g) return;
     var lost = Math.min(h0, p.mhp || h0) - (p.hp || 0); if (!(lost > 0)) return;   // 2026-10-29：最大 HP 下降造成的「夾回上限」不算受傷（不讓禁衛軍白白代扣）
+    // 2026-10-31 12:53：夢域鏡「副本侵蝕」只擋一半——這一拍侵蝕扣你的量有 50% 直接扣在你身上，其餘才由融合體承擔
+    var dr = Number(window.__afkDrainHit) || 0, through = 0; window.__afkDrainHit = 0;
+    if (dr > 0) { through = Math.min(lost, Math.ceil(dr * DRAIN_THROUGH)); lost -= through; }
+    if (!(lost > 0)) { p.hp = h0 - through; return; }
     var take = lost * 2, left = 0;
     if (take >= g.hp) { left = Math.ceil((take - g.hp) / 2); g.hp = 0; try { _guardDown(g); } catch (e) { g._downed = true; g._reviveAt = Date.now() + 30000; } }
     else g.hp -= take;
-    p.hp = h0 - left;
+    p.hp = h0 - left - through;
     try { renderGuardPanel(); } catch (e) {}
   };
   var coverRun = function (o, self, args) {
     var p = P();
     if (coverDepth > 0 || !p || p.dead || !coverGuard()) return o.apply(self, args);
-    var h0 = p.hp || 0, r; coverDepth++; coverPend = false;
+    var h0 = p.hp || 0, r; coverDepth++; coverPend = false; window.__afkDrainHit = 0;
     try { r = o.apply(self, args); }
     finally {
       coverDepth--;
@@ -479,7 +483,7 @@
 
   // 撼動：謀叛者的低語裡亞丁禁衛軍不攻擊
   if (typeof window.guardAttackOnce === 'function') { var oGAO = window.guardAttackOnce; window.guardAttackOnce = function (s) { if (shaken(s)) return; return oGAO.apply(this, arguments); }; }
-  window.__afkCastleGuards = { activeSquads: activeSquads, rosterInfo: rosterInfo, coverGuard: function () { return coverGuard(); }, held: held, unified: unified, specOfRoster: specOfRoster, eliteDerive: eliteDerive, followOf: followOf, CAP: CAP };
+  window.__afkCastleGuards = { activeSquads: activeSquads, rosterInfo: rosterInfo, coverGuard: function () { return coverGuard(); }, coverSettle: function (h0) { return coverSettle(h0); }, DRAIN_THROUGH: DRAIN_THROUGH, held: held, unified: unified, specOfRoster: specOfRoster, eliteDerive: eliteDerive, followOf: followOf, CAP: CAP };
   try { castleGuardSync(true); } catch (e) {}
   console.log('[AFK-castle-guards] 已啟用：七城護衛、聖十字近衛與融合');
 })();

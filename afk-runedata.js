@@ -21,7 +21,7 @@
     ['xun', '尋', 1, 'aid', '遺物掉落判定 +25%（最多 2 顆，跟幸運暴走兔腳相乘；時空裂痕裡不算）'],
     ['shi', '拾', 1, 'aid', '夢域專屬材料 +25%：夢域塵、回夢香塵、闇龍的抵抗者碎片、之魂（最多 2 顆）'],
     ['quan', '泉', 1, 'potion', '藥水回復量 +25%（最多 2 顆）'],
-    ['shun', '瞬', 1, 'potion', '藥水冷卻 −25%（最多 2 顆）'],
+    ['shun', '瞬', 1, 'potion', '每次喝藥水 25% 機率不進冷卻（最多 2 顆）'],
     ['ni', '逆', 1, 'potion', '不受「死亡藥水」影響：喝治癒藥水照樣補血'],
     ['yin', '飲', 1, 'potion', '一次喝三罐：扣 3 瓶、回復 ×3，冷卻不變'],
     ['dun', '盾', 2, 'guard', '受到的物理傷害 −6%（最多 2 顆）'],
@@ -260,5 +260,5 @@
     // 佐爾頓合成（玩家 2026-10-29）：同階段符文 3 顆＋哀石結晶 10 → 隨機一顆高一階的符文。只開放 階段一→二、階段二→三（傳說不從合成出）
     COMBINE: { n: 3, cost: ['afk_lament_gem', 10], from: [1, 2] },
     STAR_TXT: STAR_TXT, STAR_COST: STAR_COST, NO_STAR: NO_STAR, WIP_STAR: WIP_STAR, starOk: starOk, starId: starId, STARS: STARS,
-    BAL: { po_l: 5 }, OPEN_COST: OPEN_COST, REMOVE: ['afk_lament_stone', 500], openBox: openBox, refinePlan: refinePlan };
+    BAL: { po_l: 5, '破': 5 /* 破（攻擊）：設計是無視減傷與「防禦」各 20%，防禦那一半改用平衡點數 +5（每顆 +5% 傷害，平衡表建議 +5～+10）*/ }, OPEN_COST: OPEN_COST, REMOVE: ['afk_lament_stone', 500], openBox: openBox, refinePlan: refinePlan };
 })();
