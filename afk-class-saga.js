@@ -261,25 +261,98 @@
   }
 
   // ── 導師對話：在原本的試煉畫面下面接上第二部 ──
+  //   介面（玩家 2026-11-01）：貼近原本製作／試煉面板（深色卡片、圖示框、需求數量綠／紅）、劇情文字用標楷體並放大；只改呈現，判斷與按鈕不變。
   var lastArgs = null;
+  var KAI = '"DFKai-SB","BiauKai","標楷體","Kaiti TC","STKaiti","KaiTi","TW-Kai","AR PL UKai TW",serif';
+  var ensureCss = function () {
+    if (document.getElementById('afk-saga-css')) return;
+    var st = document.createElement('style'); st.id = 'afk-saga-css';
+    st.textContent = [
+      '.asg{margin-top:12px;padding:12px 12px 4px;border:1px solid #6b4e36;border-radius:6px;background-image:linear-gradient(180deg,rgba(74,54,40,.45),rgba(40,39,48,0) 120px);box-shadow:inset 0 1px rgba(222,176,112,.12)}',
+      '.asg-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;padding:0 2px 9px;margin-bottom:10px;border-bottom:1px solid #594638}',
+      '.asg-title{font-family:' + KAI + ';font-size:23px;font-weight:bold;line-height:1.3;color:#e7d2a7;letter-spacing:.06em;text-shadow:1px 1px 0 #000,0 0 6px rgba(177,132,84,.35)}',
+      '.asg-tsub{font-size:13px;font-weight:bold;color:#a8998a;white-space:nowrap}',
+      '.asg-sum{margin-left:auto;font-size:13px;font-weight:bold;color:#cdb991;padding:2px 10px;border:1px solid #6e5845;border-radius:999px;background:#1d1b20;white-space:nowrap}',
+      '.asg-intro{font-family:' + KAI + ';font-size:17px;line-height:1.8;color:#dcd0bb;padding:8px 12px;margin-bottom:10px;border-left:3px solid #8d6846;border-radius:0 4px 4px 0;background:rgba(0,0,0,.2)}',
+      '.asg-ch{margin-bottom:10px;padding:12px 14px;border:1px solid #514138;border-radius:6px;background-image:linear-gradient(180deg,#2e2c35,#222027);box-shadow:inset 3px 0 0 var(--asg-acc,#8d6846),inset 0 1px rgba(222,176,112,.06)}',
+      '.asg-ch.s-done{--asg-acc:#3f8a5f}.asg-ch.s-ready{--asg-acc:#34d399;border-color:#2f6b4a}.asg-ch.s-active{--asg-acc:#d4943f}.asg-ch.s-lock{--asg-acc:#4b4540}.asg-ch.s-lv{--asg-acc:#9b2c2c}',
+      '.asg-ch.s-lock .asg-cht{color:#a59a8c}.asg-ch.s-lock .asg-story{color:#b3a999}',
+      '.asg-chh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}',
+      '.asg-no{font-size:12.5px;font-weight:bold;color:#e7d2a7;padding:1px 8px;border:1px solid #8d6846;border-radius:3px;background:linear-gradient(180deg,#3a2e27,#211d20);white-space:nowrap}',
+      '.asg-cht{font-family:' + KAI + ';font-size:21px;font-weight:bold;line-height:1.35;color:#f1d9a6;text-shadow:1px 1px 0 #000}',
+      '.asg-lv{font-size:13px;font-weight:bold;color:#a8998a;white-space:nowrap}',
+      '.asg-badge{margin-left:auto;font-size:13px;font-weight:bold;padding:2px 10px;border:1px solid;border-radius:999px;white-space:nowrap}',
+      '.asg-badge.s-done{color:#7ee2a8;border-color:#2f6b4a;background:rgba(16,64,40,.5)}',
+      '.asg-badge.s-ready{color:#bbf7d0;border-color:#34d399;background:rgba(6,95,70,.55);box-shadow:0 0 8px rgba(52,211,153,.35)}',
+      '.asg-badge.s-active{color:#fcd38a;border-color:#a8742f;background:rgba(120,72,20,.4)}',
+      '.asg-badge.s-new{color:#e7d2a7;border-color:#8d6846;background:rgba(80,58,40,.4)}',
+      '.asg-badge.s-lock{color:#9c958c;border-color:#4b4540;background:rgba(30,29,33,.7)}',
+      '.asg-badge.s-lv{color:#fca5a5;border-color:#7f1d1d;background:rgba(80,20,20,.4)}',
+      '.asg-story{font-family:' + KAI + ';font-size:17px;line-height:1.85;color:#ddd3c3;margin:8px 0 8px}',
+      '.asg-meta{font-size:13.5px;line-height:1.6;color:#a8998a;margin-bottom:4px}',
+      '.asg-meta b{color:#cdb991;font-weight:bold}',
+      '.asg-row{display:flex;align-items:flex-start;gap:8px;margin-top:8px}',
+      '.asg-lab{flex:0 0 auto;font-size:14px;color:#a8998a;line-height:40px;white-space:nowrap}',
+      '.asg-items{display:flex;flex-wrap:wrap;gap:6px 16px;min-width:0}',
+      '.asg-it{display:flex;align-items:center;gap:8px;min-width:0}',
+      '.asg-ic{width:40px;height:40px;flex:0 0 40px;display:flex;align-items:center;justify-content:center;background:#17161a;border:1px solid #6e5845;border-radius:4px;box-shadow:inset 0 0 0 1px #0d0c0f}',
+      '.asg-ic img{width:34px;height:34px;object-fit:contain;pointer-events:none}',
+      '.asg-ic.exp{font-size:12px;font-weight:900;color:#facc15;letter-spacing:.02em;text-shadow:1px 1px 0 #000}',
+      '.asg-itx{display:flex;flex-direction:column;min-width:0;line-height:1.3}',
+      '.asg-in{font-size:15px;font-weight:bold}',
+      '.asg-cnt{font-size:13.5px;font-weight:bold;color:#cfc6b8}',
+      '.asg-cnt .ok{color:#4ade80}.asg-cnt .no{color:#f87171}',
+      '.asg-sub{font-size:12px;color:#8f877d;font-weight:normal}',
+      '.asg-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding-top:10px;border-top:1px dashed #4a3c32}',
+      '.asg-act .btn{font-size:15px}',
+      '.asg-act .btn:disabled{opacity:.45;cursor:not-allowed}',
+      '.asg-note{font-size:13.5px;line-height:1.6;color:#8f877d}',
+      '.asg-warn{font-size:13.5px;line-height:1.6;color:#f87171}',
+      '.asg-more{margin-top:6px}',
+      '.asg-more>summary{cursor:pointer;list-style:none;display:inline-block;font-size:13px;color:#a8998a;padding:1px 0;user-select:none}',
+      '.asg-more>summary::-webkit-details-marker{display:none}',
+      '.asg-more>summary::before{content:"▸ ";color:#8d6846}.asg-more[open]>summary::before{content:"▾ "}',
+      '.asg-more>summary:hover{color:#e7d2a7}',
+      '.asg-outro{font-family:' + KAI + ';font-size:17px;line-height:1.85;color:#f0c4f5;padding:10px 12px;margin-bottom:10px;border:1px solid #6b3f6e;border-radius:6px;background:rgba(60,24,64,.25)}',
+      '@media (max-width:640px){.asg{padding:10px 8px 2px}.asg-title{font-size:21px}.asg-ch{padding:10px 10px}.asg-cht{font-size:19px}.asg-story,.asg-intro,.asg-outro{font-size:16px;line-height:1.75}.asg-ic{width:36px;height:36px;flex-basis:36px}.asg-ic img{width:30px;height:30px}.asg-lab{line-height:36px}.asg-items{gap:6px 12px}.asg-badge{margin-left:0}}'
+    ].join('\n');
+    (document.head || document.documentElement).appendChild(st);
+  };
+  var iconOf = function (id, d) { d = d || DB.items[id]; if (!d) return ''; try { return typeof getIconUrl === 'function' ? getIconUrl(d) : (d.img || ''); } catch (e) { return d.img || ''; } };
+  var colorOf = function (id) { try { return typeof getItemColor === 'function' ? getItemColor({ id: id }) : 'text-sky-300'; } catch (e) { return 'text-sky-300'; } };
+  var chip = function (id, name, cls, cnt, sub) {
+    var known = !!DB.items[id];
+    return '<div class="asg-it"><div class="asg-ic' + (id === 'exp' ? ' exp">EXP' : (known ? ' tip-host" data-tip-id="' + esc(id) + '">' : '">') + (iconOf(id) ? '<img src="' + esc(iconOf(id)) + '" onerror="this.style.display=\'none\'" alt="">' : '')) + '</div>'
+      + '<div class="asg-itx"><span class="asg-in ' + cls + '">' + esc(name) + '</span>' + (cnt ? '<span class="asg-cnt">' + cnt + '</span>' : '') + (sub ? '<span class="asg-sub">' + esc(sub) + '</span>' : '') + '</div></div>';
+  };
+  var row = function (lab, inner) { return inner ? '<div class="asg-row"><span class="asg-lab">' + lab + '</span><div class="asg-items">' + inner + '</div></div>' : ''; };
+  var STN = { done: '已完成', ready: '可交付', active: '進行中', 'new': '未接取', lock: '未解鎖', lv: '等級不足' };
   function sectionHTML(p) {
     var s = SAGA[p.cls]; if (!s) return '';
-    var h = '<div class="mt-3 p-3 rounded border border-amber-800/70 bg-slate-900/50"><div class="text-amber-300 font-bold mb-1">📜 第二部・' + esc(s.arc) + '（55～80 級專屬劇情）</div>'
-      + '<div class="text-xs text-slate-400 mb-2">' + esc(s.now) + '</div>';
-    chOf(p.cls).forEach(function (q) {
+    ensureCss();
+    var chs = chOf(p.cls), done = chs.filter(function (q) { return stOf(p, q) === 2; }).length;
+    var h = '<div class="asg"><div class="asg-head"><span class="asg-title">📜 第二部・' + esc(s.arc) + '</span><span class="asg-tsub">（55～80 級專屬劇情）</span><span class="asg-sum">已完成 ' + done + '／' + chs.length + ' 章</span></div>'
+      + '<div class="asg-intro">' + esc(s.now) + '</div>';
+    chs.forEach(function (q) {
       var st = stOf(p, q), have = typeof questCountId === 'function' ? questCountId(q.item) : 0;
-      h += '<div class="mb-2 p-2 rounded border border-slate-700 bg-slate-800/50"><div class="font-bold text-amber-200 text-sm">第 ' + (q.i + 1) + ' 章・' + esc(q.title) + '（Lv' + q.lv + '）' + (st === 2 ? ' <span class="text-emerald-400">✅ 已完成</span>' : '') + '</div>';
-      if (st === 2) { h += '</div>'; return; }
-      h += '<div class="text-xs text-slate-300 my-1">' + esc(q.story) + '</div>'
-        + '<div class="text-xs text-slate-400">地點：' + esc(q.map) + '（' + q.mobs.map(esc).join('、') + '）｜需要：<b class="' + (have >= q.need ? 'text-emerald-300' : 'text-amber-200') + '">' + esc(q.itemN) + ' ' + Math.min(have, q.need) + '/' + q.need + '</b></div>'
-        + '<div class="text-xs text-slate-400 mb-1">獎勵：經驗 ' + expOf(q).toLocaleString() + '、' + scrollsOf(q).map(function (x) { return (DB.items[x[0]] || {}).n + ' ×' + x[1]; }).join('、') + (q.i === 5 ? '、<b class="text-sky-300">' + esc(s.belt.n) + '</b>（' + esc(s.belt.txt) + '）' : '') + '</div>';
-      if (!prevDone(p, q)) h += '<div class="text-xs text-slate-500">完成「' + esc(chOf(p.cls)[q.i - 1].title) + '」後才能接取。</div>';
-      else if ((p.lv || 1) < q.lv) h += '<div class="text-xs text-red-400">需要等級 ' + q.lv + ' 以上。</div>';
-      else if (st === 0) h += '<button class="btn bg-amber-800 hover:bg-amber-700 py-1 px-3 text-sm font-bold" onclick="trialQAccept(\'' + q.key + '\',\'afkSagaRedraw\')">接取</button>';
-      else h += '<button class="btn bg-emerald-800 hover:bg-emerald-700 py-1 px-3 text-sm font-bold" onclick="trialQComplete(\'' + q.key + '\',\'afkSagaRedraw\')"' + (have >= q.need ? '' : ' disabled') + '>交付</button>' + (have >= q.need ? '' : ' <span class="text-xs text-slate-500">（擊殺指定怪物必定掉落，集滿為止）</span>');
-      h += '</div>';
+      var k = st === 2 ? 'done' : !prevDone(p, q) ? 'lock' : (p.lv || 1) < q.lv ? 'lv' : st === 0 ? 'new' : have >= q.need ? 'ready' : 'active';
+      var rw = chip('exp', '經驗', 'text-yellow-300', expOf(q).toLocaleString())
+        + scrollsOf(q).map(function (x) { return chip(x[0], (DB.items[x[0]] || {}).n, colorOf(x[0]), '×' + x[1]); }).join('')
+        + (q.i === 5 ? chip(s.belt.id, s.belt.n, colorOf(s.belt.id), '', s.belt.txt) : '');
+      var body = '<div class="asg-story">' + esc(q.story) + '</div>'
+        + '<div class="asg-meta">地點：<b>' + esc(q.map) + '</b>（' + q.mobs.map(esc).join('、') + '）</div>'
+        + row('需求：', chip(q.item, q.itemN, 'text-amber-200', '<span class="' + (have >= q.need ? 'ok' : 'no') + '">' + Math.min(have, q.need) + '</span>/' + q.need))
+        + row('獎勵：', rw);
+      h += '<div class="asg-ch s-' + k + '"><div class="asg-chh"><span class="asg-no">第 ' + (q.i + 1) + ' 章</span><span class="asg-cht">' + esc(q.title) + '</span><span class="asg-lv">Lv' + q.lv + '</span><span class="asg-badge s-' + k + '">' + STN[k] + '</span></div>';
+      if (k === 'done') { h += '<details class="asg-more"><summary>回顧這一章</summary>' + body + '</details></div>'; return; }
+      h += body + '<div class="asg-act">';
+      if (k === 'lock') h += '<span class="asg-note">完成「' + esc(chs[q.i - 1].title) + '」後才能接取。</span>';
+      else if (k === 'lv') h += '<span class="asg-warn">需要等級 ' + q.lv + ' 以上。</span>';
+      else if (k === 'new') h += '<button class="btn bg-amber-800 hover:bg-amber-700 py-2 px-4 font-bold" onclick="trialQAccept(\'' + q.key + '\',\'afkSagaRedraw\')">接取</button>';
+      else h += '<button class="btn bg-emerald-800 hover:bg-emerald-700 py-2 px-4 font-bold" onclick="trialQComplete(\'' + q.key + '\',\'afkSagaRedraw\')"' + (have >= q.need ? '' : ' disabled') + '>交付</button>' + (have >= q.need ? '' : '<span class="asg-note">（擊殺指定怪物必定掉落，集滿為止）</span>');
+      h += '</div></div>';
     });
-    if (chOf(p.cls).every(function (q) { return stOf(p, q) === 2; })) h += '<div class="text-xs text-fuchsia-300">' + esc(s.end) + '</div>';
+    if (done === chs.length) h += '<div class="asg-outro">' + esc(s.end) + '</div>';
     return h + '</div>';
   }
   function appendSection() {

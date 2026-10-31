@@ -10,6 +10,8 @@
  *     X靈的箭袋            ＝（淨化石 50＋50 萬）×7       ＝ 淨化石 350＋金幣 350 萬
  *     X靈的黃金箭袋…       ＝（淨化石 50＋材料 50＋100 萬）×14 ＝ 淨化石 700＋材料 700＋金幣 1,400 萬
  *   箭的數值：X靈的箭 傷害 8／7；黃金 9／9；奧裡哈魯根 12／12（對不死追加）；黑色米索莉 11／15；全部命中時追加該屬性傷害 +3（同原作的屬性箭）。
+ *   奧裡哈魯根箭（原作已有，2026-11-01 新增）＝奧里哈魯根 50＋金幣 50 萬 → 500 支；奧裡哈魯根箭袋（一萬支）＝×14。
+ *   介面（2026-11-01）：改用核心的通用製作清單（跟其他製作 NPC 一樣），上面一排分頁切換奧裡哈魯根箭／火／水／風／地。
  *   幸運的箭：只能打怪掉落（門蘇不做）。
  *   箭的消耗順序：裝備中的箭 → 背包裡「同一種」箭 → 打開同一種箭的箭矢袋（自動，一次 10,000 支）→ 背包裡其他箭（核心）→ 自動購買銀箭（核心，有勾才會）。
  *   箭矢袋也可以手動打開。
@@ -136,48 +138,88 @@
     };
   }
 
-  // ── NPC 門蘇（歐瑞村莊）──
+  // ── 介面（2026-11-01：玩家「箭矢工匠介面優化，看起來跟其他 NPC 接近」）──
+  //   改用核心的通用製作清單（renderUniversalCraft：圖示、名稱顏色、需求數量綠／紅、數量格＋製作＋全部、成品能力），
+  //   上面一排分頁切換「奧裡哈魯根箭」與火／水／風／地四種屬性箭。配方放在 CRAFT_RECIPES[門蘇]，切分頁就換內容。
+  //   2026-11-01 新增：一般的「奧裡哈魯根箭」（原作已有的道具）＝奧里哈魯根 50＋金幣 50 萬 → 500 支；整袋（一萬支）＝×14。
+  var ORI_MAT = 'new_item_173';
+  var ORI_ARROW = (function () {
+    if (DB.items.ttmi_1375 && DB.items.ttmi_1375.isArrow) return 'ttmi_1375';
+    var hit = Object.keys(DB.items).filter(function (id) { var d = DB.items[id]; return d && d.isArrow && d.n === '奧裡哈魯根箭'; })[0];
+    return hit || null;
+  })();
+  var ORI_BAG = 'afk_arwbag_ori0', ORI = { out: 500, mat: 50, gold: 500000, bagMul: 14 };
+  if (ORI_ARROW && DB.items[ORI_MAT]) {
+    L.addItem(ORI_BAG, { n: DB.items[ORI_ARROW].n + '袋', type: 'misc', eff: 'afk_arrowbag', afkArrowBag: ORI_ARROW, p: 0, req: 'all', c: 'text-sky-300', img: BAG_IMG,
+      d: '裝著 ' + BAG_CNT.toLocaleString() + ' 支「' + DB.items[ORI_ARROW].n + '」的箭矢袋。打開（使用）就會拿到箭；身上的' + DB.items[ORI_ARROW].n + '用完時也會自動打開。' });
+    try { if (typeof ITEM_WEIGHTS !== 'undefined' && ITEM_WEIGHTS[DB.items[ORI_BAG].n] == null) ITEM_WEIGHTS[DB.items[ORI_BAG].n] = 20; } catch (er) {}
+    BAG_OF[ORI_BAG] = ORI_ARROW; ARROW_BAG[ORI_ARROW] = ORI_BAG;
+  }
   var NPC_ID = 'npc_afk_mensu', NPC_N = '門蘇';
-  L.addNpc('town_oren', { id: NPC_ID, n: NPC_N, title: '箭矢工匠', type: 'quest', classicHide: true,
+  L.addNpc('town_oren', { id: NPC_ID, n: NPC_N, title: '箭矢工匠', type: 'craft', classicHide: true,
     d: '歐瑞村莊的箭矢工匠，能把屬性淨化石鍛進箭頭裡，也替遠行的弓手把箭整袋裝好。' }, '1768', [16, 46]);
-  var ui = { ele: 'fire' };
-  var fmt = function (n) { return Number(n).toLocaleString(); };
-  var render = function (div) {
-    var p = P(); if (!p || !div) return;
-    if (p.classicMode || !on()) { div.innerHTML = '<div class="text-sm text-slate-300">「抱歉，我的工房今天不開。」</div>'; return; }
-    var e = ELE.filter(function (x) { return x[0] === ui.ele; })[0];
-    var hh = '<div class="text-sm space-y-2" id="afk-mensu">'
-      + '<div class="text-slate-300">「淨化石的力量鍛進箭頭，射出去就帶著元素。一千支一批；要整袋的話，一袋一萬支，算你七折。幸運的箭？那個我做不出來，只能從怪物身上找。」</div>'
-      + '<div class="flex flex-wrap gap-2">' + ELE.map(function (x) { return '<button type="button" class="btn px-3 py-1 text-sm' + (x[0] === ui.ele ? ' font-bold' : '') + '" style="' + (x[0] === ui.ele ? 'outline:2px solid #38bdf8' : '') + '" data-ms="ele:' + x[0] + '">' + x[1] + '（' + esc(DB.items[x[2]].n) + ' ' + fmt(have(x[2])) + '）</button>'; }).join('') + '</div>';
+  var TABS = [['ori', '奧裡哈魯根箭']].concat(ELE.map(function (e) { return [e[0], e[1] + '屬性箭']; }));
+  var ui = { tab: ORI_ARROW ? 'ori' : 'fire' };
+  var recipesOf = function (tab) {
+    var out = [];
+    if (tab === 'ori') {
+      if (!ORI_ARROW) return out;
+      out.push({ result: ORI_ARROW, yield: ORI.out, req: [{ id: ORI_MAT, cnt: ORI.mat }, { id: 'gold', cnt: ORI.gold }] });
+      out.push({ result: ORI_BAG, yield: 1, req: [{ id: ORI_MAT, cnt: ORI.mat * ORI.bagMul }, { id: 'gold', cnt: ORI.gold * ORI.bagMul }] });
+      return out;
+    }
     TIERS.forEach(function (t) {
-      var aid = arrowId(t, e[0]), ad = DB.items[aid]; if (!ad) return;
+      var aid = arrowId(t, tab); if (!DB.items[aid]) return;
       ['arrow', 'bag'].forEach(function (kind) {
-        var need = needOf(t, e[0], kind, 1), n = canMake(t, e[0], kind), outN = kind === 'bag' ? '1 袋（' + fmt(BAG_CNT) + ' 支）' : fmt(t.out) + ' 支';
-        var nm = kind === 'bag' ? DB.items[bagId(t, e[0])].n : ad.n;
-        hh += '<div class="p-2 rounded border ' + (kind === 'bag' ? 'border-sky-800' : 'border-slate-700') + ' flex items-center justify-between gap-2"><span><img src="' + esc(kind === 'bag' ? BAG_IMG : (ad.img || icon(aid, ''))) + '" style="width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:6px"><b>' + esc(nm) + '</b> → ' + outN
-          + '<br><small class="text-slate-400">' + need.map(function (q) { var ok = have(q[0]) >= q[1]; return '<span style="color:' + (ok ? '#cbd5e1' : '#fca5a5') + '">' + (q[0] === 'gold' ? '金幣' : esc((DB.items[q[0]] || {}).n || q[0])) + ' ' + fmt(q[1]) + '</span>'; }).join('、')
-          + (kind === 'arrow' ? '・傷害 ' + ad.dmgS + '／' + ad.dmgL + '、' + e[1] + '屬性 +3' : '') + '</small></span>'
-          + '<span style="white-space:nowrap;flex-shrink:0"><button type="button" class="btn px-2 py-1 text-xs"' + (n < 1 ? ' disabled' : '') + ' data-ms="make:' + t.k + ':' + kind + ':1">製作</button>'
-          + ' <button type="button" class="btn px-2 py-1 text-xs"' + (n < 2 ? ' disabled' : '') + ' data-ms="make:' + t.k + ':' + kind + ':' + n + '">全部（' + n + '）</button></span></div>';
+        out.push({ result: kind === 'bag' ? bagId(t, tab) : aid, yield: kind === 'bag' ? 1 : t.out, req: needOf(t, tab, kind, 1).map(function (q) { return { id: q[0], cnt: q[1] }; }) });
       });
     });
-    hh += '<div class="text-xs text-slate-400">箭用完時的順序：裝備中的箭 → 背包裡同一種箭 → 自動打開同一種箭的箭矢袋 → 背包裡其他的箭 → 自動購買銀箭（有勾才會）。</div>';
-    div.innerHTML = hh + '</div>';
-    div.onclick = function (ev) {
-      var b = ev.target.closest('[data-ms]'); if (!b || b.disabled) return;
-      var v = b.getAttribute('data-ms').split(':');
-      if (v[0] === 'ele') ui.ele = v[1];
-      else if (v[0] === 'make') { var r = make(v[1], ui.ele, v[2], Number(v[3])); if (!r.ok) sys('<span class="text-amber-300">' + esc(r.msg) + '</span>'); }
-      render(div);
-    };
+    return out;
   };
+  var RECIPES = [];
+  var setTab = function (tab) { ui.tab = tab; RECIPES.length = 0; recipesOf(tab).forEach(function (r) { RECIPES.push(r); }); };
+  try { if (typeof CRAFT_RECIPES !== 'undefined') { CRAFT_RECIPES[NPC_ID] = RECIPES; setTab(ui.tab); } } catch (e) {}
+  var CSS_ID = 'afk-mensu-css';
+  var css = function () {
+    if (document.getElementById(CSS_ID)) return;
+    var st = document.createElement('style'); st.id = CSS_ID;
+    st.textContent = '#afk-mensu-head{margin-bottom:10px}#afk-mensu-head .ms-say{color:#cbd5e1;font-size:14px;line-height:1.6;margin-bottom:8px}'
+      + '#afk-mensu-head .ms-tabs{display:flex;flex-wrap:wrap;gap:6px}'
+      + '#afk-mensu-head .ms-tab{padding:6px 12px;font-size:14px;font-weight:700;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#cbd5e1}'
+      + '#afk-mensu-head .ms-tab.on{background:linear-gradient(180deg,#0e7490,#0c4a6e) !important;border-color:#38bdf8 !important;color:#ecfeff !important;box-shadow:0 0 0 1px #38bdf8 inset,0 0 8px rgba(56,189,248,.45) !important}'
+      + '#afk-mensu-foot{margin-top:6px;font-size:12px;color:#94a3b8;line-height:1.6}';
+    document.head.appendChild(st);
+  };
+  var oUni = W.renderUniversalCraft;
+  if (typeof oUni === 'function') {
+    W.renderUniversalCraft = function (div, npcId) {
+      if (npcId !== NPC_ID || !div) return oUni.apply(this, arguments);
+      var p = P();
+      if (!p || p.classicMode || !on()) { div.innerHTML = '<div class="text-sm text-slate-300">「抱歉，我的工房今天不開。」</div>'; return; }
+      css();
+      if (!RECIPES.length) setTab(ui.tab);
+      div.innerHTML = '<div id="afk-mensu"><div id="afk-mensu-head"><div class="ms-say">「奧里哈魯根打成的箭頭對不死的東西特別有效；淨化石的力量鍛進箭頭，射出去就帶著元素。要整袋的話，一袋一萬支，算你七折。幸運的箭？那個我做不出來，只能從怪物身上找。」</div>'
+        + '<div class="ms-tabs">' + TABS.filter(function (t) { return t[0] !== 'ori' || ORI_ARROW; }).map(function (t) { return '<button type="button" class="btn ms-tab' + (t[0] === ui.tab ? ' on' : '') + '" data-ms="tab:' + t[0] + '">' + esc(t[1]) + '</button>'; }).join('') + '</div></div>'
+        + '<div id="afk-mensu-list"></div>'
+        + '<div id="afk-mensu-foot">箭用完時的順序：裝備中的箭 → 背包裡同一種箭 → 自動打開同一種箭的箭矢袋 → 背包裡其他的箭 → 自動購買銀箭（有勾才會）。</div></div>';
+      oUni.call(this, div.querySelector('#afk-mensu-list'), NPC_ID);
+      var head = div.querySelector('#afk-mensu-head');
+      head.onclick = function (ev) {
+        var b = ev.target.closest('[data-ms]'); if (!b) return;
+        var v = b.getAttribute('data-ms').split(':');
+        if (v[0] === 'tab') { setTab(v[1]); W.renderUniversalCraft(div, NPC_ID); }
+      };
+    };
+    try { (0, eval)('renderUniversalCraft = window.renderUniversalCraft'); } catch (e) {}
+  }
+  var render = function (div) { if (div) W.renderUniversalCraft(div, NPC_ID); };
   if (typeof W.interactNPC === 'function') {
     var oNpc = W.interactNPC;
     W.interactNPC = function (npcId) {
       var r = oNpc.apply(this, arguments);
-      try { if (npcId === NPC_ID) { var div = document.getElementById('interaction-content'); if (div) { div.onclick = null; render(div); } } } catch (e) { console.warn('[AFK-arrowsmith] ui', e); }
+      try { if (npcId === NPC_ID) { var div = document.getElementById('interaction-content'); if (div && !div.querySelector('#afk-mensu')) { div.onclick = null; render(div); } } } catch (e) { console.warn('[AFK-arrowsmith] ui', e); }
       return r;
     };
   }
-  W.__afkArrowSmith = { ELE: ELE, TIERS: TIERS, BAG_CNT: BAG_CNT, NPC_ID: NPC_ID, arrowId: arrowId, bagId: bagId, needOf: needOf, make: make, have: have, openBag: openBag, render: render, stats: function () { return Object.assign({}, stats); } };
+  W.__afkArrowSmith = { ORI_ARROW: ORI_ARROW, ORI_BAG: ORI_BAG, setTab: setTab, recipes: function () { return RECIPES.slice(); }, ELE: ELE, TIERS: TIERS, BAG_CNT: BAG_CNT, NPC_ID: NPC_ID, arrowId: arrowId, bagId: bagId, needOf: needOf, make: make, have: have, openBag: openBag, render: render, stats: function () { return Object.assign({}, stats); } };
 })();

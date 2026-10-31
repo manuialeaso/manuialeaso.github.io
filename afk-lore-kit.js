@@ -95,20 +95,127 @@
     W[rr] = function (div) { render(line, div); };
     return line;
   };
+  // ── 劇情任務介面（玩家 2026-11-01：貼近原本 NPC 製作／試煉面板、標楷體、字放大）──
+  //   只管呈現：狀態判斷照核心 trialQHTML 的順序（已完成 → 前章未完成 → 等級不足 → 未接取 → 收集中／可交付），
+  //   按鈕仍呼叫 trialQAccept／trialQComplete；核心 trialQHTML 仍會被呼叫，取出其他外掛注入的區塊（afk-retrial 批次兌換、afk-ancdrop 遠古標記）接在卡片裡。
+  var KAI = '"DFKai-SB","BiauKai","標楷體","Kaiti TC","STKaiti","KaiTi","TW-Kai","AR PL UKai TW",serif';
+  var CSS_ID = 'afk-lore-css';
+  var ensureCss = function () {
+    if (document.getElementById(CSS_ID)) return;
+    var st = document.createElement('style'); st.id = CSS_ID;
+    st.textContent = [
+      '.alq{margin-top:12px;padding:12px 12px 4px;border:1px solid #6b4e36;border-radius:6px;background-image:linear-gradient(180deg,rgba(74,54,40,.45),rgba(40,39,48,0) 120px);box-shadow:inset 0 1px rgba(222,176,112,.12)}',
+      '.alq-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;padding:0 2px 9px;margin-bottom:10px;border-bottom:1px solid #594638}',
+      '.alq-title{font-family:' + KAI + ';font-size:23px;font-weight:bold;line-height:1.3;color:#e7d2a7;letter-spacing:.06em;text-shadow:1px 1px 0 #000,0 0 6px rgba(177,132,84,.35)}',
+      '.alq-sum{margin-left:auto;font-size:13px;font-weight:bold;color:#cdb991;padding:2px 10px;border:1px solid #6e5845;border-radius:999px;background:#1d1b20;white-space:nowrap}',
+      '.alq-intro{font-family:' + KAI + ';font-size:17px;line-height:1.8;color:#dcd0bb;padding:8px 12px;margin-bottom:10px;border-left:3px solid #8d6846;border-radius:0 4px 4px 0;background:rgba(0,0,0,.2)}',
+      '.alq-ch{margin-bottom:10px;padding:12px 14px;border:1px solid #514138;border-radius:6px;background-image:linear-gradient(180deg,#2e2c35,#222027);box-shadow:inset 3px 0 0 var(--alq-acc,#8d6846),inset 0 1px rgba(222,176,112,.06)}',
+      '.alq-ch.s-done{--alq-acc:#3f8a5f}.alq-ch.s-ready{--alq-acc:#34d399;border-color:#2f6b4a}.alq-ch.s-active{--alq-acc:#d4943f}.alq-ch.s-lock{--alq-acc:#4b4540}.alq-ch.s-lv{--alq-acc:#9b2c2c}',
+      '.alq-ch.s-lock .alq-cht{color:#a59a8c}.alq-ch.s-lock .alq-story{color:#b3a999}',
+      '.alq-chh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}',
+      '.alq-no{font-size:12.5px;font-weight:bold;color:#e7d2a7;padding:1px 8px;border:1px solid #8d6846;border-radius:3px;background:linear-gradient(180deg,#3a2e27,#211d20);white-space:nowrap}',
+      '.alq-cht{font-family:' + KAI + ';font-size:21px;font-weight:bold;line-height:1.35;color:#f1d9a6;text-shadow:1px 1px 0 #000}',
+      '.alq-lv{font-size:13px;font-weight:bold;color:#a8998a;white-space:nowrap}',
+      '.alq-badge{margin-left:auto;font-size:13px;font-weight:bold;padding:2px 10px;border:1px solid;border-radius:999px;white-space:nowrap}',
+      '.alq-badge.s-done{color:#7ee2a8;border-color:#2f6b4a;background:rgba(16,64,40,.5)}',
+      '.alq-badge.s-ready{color:#bbf7d0;border-color:#34d399;background:rgba(6,95,70,.55);box-shadow:0 0 8px rgba(52,211,153,.35)}',
+      '.alq-badge.s-active{color:#fcd38a;border-color:#a8742f;background:rgba(120,72,20,.4)}',
+      '.alq-badge.s-new{color:#e7d2a7;border-color:#8d6846;background:rgba(80,58,40,.4)}',
+      '.alq-badge.s-lock{color:#9c958c;border-color:#4b4540;background:rgba(30,29,33,.7)}',
+      '.alq-badge.s-lv{color:#fca5a5;border-color:#7f1d1d;background:rgba(80,20,20,.4)}',
+      '.alq-story{font-family:' + KAI + ';font-size:17px;line-height:1.85;color:#ddd3c3;margin:8px 0 8px}',
+      '.alq-meta{font-size:13.5px;line-height:1.6;color:#a8998a;margin-bottom:4px}',
+      '.alq-meta b{color:#cdb991;font-weight:bold}',
+      '.alq-row{display:flex;align-items:flex-start;gap:8px;margin-top:8px}',
+      '.alq-lab{flex:0 0 auto;font-size:14px;color:#a8998a;line-height:40px;white-space:nowrap}',
+      '.alq-items{display:flex;flex-wrap:wrap;gap:6px 16px;min-width:0}',
+      '.alq-it{display:flex;align-items:center;gap:8px;min-width:0}',
+      '.alq-ic{width:40px;height:40px;flex:0 0 40px;display:flex;align-items:center;justify-content:center;background:#17161a;border:1px solid #6e5845;border-radius:4px;box-shadow:inset 0 0 0 1px #0d0c0f}',
+      '.alq-ic img{width:34px;height:34px;object-fit:contain;pointer-events:none}',
+      '.alq-itx{display:flex;flex-direction:column;min-width:0;line-height:1.3}',
+      '.alq-in{font-size:15px;font-weight:bold}',
+      '.alq-cnt{font-size:13.5px;font-weight:bold;color:#cfc6b8}',
+      '.alq-cnt .ok{color:#4ade80}.alq-cnt .no{color:#f87171}',
+      '.alq-sub{font-size:12px;color:#8f877d;font-weight:normal}',
+      '.alq-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding-top:10px;border-top:1px dashed #4a3c32}',
+      '.alq-act .btn{font-size:15px}',
+      '.alq-note{font-size:13.5px;line-height:1.6;color:#8f877d}',
+      '.alq-warn{font-size:13.5px;line-height:1.6;color:#f87171}',
+      '.alq-ext{margin-top:8px}',
+      '.alq-ext>div{padding:8px 10px!important;background:rgba(0,0,0,.18)}',
+      '.alq-ext .text-xs{font-size:13px;line-height:1.6}',
+      '.alq-more{margin-top:6px}',
+      '.alq-more>summary{cursor:pointer;list-style:none;display:inline-block;font-size:13px;color:#a8998a;padding:1px 0;user-select:none}',
+      '.alq-more>summary::-webkit-details-marker{display:none}',
+      '.alq-more>summary::before{content:"▸ ";color:#8d6846}.alq-more[open]>summary::before{content:"▾ "}',
+      '.alq-more>summary:hover{color:#e7d2a7}',
+      '.alq-outro{font-family:' + KAI + ';font-size:17px;line-height:1.85;color:#f0c4f5;padding:10px 12px;margin-bottom:10px;border:1px solid #6b3f6e;border-radius:6px;background:rgba(60,24,64,.25)}',
+      '@media (max-width:640px){.alq{padding:10px 8px 2px}.alq-title{font-size:21px}.alq-ch{padding:10px 10px}.alq-cht{font-size:19px}.alq-story,.alq-intro,.alq-outro{font-size:16px;line-height:1.75}.alq-ic{width:36px;height:36px;flex-basis:36px}.alq-ic img{width:30px;height:30px}.alq-lab{line-height:36px}.alq-items{gap:6px 12px}.alq-badge{margin-left:0}}'
+    ].join('\n');
+    (document.head || document.documentElement).appendChild(st);
+  };
+  var iconOf = function (id) { var d = DB.items[id]; if (!d) return ''; try { return typeof getIconUrl === 'function' ? getIconUrl(d) : (d.img || ''); } catch (e) { return d.img || ''; } };
+  var colorOf = function (id) { try { return typeof getItemColor === 'function' ? getItemColor({ id: id }) : 'text-amber-200'; } catch (e) { return 'text-amber-200'; } };
+  var chip = function (id, name, cls, cnt, sub, tag) {   // 圖示框＋名稱（＋數量）——同製作面板的 48px 圖示框縮小版
+    var img = id === 'gold' ? 'assets/icons/items/金幣.png' : iconOf(id);
+    return '<div class="alq-it"><div class="alq-ic' + (id !== 'gold' && DB.items[id] ? ' tip-host" data-tip-id="' + esc(id) + '"' : '"') + '>'
+      + (img ? '<img src="' + esc(img) + '" onerror="this.style.display=\'none\'" alt="">' : '') + '</div>'
+      + '<div class="alq-itx"><span class="alq-in ' + cls + '">' + esc(name) + (tag || '') + '</span>' + (cnt ? '<span class="alq-cnt">' + cnt + '</span>' : '') + (sub ? '<span class="alq-sub">' + sub + '</span>' : '') + '</div></div>';
+  };
+  var row = function (lab, inner) { return inner ? '<div class="alq-row"><span class="alq-lab">' + lab + '</span><div class="alq-items">' + inner + '</div></div>' : ''; };
+  // 核心 trialQHTML 的輸出：取出其他外掛加進去的東西（批次兌換區塊、遠古標記）
+  var extOf = function (k, rr) {
+    var out = { blocks: '', anc: {} };
+    if (typeof trialQHTML !== 'function') return out;
+    var raw = '';
+    try { raw = trialQHTML(k, rr) || ''; } catch (e) { return out; }
+    if (!raw) return out;
+    try {
+      var t = document.createElement('div'); t.innerHTML = raw;
+      var root = t.firstElementChild; if (!root) return out;
+      Array.prototype.forEach.call(root.querySelectorAll('b.text-sky-300'), function (b) { var n = b.nextElementSibling; if (n && n.classList.contains('c-ancient')) out.anc[b.textContent] = n.outerHTML; });
+      Array.prototype.forEach.call(root.children, function (c) { if (/批次兌換/.test(c.textContent)) out.blocks += c.outerHTML.replace(/試煉/g, '任務'); });
+    } catch (e) {}
+    return out;
+  };
+  var STN = { done: '已完成', ready: '可交付', active: '進行中', 'new': '未接取', lock: '未解鎖', lv: '等級不足' };
   var html = function (line, p) {
-    var rr = 'afkLoreRender_' + line.id;
-    var h = '<div id="afk-lore-' + line.id + '" class="mt-3 text-sm space-y-2"><div class="font-bold" style="color:#fca5a5">📜 劇情「' + esc(line.name) + '」</div>'
-      + (line.intro ? '<div class="text-slate-300 text-xs">' + line.intro + '</div>' : '');
+    ensureCss();
+    var rr = 'afkLoreRender_' + line.id, n = line.chapters.length;
+    var done = line.chapters.filter(function (ch, i) { return trialQStateFor(p, keyOf(line, i, p.cls)) === 2; }).length;
+    var h = '<div id="afk-lore-' + line.id + '" class="alq"><div class="alq-head"><span class="alq-title">📜 劇情「' + esc(line.name) + '」</span><span class="alq-sum">已完成 ' + done + '／' + n + ' 章</span></div>'
+      + (line.intro ? '<div class="alq-intro">' + line.intro + '</div>' : '');
     line.chapters.forEach(function (ch, i) {
-      var k = keyOf(line, i, p.cls), st = trialQStateFor(p, k);
-      h += '<div class="p-2 rounded border border-slate-700 bg-slate-900/40"><div class="font-bold text-amber-300">' + esc(line.name) + ' ' + (i + 1) + '／' + line.chapters.length + '・' + esc(ch.title) + '（Lv' + ch.lv + '）</div>'
-        + '<div class="text-xs text-slate-400 my-1">' + ch.story + '</div>'
-        + '<div class="text-xs text-slate-400 mb-1">地點：' + esc(ch.map) + '</div>'
-        + (ch.first && ch.first.length ? '<div class="text-xs text-slate-400 mb-1">第一次完成另送：' + ch.first.map(function (x) { return (x[0] === 'gold' ? '金幣' : (DB.items[x[0]] || {}).n) + ' ×' + Number(x[1]).toLocaleString(); }).join('、') + '</div>' : '');
-      if (st !== 2 && !prevDone(line, i, p)) h += '<div class="text-xs text-slate-500">完成「' + esc(line.chapters[i - 1].title) + '」後才能接取。</div></div>';
-      else h += (typeof trialQHTML === 'function' ? trialQHTML(k, rr).replace(/⚔️ \d+ 級試煉/, '任務進度').replace(/接取試煉任務/g, '接取任務').replace(/完成試煉（獲得全部獎勵）/g, '交付任務（獲得全部獎勵）').replace(/試煉/g, '任務') : '') + '</div>';
+      var k = keyOf(line, i, p.cls), st = trialQStateFor(p, k), c = TRIAL_Q[k] || { reqs: [], rewards: [] };
+      var reqs = c.reqs || [], have = function (id) { return typeof questCountId === 'function' ? questCountId(id) : 0; };
+      var ok = reqs.every(function (r) { return have(r[0]) >= r[1]; });
+      var s = st === 2 ? 'done' : !prevDone(line, i, p) ? 'lock' : (p.lv || 1) < ch.lv ? 'lv' : st === 0 ? 'new' : ok ? 'ready' : 'active';
+      var ext = (s === 'done' || s === 'ready' || s === 'active') ? extOf(k, rr) : { blocks: '', anc: {} };
+      var mobs = []; (ch.reqs || []).forEach(function (q) { (q.mobs || []).forEach(function (m) { if (mobs.indexOf(m) < 0) mobs.push(m); }); });
+      var reqH = reqs.map(function (r) {
+        var d = DB.items[r[0]] || {}, hv = have(r[0]), lk = 0;
+        if (hv < r[1] && typeof lockedCountId === 'function') { try { lk = lockedCountId(r[0]); } catch (e) {} }
+        return chip(r[0], d.n || r[0], 'text-amber-200', '<span class="' + (hv >= r[1] ? 'ok' : 'no') + '">' + Math.min(hv, r[1]) + '</span>/' + r[1], lk > 0 ? '另 ' + lk + ' 個已上鎖不計' : '');
+      }).join('');
+      var rwH = (c.rewards || []).map(function (id) { var d = DB.items[id] || {}; return chip(id, d.n || id, colorOf(id), '', '', ext.anc[d.n] || ''); }).join('');
+      var firstH = (ch.first || []).map(function (x) { return chip(x[0], x[0] === 'gold' ? '金幣' : (DB.items[x[0]] || {}).n, x[0] === 'gold' ? 'text-yellow-300' : colorOf(x[0]), '×' + Number(x[1]).toLocaleString()); }).join('');
+      var body = '<div class="alq-story">' + ch.story + '</div>'
+        + '<div class="alq-meta">地點：<b>' + esc(ch.map) + '</b>' + (mobs.length ? '（' + mobs.map(esc).join('、') + '）' : '') + '</div>'
+        + row('需求：', reqH) + row('獎勵：', rwH) + row('首次另送：', firstH);
+      h += '<div class="alq-ch s-' + s + '"><div class="alq-chh"><span class="alq-no">' + esc(line.name) + ' ' + (i + 1) + '／' + n + '</span><span class="alq-cht">' + esc(ch.title) + '</span><span class="alq-lv">Lv' + ch.lv + '</span><span class="alq-badge s-' + s + '">' + STN[s] + '</span></div>';
+      if (s === 'done') h += '<details class="alq-more"><summary>回顧這一章</summary>' + body + '</details>' + (ext.blocks ? '<div class="alq-ext">' + ext.blocks + '</div>' : '');
+      else {
+        h += body + '<div class="alq-act">';
+        if (s === 'lock') h += '<span class="alq-note">完成「' + esc(line.chapters[i - 1].title) + '」後才能接取。</span>';
+        else if (s === 'lv') h += '<span class="alq-warn">需要等級 ' + ch.lv + ' 以上才能接取此任務。</span>';
+        else if (s === 'new') h += '<button class="btn bg-amber-800 hover:bg-amber-700 py-2 px-4 font-bold" onclick="trialQAccept(\'' + k + '\',\'' + rr + '\')">接取任務</button><span class="alq-note">接取後擊殺指定怪物 100% 掉落・無法存入倉庫・達需求數量即停止掉落</span>';
+        else if (s === 'ready') h += '<button class="btn bg-emerald-800 hover:bg-emerald-700 py-2 px-4 font-bold" onclick="trialQComplete(\'' + k + '\',\'' + rr + '\')">交付任務（獲得全部獎勵）</button>';
+        else h += '<span class="alq-warn">尚未備齊。</span><span class="alq-note">擊殺指定怪物必定掉落，集滿為止' + (reqs.some(function (r) { return have(r[0]) < r[1] && typeof lockedCountId === 'function' && lockedCountId(r[0]) > 0; }) ? '（有道具已上鎖・解鎖後才會列入計數）' : '') + '</span>';
+        h += '</div>' + (ext.blocks ? '<div class="alq-ext">' + ext.blocks + '</div>' : '');
+      }
+      h += '</div>';
     });
-    if (line.outro && line.chapters.every(function (ch, i) { return trialQStateFor(p, keyOf(line, i, p.cls)) === 2; })) h += '<div class="text-xs text-fuchsia-300">' + line.outro + '</div>';
+    if (line.outro && done === n) h += '<div class="alq-outro">' + line.outro + '</div>';
     return h + '</div>';
   };
   var render = function (line, div) {
@@ -194,7 +301,7 @@
   };
   var halted = function (m) { return !!(W.__afkHalted && W.__afkHalted(m)); };
 
-  W.__afkLore = { CLASSES: CLASSES, defineLine: defineLine, lines: LINES, keyOf: keyOf, addItem: addItem, addMob: addMob, aliasAnim: aliasAnim, addNpc: addNpc,
+  W.__afkLore = { questUI: { ensureCss: ensureCss, chip: chip, row: row, extOf: extOf, STN: STN, colorOf: colorOf }, CLASSES: CLASSES, defineLine: defineLine, lines: LINES, keyOf: keyOf, addItem: addItem, addMob: addMob, aliasAnim: aliasAnim, addNpc: addNpc,
     defineSet: defineSet, setBonus: bonusOf, render: render, html: html, esc: esc, sys: sys, clog: clog,
     boss: { party: party, hurt: hurt, place: place, summon: summon, halted: halted } };
 })();

@@ -129,8 +129,43 @@
     try { if (x.spr && typeof NPC_SPR_FIXED !== 'undefined' && !NPC_SPR_FIXED[x.id]) NPC_SPR_FIXED[x.id] = x.spr; } catch (e) {}
   });
 
+  // 2026-11-01（玩家：劇情任務介面美化、標楷體放大）：跟其他劇情線用同一套卡片（afk-lore-kit 的 questUI）；讀不到就用舊版
+  function renderLeoNew(div, p, U) {
+    U.ensureCss();
+    var rr = 'afkRenderLeo', n = QUESTS.length, have = function (id) { return typeof questCountId === 'function' ? questCountId(id) : 0; };
+    var done = QUESTS.filter(function (q) { return trialQStateFor(p, keyOf(q, p)) === 2; }).length;
+    var h = '<div class="alq" style="margin-top:0"><div class="alq-head"><span class="alq-title">📜 劇情「亞丁的陰影」</span><span class="alq-sum">已完成 ' + done + '／' + n + ' 章</span></div>'
+      + '<div class="alq-intro">「反王肯恩還沒死心。他和魔女賽尼斯、冥皇丹特斯勾結，想奪回亞丁的王座。我需要能打的人替我追查線索。」</div>';
+    QUESTS.forEach(function (q, i) {
+      var k = keyOf(q, p), st = trialQStateFor(p, k), c = TRIAL_Q[k] || { reqs: [], rewards: [] }, reqs = c.reqs || [];
+      var ok = reqs.every(function (r) { return have(r[0]) >= r[1]; });
+      var s = st === 2 ? 'done' : !prevDone(i, p) ? 'lock' : (p.lv || 1) < q.lv ? 'lv' : st === 0 ? 'new' : ok ? 'ready' : 'active';
+      var ext = (s === 'done' || s === 'ready' || s === 'active') ? U.extOf(k, rr) : { blocks: '', anc: {} };
+      var reqH = reqs.map(function (r) { var d = DB.items[r[0]] || {}, hv = have(r[0]); return U.chip(r[0], d.n || r[0], 'text-sky-300', '<span class="' + (hv >= r[1] ? 'ok' : 'no') + '">' + Math.min(hv, r[1]) + '</span>/' + r[1]); }).join('');
+      var rwH = (c.rewards || []).map(function (id) { var d = DB.items[id] || {}; return U.chip(id, d.n || id, U.colorOf(id), '', '', ext.anc[d.n] || ''); }).join('');
+      var firstH = q.scrolls.map(function (x) { return U.chip(x[0], (DB.items[x[0]] || {}).n || x[0], U.colorOf(x[0]), '×' + x[1]); }).join('');
+      var body = '<div class="alq-story">' + esc(q.story) + '</div><div class="alq-meta">地點：<b>' + esc(q.map) + '</b>（' + q.mobs.map(esc).join('、') + '）</div>'
+        + U.row('需求：', reqH) + U.row('獎勵：', rwH) + U.row('首次另送：', firstH);
+      h += '<div class="alq-ch s-' + s + '"><div class="alq-chh"><span class="alq-no">亞丁的陰影 ' + (i + 1) + '／' + n + '</span><span class="alq-cht">' + esc(q.title) + '</span><span class="alq-lv">Lv' + q.lv + '</span><span class="alq-badge s-' + (s === 'new' ? 'new' : s) + '">' + U.STN[s] + '</span></div>';
+      if (s === 'done') h += '<details class="alq-more"><summary>回顧這一章</summary>' + body + '</details>' + (ext.blocks ? '<div class="alq-ext">' + ext.blocks + '</div>' : '');
+      else {
+        h += body + '<div class="alq-act">';
+        if (s === 'lock') h += '<span class="alq-note">完成「' + esc(QUESTS[i - 1].title) + '」後才能接取。</span>';
+        else if (s === 'lv') h += '<span class="alq-warn">需要等級 ' + q.lv + ' 以上才能接取此任務。</span>';
+        else if (s === 'new') h += '<button class="btn bg-amber-800 hover:bg-amber-700 py-2 px-4 font-bold" onclick="trialQAccept(\'' + k + '\',\'' + rr + '\')">接取任務</button><span class="alq-note">接取後擊殺指定怪物 100% 掉落・無法存入倉庫</span>';
+        else if (s === 'ready') h += '<button class="btn bg-emerald-800 hover:bg-emerald-700 py-2 px-4 font-bold" onclick="trialQComplete(\'' + k + '\',\'' + rr + '\')">交付任務（獲得全部獎勵）</button>';
+        else h += '<span class="alq-warn">尚未備齊。</span><span class="alq-note">擊殺指定怪物必定掉落，集滿為止。</span>';
+        h += '</div>' + (ext.blocks ? '<div class="alq-ext">' + ext.blocks + '</div>' : '');
+      }
+      h += '</div>';
+    });
+    if (done === n) h += '<div class="alq-outro">「謝謝你。亞丁有個叫伊菈的告密者，她知道肯恩藏身的密室（謀叛者的低語）入口——去找她吧。」</div>';
+    div.innerHTML = h + '</div>';
+  }
   function renderLeo(div) {
     var p = P(); if (!p || !div) return;
+    var U = W.__afkLore && W.__afkLore.questUI;
+    if (U) { try { renderLeoNew(div, p, U); return; } catch (e) { console.warn('[AFK-aden-quests] ui', e); } }
     var h = '<div class="text-sm space-y-2"><div class="text-slate-300">「反王肯恩還沒死心。他和魔女賽尼斯、冥皇丹特斯勾結，想奪回亞丁的王座。我需要能打的人替我追查線索。」</div>';
     QUESTS.forEach(function (q, i) {
       var k = keyOf(q, p), st = trialQStateFor(p, k);

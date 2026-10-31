@@ -67,7 +67,9 @@
   //   ac／dr／mr／res：頭目防禦統一成這組數值（不看抽到的頭目原本多硬）；rage：每過 1 分鐘頭目傷害 +10%
   //   atk／db／hit／spd：頭目一般攻擊統一（6D40＋80，每 2 秒），原頭目的魔法拿掉
   //   eclipse：星蝕（每 20 秒全隊最大 HP 5%）；devour：夢噬（每 35 秒，生命最多的人現有 HP 30%）；fall：墜星（2 分 30 秒起每分鐘全隊最大 HP 10%）
-  var DS = { atk: [6, 40], db: 80, hit: 200, spd: 2, hp: 335000000, hpScale: 0.55, wallEvery: 30, wallPct: 0.10, rageMax: 1.0, body: 0.70, phase: 0.70, ac: -80, dr: 30, mr: 300, res: 300, rage: 0.10, eclipse: 0.05, devour: 0.30, fall: 0.10, burst: 0.10 };
+  var DS = { atk: [6, 40], db: 80, hit: 200, spd: 2, hp: 335000000, hpScale: 0.11, wallEvery: 30, wallPct: 0.10, rageMax: 1.0, body: 0.70, phase: 0.70, ac: -80, dr: 30, mr: 300, res: 300, rage: 0.10, eclipse: 0.05, devour: 0.30, fall: 0.10, burst: 0.10 };
+  // 2026-11-01（玩家：11-01 存檔 王族 Lv106 一轉＋7 傭兵打夢域鏡要 1 分 35 秒～2 分，這種輸出應該 30 秒內打倒）：hpScale 0.55 → 0.11（HP ÷5）；
+  //   同一份存檔實測 4 隻隨機頭目 27～30 秒。10-30 的存檔（未轉生 Lv100）約 1 分半～2 分。
   window.__afkDreamStarCfg = DS;
   // 暴走：一開場就暴走（+10%），之後每分鐘再 +10%，最多 +100%；瘋狂席琳版不暴走
   var rageOf = function (m) { if (m._dsMode === 'mad') return 1; var age = (S().ticks || 0) - (m._dsBorn || 0); return 1 + Math.min(DS.rageMax, DS.rage * (Math.floor(age / 600) + 1)); };
