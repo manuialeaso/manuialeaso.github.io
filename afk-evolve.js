@@ -377,38 +377,67 @@
   }
 
   // ── 介面（薇爾娜頁面下方）──
-  var CSS = '.aev{margin-top:12px;padding:10px;border:1px solid #6b3f6e;border-radius:6px;background:rgba(60,24,64,.22)}.aev h4{font-size:15px;font-weight:bold;color:#f0c4f5;margin-bottom:6px}.aev .row{font-size:13px;line-height:1.6;color:#ddd3c3}.aev .sc{display:block;margin:6px 0;padding:6px 8px;border:1px solid #514138;border-radius:4px;background:#24222a;cursor:pointer}.aev .sc.on{border-color:#e879f9}.aev .sl{display:flex;gap:8px;align-items:center;margin:4px 0}.aev .muted{color:#8f877d}';
+  var CSS = [
+    '.aev{color:#e2e8f0;font-size:14px;line-height:1.65}',
+    '.aev .ev-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,rgba(134,25,143,.3),rgba(15,23,42,.6));border:1px solid rgba(232,121,249,.35)}',
+    '.aev .ev-head b{color:#f5d0fe;font-size:16px}.aev .ev-head small{color:#e9d5ff}',
+    '.aev .ev-dots{display:flex;gap:4px}.aev .ev-dots i{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;font-weight:bold;background:#1e293b;border:2px solid #334155;color:#64748b}',
+    '.aev .ev-dots i.on{background:#a21caf;border-color:#f0abfc;color:#fff}',
+    '.aev .ev-intro{margin:8px 0;padding:8px 10px;border-radius:8px;background:rgba(30,41,59,.7);color:#cbd5e1;font-size:13px}',
+    '.aev .ev-h{margin:12px 0 6px;color:#fde68a;font-weight:bold;font-size:15px}',
+    '.aev .ev-sc{display:block;margin:8px 0;padding:10px 12px;border:1px solid #334155;border-radius:10px;background:rgba(15,23,42,.7);cursor:pointer}',
+    '.aev .ev-sc.on{border-color:#e879f9;box-shadow:0 0 10px rgba(232,121,249,.4);background:linear-gradient(180deg,rgba(112,26,117,.25),rgba(15,23,42,.7))}',
+    '.aev .ev-sc .nm{display:flex;justify-content:space-between;align-items:center;gap:6px}.aev .ev-sc .nm b{color:#fde68a;font-size:15px}',
+    '.aev .tag{font-size:11px;padding:1px 8px;border-radius:999px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;white-space:nowrap}',
+    '.aev .tag.main{border-color:#ca8a04;color:#fde68a}.aev .tag.mix{border-color:#a855f7;color:#e9d5ff}',
+    '.aev .ev-type{font-size:12px;color:#94a3b8;margin:2px 0 4px}',
+    '.aev .ev-st{display:flex;gap:8px;padding:3px 0;color:#cbd5e1}.aev .ev-st i{flex:none;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:bold;background:#1e293b;border:1px solid #475569;color:#94a3b8;margin-top:2px}',
+    '.aev .ev-st.on{color:#f8fafc}.aev .ev-st.on i{background:#a21caf;border-color:#f0abfc;color:#fff}',
+    '.aev .ev-aura{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.aev .ev-aura span{font-size:12px;padding:2px 8px;border-radius:6px;background:rgba(88,28,135,.35);border:1px solid #7e22ce;color:#e9d5ff}',
+    '.aev .ev-next{margin-top:12px;padding:10px 12px;border:1px dashed #a855f7;border-radius:10px;background:rgba(59,7,100,.2)}',
+    '.aev .ev-why{color:#fca5a5;margin-top:4px}',
+    '.aev .ev-sl{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;padding:6px 8px;border-radius:8px;background:#0f172a;border:1px solid #1e293b}',
+    '#town-interaction-container .aev .ev-btn,.aev .ev-btn{padding:6px 12px!important;border-radius:8px!important;background:linear-gradient(180deg,#c026d3,#86198f)!important;color:#fff!important;border:1px solid #f0abfc!important;font-weight:bold;font-size:13px;white-space:nowrap}',
+    '.aev .muted{color:#94a3b8}'
+  ].join('');
   var pick = '';
+  var ROM = ['', '一', '二', '三'];
+  var tagOf = function (x) { return /本職/.test(x.type) ? '<span class="tag main">本職</span>' : /混合/.test(x.type) ? '<span class="tag mix">混合</span>' : ''; };
+  var stList = function (x, n) { return x.st.map(function (s, i) { return '<div class="ev-st' + (i < n ? ' on' : '') + '"><i>' + (i < n ? '✓' : ROM[i + 1]) + '</i><span>' + esc(s.t) + '</span></div>'; }).join(''); };
+  var auraHtml = function (x) { var au = x.aura || []; return au.length ? '<div class="ev-aura"><span>二段光環：' + esc(auraTxt(au[0])) + '</span><span>三段光環：' + esc(auraTxt(au[1])) + '</span></div>' : ''; };
   function render(div) {
     var p = P(); if (!p || !div) return;
     if (!document.getElementById('aev-css')) { var st = document.createElement('style'); st.id = 'aev-css'; st.textContent = CSS; document.head.appendChild(st); }
-    var box = div.querySelector('#aev') || document.createElement('div'); box.id = 'aev'; box.className = 'aev';
-    var n = stageOf(p), sc = schoolOf(p), h = '<h4>✦ 職業進化' + (sc ? '：' + esc(sc.n) + '（第 ' + n + '／3 段）' : '') + '</h4>';
-    if (classic(p)) { box.innerHTML = h + '<div class="row muted">經典模式沒有職業進化。</div>'; if (!box.parentNode) div.appendChild(box); return; }
-    h += '<div class="row muted">交出同職業 Lv100 的存檔（第一段 0 轉、第二段 1 轉、第三段 2 轉），讓這個角色走上一條流派。交出的存檔會被刪除；流派選了以後不能換。傭兵不能進化，但吃得到你的光環。</div>';
+    var host = div.querySelector('#afk-su-pane-evo') || div;
+    var box = host.querySelector('#aev') || document.createElement('div'); box.id = 'aev'; box.className = 'aev';
+    var n = stageOf(p), sc = schoolOf(p);
+    var h = '<div class="ev-head"><div><b>✦ 職業進化</b><br><small>' + (sc ? esc(sc.n) + '・第 ' + n + '／3 段' : '尚未選擇流派') + '</small></div><div class="ev-dots">' + [1, 2, 3].map(function (i) { return '<i class="' + (n >= i ? 'on' : '') + '">' + (n >= i ? '✓' : ROM[i]) + '</i>'; }).join('') + '</div></div>';
+    if (classic(p)) { box.innerHTML = h + '<div class="ev-intro">經典模式沒有職業進化。</div>'; if (!box.parentNode) host.appendChild(box); return; }
+    h += '<div class="ev-intro">交出同職業 Lv100 的存檔，讓這個角色走上一條流派：第一段交 0 轉、第二段交 1 轉、第三段交 2 轉。<b style="color:#fca5a5">交出的存檔會被刪除，流派選了以後不能換。</b>傭兵不能進化，但吃得到你的光環。</div>';
     if (sc) {
-      h += '<div class="row">' + sc.st.map(function (s, i) { return (i < n ? '✅' : '▫️') + ' 第 ' + (i + 1) + ' 段：' + esc(s.t); }).join('<br>') + '</div>';
-      var au = sc.aura || []; if (au.length) h += '<div class="row muted">光環：第二段 ' + esc(auraTxt(au[0])) + '；第三段 ' + esc(auraTxt(au[1])) + '</div>';
+      h += '<div class="ev-h">你的流派</div><div class="ev-sc on" style="cursor:default"><div class="nm"><b>' + esc(sc.n) + '</b>' + tagOf(sc) + '</div><div class="ev-type">' + esc(sc.type) + '</div>' + stList(sc, n) + auraHtml(sc) + '</div>';
     } else {
       var mine = Object.keys(S).filter(function (k) { return S[k].cls === p.cls; });
-      if (!mine.length) h += '<div class="row muted">' + CLS_N[p.cls] + '的流派在第二輪開放。</div>';
-      mine.forEach(function (k) { var x = S[k]; h += '<label class="sc' + (pick === k ? ' on' : '') + '" data-aev-pick="' + k + '"><b style="color:#f1d9a6">' + esc(x.n) + '</b>　<span class="muted">' + esc(x.type) + '</span><br>' + x.st.map(function (s, i) { return '第 ' + (i + 1) + ' 段：' + esc(s.t); }).join('<br>') + '</label>'; });
+      h += '<div class="ev-h">選擇流派（' + CLS_N[p.cls] + '）</div>';
+      if (!mine.length) h += '<div class="ev-intro">' + CLS_N[p.cls] + '的流派之後開放。</div>';
+      mine.forEach(function (k) { var x = S[k]; h += '<label class="ev-sc' + (pick === k ? ' on' : '') + '" data-aev-pick="' + k + '"><div class="nm"><b>' + (pick === k ? '◉ ' : '○ ') + esc(x.n) + '</b>' + tagOf(x) + '</div><div class="ev-type">' + esc(x.type) + '</div>' + stList(x, 0) + auraHtml(x) + '</label>'; });
     }
     if (n < 3 && (sc || Object.keys(S).some(function (k) { return S[k].cls === p.cls; }))) {
       var stage = n + 1, why = gate(p, stage);
-      h += '<div class="row" style="margin-top:6px"><b>第 ' + stage + ' 段：</b>交出同職業 ' + needRebirth(stage) + ' 轉 Lv100 的存檔</div>';
-      if (why) h += '<div class="row" style="color:#f87171">' + esc(why) + '</div>';
+      h += '<div class="ev-next"><b style="color:#f5d0fe">下一步：第 ' + stage + ' 段</b><div class="muted">交出同職業 ' + needRebirth(stage) + ' 轉、Lv100 的存檔' + (stage === 1 ? '，並先在上面選好流派' : '') + '。</div>';
+      if (why) h += '<div class="ev-why">' + esc(why) + '</div>';
       else {
         var cs = candidates(p, stage);
-        if (!cs.length) h += '<div class="row muted">沒有可以交出的同職業存檔。</div>';
-        cs.forEach(function (c) { h += '<div class="sl"><span>存檔 ' + c.slot + '：' + esc(c.q.name || '未命名') + ' Lv' + c.q.lv + '（' + Math.floor(c.q.rebirth || 0) + ' 轉）</span>' + (c.why ? '<span class="muted">' + esc(c.why) + '</span>' : '<button class="btn py-1 px-3 font-bold" data-aev-slot="' + c.slot + '">交出並進化</button>') + '</div>'; });
+        if (!cs.length) h += '<div class="muted" style="margin-top:4px">目前沒有可以交出的同職業存檔。</div>';
+        cs.forEach(function (c) { h += '<div class="ev-sl"><span>存檔 ' + c.slot + '：' + esc(c.q.name || '未命名') + '　Lv' + c.q.lv + '・' + Math.floor(c.q.rebirth || 0) + ' 轉</span>' + (c.why ? '<span class="muted">' + esc(c.why) + '</span>' : '<button type="button" class="ev-btn" data-aev-slot="' + c.slot + '"' + (stage === 1 && !pick ? ' disabled style="opacity:.5"' : '') + '>交出並進化</button>') + '</div>'; });
       }
+      h += '</div>';
     }
     box.innerHTML = h;
-    if (!box.parentNode) div.appendChild(box);
+    if (!box.parentNode) host.appendChild(box);
     box.onclick = function (e) {
       var a = e.target.closest('[data-aev-pick]'); if (a) { pick = a.getAttribute('data-aev-pick'); render(div); return; }
-      var b = e.target.closest('[data-aev-slot]'); if (b) { evolve(Number(b.getAttribute('data-aev-slot')), pick); render(div); }
+      var b = e.target.closest('[data-aev-slot]'); if (b && !b.disabled) { evolve(Number(b.getAttribute('data-aev-slot')), pick); render(div); }
     };
   }
   function auraTxt(a) { if (!a) return ''; var t = []; if (a.dmg) t.push('造成的傷害 +' + a.dmg + '%'); if (a.crit) t.push('爆擊傷害 +' + a.crit + '%'); if (a.comp) t.push('召喚物、寵物傷害 +' + a.comp + '%'); if (a.compTaken) t.push('召喚物、寵物受到的傷害 −' + a.compTaken + '%'); return (a.selfOnly ? '你自己' : a.exSelf ? '全隊（不含你）' : '全隊') + t.join('、'); }

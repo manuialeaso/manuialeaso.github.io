@@ -748,7 +748,7 @@
   // ── NPC：席琳神殿 技藝導師 薇爾娜 ──
   var NPC_ID = 'npc_afk_skillup', TOWN = 'town_sherine', NPC_SPR = '6804';   // 女性外型（席琳神殿裡沒人用）
   try {
-    var def = { id: NPC_ID, n: '技藝導師 薇爾娜', title: '技能強化', type: 'quest', classicHide: true,
+    var def = { id: NPC_ID, n: '技藝導師 薇爾娜', title: '技能強化・職業進化', type: 'quest', classicHide: true,
       d: '在席琳神殿替冒險者重新磨亮技藝的導師。她說，技藝不會因為輪迴而消失，只會被遺忘。' };
     var L = W.__afkLore; if (L && L.addNpc) L.addNpc(TOWN, def, NPC_SPR, null); else if (DB.towns && DB.towns[TOWN]) DB.towns[TOWN].npcs.push(def);
     if (typeof NPC_SPR_FIXED !== 'undefined' && !NPC_SPR_FIXED[NPC_ID]) NPC_SPR_FIXED[NPC_ID] = NPC_SPR;
@@ -794,40 +794,86 @@
       ['呼喚盟友：寵物、召喚物、城堡護衛也一起出手', '精準目標：對頭目 ×1.5', '勇猛意志：觸發時全隊 3 秒傷害 +10%']]
   };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var ROMAN = ['', '一', '二', '三'];
   var render = function (box) {
     var p = P(); if (!box || !p) return;
-    var st = stageOf(p), h = '<p class="afk-lore">「技藝不會因為輪迴而消失，只會被遺忘。把材料拿來，我幫你想起來。」</p>';
-    h += '<p class="note">目前：' + (st ? STAGE_TXT[st].n + '（' + STAGE_TXT[st].all + '）' : '還沒強化') + '。每個角色各自計算，照順序升級，一定成功。傭兵要「重新招募」才會用到新的階段。</p>';
+    var st = stageOf(p), h = '';
+    h += '<div class="su-steps">' + [1, 2, 3].map(function (s) { return '<div class="su-step' + (st >= s ? ' done' : st + 1 === s ? ' next' : '') + '"><i>' + (st >= s ? '✓' : ROMAN[s]) + '</i><span>' + STAGE_TXT[s].n + '</span></div>'; }).join('<div class="su-line"></div>') + '</div>';
+    h += '<div class="su-now">' + (st ? '目前 <b>' + STAGE_TXT[st].n + '</b>：' + esc(STAGE_TXT[st].all) : '還沒有強化過。') + '</div>';
     for (var s = 1; s <= 3; s++) {
-      var done = st >= s, next = st + 1 === s, T2 = STAGE_TXT[s];
-      var cost = COST[s].map(function (x) { var have = count(x[0]); return esc(nameOf(x[0])) + ' ×' + x[1].toLocaleString() + (next ? '（背包 ' + have.toLocaleString() + '）' : ''); }).join('、');
+      var done = st >= s, next = st + 1 === s, T2 = STAGE_TXT[s], ok = true;
+      var mats = COST[s].map(function (x) { var have = count(x[0]), enough = have >= x[1]; if (!enough) ok = false;
+        return '<span class="su-mat' + (done ? '' : enough ? ' ok' : ' no') + '">' + esc(nameOf(x[0])) + ' <b>' + (done ? '' : have.toLocaleString() + ' / ') + x[1].toLocaleString() + '</b></span>'; }).join('');
       var sig = (CLS_TXT[p.cls] && CLS_TXT[p.cls][s]) || [];
-      h += '<div class="card' + (done ? ' on' : '') + '"><b>' + T2.n + (done ? '（完成）' : '') + '</b><p>' + T2.all + '</p>' +
-        (sig.length ? '<p>' + sig.map(function (x) { return '・' + esc(x); }).join('<br>') + '</p>' : '') + '<p class="note">材料：' + cost + '</p>' +
-        (next ? '<button type="button" data-su="1">強化</button>' : '') + '</div>';
+      h += '<div class="su-card' + (done ? ' done' : next ? ' next' : ' lock') + '"><div class="su-ct"><b>' + T2.n + '</b><em>' + (done ? '已完成' : next ? '可以強化' : '先完成前一階段') + '</em></div>'
+        + '<div class="su-all">' + esc(T2.all) + '</div>'
+        + (sig.length ? '<ul class="su-sig">' + sig.map(function (x) { var i = x.indexOf('：'); return '<li>' + (i > 0 ? '<b>' + esc(x.slice(0, i)) + '</b>' + esc(x.slice(i)) : esc(x)) + '</li>'; }).join('') + '</ul>' : '')
+        + (done ? '' : '<div class="su-mats">' + mats + '</div>')
+        + (next ? '<button type="button" class="su-btn" data-su="1"' + (ok ? '' : ' disabled') + '>' + (ok ? '強化到' + T2.n : '材料不足') + '</button>' : '') + '</div>';
     }
+    h += '<div class="su-foot">每個角色各自計算，照順序升級、一定成功。傭兵要「重新招募」才會用到新的階段。</div>';
     box.innerHTML = h;
   };
   var css = function () {
     if (document.getElementById('afk-skillup-css')) return;
     var s = document.createElement('style'); s.id = 'afk-skillup-css';
-    s.textContent = '.afk-su{color:#e2e8f0;font-size:14px;line-height:1.7}.afk-su p{margin:6px 0}.afk-su .note{color:#cbd5e1}' +
-      '.afk-su .card{border:1px solid #334155;border-radius:8px;padding:10px 12px;margin:10px 0;background:rgba(15,23,42,.6)}' +
-      '.afk-su .card.on{border-color:#facc15;box-shadow:0 0 8px rgba(161,98,7,.6)}.afk-su .card b{color:#fde68a;font-size:15px}' +
-      '.afk-su button{padding:6px 14px;border-radius:6px;background:#6d28d9;color:#fff;border:1px solid #a78bfa;font-size:14px;font-weight:bold}';
+    s.textContent = [
+      '.afk-su{color:#e2e8f0;font-size:14px;line-height:1.65}',
+      '.afk-su .su-hero{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:linear-gradient(135deg,rgba(76,29,149,.35),rgba(15,23,42,.6));border:1px solid rgba(167,139,250,.35)}',
+      '.afk-su .su-hero .q{color:#ddd6fe;font-style:italic}',
+      '.afk-su .su-tabs{display:flex;gap:6px;margin:12px 0 10px;padding:4px;border-radius:10px;background:#0f172a;border:1px solid #1e293b}',
+      '#town-interaction-container .afk-su .su-tab,.afk-su .su-tab{flex:1;padding:8px 0!important;border-radius:8px!important;border:1px solid transparent!important;background:transparent!important;color:#94a3b8!important;font-weight:bold;font-size:15px;box-shadow:none!important}',
+      '#town-interaction-container .afk-su .su-tab.on,.afk-su .su-tab.on{background:linear-gradient(180deg,#7c3aed,#4c1d95)!important;color:#fff!important;border-color:#a78bfa!important;box-shadow:0 0 10px rgba(124,58,237,.45)!important}',
+      '.afk-su .su-steps{display:flex;align-items:center;margin:4px 2px 8px}',
+      '.afk-su .su-step{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px}',
+      '.afk-su .su-step i{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:bold;background:#1e293b;border:2px solid #334155;color:#64748b}',
+      '.afk-su .su-step span{font-size:12px;color:#94a3b8}',
+      '.afk-su .su-step.done i{background:#a16207;border-color:#facc15;color:#fff}.afk-su .su-step.done span{color:#fde68a}',
+      '.afk-su .su-step.next i{border-color:#a78bfa;color:#ddd6fe;box-shadow:0 0 8px rgba(167,139,250,.6)}',
+      '.afk-su .su-line{flex:1;height:2px;background:#334155;margin-bottom:16px}',
+      '.afk-su .su-now{padding:6px 10px;border-radius:8px;background:rgba(30,41,59,.7);color:#cbd5e1;font-size:13px}.afk-su .su-now b{color:#fde68a}',
+      '.afk-su .su-card{border:1px solid #334155;border-radius:10px;padding:10px 12px;margin:10px 0;background:rgba(15,23,42,.7)}',
+      '.afk-su .su-card.done{border-color:rgba(250,204,21,.6);background:linear-gradient(180deg,rgba(113,63,18,.25),rgba(15,23,42,.7))}',
+      '.afk-su .su-card.next{border-color:#8b5cf6;box-shadow:0 0 10px rgba(139,92,246,.35)}',
+      '.afk-su .su-card.lock{opacity:.7}',
+      '.afk-su .su-ct{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}.afk-su .su-ct b{color:#fde68a;font-size:16px}',
+      '.afk-su .su-ct em{font-style:normal;font-size:12px;padding:1px 8px;border-radius:999px;background:#1e293b;color:#94a3b8}',
+      '.afk-su .su-card.done .su-ct em{background:#713f12;color:#fde68a}.afk-su .su-card.next .su-ct em{background:#4c1d95;color:#ddd6fe}',
+      '.afk-su .su-all{color:#e2e8f0}',
+      '.afk-su .su-sig{margin:6px 0 4px;padding-left:0;list-style:none}.afk-su .su-sig li{padding:2px 0 2px 14px;position:relative;color:#cbd5e1}',
+      '.afk-su .su-sig li:before{content:"◆";position:absolute;left:0;color:#a78bfa;font-size:9px;top:7px}.afk-su .su-sig b{color:#c4b5fd;font-weight:bold}',
+      '.afk-su .su-mats{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}',
+      '.afk-su .su-mat{font-size:12px;padding:2px 8px;border-radius:6px;background:#1e293b;color:#cbd5e1;border:1px solid #334155}',
+      '.afk-su .su-mat.ok{border-color:#15803d;color:#bbf7d0}.afk-su .su-mat.no{border-color:#991b1b;color:#fecaca}',
+      '#town-interaction-container .afk-su .su-btn,.afk-su .su-btn{width:100%;margin-top:4px;padding:9px 0!important;border-radius:8px!important;background:linear-gradient(180deg,#7c3aed,#5b21b6)!important;color:#fff!important;border:1px solid #a78bfa!important;font-size:15px;font-weight:bold}',
+      '#town-interaction-container .afk-su .su-btn:disabled,.afk-su .su-btn:disabled{background:#334155!important;border-color:#475569!important;color:#94a3b8!important}',
+      '.afk-su .su-foot{font-size:12px;color:#94a3b8;margin-top:6px}'
+    ].join('');
     document.head.appendChild(s);
   };
+  var tab = 'skill';
   var embed = function (div) {
     if (!div) return; css();
-    div.innerHTML = '<div class="afk-su"><div class="box"></div></div>';
+    var hasEvo = !!(W.__afkEvolve && W.__afkEvolve.render);
+    div.innerHTML = '<div class="afk-su"><div class="su-hero"><div style="font-size:28px">📜</div><div><div style="color:#fde68a;font-weight:bold">技藝導師 薇爾娜</div><div class="q">「技藝不會因為輪迴而消失，只會被遺忘。把材料拿來，我幫你想起來。」</div></div></div>'
+      + (hasEvo ? '<div class="su-tabs"><button type="button" class="su-tab" data-su-tab="skill">⚔️ 技能強化</button><button type="button" class="su-tab" data-su-tab="evo">✦ 職業進化</button></div>' : '<div style="height:10px"></div>')
+      + '<div class="box" id="afk-su-pane-skill"></div><div id="afk-su-pane-evo"></div></div>';
     var host = div.querySelector('.afk-su');
+    var show = function () {
+      if (!hasEvo) tab = 'skill';
+      host.querySelectorAll('[data-su-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-su-tab') === tab); });
+      host.querySelector('#afk-su-pane-skill').style.display = tab === 'skill' ? '' : 'none';
+      host.querySelector('#afk-su-pane-evo').style.display = tab === 'evo' ? '' : 'none';
+      if (tab === 'skill') render(host.querySelector('.box')); else try { W.__afkEvolve.render(div); } catch (e) { console.warn('[AFK-skillup] evo', e); }
+    };
     host.addEventListener('click', function (ev) {
+      var t = ev.target.closest('[data-su-tab]'); if (t) { tab = t.getAttribute('data-su-tab'); show(); return; }
       var b = ev.target.closest('button'); if (!b || !b.dataset.su) return;
       var go = function () { upgrade(); render(host.querySelector('.box')); };
       var msg = '確定要進行技能強化嗎？材料會直接扣掉，不能還原。';
       if (W.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '技能強化', message: msg, okText: '強化', cancelText: '取消', onOk: go }); else if (confirm(msg)) go();
     });
-    render(host.querySelector('.box'));
+    show();
   };
   if (typeof W.interactNPC === 'function') {
     var oNpc = W.interactNPC;
