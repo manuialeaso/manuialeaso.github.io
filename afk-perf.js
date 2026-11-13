@@ -489,9 +489,15 @@
         if (!missSched) { missSched = true; raf(flushMiss); }
       };
     }
+    var pickRect = { on: false, at: 0, m: {} };
     if (typeof window._vfxSlotRect === 'function') {
       var oRect = window._vfxSlotRect, rectCache = null;
       window._vfxSlotRect = function (uid) {
+        if (pickRect.on) {   // 寵物／守衛挑「最近的敵人」：怪物格的位置 0.5 秒內沿用，不為了挑目標逼瀏覽器重新排版
+          var pr0 = pickRect.m[uid];
+          if (!pr0) { pr0 = oRect(uid); if (pr0 && pr0.width) pickRect.m[uid] = pr0 = { left: pr0.left, top: pr0.top, width: pr0.width, height: pr0.height }; }
+          return pr0 ? { left: pr0.left, top: pr0.top, width: pr0.width, height: pr0.height } : null;
+        }
         if (!rectCache) { rectCache = {}; raf(function () { rectCache = null; }); }
         if (!(uid in rectCache)) rectCache[uid] = oRect(uid);
         var r = rectCache[uid];
@@ -509,6 +515,29 @@
         faceMemo.set(who, { uid: who._faceTgtUid, at: now });
         return r;
       };
+    }
+    // 寵物／召喚／守衛挑目標：原版每拍每隻都量一次畫面位置找「最近的敵人」（滿隊＋守衛＝每拍十幾次強制排版）；
+    //   改成同一隻沿用上次挑到的目標 5 拍，目標死亡、消失或換地圖就立刻重挑。指定目標（流派、遺物指令）包在更外層，不受影響
+    if (typeof window._petPickTarget === 'function' && !window._petPickTarget.__afkPerf) {
+      var oPick = window._petPickTarget, pickMemo = new WeakMap();
+      window._petPickTarget = function (pet) {
+        if (!pet || typeof pet !== 'object' || typeof state === 'undefined' || typeof mapState === 'undefined' || !mapState.mobs) return oPick.apply(this, arguments);
+        var t = state.ticks, m = pickMemo.get(pet), g = m && m.tgt;
+        if (g && m.map === mapState.current && t >= m.at && t - m.at < 5 && g.curHp > 0 && !g._dead && mapState.mobs.indexOf(g) >= 0) return g;
+        var r, host = null, pn = Date.now();
+        if (pn - pickRect.at > 500 || pn < pickRect.at) { pickRect.at = pn; pickRect.m = {}; pickRect.hEl = null; }
+        try {   // 戰場圖層自己的位置也沿用同一份（只在挑目標這一小段蓋掉，挑完就還原）
+          host = (typeof _petLayerHost === 'function') ? _petLayerHost() : null;
+          if (host) {
+            if (pickRect.hEl !== host) { var h0 = host.getBoundingClientRect(); pickRect.hEl = host; pickRect.hr = { left: h0.left, top: h0.top, width: h0.width, height: h0.height }; }
+            host.getBoundingClientRect = function () { return pickRect.hr; };
+          }
+        } catch (e) { host = null; }
+        pickRect.on = true; try { r = oPick.apply(this, arguments); } finally { pickRect.on = false; if (host) { try { delete host.getBoundingClientRect; } catch (e) {} } }
+        if (r) pickMemo.set(pet, { tgt: r, at: t, map: mapState.current }); else pickMemo.delete(pet);
+        return r;
+      };
+      window._petPickTarget.__afkPerf = true;
     }
     var hostSize = new WeakMap();
     var ro = (typeof ResizeObserver === 'function') ? new ResizeObserver(function (ents) { ents.forEach(function (e) { hostSize.delete(e.target); }); }) : null;

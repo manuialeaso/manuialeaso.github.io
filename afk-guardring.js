@@ -461,8 +461,10 @@
   // 持續時間：我們這一份（共通、影子騎士、共鳴、抵抗溢出），跟其他來源一起最多 −70%
   var rawAbn = function (p) { var s = 0; try { (typeof WEIGHT_COUNT_SLOTS !== 'undefined' ? WEIGHT_COUNT_SLOTS : []).forEach(function (k) { var e = p.eq && p.eq[k], dd = e && DB.items[e.id]; if (dd && dd.abnormalResist) s += Number(dd.abnormalResist) || 0; }); } catch (e) {} return s; };
   var overDur = function (p) { var o = Math.max(0, rawAbn(p) - CAPS.abn); return Math.min(CAPS.overMax, Math.floor(o / CAPS.overStep) * CAPS.overGain); };
-  var otherDurMult = function (p) { var m = 1; try { var C = W.__afkCarve; if (C && C.durParts) C.durParts(p).forEach(function (x) { if (x[0] !== '守護者之戒') m *= 1 - x[1]; }); } catch (e) {} return m; };
+  var _inOther = false;
+  var otherDurMult = function (p) { var m = 1; if (_inOther) return m; _inOther = true; try { var C = W.__afkCarve; if (C && C.durParts) C.durParts(p).forEach(function (x) { if (x[0] !== '守護者之戒') m *= 1 - x[1]; }); } catch (e) {} _inOther = false; return m; };
   var durCut = function (p) {
+    if (_inOther) return 0;   // 刻印那邊算「其他來源」時回頭問我們：不算自己，免得互相呼叫到堆疊爆掉
     p = p || P(); var E = cur(); if (!p || !E.on) return 0;
     var mine = (1 - E.dur / 100) * (1 - E.durX / 100) * (1 - E.durR / 100) * (1 - overDur(p) / 100);
     var floor = (1 - CAPS.durMax / 100) / Math.max(0.0001, otherDurMult(p));
