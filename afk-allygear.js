@@ -111,7 +111,9 @@
       return '<button type="button" class="ag-item' + (String(it.uid) === G.sel ? ' sel' : '') + '" data-ag-item="' + esc(it.uid) + '" title="' + esc(itemName(it)) + '"><img src="' + esc(icon(d)) + '" alt="" draggable="false">' + (N(it.en) > 0 ? '<i>+' + enOf(it, d) + '</i>' : c > 1 ? '<i>' + c.toLocaleString() + '</i>' : '') + '<span>' + esc(itemName(it)) + '</span></button>';
     }).join('') + (more > 0 ? '<div class="ag-empty">還有 ' + more.toLocaleString() + ' 件沒有列出，請用搜尋或部位篩選。</div>' : '') : '<div class="ag-empty">' + (inv.length ? '沒有符合條件的裝備。' : '隊長背包沒有這名傭兵可穿戴的裝備。') + '</div>') + '</div>';
     h += '<div class="ag-pv">';
-    if (!selIt) h += '<div class="ag-note">點選裝備，預覽隊員能力的變化。</div>';
+    var offIt = G.slotSel && src.eq && src.eq[G.slotSel];
+    if (offIt) h += '<div class="ag-pv-h">身上：' + esc(itemName(offIt)) + '</div><button type="button" class="btn ag-btn ag-wear" data-ag-off="' + esc(G.slotSel) + '">卸下</button>';
+    if (!selIt) { if (!offIt) h += '<div class="ag-note">點選裝備，預覽隊員能力的變化。</div>'; }
     else {
       h += '<div class="ag-pv-h">候選：' + esc(itemName(selIt)) + '</div>';
       var pv = G.pv;
@@ -123,29 +125,34 @@
       }
       h += '<button type="button" class="btn ag-btn ag-wear" data-ag-wear="1">穿上</button>';
     }
-    h += '</div><div class="ag-hint">雙擊背包裡的裝備穿上；雙擊左邊部位卸下；點左邊部位只顯示那個部位。Enter 也可以穿上選到的裝備。只能在安全區操作。</div></div></div>';
+    h += '</div><div class="ag-hint">點背包裡的裝備再按「穿上」（或雙擊）；點左邊有裝備的部位再按「卸下」（或雙擊）；點左邊部位也會只列出那個部位的裝備。Enter 也可以穿上選到的裝備。只能在安全區操作。</div></div></div>';
     div.innerHTML = h;
     bindGuild(div);
     if (G.focusQ) { var qi = div.querySelector('[data-ag-q]'); if (qi) { qi.focus(); try { qi.setSelectionRange(qi.value.length, qi.value.length); } catch (e) {} } G.focusQ = false; }
   };
   var rerender = function () { var div = document.getElementById('interaction-content'); if (div && G.slot) render(div, G.slot); };
+  var off = function (k) { if (!k) return; G.slotSel = null; try { allyUnequipItem(G.slot, k); } catch (e) {} };
   var wear = function (uid) { if (!uid) return; G.sel = null; G.pv = null; G.pvFor = null; try { allyEquipItem(G.slot, encodeURIComponent(String(uid))); } catch (e) {} };
   var bindGuild = function (div) {
     if (div.__agBound) return; div.__agBound = true;
     div.addEventListener('click', function (e) {
       if (!div.querySelector('.ag-wrap')) return;
-      var t = e.target.closest('[data-ag-back],[data-ag-step],[data-ag-page],[data-ag-item],[data-ag-slot],[data-ag-wear]'); if (!t) return;
+      var t = e.target.closest('[data-ag-back],[data-ag-step],[data-ag-page],[data-ag-item],[data-ag-slot],[data-ag-wear],[data-ag-off]'); if (!t) return;
       if (t.hasAttribute('data-ag-back')) { try { closeAllyEquipmentManager(); } catch (er) {} return; }
       if (t.hasAttribute('data-ag-step')) { var al = (P().allies || []).filter(Boolean), i = al.findIndex(function (a) { return String(a._slot) === G.slot; }), n = al[(i + N(t.getAttribute('data-ag-step')) + al.length) % al.length]; if (n) openAllyEquipmentManager(n._slot); return; }
       if (t.hasAttribute('data-ag-page')) { G.page = N(t.getAttribute('data-ag-page')); rerender(); return; }
       if (t.hasAttribute('data-ag-wear')) { wear(G.sel); return; }
-      if (t.hasAttribute('data-ag-item')) { G.sel = t.getAttribute('data-ag-item'); rerender(); return; }
-      if (t.hasAttribute('data-ag-slot')) { var g = groupOfKey(t.getAttribute('data-ag-slot')); G.group = GROUPS.some(function (x) { return x[0] === g; }) ? g : 'all'; rerender(); }
-    });
-    div.addEventListener('dblclick', function (e) {
-      if (!div.querySelector('.ag-wrap')) return;
-      var it = e.target.closest('[data-ag-item]'); if (it) { wear(it.getAttribute('data-ag-item')); return; }
-      var sl = e.target.closest('.ag-doll [data-ag-slot].is-filled'); if (sl) { try { allyUnequipItem(G.slot, sl.getAttribute('data-ag-slot')); } catch (er) {} }
+      if (t.hasAttribute('data-ag-off')) { off(t.getAttribute('data-ag-off')); return; }
+      // 畫面每點一下都會重畫，瀏覽器的 dblclick 抓不到；自己用兩次點擊的間隔判斷雙擊
+      var key = t.hasAttribute('data-ag-item') ? 'i:' + t.getAttribute('data-ag-item') : 's:' + t.getAttribute('data-ag-slot'), now = Date.now(), dbl = G.lastKey === key && now - G.lastAt < 500;
+      G.lastKey = dbl ? null : key; G.lastAt = now;
+      var stamp = function () { if (G.lastKey === key) G.lastAt = Date.now(); };   // 從重畫完開始算，預覽計算慢時不會漏掉第二下
+      if (t.hasAttribute('data-ag-item')) { if (dbl) { wear(t.getAttribute('data-ag-item')); return; } G.sel = t.getAttribute('data-ag-item'); G.slotSel = null; rerender(); stamp(); return; }
+      if (t.hasAttribute('data-ag-slot')) {
+        var k = t.getAttribute('data-ag-slot'), filled = t.classList.contains('is-filled') && t.closest('.ag-doll');
+        if (dbl && filled) { off(k); return; }
+        var g = groupOfKey(k); G.group = GROUPS.some(function (x) { return x[0] === g; }) ? g : 'all'; G.slotSel = filled ? k : null; rerender(); stamp();
+      }
     });
     div.addEventListener('change', function (e) {
       if (!div.querySelector('.ag-wrap')) return;
