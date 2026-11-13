@@ -87,7 +87,7 @@
 
   // ── 套裝（+3 抽） ──
   var SETS = [
-    { k: 'rift', n: '裂隙行者', piece: ['對裂縫敵人傷害 +2%', ['out', 0.02, 'rift']], core: { n: '裂隙步', cd: 30, d: '每 30 秒侵蝕的 AC、魔防、抗性扣減 −20' }, six: ['侵蝕扣血每秒少 0.3%', ['erode', 0.3]], nine: ['取回力量 +5%', ['recover', 5]] },
+    { k: 'rift', n: '裂隙行者', piece: ['對裂縫敵人傷害 +2%', ['out', 0.02, 'rift']], core: { n: '裂隙步', cd: 30, d: '每 30 秒侵蝕的 AC、魔防、抗性扣減 −150' }, six: ['侵蝕扣血每秒少 0.3%', ['erode', 0.3]], nine: ['取回力量 +5%', ['recover', 5]] },
     { k: 'eclipse', n: '星蝕', piece: ['爆擊傷害 +4%', ['stat', 'critDmg', 4]], core: { n: '星蝕', cd: 30, d: '每 30 秒下一次一般攻擊必定 ×2' }, six: ['爆擊率 +2%、爆擊傷害 +20%', ['stat', 'crit', 2], ['stat', 'critDmg', 20]], nine: ['爆擊打頭目時再 +15%', ['out', 0.15, 'bossCrit']] },
     { k: 'tide', n: '潮汐記憶', piece: ['受到的治療 +2%', ['healIn', 0.02]], core: { n: '潮汐', cd: 20, d: '每 20 秒回復 6% HP' }, six: ['每 5 秒回復 2% HP', ['regen', 0.02, 5]], nine: ['全隊受到的傷害 −8%', ['partyTaken', 0.08]] },
     { k: 'seam', n: '縫天', piece: ['命中時追加 20 真實傷害', ['flat', 20]], core: { n: '縫合', cd: 25, d: '每 25 秒對目標造成等於你最大 HP 100% 的真實傷害' }, six: ['每第 4 次攻擊傷害 ×2', ['everyN', 4, 2]], nine: ['受到的傷害 −8%', ['taken', 0.08, '']] },
@@ -410,7 +410,7 @@
     if (t < (B.cd[key] || 0)) return;
     var ok = true;
     switch (c.n) {
-      case '裂隙步': var r = drec(); if (r && r.ero > 0) { r.ero = Math.max(0, r.ero - 20); try { calcStats(); } catch (e) {} } else ok = false; break;
+      case '裂隙步': var r = drec(); if (r && r.ero > 0) { r.ero = Math.max(0, r.ero - 150); /* Ping 11-13 14:41：−20 → −150（侵蝕改每秒 5 點後） */ try { calcStats(); } catch (e) {} } else ok = false; break;
       case '星蝕': if (tg) B.next.push(2); else ok = false; break;
       case '潮汐': if (p.hp < p.mhp) heal(p, 0.06); else ok = false; break;
       case '縫合': if (tg) hurtMob(tg, p.mhp); else ok = false; break;
