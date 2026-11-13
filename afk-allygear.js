@@ -227,11 +227,13 @@
   };
   var openPI = function (slot) {
     PI.slot = String(slot); PI.sig = ''; PI.page = 0; var el = box(); el.classList.add('open');
-    try { var sb = document.getElementById('squad-body'), r = sb && sb.getBoundingClientRect(); if (r && r.width && innerWidth > 760) { el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, r.right + 8)) + 'px'; el.style.top = Math.max(8, Math.min(r.top, innerHeight - 200)) + 'px'; } else { el.style.left = ''; el.style.top = ''; } } catch (e) {}
+    try { var sb = document.getElementById('squad-body'), r = sb && sb.getBoundingClientRect(); if (r && r.width && innerWidth > 760) { el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, r.right + 8)) + 'px'; el.style.top = Math.max(8, Math.min(r.top, innerHeight - 700)) + 'px'; } else { el.style.left = ''; el.style.top = ''; } } catch (e) {}
+    try { el.style.maxHeight = Math.max(240, innerHeight - el.getBoundingClientRect().top - 8) + 'px'; } catch (e) {}
     paintPI();
     if (!PI.timer) PI.timer = setInterval(function () { if (document.hidden) return; var el = document.getElementById('afk-pi'); if (!el || !el.classList.contains('open')) return; paintPI(); }, 1000);
   };
   var closePI = function () { var el = document.getElementById('afk-pi'); if (el) el.classList.remove('open'); PI.slot = null; if (PI.timer) { clearInterval(PI.timer); PI.timer = null; } };
+  W.addEventListener('resize', function () { var el = document.getElementById('afk-pi'); if (!el || !el.classList.contains('open')) return; try { var t = el.getBoundingClientRect().top; if (t > innerHeight - 248) { el.style.top = Math.max(8, innerHeight - 700) + 'px'; t = el.getBoundingClientRect().top; } el.style.maxHeight = Math.max(240, innerHeight - t - 8) + 'px'; } catch (e) {} });
   document.addEventListener('click', function (e) {
     var card = e.target.closest && e.target.closest('#squad-tab-team .ally-compact-card'); if (!card) return;
     if (e.target.closest('button,select,input,a')) return;
