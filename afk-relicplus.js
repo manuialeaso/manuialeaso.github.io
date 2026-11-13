@@ -596,9 +596,9 @@
   }
   function ascMissing(c) {
     var miss = [];
-    if (c.dia && diamonds() < c.dia) miss.push('龍之鑽石 ' + c.dia.toLocaleString());
+    if (c.dia && diamonds() < c.dia) miss.push('龍之鑽石 ' + diamonds().toLocaleString() + '/' + c.dia.toLocaleString());
     Object.keys(c.items).forEach(function (id) { var h = invCnt(id); if (h < c.items[id]) miss.push(((DB.items[id] || {}).n || id) + ' ' + h + '/' + c.items[id]); });
-    c.equip.forEach(function (nm) { if (nameCnt(nm) < 1) miss.push(nm); });
+    c.equip.forEach(function (nm) { if (nameCnt(nm) < 1) miss.push(nm + '（背包沒有）'); });
     return miss;
   }
   var dustUse = 0, stoneUse = false;
@@ -1096,6 +1096,7 @@
       else if (A > 5 && g.evo != null) {
         var lk = fx3Lock(g), f3m = TS_MATS.filter(function (id) { return invCnt(id) < 1; }).length || invCnt('afk_dark_stardust') < FX3_COST.stardust;
         ready = !lk && !f3m; label = lk ? '至高的支配' : (g.fx3 ? '重抽第三詞綴' : '抽第三詞綴');
+        if (!lk && f3m) { var f3l = TS_MATS.filter(function (id) { return invCnt(id) < 1; }).map(function (id) { return (DB.items[id] || {}).n || id; }); if (invCnt('afk_dark_stardust') < FX3_COST.stardust) f3l.push('至暗星塵 ' + invCnt('afk_dark_stardust') + '/' + FX3_COST.stardust); label += '｜缺 ' + f3l.join('、'); }
         btn = lk ? '<button class="rp-go" disabled>至高的支配<br><span style="font-weight:600;font-size:13px">' + esc(EVO[g.evo] || '第三詞綴') + '</span></button>'
           : '<button class="rp-go rp-fx3" type="button" data-k="' + esc(g.key) + '"' + (f3m ? ' disabled' : '') + '>' + (g.fx3 ? '重抽' : '抽取') + '<br><span style="font-weight:600;font-size:13px">第三詞綴</span></button>';
         ascTxt = '<div class="rp-sub" style="color:#fde047">至高的支配' + esc(evoTag(g.evo)) + (g.fx3 ? '；第三詞綴：' + esc((DB.items[g.fx3] || {}).n || g.fx3) : '') + '</div>'
@@ -1103,7 +1104,7 @@
       }
       else if (A > 5) {
         var evMiss = TS_MATS.filter(function (id) { return invCnt(id) < 1; });
-        ready = !evMiss.length; label = '進化：至高的支配';
+        ready = !evMiss.length; label = '進化：至高的支配' + (evMiss.length ? '｜缺 ' + evMiss.map(function (id) { return (DB.items[id] || {}).n || id; }).join('、') : '');
         btn = '<button class="rp-go rp-evo" type="button" data-k="' + esc(g.key) + '"' + (evMiss.length ? ' disabled' : '') + '>進化<br><span style="font-weight:600;font-size:13px">至高的支配 100%</span></button>';
         ascTxt = '<div class="rp-sub" style="color:#fde047">進化：隨機獲得一種至高的支配特效（' + (bd.type === 'wpn' ? '武器沒有八種特效，改成進化時直接附上「第三詞綴」：隨機繼承另一件遺物的能力，之後可在這裡重洗' : '克特／死亡騎士／惡魔／四大軍王／真．冥皇套裝、全能力 +30、面板能力 +50、四屬性抗性 +100，不跟你已有的重複') + '）' + (bd.set === 'priest' ? '；遺物・司祭苦行套裝直接擁有全部八種' : '') + '</div>'
           + '<div class="rp-sub">需要：' + TS_MATS.map(function (id) { var h = invCnt(id); return '<span class="' + (h ? '' : 'rp-miss') + '">' + esc((DB.items[id] || {}).n || id) + ' ' + h + '/1</span>'; }).join('、') + '</div>';
@@ -1112,7 +1113,7 @@
         var ac = ascCost(A), rate = Math.min(1, ac.rate + 0.1 * dustUse);
         if (stoneUse && A >= 1 && stoneOf(g.base)) { ac = { dia: 0, items: {}, equip: [], rate: 1 }; ac.items[stoneOf(g.base)] = 1; rate = 1; }
         var miss = ascMissing(ac);
-        ready = !miss.length; label = '昇華支配 +' + A;
+        ready = !miss.length; label = '昇華支配 +' + A + (miss.length ? '｜缺 ' + miss.join('、') : '');
         btn = '<button class="rp-go rp-asc" type="button" data-k="' + esc(g.key) + '"' + (miss.length ? ' disabled' : '') + '>昇華支配 +' + A + '<br><span style="font-weight:600;font-size:13px">成功率 ' + Math.round(rate * 100) + '%</span></button>';
         var need = [];
         // 11-14：龍鑽也標出持有量；裝備要放在背包、沒上鎖才算（穿在身上的不算），缺的標紅並寫出來
@@ -1189,7 +1190,7 @@
       var f = info(g);
       return '<div class="ax-eq' + (g.key === ui.sel ? ' on' : '') + '" data-rppick="' + esc(g.key) + '">' + (K ? K.icoTag(gImg(f.bd), '', false) : '')
         + '<div style="min-width:0"><div class="rp-nm">' + gName(g, f.bd) + ' <span style="color:#94a3b8;font-weight:600">× ' + g.cnt + '</span>' + (g.eqSlots && g.eqSlots.length ? ' <span class="rp-eqtag">裝備中</span>' : '') + '</div>'
-        + '<div class="ax-where">' + (f.label ? '下一步：<span class="' + (f.ready ? 'ok' : 'no') + '">' + esc(f.label) + (f.label === '已達終階' ? '' : f.ready ? '（可以做）' : '（材料不足）') + '</span>' : '') + (g.fx && DB.items[g.fx] ? '　・第二詞綴：' + esc(DB.items[g.fx].n) : '') + (exAuto[g.base] ? '　・不自動合成' : '') + '</div></div></div>';
+        + '<div class="ax-where">' + (f.label ? '下一步：<span class="' + (f.ready ? 'ok' : 'no') + '">' + esc(f.label) + (f.label === '已達終階' ? '' : f.ready ? '（可以做）' : (/｜/.test(f.label) ? '' : '（材料不足）')) + '</span>' : '') + (g.fx && DB.items[g.fx] ? '　・第二詞綴：' + esc(DB.items[g.fx].n) : '') + (exAuto[g.base] ? '　・不自動合成' : '') + '</div></div></div>';
     }).join('') + (shown.length > lim ? '<div class="ax-eq ax-where" data-rpmore="1" style="justify-content:center;color:#fde68a">還有 ' + (shown.length - lim).toLocaleString() + ' 組，點這裡多顯示 ' + PAGE + ' 組，或用搜尋縮小範圍</div>' : '') : '<div class="ax-eq ax-where">沒有符合的遺物。</div>') + '</div>';
     var g = gs.filter(function (x) { return x.key === ui.sel; })[0];
     if (g) {
