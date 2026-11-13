@@ -10,7 +10,7 @@
  *   ‧掛點：afk-procfx 的 dealt／taken／tick／kill／death；__afkRelicTier（buildDef 時寫入階段）；
  *         金幣 dollFieldVal('goldBonus')、經驗 __afkTtmiExpMult。
  *   ‧內部：觸發型（命中時 c%）同一個人同一種效果 0.5 秒內最多一次。
- *   ‧圖示：GPT 圖到之前先借同部位遺物的圖。經典模式沒有效果。外掛開關 bossrelic。
+ *   ‧圖示：assets/icons/relic-boss/<key>.webp（GPT 圖，11-13 交件）。經典模式沒有效果。外掛開關 bossrelic。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -246,7 +246,7 @@
     Object.keys(B.s).forEach(function (f) { d[f] = B.s[f]; });
     row.slice(4).forEach(function (e) { if (e[0] === 'res') d[e[1].k] = (d[e[1].k] || 0) + e[1].n; if (e[0] === 'res4') ['resFire', 'resWater', 'resWind', 'resEarth'].forEach(function (f) { d[f] = (d[f] || 0) + e[1].n; }); });
     d.d = '【遺物】' + row[3] + ' 〔王者遺物・' + STAGE_N[0] + '〕' + fxText(row, 0) + '。';
-    try { var src = DB.items[B.img]; if (src && src.img) d.img = src.img; } catch (e) {}
+    d.img = 'assets/icons/relic-boss/' + key + '.webp';   // GPT 圖（Ping 11-13 23:46 交件，79 張）
     if (!DB.items[key]) DB.items[key] = d;
     try { if (B.tags && typeof WEAPON_TAGS !== 'undefined' && !WEAPON_TAGS[key]) WEAPON_TAGS[key] = B.tags.slice(); } catch (e) {}
     BY[key] = row; KEYS.push(key);

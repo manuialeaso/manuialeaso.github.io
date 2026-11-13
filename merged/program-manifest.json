@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-396003ca4f05",
+  "build": "merge-0.4-52555ad7f192",
   "files": [
     {
       "url": "afk-abnforce.js?v=75f657efeabc",
@@ -208,8 +208,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-bossrelic.js?v=6da619f014a7",
-      "sha256": "6da619f014a739734b411d3ded82a3a7bc6d377ff12821e947fee788ee5deddc",
+      "url": "afk-bossrelic.js?v=691baf3695da",
+      "sha256": "691baf3695dac8a64e524e4a959eb5fcfbb0ad2e0fb92a66e0c22bb69acca080",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1649,7 +1649,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "4903e3eb9b430661ba19e51bc2b822c240e4efa77ee37eea76ba0d612572d7ae",
+      "sha256": "e5b9348dbba7c0ab0fa49b4d0634fce44fb729cbd3c2bf602800b56c52721d2c",
       "type": "text/html; charset=utf-8"
     },
     {
