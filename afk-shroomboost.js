@@ -2,20 +2,20 @@
  * afk-shroomboost.js — 蘑菇秘境的加強（Ping 11-13 21:39／21:45）
  *
  *   ‧加強：花 50,000 龍鑽，今天蘑菇秘境的經驗 ×5。
- *   ‧史詩加強：花 50,000 血龍鑽，今天蘑菇秘境的經驗 ×10。
- *   ‧兩個可以一起買，相乘（×50）。每個角色各自算，一天各能買一次，台灣時間 00:00 重置（跟秘境的 30 分鐘同一天）。
+ *   ‧史詩加強：花 50,000 血龍鑽，今天蘑菇秘境的經驗 ×3（Ping 11-14 05:08 由 ×10 改）。
+ *   ‧兩個可以一起買，相乘（×15）。每個角色各自算，一天各能買一次，台灣時間 00:00 重置（跟秘境的 30 分鐘同一天）。
  *   ‧做法：merged/activities 的秘境蘑菇 exp 是 getter，這裡再包一層乘上倍率（出生時決定）。
  *   ‧畫面：成長面板的蘑菇秘境頁，標題下面多兩顆按鈕（按兩次確認）。
  * ========================================================================== */
 (function () {
   'use strict';
   var W = window, T = W.AFK_TOGGLES;
-  if (T && T.register) T.register({ id: 'shroomboost', name: '蘑菇秘境加強', group: '遊戲內容', desc: '蘑菇秘境：花 5 萬龍鑽經驗 ×5、花 5 萬血龍鑽經驗 ×10，當天有效，可以疊加' });
+  if (T && T.register) T.register({ id: 'shroomboost', name: '蘑菇秘境加強', group: '遊戲內容', desc: '蘑菇秘境：花 5 萬龍鑽經驗 ×5、花 5 萬血龍鑽經驗 ×3，當天有效，可以疊加' });
   if (T && !T.enabled('shroomboost')) return;
   var MOB = 'growth_mushroom_1000', COST = 50000;
   var KINDS = {
     dia: { n: '加強', cur: '龍鑽', mult: 5 },
-    blood: { n: '史詩加強', cur: '血龍鑽', mult: 10 }
+    blood: { n: '史詩加強', cur: '血龍鑽', mult: 3 }
   };
   var P = function () { return (typeof player !== 'undefined' && player && player.cls) ? player : null; };
   var N = function (x) { return Number(x) || 0; };
