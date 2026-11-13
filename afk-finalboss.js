@@ -181,6 +181,8 @@
     if (novice()) sys('<span class="font-bold" style="color:#fde68a">✨ 由於 玩家巴黎 獻上祝福，女神血量微微增加。</span>');
     if (novice()) sys('<span class="text-cyan-200">初次輪迴：席琳還沒認真看待你——她的 HP 只有平常的一半左右，造成的傷害也比較低（隊伍人數越少，她的傷害越低）。</span>');
     if (S()._afkFinalScale < 1) sys('<span class="text-cyan-200">隊伍 ' + S()._afkFinalParty + ' 人：席琳的 HP 調整為 ' + m.hp.toLocaleString() + '（' + S()._afkFinalParty + '／' + FB.base + '），冥界的使徒同比例。</span>');
+    // Ping 11-13 16:27：穿著異常檢查封印的 S 級道具時，女神多喊一句（只是台詞，戰鬥照常）
+    try { if (window.__afkAcSealedOn && window.__afkAcSealedOn(player) > 0) setTimeout(function () { sys('<span class="font-bold" style="color:#e879f9;">' + BOSS_NAME + '：</span><span class="afk-lore">「非正規之人啊……」</span>'); }, 0); } catch (e) {}
     sys('<span class="font-bold" style="color:#7dd3fc;">死亡之海的水面倒映著無數亡者的臉。沉沒神殿的最深處，' + BOSS_NAME + '緩緩睜開了眼睛。</span><span class="afk-lore">「孩子……你終於走到夢的盡頭了。……你也是被送來的嗎？」</span>');
     if (typeof vfxBossEntrance === 'function') { try { vfxBossEntrance(m); } catch (e) {} }
     if (!S().ff) { try { renderMobs(); } catch (e) {} }

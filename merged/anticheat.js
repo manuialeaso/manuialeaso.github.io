@@ -196,6 +196,7 @@
   };
   hookSeal(); W.addEventListener('load', hookSeal);
   (W.__afkTakenMods = W.__afkTakenMods || []).push(function (ent) { var v = ent && ent.cls ? sealOf(ent) : null; return v ? 1 + v.inn : 1; });
+  W.__afkAcSealedOn = function (actor) { var v = sealOf(actor); return v ? v.n : 0; };   // 穿著幾件封印中的道具（女神台詞用）
   W.__afkAcHealMult = function (owner, source) { var v = sealOf(owner); return v && source && v.keys[source] ? 0.5 : 1; };
 
   // ── 主控台呼叫判定 ──
