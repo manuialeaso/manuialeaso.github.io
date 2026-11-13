@@ -88,7 +88,12 @@
     };
   };
   [['getStrMeleeDmg', 'str'], ['getStrMeleeHit', 'str'], ['getStrMeleeCrit', 'str'], ['getDexRangedDmg', 'dex'], ['getDexRangedHit', 'dex'], ['getDexRangedCrit', 'dex'],
-   ['getIntMagicDmg', 'int'], ['getIntMagicHit', 'int'], ['getIntMagicCrit', 'int'], ['getIntExtraMp', 'int']].forEach(function (a) { useRaw(a[0], a[1]); });
+   ['getIntMagicDmg', 'int'], ['getIntMagicHit', 'int'], ['getIntMagicCrit', 'int'], ['getIntExtraMp', 'int'],
+   // Ping 11-13 21:45：六大屬性超過 200 的部分都繼續算——敏捷的 AC、智力的 MP 消耗減免、體質的 HP 恢復上限與藥水、精神的 MP 恢復、MP 成長、藍水與回魔間隔
+   ['getDexAC', 'dex'], ['getIntMpReduce', 'int'], ['getConHpRegenMax', 'con'], ['getConPotionPct', 'con'],
+   ['getWisMpRegen', 'wis'], ['getWisBlueBonus', 'wis'], ['getWisGrowth', 'wis'], ['wisMpRegenIntervalTicks', 'wis']].forEach(function (a) { useRaw(a[0], a[1]); });
+  // 讀屬性（含超過上限的部分）：你自己用面板總值，其他人照原本的值（核心召喚物的魅力加成用這個）
+  window.__afkStatOf = function (a, k) { try { if (a && a === player && typeof window.__afkStatTotal === 'function') return window.__afkStatTotal(k); } catch (e) {} return (a && a.d && Number(a.d[k])) || 0; };
 
   // 能力面板：屬性超過上限時顯示「200(+XXX)」（超出的部分仍算進攻擊與魔法公式）
   if (typeof window._updateUIImpl === 'function') {
@@ -330,6 +335,13 @@
       new MutationObserver(tag).observe(host, { childList: true }); tag(); return true;
     };
     try { if (!hook() && document.addEventListener) document.addEventListener('DOMContentLoaded', hook); } catch (e) {}
+  })();
+  // 隱藏規則（Ping 11-13 21:46）：主屬性魅力（初始＋配點）滿 200，商店買東西 1 折；裝備、道具、萬能藥堆出來的不算。不寫進任何玩家看得到的文字。
+  var chaBase = function () { try { var p = player; if (!p || p.classicMode) return 0; return (Number(p.base && p.base.cha) || 0) + (Number(p.alloc && p.alloc.cha) || 0); } catch (e) { return 0; } };
+  (function () {
+    var o = window.shopPrice; if (typeof o !== 'function' || o.__afkCha) return;
+    var f = function (base) { var v = o.apply(this, arguments); try { if (chaBase() >= 200 && v > 0) return Math.max(1, Math.floor(v * 0.1)); } catch (e) {} return v; };
+    f.__afkCha = true; window.shopPrice = f; try { (0, eval)('shopPrice = window.shopPrice'); } catch (e) {}
   })();
   window.__afkRebirth = { reborn: reborn, potionMultiplier: potionMultiplier, LV_PTS: LV_PTS, refundPts: refundPts, fixPts: fixPts, fixNeeded: fixNeeded };
   console.log('[AFK-rebirth] 已啟用：輪迴轉生');

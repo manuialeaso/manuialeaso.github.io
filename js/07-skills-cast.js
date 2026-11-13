@@ -29,7 +29,7 @@ function summonDamageMult(sm, owner, magicBased, teamMagicDmg) {
     return mult;
 }
 function summonHitValue(sm, owner, target, gearHit) {
-    let cha = (owner.d && owner.d.cha) || 0;
+    let cha = (typeof window.__afkStatOf === 'function') ? window.__afkStatOf(owner, 'cha') : ((owner.d && owner.d.cha) || 0);   /* 2026-11-13：超過 200 也算 */
     let growth = Math.floor((owner.lv || 1) * 0.75 + cha * 0.35);
     let masteryHit = isMageSummonMastered(sm, owner) ? 5 : 0;
     let raw = (owner.lv || 1) + (sm.hitLvOff || 0) + growth + masteryHit - target.lv + mobEffAC(target)
@@ -64,7 +64,7 @@ function summonAttack(sm, owner) {
         return;
     }
     let t = getTarget(); if(!t) return;
-    let cha = (owner.d && owner.d.cha) || 0;
+    let cha = (typeof window.__afkStatOf === 'function') ? window.__afkStatOf(owner, 'cha') : ((owner.d && owner.d.cha) || 0);   /* 2026-11-13：超過 200 也算 */
     let _sgb = (typeof summonGearBonus === 'function') ? summonGearBonus(owner) : { dmg: 0, hit: 0 };   // 🏺 喚獸師的訓練鞭：召喚物額外傷害/命中（掃 owner 裝備欄）
     let _teamAtk = (typeof teamIlluAura === 'function') ? teamIlluAura(sm, true) : null;   // 👑 灼熱武器／幻覺攻擊光環：舊式迷魅與抽象召喚也取得全隊一般攻擊加成
     let idx = mapState.mobs.findIndex(m => m && m.uid === t.uid);
@@ -129,7 +129,7 @@ function summonTick(sm, clearFn, owner) {
             sm.proc.cdCur = procCd;
             let t = getTarget();
             if(t && Math.random() < sm.proc.p) {
-                let cha = (owner.d && owner.d.cha) || 0;
+                let cha = (typeof window.__afkStatOf === 'function') ? window.__afkStatOf(owner, 'cha') : ((owner.d && owner.d.cha) || 0);   /* 2026-11-13：超過 200 也算 */
                 let procFlat = cha + Math.floor((owner.lv || 1) / 2);
                 let pd;
                 if(sm.proc.ele && sm.proc.ele !== 'none') {
