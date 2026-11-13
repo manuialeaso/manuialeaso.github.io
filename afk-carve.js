@@ -330,7 +330,7 @@
     try { var GR = W.__afkGuardRing; if (GR && GR.durCut) { var gc = GR.durCut(p); if (gc > 0) out.push(['守護者之戒', gc]); } } catch (e) {}   // afk-guardring 自己縮短（跟其他來源一起最多 −70%）
     return out;
   };
-  var durTotal = function (p) { var m = 1; durParts(p).forEach(function (x) { m *= 1 - x[1]; }); return 1 - m; };
+  var durTotal = function (p) { var m = 1; durParts(p).forEach(function (x) { m *= 1 - x[1]; }); return (1 - m) * (typeof W.__afkDimPanelF === 'function' ? W.__afkDimPanelF(p) : 1); };   // 次元裂縫的面板壓制也打折
 
   // ── 面板 ──
   var paint = function () {

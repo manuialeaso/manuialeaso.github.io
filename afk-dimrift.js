@@ -198,7 +198,9 @@
   }
 
   // ── 面板 ──
-  var HALF = ['meleeDmg', 'meleeHit', 'meleeCritDmg', 'rangedDmg', 'rangedHit', 'rangedCritDmg', 'magicDmg', 'magicHit', 'magicCritDmg', 'extraDmg', 'extraHit', 'dr', 'mr', 'resNone', 'resFire', 'resWater', 'resWind', 'resEarth'];
+  // 面板壓制：能力分頁上的數字全部打折（Ping 11-13 21:36：爆擊率、額外魔法點數、HP／MP 恢復、MP 消耗減免、迴避、溢出前的原始抗性也算）
+  var HALF = ['meleeDmg', 'meleeHit', 'meleeCrit', 'meleeCritDmg', 'rangedDmg', 'rangedHit', 'rangedCrit', 'rangedCritDmg', 'magicDmg', 'magicHit', 'magicCrit', 'magicCritDmg', 'extraDmg', 'extraHit', 'extraMp', 'mpReduce',
+    'hpR', 'hpRegenMax', 'mpR', 'er', 'dr', 'mr', 'resNone', 'resFire', 'resWater', 'resWind', 'resEarth', '_raw_resNone', '_raw_resFire', '_raw_resWater', '_raw_resWind', '_raw_resEarth'];
   var RES4 = ['resFire', 'resWater', 'resWind', 'resEarth'];
   if (W.__afkMaxAdd && W.__afkMaxAdd.add) W.__afkMaxAdd.add(function (p) {
     if (!on() || p !== P()) return;
@@ -237,6 +239,22 @@
       return r;
     };
   }
+  // 面板壓制（不在 p.d 上的數字）：攻擊速度、移動速度、MP 回復間隔、藥水恢復量；異常狀態抵抗、持續時間由 afk-abnforce／afk-carve 讀 __afkDimPanelF
+  W.__afkDimPanelF = function (x) { var p = P(); return (on() && p && (!x || x === p)) ? panelF(p) : 1; };
+  var wrapG = function (fn, make) { var o = W[fn]; if (typeof o !== 'function' || o.__afkDimPanel) return; var f = make(o); f.__afkDimPanel = true; W[fn] = f; try { (0, eval)(fn + ' = window.' + fn); } catch (e) {} };
+  var hookPanel = function () {
+    wrapG('playerAttackIntervalTicks', function (o) { return function () { var v = o.apply(this, arguments); var f = W.__afkDimPanelF(); return f < 1 && v > 0 ? Math.ceil(v / f) : v; }; });
+    wrapG('playerEffectiveMoveSpeedPct', function (o) { return function () { var v = o.apply(this, arguments); var f = W.__afkDimPanelF(); return f < 1 ? Math.round(v * f) : v; }; });
+    wrapG('wisMpRegenIntervalTicks', function (o) { return function () { var v = o.apply(this, arguments); var f = W.__afkDimPanelF(); return f < 1 && v > 0 ? Math.ceil(v / f) : v; }; });
+    wrapG('getConPotionPct', function (o) { return function () { var v = o.apply(this, arguments); var f = W.__afkDimPanelF(); return f < 1 && v > 0 ? v * f : v; }; });
+    wrapG('playerEquipPotionBonusPct', function (o) { return function () { var v = o.apply(this, arguments); var f = W.__afkDimPanelF(); return f < 1 && v > 0 ? v * f : v; }; });
+  };
+  hookPanel(); W.addEventListener('load', hookPanel);
+  // 迴避率的上限（80%）也跟著面板打折：原始迴避再高，裂縫裡最多 80% × 面板比例
+  (function () {
+    var base = W.__afkEvadeCap;
+    try { Object.defineProperty(W, '__afkEvadeCap', { configurable: true, get: function () { if (base == null) return base; var f = 1; try { f = W.__afkDimPanelF(); } catch (e) {} return f < 1 ? Math.round(base * f) : base; }, set: function (v) { base = v; } }); } catch (e) {}
+  })();
   // 負重：上限 −5,000，每取回 5% 再 −500（在核心算負重級距之前扣掉）
   var RC = W.AFK_RELIC_COMPANIONS;
   if (RC && typeof RC.equipmentCapacity === 'function') {

@@ -99,7 +99,9 @@
   var abnPct = function (p) {
     var pct = 0;
     try { (typeof WEIGHT_COUNT_SLOTS !== 'undefined' ? WEIGHT_COUNT_SLOTS : []).forEach(function (k) { var e = p.eq && p.eq[k]; var dd = e && DB.items[e.id]; if (dd && dd.abnormalResist) pct += Number(dd.abnormalResist) || 0; }); } catch (e) {}
-    return Math.min(100, pct);
+    pct = Math.min(100, pct);
+    try { if (typeof W.__afkDimPanelF === 'function') pct = Math.floor(pct * W.__afkDimPanelF(p)); } catch (e) {}   // 次元裂縫的面板壓制
+    return pct;
   };
   var paintAbn = function () {
     var p = P(), erEl = document.getElementById('dt-er'); if (!p || !erEl) return;

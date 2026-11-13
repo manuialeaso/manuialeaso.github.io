@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "build": "merge-0.4-52a97f0664a4",
+  "build": "merge-0.4-2c019892220d",
   "files": [
     {
-      "url": "afk-abnforce.js?v=78f4f979cb9e",
-      "sha256": "78f4f979cb9eeb5a2d3f3cceef849da2896d0ba58ebd7d4dfaf2615dedec3257",
+      "url": "afk-abnforce.js?v=75f657efeabc",
+      "sha256": "75f657efeabc4d7dac6c9b7a8e78269d13f39b0b5a44187be72a23b78883280d",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -303,8 +303,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-carve.js?v=a3adbab07f97",
-      "sha256": "a3adbab07f97087560f933daab738e2129f966b52ebafa05aac22653e9ba0da1",
+      "url": "afk-carve.js?v=aa1992d89e9f",
+      "sha256": "aa1992d89e9f7fcd1b9b491cfc8b6053b66e891aafc34bf4f7a2286eca6b4ae7",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -413,8 +413,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-dimrift.js?v=5027bc5f1940",
-      "sha256": "5027bc5f1940f4d559598083abea9c85284fe74834cd0f46b36e695e1931820f",
+      "url": "afk-dimrift.js?v=98b7393edc6b",
+      "sha256": "98b7393edc6b99ce43f41ff04c6172308262aa1c04d94b5ee5d45e263656acc9",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -998,8 +998,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-overflow.js?v=f616e14df945",
-      "sha256": "f616e14df94508c5e02279044391bf3a9c8178c4bfd52f1fb360439f9ee892bb",
+      "url": "afk-overflow.js?v=898d3f2a3b80",
+      "sha256": "898d3f2a3b803b35251061312c69016ca4da43f0500912055606cf591322ff5c",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1578,8 +1578,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-wiki.js?v=b47351a56a5d",
-      "sha256": "b47351a56a5d50f6d25b0397271e0ad0a20e73ddf6fe973c81f0f13d8e257f37",
+      "url": "afk-wiki.js?v=94d38641df23",
+      "sha256": "94d38641df23999825226eeeef013b8526704ba0d7707dcbba942738c122a3be",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1644,7 +1644,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "373f1974ee31398df8c59f7442527c40ba988480723b84934258be2c33054d30",
+      "sha256": "c15fa706a39692e0e1d284ae0967376cd36910baa83453f1d34b1c818ed8c942",
       "type": "text/html; charset=utf-8"
     },
     {

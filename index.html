@@ -705,7 +705,7 @@
     <script src="afk-dex.js?v=66a3b20efa05"></script>
     <!-- afk-illufix：幻術士修補（疼痛的歡愉 −50%、反彈、蝕刻印記；立方：燃燒 每 2 秒 5～50 火傷、灼熱印記、吸血回魔；立方：和諧回 MP 5 → 15，原 afk-classtweak）；排在 afk-wiki 之前（小百科說明跟著改）；需核心補丁 69 -->
     <script src="afk-illufix.js?v=d4806c4f9e9b"></script>
-    <script src="afk-wiki.js?v=b47351a56a5d"></script>
+    <script src="afk-wiki.js?v=94d38641df23"></script>
     <!-- 設定選單 / 存檔 / 診斷 / 離線紀錄 -->
     <script src="afk-storage.js?v=a2831ae70fbf"></script>
     <!-- 整包備份／還原（本機檔案）：入口掛在 afk-storage 的設定選單裡，必須排在它之後 -->
@@ -1023,7 +1023,7 @@
     <!-- afk-caps：轉生雙持的副手武器固定加成計入能力；爆擊率上限 80%（包 recomputeStats 最外層，必須最後載入）；迴避上限見核心補丁 patchEvadeCap -->
     <script src="afk-caps.js?v=8fab74fdc330"></script>
     <!-- afk-overflow：命中／迴避溢出（命中超過上限每 50 點多 5 點真實傷害、迴避超過 200 每 50 點最終減傷 +5）；包 AFK_CARD_COMBAT.damage／finalDR 最外層，排在 afk-caps 之後 -->
-    <script src="afk-overflow.js?v=f616e14df945"></script>
+    <script src="afk-overflow.js?v=898d3f2a3b80"></script>
     <!-- afk-mech1031：戰鬥機制調整（深蝕、戰士雙鈍器暈眩 ×1.5、妖精拿弓幻影、王暈眩破綻）；開關併入夢域鏡模式；傷害倍率排在 afk-caps 之外 -->
     <script src="afk-mech1031.js?v=ee9accc2f836"></script>
     <!-- afk-fix1031：實測回報修正（equipItem 容錯、抵達地圖提示、+N 遺物登錄收集冊）；要在其他包 equipItem 的外掛之後（最外層） -->
@@ -1129,7 +1129,7 @@
     <!-- afk-starweaver：稱號「織星者」（七城、S 級、上位者、村長、密奧、織羽手環、隱藏稱號、轉生、聖甲蟲、卡冊、星途遠征、6 件至高的支配全部達成）；只在檢查時讀其他系統，放最後 -->
     <script src="afk-starweaver.js?v=1036457f989e"></script>
     <!-- afk-carve：歐瑞村莊刻印師邪迪克爾——武器、盔甲、頭盔、手套、長靴、斗篷各 1 孔的刻印（7 種 Lv1～5）與尤／鯤／彌之印記、3／6 格套裝；要在 afk-procfx、afk-overflow、afk-balance1101、afk-hidden、afk-matwh、afk-expedition、afk-sherine-dream 之後 -->
-    <script src="afk-carve.js?v=a3adbab07f97"></script>
+    <script src="afk-carve.js?v=aa1992d89e9f"></script>
     <!-- afk-guardring：守護者之戒（五騎士的劇情、副本、上半部／完整 ★1～★3、主誓約、騎士之印、庇護者之戒、滿月；裝備視窗第二頁密奧上面那格；轉生後、經典模式沒有）；要在 afk-procfx、afk-lore-kit、afk-npc-kit、afk-npctabs、afk-carve 之後，afk-bosslines、afk-bosswatch 之前 -->
     <script src="afk-guardring.js?v=8fb6e0afe27c"></script>
     <!-- afk-siege2：每週守城戰（每週五 20:00 集結、血盟頁可關、攻城頁放棄城堡、回防副本 25 波（倒下轉攻城）、失城 7 天鎖與城陷之恥、奪回戰鏡像敵人）；預設開；要在 afk-castlewar、afk-castle-guards、afk-guardup、afk-soulstone 之後 -->
@@ -1156,7 +1156,7 @@
 <script src="afk-timeroom.js?v=0c66693ced64"></script>
 <script src="afk-avatar.js?v=645fd5dff69f"></script>
     <!-- afk-dimrift：次元裂縫（世界規則：侵蝕、光蝕、面板減半、怪物倍率、掉落）；要在 afk-rebirth、afk-relic-companions、afk-lore-kit、afk-mio、afk-bracelet 之後 -->
-    <script src="afk-dimrift.js?v=5027bc5f1940"></script>
+    <script src="afk-dimrift.js?v=98b7393edc6b"></script>
     <!-- afk-zodiac：副本「黃道十二宮」（席琳神殿 星鑄師 艾琳娜）與聖衣 EX；要在 afk-saint-cloth、afk-dimrift、afk-npc-kit 之後 -->
     <script src="afk-zodiac.js?v=50ab8e8a44e1"></script>
     <!-- afk-starcard：黃道星卡（星卡格；艾琳娜登錄、升級）；要在 afk-zodiac、afk-mio、afk-procfx 之後 -->
@@ -1250,7 +1250,7 @@
     <!-- afk-talent3：第三套天賦「匣之」＋匣之聖衣／血魔聖衣／鐵聖衣的數值（Ping 11-13）；要在 afk-talent2、afk-zodiac 之後 -->
     <script src="afk-talent3.js?v=19ae23860660"></script>
     <!-- afk-abnforce：次元裂縫／GD之子的期待的強制異常（隱藏規則，Ping 11-13）；要在 afk-carve、afk-guardring 之後 -->
-    <script src="afk-abnforce.js?v=78f4f979cb9e"></script>
+    <script src="afk-abnforce.js?v=75f657efeabc"></script>
     <!-- afk-allygear：傭兵公會圖形換裝畫面、隊伍名單點名字的即時視窗（Ping 11-13） -->
     <script src="afk-allygear.js?v=02e03941f896"></script>
 </body>

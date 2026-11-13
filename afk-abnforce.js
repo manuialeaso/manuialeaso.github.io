@@ -34,6 +34,7 @@
     try { (typeof WEIGHT_COUNT_SLOTS !== 'undefined' ? WEIGHT_COUNT_SLOTS : []).forEach(function (k) { var e = x.eq && x.eq[k], dd = e && DB.items[e.id]; if (!dd) return; r += N(dd.abnormalResist); if (f) r += N(dd[f]); }); } catch (e) {}
     if (kind === 'stun' && x.skills && x.skills.indexOf('sk_royal_kingguard') >= 0) r += 20;
     try { if (x === P() && W.__afkCarve && W.__afkCarve.fx) r += N(W.__afkCarve.fx(x).abn); } catch (e) {}
+    try { if (typeof W.__afkDimPanelF === 'function') r *= W.__afkDimPanelF(x); } catch (e) {}   // 次元裂縫的面板壓制
     return Math.min(CAP, Math.max(0, r));
   };
   var durOf = function (x) { try { return W.__afkCarve && W.__afkCarve.durTotal ? Math.max(0, Math.min(0.95, N(W.__afkCarve.durTotal(x)))) : 0; } catch (e) { return 0; } };
