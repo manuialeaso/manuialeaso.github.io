@@ -137,6 +137,19 @@
   var nodeText = function (id) { var x = parse(id); if (!x) return ''; if (x.s === 'K') return DIRS[x.d].kName + '：' + DIRS[x.d].kText; return fmtEff(nodeEff(id)); };
   var view = { dir: 'glory' };
   var TIERNAME = { divine: '神聖衣', blood: '血魔聖衣', iron: '鐵聖衣', casket: '匣之聖衣' };
+  // 星圖（跟天賦一樣一圈；共用 LineageGrowthViews.constellation）
+  var xState = function (t, pts, used, op, id) { var x = parse(id); if (!x) return 'locked'; if (t.n.indexOf(id) >= 0) return 'lit'; return op && canAdd(t, id) && used + x.cost <= pts ? 'available' : 'locked'; };
+  var xReason = function (st) { return st === 'lit' ? '已點亮' : st === 'available' ? '可點亮 · 點擊圓點配置' : '需先完成前置節點，或點數不夠；每系完成核心後才能選下一系（最多三系）。'; };
+  var xInspect = function (id) {
+    var p = P(), t = data(p); if (!p || !t) return ''; var x = parse(id); if (!x) return ''; var D = DIRS[x.d], st = xState(t, earned(p), spent(t), opened(P()), id);
+    return '<span class="growth-eyebrow">' + D.name + ' · ' + (x.s === 'K' ? '核心' : x.s + ' · ' + x.i) + '</span><div class="growth-insignia" style="--branch:' + D.color + '"><span class="growth-emblem" style="background-image:url(assets/ui/growth-v5/tal3/tal3_icon_' + x.d + '.webp)"></span></div><h3>' + D.name + ' · ' + (x.s === 'K' ? '核心 K' : x.s + ' 節點 ' + x.i) + '</h3><p class="growth-effect">' + esc(nodeText(id)) + '</p><div class="growth-detail-cost"><span>點亮消耗</span><b>' + x.cost + ' 點</b></div><p class="growth-state ' + st + '">' + xReason(st) + '</p><div class="growth-inspect-rule">A／B 每顆 3 點、N1／N2 每顆 7 點<br>N3 每顆 10 點、核心 24 點<br>A → N1 · B → N2<br>四組全滿 → N3 → 核心<br>每系 154 點 · 三系核心後點融會<br>效果只在聖衣變身中有效</div>';
+  };
+  var xTree = function (t, pts, used, op) {
+    var V = W.LineageGrowthViews; if (!V || !V.constellation) return '';
+    return V.constellation({ cmd: 'ext:t3|', dirs: ORDER.map(function (d) { return { k: d, name: DIRS[d].name, sub: DIRS[d].sub, color: DIRS[d].color, icon: 'assets/ui/growth-v5/tal3/tal3_icon_' + d + '.webp', bg: 'assets/ui/growth-v5/tal3/tal3_bg_' + d + '.webp' }; }), dir: view.dir, order: t.o,
+      costs: { A: SEC[0][2], B: SEC[1][2], N1: SEC[2][2], N2: SEC[3][2], N3: SEC[4][2], K: SEC[5][2] }, state: function (id) { return xState(t, pts, used, op, id); }, desc: nodeText, inspect: xInspect, selected: view.sel,
+      coreLabel: function (d) { return DIRS[d].kName + ' · 核心 ' + SEC[5][2] + ' 點'; } });
+  };
   var render = function () {
     var p = P(), t = data(p); if (!p || !t) return '';
     var op = opened(p), pts = earned(p), used = spent(t), tier = clothTier(p), w = wearing(p);
@@ -144,18 +157,7 @@
     h += '<p class="t2-note">' + (op ? '極意 170 點之後，巔峰每 3 等再得到 1 點。全部效果只在穿著聖衣（聖衣變身中）時有效。' : '極意的融會升到 ★3 後開放。') + '</p>';
     var TV = TIER[tier || 'divine'];
     h += '<div class="t2-fuse"><span class="growth-eyebrow">SAINT CLOTH</span><b>' + (tier ? TIERNAME[tier] : '目前穿的不是神聖衣') + (w ? '' : '（現在沒有聖衣變身，效果不生效）') + '</b><small>' + (tier ? '六項能力 +' + TV.st + '、五屬性抗性 +' + TV.res + '、爆擊傷害 +' + TV.cd + '%' + (TV.td ? '、真實傷害 +' + TV.td + '%' : '') + (TV.tf ? '、真實減傷 +' + TV.tf + '%' : '') : '神聖衣、血魔聖衣、鐵聖衣在開啟匣之後會升成匣之聖衣：六項能力 +150、五屬性抗性 +400、爆擊傷害 +200%、真實傷害 +10%、真實減傷 +10%。') + '</small></div>';
-    h += '<div class="t2-dirs">' + ORDER.map(function (d) { var D = DIRS[d], i = t.o.indexOf(d); return '<button type="button" data-growth="ext:t3|dir|' + d + '" aria-pressed="' + (view.dir === d) + '" style="--c:' + D.color + '"><i style="background-image:url(assets/ui/growth-v5/tal3/tal3_icon_' + d + '.webp)"></i><b>' + D.name + '</b><small>' + D.sub + (i >= 0 ? ' · 第 ' + (i + 1) + ' 系' : '') + '</small></button>'; }).join('') + '</div>';
-    var d = view.dir, D = DIRS[d];
-    h += '<div class="t2-tree" style="--c:' + D.color + ';background:linear-gradient(rgba(10,8,6,.82),rgba(10,8,6,.88)),url(assets/ui/growth-v5/tal3/tal3_bg_' + d + '.webp)">';
-    SEC.forEach(function (sx) {
-      h += '<div class="t2-sec"><span class="t2-sec-name">' + SECNAME[sx[0]] + '<small>每顆 ' + sx[2] + ' 點</small></span><div class="t2-nodes">';
-      for (var i = 1; i <= sx[1]; i++) {
-        var id = d + '.' + sx[0] + '.' + i, on = t.n.indexOf(id) >= 0, can = !on && op && canAdd(t, id) && used + sx[2] <= pts, cls = 't2-node' + (on ? ' on' : can ? ' can' : '') + (sx[0] === 'K' ? ' k' : '');
-        h += on ? '<div class="' + cls + '"><span>✦ ' + esc(nodeText(id)) + '</span></div>' : '<button type="button" class="' + cls + '" data-growth="ext:t3|node|' + id + '" ' + (can ? '' : 'disabled') + '><span>' + esc(nodeText(id)) + '</span></button>';
-      }
-      h += '</div></div>';
-    });
-    h += '</div>';
+    h += xTree(t, pts, used, opened(P()));
     var ck = t.o.length === 3 ? COMBO[comboKey(t.o)] : null;
     h += '<div class="t2-fuse"><span class="growth-eyebrow">FUSION</span><b>融會' + (ck ? '・' + esc(ck[0]) : '') + (t.j >= 0 ? ' ' + (t.j ? '★'.repeat(t.j) : '☆') : '') + '</b>';
     if (!ck) h += '<small>選滿三系後才知道是哪一種融會（六系選三共 20 種）。</small>';
@@ -163,8 +165,8 @@
     h += '</div><div class="growth-bottom"><p class="growth-note">匣之跟極意用同一條點數來源，但分開配點、分開洗點。</p><div class="growth-actions"><button type="button" class="growth-primary" data-growth="ext:t3|wash|1">洗點（50,000 血龍鑽）</button></div></div>';
     return h;
   };
-  var click = function (cmd, arg) { if (cmd === 'dir') { view.dir = arg; return; } if (cmd === 'node') { addNode(arg); return; } if (cmd === 'star') { starUp(); return; } if (cmd === 'wash') { if (!confirm('花 50,000 血龍鑽洗掉匣之目前的全部點數？\n點數會全部退還，讓你重新配一次。')) return; return wash(); } };
-  (W.LineageGrowthExtraTabs = W.LineageGrowthExtraTabs || {}).t3 = { name: '匣之', order: 4, visible: function () { var p = P(); return !!(p && !p.classicMode && opened(p)); }, view: render, click: click };
+  var click = function (cmd, arg) { if (cmd === 'dir') { view.dir = arg; view.sel = arg + '.A.1'; return; } if (cmd === 'node') { view.sel = arg; var p0 = P(), t0 = data(p0); if (xState(t0, earned(p0), spent(t0), opened(P()), arg) === 'available') addNode(arg); return; } if (cmd === 'star') { starUp(); return; } if (cmd === 'wash') { if (!confirm('花 50,000 血龍鑽洗掉匣之目前的全部點數？\n點數會全部退還，讓你重新配一次。')) return; return wash(); } };
+  (W.LineageGrowthExtraTabs = W.LineageGrowthExtraTabs || {}).t3 = { name: '匣之', order: 4, visible: function () { var p = P(); return !!(p && !p.classicMode && opened(p)); }, view: render, click: click, inspect: xInspect };
 
   // ════════ 聖衣數值 ════════
   if (typeof W.recomputeStats === 'function') {

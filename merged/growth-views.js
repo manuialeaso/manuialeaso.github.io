@@ -49,5 +49,19 @@
       el.querySelector('[data-growth^="pg-:"]').disabled=n<=(Number(g.paragon.points[k])||0);el.querySelector('[data-growth^="pg+:"]').disabled=!g.unlocked||!!(d.need&&g.paragon.level<d.need)||spent>=g.paragon.level||n>=cap;
     }
   }
-  W.LineageGrowthViews={talent,paragon,inspect,graph,state,updateParagon};
+  // 極意、匣之共用的星圖（Ping 11-13 16:06：要跟天賦一樣是一圈）
+  // o={cmd:'ext:t2|',dirs:[{k,name,sub,color,icon,bg}],dir,order,costs:{A,B,N1,N2,N3,K},state(id),desc(id),inspect(id),selected,caption,coreLabel,note}
+  function constellation(o){const D=o.dirs.find(x=>x.k===o.dir)||o.dirs[0],dir=D.k,geo=graph(dir),points=new Map(geo.nodes.map(n=>[n.id,n]));points.set('origin',{x:350,y:55});
+    const em=u=>'<span class="growth-emblem" style="background-image:url('+u+')" aria-hidden="true"></span>',sel=o.selected&&o.selected.startsWith(dir+'.')?o.selected:dir+'.A.1',lit=id=>o.state(id)==='lit';
+    let h='<div class="growth-talent-layout growth-xtree" style="--branch:'+D.color+'"><aside class="growth-paths"><p class="growth-eyebrow">選擇方向</p>'+o.dirs.map(x=>'<button type="button" class="growth-path '+(x.k===dir?'selected':'')+' '+(lit(x.k+'.K.1')?'complete':'')+'" data-growth="'+o.cmd+'dir|'+x.k+'" aria-pressed="'+(x.k===dir)+'" style="--path-color:'+x.color+'"><i>'+em(x.icon)+'</i><span>'+esc(x.name)+'<small>'+esc(x.sub)+'</small></span><b>'+(o.order.includes(x.k)?String(o.order.indexOf(x.k)+1).padStart(2,'0'):'·')+'</b></button>').join('')+'<p class="growth-path-note">點亮一系核心後<br>再從其餘方向擇一（最多三系）</p></aside>';
+    h+='<div class="growth-star-panel"><div class="growth-star-caption"><span>'+esc(D.name+' · '+D.sub)+'</span><small>○ 未解鎖　◉ 可點亮　● 已點亮</small></div><div class="growth-tree-scroll" tabindex="0"><div class="growth-tree" style="background-image:url('+D.bg+') !important"><svg class="growth-wires" viewBox="0 0 700 670" aria-hidden="true"><defs><radialGradient id="growth-halo-x"><stop stop-color="'+D.color+'" stop-opacity=".09"/><stop offset="1" stop-color="'+D.color+'" stop-opacity="0"/></radialGradient></defs><circle cx="350" cy="318" r="300" fill="url(#growth-halo-x)"/><g class="growth-etch"><circle cx="350" cy="318" r="291"/><circle cx="350" cy="318" r="282"/><path d="M350 18v600M50 318h600M138 106l424 424M138 530l424-424"/><circle cx="350" cy="318" r="92"/></g>';
+    for(const [a,b]of geo.edges){const p=points.get(a),q=points.get(b),st=o.state(b),on=(a==='origin'||lit(a))&&lit(b);h+='<path class="growth-wire '+(on?'lit':st==='available'?'available':'')+'" d="M'+p.x+' '+p.y+' L'+q.x+' '+q.y+'"/>';}
+    h+='</svg><div class="growth-origin">'+em(D.icon)+'</div>';
+    for(const [s,x,y]of [['A',205,177],['B',495,177],['N1',205,386],['N2',495,386]])h+='<div class="growth-cluster-label" style="left:'+x/7+'%;top:'+y/6.7+'%"><b>'+s+'</b><span>'+o.costs[s]+' 點／顆</span></div>';
+    h+='<div class="growth-merge-label">N3 <span>'+o.costs.N3+' 點／顆</span></div>';
+    for(const n of geo.nodes){const st=o.state(n.id),d=o.desc(n.id);h+='<button type="button" data-growth="'+o.cmd+'node|'+n.id+'" data-xnode="'+n.id+'" aria-disabled="'+(st!=='available')+'" aria-label="'+esc(D.name+' '+n.s+' '+n.i+'，'+o.costs[n.s]+' 點。'+d)+'" title="'+esc(d)+'" class="growth-node '+st+' '+(n.s==='K'?'keystone':n.s==='N3'||(n.s==='A'||n.s==='B')&&n.i===5?'notable':'')+' '+(sel===n.id?'inspected':'')+'" style="left:'+n.x/7+'%;top:'+n.y/6.7+'%"><i class="growth-node-emblem">'+em(D.icon)+'</i><span class="growth-node-rank">'+(n.s==='K'?'K':n.i)+'</span></button>';}
+    h+='<span class="growth-core-label">'+esc(o.coreLabel(dir))+'</span></div></div><p class="growth-tree-hint">游標移至圓點查看效果；點擊可用節點點亮。小視窗可橫向捲動星圖。</p></div>';
+    h+='<aside class="growth-inspector" aria-label="節點說明">'+o.inspect(sel)+'</aside></div>';
+    return h;}
+  W.LineageGrowthViews={talent,paragon,inspect,graph,state,updateParagon,constellation};
 })(window);
