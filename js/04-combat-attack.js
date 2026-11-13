@@ -1064,7 +1064,7 @@ function bombFlowerExplode(who) {
         hitAny = true;
     });
     // 反噬屬於火屬性魔法傷害：玩家與傭兵皆套用自身 MR、火屬性抗性；不套用對敵剋制與物理 DR。
-    let selfMrFactor = mrMult(_w.d.mr || 0);
+    let selfMrFactor = (window.mrMultTaken || mrMult)(_w.d.mr || 0);
     let selfFireFactor = Math.max(0, Math.min(1, 1 - effResistPct(_w.d.resFire || 0) / 100));
     let self = Math.max(1, Math.floor(base * coef * selfMrFactor * selfFireFactor));
     if (_w === player) { player.hp -= self; logCombat(`<span class="font-bold" style="color:#fca5a5;">【爆彈花蕊】</span>爆裂反噬，你受到 ${self} 點火屬性魔法傷害。`, 'player'); }
@@ -2022,7 +2022,7 @@ function _applyMobMagicToAllyInner(mob, sk, ally) {
             return;
         }
         if (window.__afkPetTankRaw) { let __ptm = window.__afkPetTankRaw(ally, baseM + extra, mob, sk.fixedDmg ? 'fixed' : 'magic', sk); baseM *= __ptm; extra *= __ptm; }   /* 🔌 加掛版補丁:頑強抵抗 */
-        let dmg = sk.fixedDmg ? (baseM + extra) : (((baseM + extra) * resF * mrMult(mr)) - (d.dr || 0));
+        let dmg = sk.fixedDmg ? (baseM + extra) : (((baseM + extra) * resF * (window.mrMultTaken || mrMult)(mr)) - (d.dr || 0));
         if (!sk.fixedDmg && d.wearerEle && sk.ele && sk.ele !== 'none') dmg = Math.max(1, (dmg * elementCounterMult(sk.ele, d.wearerEle)));   // 🏺 v3.1.76 火焰/寒冷化身（傭兵）：受剋屬性魔法×1.4、受剋制×0.6（固定傷害不受影響·鏡像玩家 js/04:1445）
         if (st.freeze > 0 && sk.ext_freeze) { dmg += sk.ext_freeze; if (sk.extUnfreeze) (window.AFK_RELIC_DEFENSE_BRIDGE?window.AFK_RELIC_DEFENSE_BRIDGE.setStatus(ally,'freeze',0,mob):(st.freeze=0)); }
         dmg = (dmg * _shMul);
@@ -2218,7 +2218,7 @@ function _applyMobMagicInner(mob, sk) {
     // 🗑️ v3.5.83 移除第二段 self_heal：上方（v3.5.59）的同型分支無條件 return，此處永不可達；sk.heal 已併入上方 fallback。
 
     // 抗魔係數（🏺 v3.6.44 石化魔法的精髓：石化精髓 buff 期間 MR+50）
-    let mrFactor = mrMult(player.d.mr + stoneEssenceMr());
+    let mrFactor = (window.mrMultTaken || mrMult)(player.d.mr + stoneEssenceMr());
 
     if(sk.type === 'stone') {
         if(playerStatusResisted('stone',mob)) return; /* relic-defense:stone-immunity-player */ // 紅騎士盾牌：免疫石化

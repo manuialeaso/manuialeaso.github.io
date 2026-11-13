@@ -92,6 +92,31 @@
    // Ping 11-13 21:45：六大屬性超過 200 的部分都繼續算——敏捷的 AC、智力的 MP 消耗減免、體質的 HP 恢復上限與藥水、精神的 MP 恢復、MP 成長、藍水與回魔間隔
    ['getDexAC', 'dex'], ['getIntMpReduce', 'int'], ['getConHpRegenMax', 'con'], ['getConPotionPct', 'con'],
    ['getWisMpRegen', 'wis'], ['getWisBlueBonus', 'wis'], ['getWisGrowth', 'wis'], ['wisMpRegenIntervalTicks', 'wis']].forEach(function (a) { useRaw(a[0], a[1]); });
+  // Ping 11-13 21:51：原版封頂的也全部開放——體質的 HP 成長（原本 100 封頂）、精神的魔防、敏捷的迴避（原本 60 封頂）；
+  //   超過封頂的部分照原本最後一段的斜率繼續算，再壓成一半。超過屬性上限（200）的部分一樣用夾之前的值（跟 useRaw 同一套條件）。
+  var rawOf = function (v, key) { try { var d = player && player.d, raw = d && d._raw && d._raw[key]; if (raw > v && v === d[key] && v >= window.__afkAttrCap()) return raw; } catch (e) {} return v; };
+  var HALFK = 0.5;
+  (function () {
+    var oG = window.getConGrowth;
+    if (typeof oG === 'function') window.getConGrowth = function (con, cls) {
+      if (!reborn()) return oG.apply(this, arguments);
+      var v = rawOf(con, 'con'); if (!(v > 100)) return oG.call(this, v, cls);
+      var top = oG.call(this, 100, cls), rate = (top - oG.call(this, 96, cls)) / 4;   // 81～100 那一段每點的成長
+      return top + (v - 100) * rate * HALFK;
+    };
+    var oM = window.getWisMR;
+    if (typeof oM === 'function') window.getWisMR = function (wis) {
+      if (!reborn()) return oM.apply(this, arguments);
+      var v = rawOf(wis, 'wis'); if (!(v > 60)) return oM.call(this, v);
+      return oM.call(this, 60) + Math.floor((v - 60) * 4 * 0.3);   // 原本每點 +4 → 超過 60 壓縮 70%，每點 +1.2（Ping 11-13 22:05）
+    };
+    var oE = window.getDexER;
+    if (typeof oE === 'function') window.getDexER = function (dex) {
+      if (!reborn()) return oE.apply(this, arguments);
+      var v = rawOf(dex, 'dex'); if (!(v > 60)) return oE.call(this, v);
+      return oE.call(this, 60) + Math.floor((v - 60) * 0.5 * HALFK);   // 原本每 2 點 +1 → 超過 60 每 4 點 +1
+    };
+  })();
   // 讀屬性（含超過上限的部分）：你自己用面板總值，其他人照原本的值（核心召喚物的魅力加成用這個）
   window.__afkStatOf = function (a, k) { try { if (a && a === player && typeof window.__afkStatTotal === 'function') return window.__afkStatTotal(k); } catch (e) {} return (a && a.d && Number(a.d[k])) || 0; };
 

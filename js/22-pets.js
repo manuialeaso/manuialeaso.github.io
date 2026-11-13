@@ -1141,7 +1141,7 @@ function applyMobMagicToPet(mob, sk, p) {
     let baseM = roll(sk.dmg[0], sk.dmg[1]);
     let extra = (sk.db || 0) + (sk.dbLv ? (mob.lv || 0) * (sk.dbLvMult || 1) : 0);
     if (window.__afkPetTankRaw) { let __ptm = window.__afkPetTankRaw(p, baseM + extra, mob, sk.fixedDmg ? 'fixed' : 'magic', sk); baseM *= __ptm; extra *= __ptm; }   /* 🔌 加掛版補丁:頑強抵抗 */
-    let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * mrMult(mr)) - (d.dr || 0) - petHardenDr(p));
+    let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * (window.mrMultTaken || mrMult)(mr)) - (d.dr || 0) - petHardenDr(p));
     if (st.freeze > 0 && sk.ext_freeze) { dmg += sk.ext_freeze; if (sk.extUnfreeze) st.freeze = 0; }
     dmg = Math.max(1, Math.floor(Math.max(1, dmg * shMul) * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1) * petMasteryTakenMult() * petArmorDmgReduceMult(p)));   // 👑 夥伴精通：受到傷害 −50%；🏺 寵物專用盔甲：受傷 ×(1−petDmgReduce)
     dmg = Math.max(1, Math.floor(dmg * riftDamageMult()));

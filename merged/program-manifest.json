@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-b86100443b37",
+  "build": "merge-0.4-4a98eabce489",
   "files": [
     {
       "url": "afk-abnforce.js?v=75f657efeabc",
@@ -208,8 +208,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-bossrelic.js?v=5dec8c6b74eb",
-      "sha256": "5dec8c6b74ebc35d8326f085a11ab04965ee70ed03f5a1e168ea5cee7020e170",
+      "url": "afk-bossrelic.js?v=6da619f014a7",
+      "sha256": "6da619f014a739734b411d3ded82a3a7bc6d377ff12821e947fee788ee5deddc",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -378,8 +378,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-curves.js?v=b2991fdbc9d4",
-      "sha256": "b2991fdbc9d435c4a7ae7af45ceea9d0ae2e2269123bd20e2922574444699319",
+      "url": "afk-curves.js?v=34853bcce25c",
+      "sha256": "34853bcce25c3acd7fec6831267dab9e62325c645f0b4a4c0b2985dd13c0dec5",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -613,11 +613,6 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-game-guide.js?v=0e03f6b0e305",
-      "sha256": "0e03f6b0e3051c583c4176f4c1dea6ce8da9858941050bde6b79bcd34abf5328",
-      "type": "text/javascript; charset=utf-8"
-    },
-    {
       "url": "afk-gamehall.js?v=5806fe9ada3d",
       "sha256": "5806fe9ada3d959833bba079443afd777ae08bc627bd4498f1dd52a5b122dc68",
       "type": "text/javascript; charset=utf-8"
@@ -795,6 +790,11 @@
     {
       "url": "afk-kurt-hunt.js?v=39906efeaada",
       "sha256": "39906efeaada6fc4f3c4ebbb5d8f0ae3d62581efe65c76a99f1e1f0a145ba7f0",
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "afk-lazy.js?v=f24c307989d7",
+      "sha256": "f24c307989d73eb2778c2672f2d3669a27cbb2b4d7246f4cc1959df8e2ccf99d",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1103,8 +1103,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-rebirth.js?v=174b13556416",
-      "sha256": "174b1355641637864edbc8a4e6a5e923dc40c5ffcfa852dee73295389cd334a7",
+      "url": "afk-rebirth.js?v=2135520c08f0",
+      "sha256": "2135520c08f00f6e64652becc0bd0dd0a43a134fc7637452ec87fad8ee250a0e",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1583,11 +1583,6 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-wiki.js?v=94d38641df23",
-      "sha256": "94d38641df23999825226eeeef013b8526704ba0d7707dcbba942738c122a3be",
-      "type": "text/javascript; charset=utf-8"
-    },
-    {
       "url": "afk-world-events.js?v=718456288371",
       "sha256": "718456288371c5e576a5bb3037ecc6fe5ba8e291b5ba5d2387968b5adcff24c0",
       "type": "text/javascript; charset=utf-8"
@@ -1649,7 +1644,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "523c75a6230d26492aa77809c6f567e306d013aac091e7c178116b56dc37f016",
+      "sha256": "87fd44b67b07b517811ea160c3ecdf5a9a41ae11d28c5213d78c3a864b2f423b",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1673,8 +1668,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/04-combat-attack.js?v=5dafdde1a48e",
-      "sha256": "5dafdde1a48e3df234b9b7a53f301566e9f60ebd76d10fecde342578d8add82e",
+      "url": "js/04-combat-attack.js?v=35859a7e7035",
+      "sha256": "35859a7e70358e979fab4f3a151590cec84a856b16afb2037099c660486b0c29",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1763,13 +1758,13 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/22-pets.js?v=f9735c9e1ba5",
-      "sha256": "f9735c9e1ba5136b20f6e3bef7e0c9cffc350bad7885624b5b7292186087f243",
+      "url": "js/22-pets.js?v=e2817217dbc0",
+      "sha256": "e2817217dbc06ea2f8ca3923b6ef6093244aeed14a35ed554d9b70471e7033eb",
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/23-summons.js?v=69b7f657728e",
-      "sha256": "69b7f657728e12333e77a44dfc9396b78f5dd2e7068658ffc1c40301e8b0eed9",
+      "url": "js/23-summons.js?v=7d44e7affc7b",
+      "sha256": "7d44e7affc7bcfbb444295ba9bdc457714fea4080562821eb0c3c8fa85281260",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1803,8 +1798,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/31-castle-guards.js?v=11ce18402c6f",
-      "sha256": "11ce18402c6f533f624a7ffb151af6c0bf352d5920a96cd70ad5c66b3b816630",
+      "url": "js/31-castle-guards.js?v=87769e9e8dd0",
+      "sha256": "87769e9e8dd0c93a2050f73c96ecce436d82108ef4a171197f3245b39585f07b",
       "type": "text/javascript; charset=utf-8"
     },
     {

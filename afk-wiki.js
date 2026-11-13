@@ -28,7 +28,7 @@
 
   function ready(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
-    else fn();
+    else setTimeout(fn, 0);   // 用到才載入（afk-lazy）時頁面早就載好了：等整支檔案跑完（TABS 等設定都就位）再初始化
   }
   ready(init);
 

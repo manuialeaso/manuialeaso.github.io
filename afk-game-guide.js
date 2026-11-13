@@ -53,7 +53,18 @@
     return note('翻開遺物的來歷與力量，查看 +5、+10、昇華支配及終階效果。這裡收錄有專屬特殊效果的 '+relicRows().length+' 件遺物。')+
       note('遺物在燃柳村「哈瑪大師」合成強化：武器、防具最高 +15，飾品（戒指、耳環、項鍊、腰帶）最高 +10；到頂之後可以昇華支配（+0～+5）。每一階要的材料、成功率請看「遺物強化」分頁；下方表格列出特殊效果有變化的階段。')+
       '<label class="afk-guide-search">搜尋遺物<input id="afk-guide-relic-query" type="search" value="'+esc(relicQuery)+'" placeholder="名稱、編號或效果，例如：護盾"></label><div id="afk-guide-relic-results">'+relicResults()+'</div>'+
-      evoCard()+bossRelicCard();
+      evoCard()+bossRelicCard()+relicEvoCard();
+  }
+  // 原本沒有進階特效的遺物（afk-relicevo.js）：+5 起每階加一層效果
+  function relicEvoCard(){
+    var B=window.__afkBossRelic,E=window.__afkRelicEvo;if(!B||!E||!B.evoText)return '';
+    var TH={pet:'寵物',sum:'召喚',heal:'治療',dr:'減傷',ele:'屬性',wpn:'增傷（武器）',arm:'補助（防具、飾品）'};
+    var rows=Object.keys(TH).map(function(g){return (E.K[g]||[]).map(function(k){var d=DB.items[k];if(!d)return '';return '<tr><td><b>'+esc(d.n)+'</b><br><span style="opacity:.75">'+TH[g]+'</span></td><td>'+esc(B.evoText(k,1))+'</td><td>'+esc(B.evoText(k,4))+'</td></tr>';}).join('');}).join('');
+    return factCard('其他遺物的進階特效','原本只長數值的遺物，現在 +5 起也會進化','合成到 +5、+10、昇華支配、昇華支配 +5，各加一層效果，本體不變。',[
+      '主題：寵物、召喚、治療、減傷、屬性；其餘的武器加傷害，防具、飾品給全隊補助',
+      '寵物類：寵物會吃你的面板、幫全隊回血、破甲破魔、讓目標中毒、額外施法、給全隊傷害加成，最後一階寵物倒下會自己站起來',
+      '同一種效果穿好幾件會相加，但各有上限'
+    ])+'<details class="m-wiki-card"><summary class="m-wiki-name" style="cursor:pointer">進階特效一覽（'+Object.keys(E.MAP).length+' 件）</summary><div style="overflow-x:auto"><table class="m-wiki-table"><tr><th>遺物</th><th>+5</th><th>昇華支配 +5</th></tr>'+rows+'</table></div></details>';
   }
   // 王者遺物（afk-bossrelic.js）：規則＋79 件一覽（本體、昇華支配 +5）
   function bossRelicCard(){
@@ -519,6 +530,8 @@
     return card('轉生後的能力值（上限 200，超過還能算）',
       desc('轉生後屬性上限提升到 <b>200</b>（配點上限 60 → 200）。100 以上的效果，照「80 → 100」那一段的成長幅度繼續往上加（見下表）。')+
       desc('<b>超過 200 也還能計算</b>：裝備、Buff、血盟等其他來源把屬性推過 200 時，面板顯示「200(+X)」，超出的 X 仍照同樣的成長幅度繼續算：力量、敏捷、智力的傷害、命中、爆擊、額外魔法點數，敏捷的 AC，智力的 MP 消耗減免，體質的 HP 恢復上限與藥水恢復量，精神的 MP 恢復量、MP 成長、藍色藥水與 MP 回復間隔，魅力給召喚物的命中與傷害。')+
+      desc('原本封頂的也繼續算（壓縮過）：體質的 HP 成長超過 100、敏捷的迴避超過 60（每 4 點 +1）、精神的魔防超過 60（每點 +1.2）。')+
+      desc('<b>你的魔防</b>：受到的魔法傷害照魔防減少，魔防 200 剩 50%、400 剩 40%、800 剩 25%、1200 剩 13%、1600 剩 5%，<b>2000 剩 1%</b>（怪物的魔防照原本的表）。')+
       desc('轉生後，智力給的額外魔法點數至少有（智力＋35）÷3，不受 33 的限制（智力 200 → 78）；面板的額外魔法點數 +50 也算進魔法傷害。')+
       table(['屬性・效果','100','120','150','200','250'],rows));
   }

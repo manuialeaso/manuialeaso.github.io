@@ -309,7 +309,7 @@ function applyMobMagicToGuard(mob, sk, s) {
     let shMul = (mob._sherine ? (mob._sherineMad ? 3 : 2) : 1) * (mob._grace ? 2 : 1);
     let baseM = roll(sk.dmg[0], sk.dmg[1]);
     let extra = (sk.db || 0) + (sk.dbLv ? (mob.lv || 0) * (sk.dbLvMult || 1) : 0);
-    let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * (typeof mrMult === 'function' ? mrMult(mr) : 1)) - dr);
+    let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * (typeof mrMult === 'function' ? (window.mrMultTaken || mrMult)(mr) : 1)) - dr);
     dmg = Math.max(1, Math.floor(Math.max(1, dmg * shMul) * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1)));
     dmg = Math.max(1, Math.floor(dmg * (typeof riftDamageMult === 'function' ? riftDamageMult() : 1)));
     s.hp -= dmg;

@@ -27,6 +27,9 @@
     NONE_DREAM: [[0, 1], [100, 0.99], [200, 0.97], [300, 0.95], [400, 0.93], [500, 0.90], [600, 0.85], [700, 0.80], [800, 0.75], [900, 0.70], [1000, 0.64]]
   };
   W.mrMult = function (mr) { return lerp(C.MR, Math.max(0, Number(mr) || 0)); };
+  // 我方受到的魔法傷害（Ping 11-13 22:05）：魔防 2000 才剩 1%（原本 1000）；怪物的魔防照舊用 MR
+  C.MR_TAKEN = C.MR.map(function (pt) { return [pt[0] * 2, pt[1]]; });
+  W.mrMultTaken = function (mr) { return lerp(C.MR_TAKEN, Math.max(0, Number(mr) || 0)); };
   W.effResistPct = function (v) { return lerp(C.ELE_PCT, Math.max(0, Number(v) || 0)); };
   console.log('[AFK-curves] 已啟用：魔防／屬性抗性曲線統一（一份表、一個內插函式）');
 })();

@@ -143,6 +143,7 @@
     var v = {};
     Object.keys(o).forEach(function (k) {
       var x = o[k];
+      if (Array.isArray(x)) { v[k] = x[s]; return; }   // 進階特效（afk-relicevo）：每階直接寫數字
       if (typeof x !== 'number') { v[k] = x; return; }
       if (k === 'p' || k === 'n' || k === 'h') v[k] = r1(x * MP[s]);
       else if (k === 'c') v[k] = Math.min(100, Math.round(x * MC[s]));
@@ -202,7 +203,29 @@
     res4: function (v) { return '火、水、風、地屬性抗性各 +' + Math.round(v.n); },
     invuln: function (v) { return '保命：HP 低於 ' + v.th + '% 時無敵 ' + v.d + ' 秒（冷卻 ' + Math.round(v.cd) + ' 秒）'; },
     lastStand: function (v) { return '保命：受到致命傷害時保住 1 HP（冷卻 ' + Math.round(v.cd) + ' 秒），之後 10 秒造成的傷害 +' + v.p + '%（傭兵穿戴時沒有效果）'; },
-    revive: function (v) { return '保命：倒下時以最大 HP ' + v.h + '% 站起來（冷卻 ' + Math.round(v.cd) + ' 秒；傭兵穿戴時沒有效果）'; }
+    revive: function (v) { return '保命：倒下時以最大 HP ' + v.h + '% 站起來（冷卻 ' + Math.round(v.cd) + ' 秒；傭兵穿戴時沒有效果）'; },
+    // ── 進階特效（afk-relicevo）用 ──
+    petOnly: function (v) { return '寵物造成的傷害 +' + v.p + '%'; },
+    summonDmg: function (v) { return '召喚物造成的傷害 +' + v.p + '%'; },
+    petPanel: function (v) { return '寵物吃你的面板：寵物每次攻擊追加你近距離、遠距離、魔法傷害裡最高那一項的 ' + v.p + '%'; },
+    petTaken: function (v) { return '寵物受到的傷害 −' + v.p + '%'; },
+    petHp: function (v) { return '寵物最大 HP +' + v.p + '%'; },
+    petHeal: function (v) { return '寵物幫忙回血：寵物在場時，每 ' + v.t + ' 秒全隊恢復最大 HP ' + v.p + '%'; },
+    petBreak: function (v) { return '寵物攻擊命中時 ' + v.c + '% 破甲破魔：目標受到的傷害 +' + v.p + '%（8 秒）'; },
+    petPoison: function (v) { return '寵物攻擊命中時 ' + v.c + '% 讓目標中毒 8 秒，每秒造成你近 5 秒每秒傷害 ' + v.p + '%'; },
+    petCast: function (v) { return '寵物額外施法：每 ' + v.t + ' 秒對目標施放一次，造成你近 5 秒每秒傷害 ' + v.p + '%'; },
+    petAura: function (v) { return '寵物在場時，全隊造成的傷害 +' + v.p + '%'; },
+    petRevive: function (v) { return '寵物倒下 ' + v.t + ' 秒後自動站起來（每隻冷卻 ' + Math.round(v.cd) + ' 秒）'; },
+    healRecv: function (v) { return '受到的治療 +' + v.p + '%'; },
+    regenLow: function () { return 'HP 低於 50% 時，每 10 秒恢復的量 ×2'; },
+    overShield: function (v) { return '每 10 秒恢復超過最大 HP 的部分轉成護盾（最多最大 HP ' + v.p + '%；只有你自己）'; },
+    mpRegen: function (v) { return '每 10 秒恢復最大 MP ' + v.p + '%'; },
+    mpRescue: function (v) { return 'MP 低於 ' + v.th + '% 時立刻恢復最大 MP ' + v.p + '%（冷卻 ' + Math.round(v.cd) + ' 秒）'; },
+    bigHitCut: function (v) { return '單次受到超過最大 HP ' + v.th + '% 的傷害時，那一下 −' + v.p + '%'; },
+    lowHpCut: function (v) { return 'HP 低於 ' + v.th + '% 時，受到的傷害再 −' + v.p + '%'; },
+    eleCut: function (v) { return '受到' + v.en + '屬性怪物的傷害 −' + v.p + '%'; },
+    eleAbsorb: function (v) { return '受到' + v.en + '屬性怪物攻擊時 ' + v.c + '% 把那一下傷害的 ' + v.p + '% 轉成 HP'; },
+    stat: function (v) { return v.label + ' +' + v.n; }
   };
   // 武器另有「王者之威」：造成的傷害 +N%（各部位不同，11-13 木人場〔冥皇丹特斯〕對齊現有同部位遺物；×1／1.1／1.2／1.4／1.6）
   var MIGHT_BASE = { sword1: 0, dagger: 0, katana: 12, sword2: 12, spear: 10, blunt2: 30, bow: 15, wand: 15, claw: 15, dual: 15, chainsword: 15 };
@@ -268,6 +291,12 @@
             if (e[0] === 'res4') ['resFire', 'resWater', 'resWind', 'resEarth'].forEach(function (k) { d[k] = N(d[k]) - e[1].n + Math.round(val(e[1], s).n); });
           });
           d.d = '【遺物】' + row[3] + ' 〔王者遺物・' + STAGE_N[s] + '〕' + fxText(row, s) + '。';
+        } else if (d && d.relicBase && EVO[d.relicBase]) {
+          var s2 = tier(n, asc); d.relicEvoKey = d.relicBase; d.relicEvoStage = s2;
+          if (s2 > 0) {
+            EVO[d.relicBase].fx.forEach(function (e) { if (e[0] !== 'stat') return; var o = val(e[1], s2); if (N(o.n)) (o.k === 'res4' ? ['resFire', 'resWater', 'resWind', 'resEarth'] : [o.k]).forEach(function (k) { d[k] = N(d[k]) + N(o.n); }); });
+            d.d = (d.d || '') + '〔進階特效・' + STAGE_N[s2] + '〕' + evoText(d.relicBase, s2) + '。';
+          }
         }
       } catch (e) {}
       return r;
@@ -304,13 +333,64 @@
     });
   };
   hookGen(); W.addEventListener('load', hookGen);
+  // 同一種效果相加（間隔取短、層數取多）
+  var merge = function (v, k, o) {
+    v.has = true;
+    if (k === 'summon' || k === 'pulse') { (v[k] = v[k] || []).push(o); return; }
+    var cur = v[k];
+    if (!cur) { v[k] = Object.assign({}, o); return; }
+    if (o.p != null) cur.p = r1(N(cur.p) + o.p);
+    if (o.c != null) cur.c = Math.min(100, r1(N(cur.c) + o.c));
+    if (o.n != null && k === 'mpSteal') cur.n += o.n;
+    if (o.k != null) cur.k = Math.max(cur.k, o.k);
+    if (o.t != null) cur.t = Math.min(cur.t, o.t);
+    if (o.d != null) cur.d = Math.max(cur.d, o.d);
+    if (o.cd != null) cur.cd = Math.min(cur.cd, o.cd);
+    if (o.th != null) cur.th = Math.max(cur.th, o.th);
+  };
+  var EVO = {};
+  var evoInto = function (v, key, s) {
+    EVO[key].fx.forEach(function (e) {
+      var k = e[0]; if (k === 'stat') return; var o = val(e[1], s);
+      if (!Object.keys(o).some(function (k2) { return k2 !== 'th' && typeof o[k2] === 'number' && o[k2] > 0; })) return;   // 這一階還沒有
+      if (k === 'eleCut' || k === 'eleAbsorb') { var l = v[k] = v[k] || []; l.push(o); v.has = true; return; }
+      merge(v, k, o);
+    });
+  };
+  var evoText = function (key, s) {
+    return EVO[key].fx.map(function (e) { var o = val(e[1], s); if (!Object.keys(o).some(function (k2) { return k2 !== 'th' && typeof o[k2] === 'number' && o[k2] > 0; })) return ''; return TXT[e[0]] ? TXT[e[0]](o) : ''; }).filter(Boolean).join('；');
+  };
+  // 已經建好的合成物品定義（存檔載入時就建了）重建一次，才帶得到進階特效
+  var rebuildEvo = function () {
+    var D = W.__afkRelicData; if (!D || !D.parseId || !D.ensure) return;
+    Object.getOwnPropertyNames(DB.items).forEach(function (id) { var q = D.parseId(id); if (!q || !EVO[q.base]) return; var d = DB.items[id]; if (d && d.relicEvoKey) return; try { delete DB.items[id]; D.ensure(id); } catch (e) {} });
+    GEN++;
+  };
+  var addEvo = function (map) { Object.keys(map).forEach(function (k) { if (DB.items[k]) EVO[k] = map[k]; }); rebuildEvo(); };
+  W.addEventListener('load', function () { setTimeout(rebuildEvo, 0); });
+  // 同一種效果疊很多件時的上限
+  var CAPS = { petOnly: 150, petPanel: 100, petHp: 200, petHeal: 8, petCast: 120, petPoison: 6, summonDmg: 150, healRecv: 100, mpRegen: 15, regen: 10, guard: 30, magicCut: 40, physCut: 40, lowHpCut: 40, double: 60, atk: 80, magicDmg: 80, hunt: 80, ambush: 300, gold: 50 };
+  var paC = { t: -1, v: false };
+  var petAuraOn = function () { var t = tk(); if (paC.t === t) return paC.v; paC.t = t; try { paC.v = (typeof petsOutList === 'function' ? petsOutList() : []).some(function (pt) { return pt && !pt._downed && N(pt.hp) > 0; }); } catch (e) { paC.v = false; } return paC.v; };
+  // 寵物受到的傷害、寵物最大 HP（核心函式包一層）
+  var hookPet = function () {
+    var o1 = W.petArmorDmgReduceMult;
+    if (typeof o1 === 'function' && !o1.__afkEvo) { var f1 = function (pt) { var m = o1.apply(this, arguments); try { if (on()) { var f = fx(P()); if (f && f.petTaken) m *= 1 - Math.min(60, f.petTaken.p) / 100; } } catch (e) {} return m; }; f1.__afkEvo = true; W.petArmorDmgReduceMult = f1; try { (0, eval)('petArmorDmgReduceMult = window.petArmorDmgReduceMult'); } catch (e) {} }
+    var o2 = W.petMhpEff;
+    if (typeof o2 === 'function' && !o2.__afkEvo) { var f2 = function (pt) { var m = o2.apply(this, arguments); try { if (on()) { var f = fx(P()); if (f && f.petHp) m = Math.floor(m * (1 + f.petHp.p / 100)); } } catch (e) {} return m; }; f2.__afkEvo = true; W.petMhpEff = f2; try { (0, eval)('petMhpEff = window.petMhpEff'); } catch (e) {} }
+    var o3 = W.foulWaterHealMult;   // 受到的治療
+    if (typeof o3 === 'function' && !o3.__afkEvo) { var f3 = function (tg) { var m = o3.apply(this, arguments); try { if (on() && tg && (isPlayer(tg) || isAlly(tg))) { var f = fx(tg); if (f && f.healRecv) m *= 1 + f.healRecv.p / 100; } } catch (e) {} return m; }; f3.__afkEvo = true; W.foulWaterHealMult = f3; try { (0, eval)('foulWaterHealMult = window.foulWaterHealMult'); } catch (e) {} }
+  };
+  hookPet(); W.addEventListener('load', hookPet);
   var fx = function (x) {
     if (!x || !x.eq) return null;
     var t = tk() + ':' + GEN, c = CACHE.get(x); if (c && c.t === t) return c.v;
     var v = { has: false }, save = null;
     Object.keys(x.eq).forEach(function (slot) {
-      var it = x.eq[slot], d = it && DB.items[it.id]; if (!d || !d.bossRelicKey || !BY[d.bossRelicKey]) return;
+      var it = x.eq[slot], d = it && DB.items[it.id]; if (!d) return;
       if (slot === 'wpn2' || /^rem_|^doll|^mio/.test(slot)) return;
+      if (d.relicEvoKey && EVO[d.relicEvoKey] && N(d.relicEvoStage) > 0) { evoInto(v, d.relicEvoKey, N(d.relicEvoStage)); return; }
+      if (!d.bossRelicKey || !BY[d.bossRelicKey]) return;
       var s = Math.max(0, Math.min(4, N(d.bossRelic))), row = BY[d.bossRelicKey];
       if (slot === 'wpn' && might(row, s)) { v.has = true; v.might = N(v.might) + might(row, s); }
       row.slice(4).forEach(function (e) {
@@ -327,7 +407,10 @@
         if (o.d != null) cur.d = Math.max(cur.d, o.d);
       });
     });
+    // 寵物身上的寵物裝備（寵物專用遺物）算在你身上
+    if (x === P()) { try { (typeof petsOutList === 'function' ? petsOutList() : []).forEach(function (pt) { if (!pt || !pt.eq) return; Object.keys(pt.eq).forEach(function (k) { var e = pt.eq[k], d = e && DB.items[e.id]; if (d && d.relicEvoKey && EVO[d.relicEvoKey] && N(d.relicEvoStage) > 0) evoInto(v, d.relicEvoKey, N(d.relicEvoStage)); }); }); } catch (e) {} }
     if (save) v.save = save;
+    Object.keys(CAPS).forEach(function (k) { if (v[k] && v[k].p > CAPS[k]) v[k].p = CAPS[k]; if (v[k] && k === 'double' && v[k].c > CAPS[k]) v[k].c = CAPS[k]; });
     CACHE.set(x, { t: t, v: v.has ? v : null }); return v.has ? v : null;
   };
   // 每人的計時器、冷卻
@@ -347,15 +430,35 @@
   var dealt = function (actor, tgt, v, opt) {
     if (!on() || !(v > 0) || !tgt || !actor || typeof actor !== 'object') return v;
     var p = P(), kind = opt && opt.kind, main = kind === 'melee' || kind === 'ranged' || kind === 'magic', t = tk();
-    var mine = isPlayer(actor) || isAlly(actor);
+    var src = null; try { src = typeof _combatSrc !== 'undefined' ? _combatSrc : null; } catch (e) {}
+    var comp = src === 'pet' || src === 'summon';   // 寵物、召喚物的傷害在核心是記在你身上（actor＝你）
+    var mine = !comp && (isPlayer(actor) || isAlly(actor));
     if (mine) dpsAdd(actor, v);
-    var pf = fx(p), mult = 1;
+    var pf = fx(p), mult = 1, om0 = MK_.get(tgt);
+    if (om0 && (om0.curse || 0) > t) mult += Math.min(60, N(om0.curseP)) / 100;   // 詛咒、破甲破魔：目標受到的傷害增加
+    var aura = Math.min(15, petAuraOn() ? teamSum('petAura') : 0), team = Math.min(20, teamSum('teamDmg'));
     if (!mine) {   // 寵物、召喚物
-      if (pf) { if (pf.allyDmg) mult += pf.allyDmg.p / 100; if (pf.petDmg) mult += pf.petDmg.p / 100; }
-      return mult !== 1 ? v * mult : v;
+      if (pf) {
+        if (pf.allyDmg) mult += pf.allyDmg.p / 100; if (pf.petDmg) mult += pf.petDmg.p / 100;
+        if (src === 'pet' && pf.petOnly) mult += pf.petOnly.p / 100;
+        if (src === 'summon' && pf.summonDmg) mult += pf.summonDmg.p / 100;
+      }
+      mult += (team + aura) / 100;
+      v = v * mult;
+      if (src === 'pet' && pf) {
+        if (pf.petPanel) { var dd = p.d || {}; v += Math.max(N(dd.meleeDmg), N(dd.rangedDmg), N(dd.magicDmg)) * pf.petPanel.p / 100; }
+        var o3 = mk(tgt);
+        if (pf.petBreak && proc(p, 'pbk', pf.petBreak.c)) { o3.curse = t + 80; o3.curseP = Math.max(N(o3.curseP), pf.petBreak.p); }
+        if (pf.petPoison && proc(p, 'ppo', pf.petPoison.c)) {   // 寵物的毒最多 3 層，滿了只刷新時間
+          var pl = o3.dots.filter(function (d) { return d.k === 'ppo' && d.until > t; });
+          if (pl.length < 3) o3.dots.push({ src: p, k: 'ppo', until: t + 80, per: panel(p) * pf.petPoison.p / 100 }); else { pl.sort(function (a, b) { return a.until - b.until; }); pl[0].until = t + 80; pl[0].per = panel(p) * pf.petPoison.p / 100; }
+        }
+      }
+      return v;
     }
+    mult += aura / 100;
     if (isAlly(actor) && pf && pf.allyDmg) mult += pf.allyDmg.p / 100;
-    var team = teamSum('teamDmg'); if (team) mult += team / 100;
+    if (team) mult += team / 100;
     var f = fx(actor);
     if (!f) return mult !== 1 ? v * mult : v;
     var s = st(actor), add = N(f.might);
@@ -423,7 +526,12 @@
     if (f.physCut && kind === 'phys') cut += f.physCut.p;
     if (f.magicCut && kind === 'magic') cut += f.magicCut.p;
     if (f.bossCut && mob && mob.boss) cut += f.bossCut.p;
+    var me = mob && (mob.ele || mob.e);
+    if (f.eleCut && me) f.eleCut.forEach(function (o) { if (o.e === me || o.e === 'all') cut += o.p; });
+    if (f.lowHpCut && hpOf(ent) < mhpOf(ent) * f.lowHpCut.th / 100) cut += f.lowHpCut.p;
     if (cut) dmg *= 1 - Math.min(50, cut) / 100;
+    if (f.bigHitCut && dmg > mhpOf(ent) * f.bigHitCut.th / 100) dmg *= 1 - Math.min(60, f.bigHitCut.p) / 100;
+    if (f.eleAbsorb && me) f.eleAbsorb.forEach(function (o) { if ((o.e === me || o.e === 'all') && proc(ent, 'eab' + o.e, o.c)) { var hv = dmg * o.p / 100; setTimeout(function () { heal(ent, hv); }, 0); } });
     if (mob && alive(mob)) {
       var om = mk(mob);
       if (f.thorn && kind === 'phys' && proc(ent, 'thn', f.thorn.c)) om.dots.push({ src: ent, k: 'thn', until: t + 50, per: panel(ent) * f.thorn.p / 100 });
@@ -441,7 +549,16 @@
     var t = tk(), fight = false; try { fight = X().inCombat(); } catch (e) {}
     party().forEach(function (a) {
       var f = fx(a); if (!f) return; var s = st(a);
-      if (f.regen && t - s.regenAt >= 100) { s.regenAt = t; if (hpOf(a) > 0) heal(a, mhpOf(a) * f.regen.p / 100); }
+      if ((f.regen || f.mpRegen) && t - s.regenAt >= 100) {
+        s.regenAt = t;
+        if (f.regen && hpOf(a) > 0) {
+          var amt = mhpOf(a) * f.regen.p / 100 * (f.regenLow && hpOf(a) < mhpOf(a) * 0.5 ? 2 : 1), over = hpOf(a) + amt - mhpOf(a);
+          heal(a, amt);
+          if (f.overShield && isPlayer(a) && over > 0) { try { var cap0 = Math.floor(mhpOf(a) * f.overShield.p / 100); X().shield.add(over, cap0); } catch (e) {} }
+        }
+        if (f.mpRegen && isPlayer(a) && N(a.mmp) > 0) a.mp = Math.min(N(a.mmp), N(a.mp) + Math.floor(N(a.mmp) * f.mpRegen.p / 100));
+      }
+      if (f.mpRescue && isPlayer(a) && N(a.mmp) > 0 && N(a.mp) < N(a.mmp) * f.mpRescue.th / 100 && t - (s.mpResAt || -1e9) >= f.mpRescue.cd * 10) { s.mpResAt = t; a.mp = Math.min(N(a.mmp), N(a.mp) + Math.floor(N(a.mmp) * f.mpRescue.p / 100)); popFx('mpr', '魔力湧泉'); }
       if (f.save && f.save.k === 'invuln' && hpOf(a) > 0 && hpOf(a) < mhpOf(a) * f.save.o.th / 100 && t - s.saveCd >= f.save.o.cd * 10) {
         s.saveCd = t; s.invUntil = t + Math.round(f.save.o.d * 10); popFx('inv' + (isPlayer(a) ? 'p' : 'a'), '無敵');
         note('inv', '<span class="text-amber-300 font-bold">【王者遺物】' + esc(isPlayer(a) ? '你' : (a._allyName || '隊友')) + '短暫無敵 ' + f.save.o.d + ' 秒。</span>');
@@ -456,9 +573,23 @@
         var pv = panel(a); if (pv > 0) { mobs().forEach(function (m) { hit(m, pv * o.p / 100); }); popFx('pl' + i, o.name); }
       });
       if (f.shield && isPlayer(a) && t - s.shieldAt >= f.shield.t * 10) {
-        s.shieldAt = t; try { var cap = mhpOf(a) * f.shield.p / 100; X().shield.add(cap, cap); } catch (e) {}
+        s.shieldAt = t; try { var cap = Math.floor(mhpOf(a) * f.shield.p / 100); X().shield.add(cap, cap); } catch (e) {}
       }
     });
+    // 寵物：幫忙回血、額外施法、自動站起來
+    var pf2 = fx(P());
+    if (pf2 && (pf2.petHeal || pf2.petCast || pf2.petRevive)) {
+      var pets = []; try { pets = typeof petsOutList === 'function' ? petsOutList() : []; } catch (e) {}
+      var up = pets.filter(function (pt) { return pt && !pt._downed && N(pt.hp) > 0; }), sP = st(P());
+      if (pf2.petHeal && up.length && t - (sP.petHealAt || 0) >= pf2.petHeal.t * 10) { sP.petHealAt = t; party().forEach(function (a) { heal(a, mhpOf(a) * pf2.petHeal.p / 100); }); }
+      if (pf2.petCast && up.length && fight && t - (sP.petCastAt || 0) >= pf2.petCast.t * 10) { sP.petCastAt = t; var tg2 = target(), pv2 = panel(P()); if (tg2 && pv2 > 0) { hit(tg2, pv2 * pf2.petCast.p / 100); popFx('pcast', '寵物施法'); } }
+      if (pf2.petRevive) pets.forEach(function (pt) {
+        if (!pt || !pt._downed) return; var ps = st(pt);
+        if (!ps.downAt) ps.downAt = t;
+        if (t - ps.downAt >= pf2.petRevive.t * 10 && t - (ps.revAt || -1e9) >= pf2.petRevive.cd * 10) { ps.revAt = t; ps.downAt = 0; try { _petReviveDone(pt, '遺物的力量'); } catch (e) {} }
+      });
+      pets.forEach(function (pt) { if (pt && !pt._downed) { var ps2 = ST.get(pt); if (ps2) ps2.downAt = 0; } });
+    }
     // 中毒每秒
     if (t % 10 === 0) mobs().forEach(function (m) {
       var o = MK_.get(m); if (!o || !o.dots.length) return;
@@ -504,5 +635,5 @@
   };
   hookEco(); W.addEventListener('load', hookEco);
 
-  W.__afkBossRelic = { _death: death, _taken: taken, _dealt: dealt, LIST: LIST, BASE: BASE, BY: BY, KEYS: KEYS, tier: tier, val: val, fx: fx, text: fxText, STAGE_N: STAGE_N, TXT: TXT, RATE: RATE };
+  W.__afkBossRelic = { _panel: panel, addEvo: addEvo, EVO: EVO, evoText: evoText, _death: death, _taken: taken, _dealt: dealt, LIST: LIST, BASE: BASE, BY: BY, KEYS: KEYS, tier: tier, val: val, fx: fx, text: fxText, STAGE_N: STAGE_N, TXT: TXT, RATE: RATE };
 })();

@@ -571,7 +571,7 @@
 <script src="js/01-drops-config.js?v=287d6f0e5cdc"></script>
 <script src="js/02-stats-recompute.js?v=8cefe7e46f92"></script>
     <script src="js/03-combat-core.js?v=3348328d330e"></script>
-    <script src="js/04-combat-attack.js?v=5dafdde1a48e"></script>
+    <script src="js/04-combat-attack.js?v=35859a7e7035"></script>
 <script src="js/05-kill-progression.js?v=524cae4b0f1a"></script>
     <script src="js/06-status-allies.js?v=d43ffca5592e"></script>
     <script src="js/07-skills-cast.js?v=48332b03c665"></script>
@@ -589,15 +589,15 @@
 <script src="js/19-equipment-window.js?v=2bf2f931c483"></script>
 <script src="js/20-warehouse-window.js?v=92e5e1d96a5a"></script>
 <script src="js/21-relic-book.js?v=2cf7d69f2832"></script>
-    <script src="js/23-summons.js?v=69b7f657728e"></script>
-    <script src="js/22-pets.js?v=f9735c9e1ba5"></script>
+    <script src="js/23-summons.js?v=7d44e7affc7b"></script>
+    <script src="js/22-pets.js?v=e2817217dbc0"></script>
     <script src="js/24-pandora-relic-market.js?v=f75cfb247059"></script>
     <script src="js/25-clan-system.js?v=9f104b862b0f"></script>
     <script src="js/26-world-channel.js?v=f03d4f92d3f4"></script>
 <script src="js/28-pvp-arena.js?v=735b3ed78942"></script>
 <script src="js/29-siege-v2-data.js?v=9e6e76f0aade"></script>
 <script src="js/30-siege-v2.js?v=a02956537917"></script>
-<script src="js/31-castle-guards.js?v=11ce18402c6f"></script>
+<script src="js/31-castle-guards.js?v=87769e9e8dd0"></script>
 <script src="js/32-threat.js?v=2d4b566d7053"></script>
     <!-- ═══════════ 加掛版外掛層（核心永遠是原作者原版；我們的功能全部是外掛疊上去） ═══════════ -->
     <!-- 此區塊由 scripts/sync-upstream.mjs 於「拉上游 index.html 後」自動注入到 </body> 之前。?v= 由 stamp-code-versions 補。 -->
@@ -705,7 +705,9 @@
     <script src="afk-dex.js?v=66a3b20efa05"></script>
     <!-- afk-illufix：幻術士修補（疼痛的歡愉 −50%、反彈、蝕刻印記；立方：燃燒 每 2 秒 5～50 火傷、灼熱印記、吸血回魔；立方：和諧回 MP 5 → 15，原 afk-classtweak）；排在 afk-wiki 之前（小百科說明跟著改）；需核心補丁 69 -->
     <script src="afk-illufix.js?v=d4806c4f9e9b"></script>
-    <script src="afk-wiki.js?v=94d38641df23"></script>
+    <!-- 小百科：用到才載入（afk-lazy.js，Ping 11-13） -->
+    <script>window.__AFK_LAZY_SRC={wiki:["afk-game-guide.js?v=aabe50f94f","afk-wiki.js?v=dbee7e1531"]};</script>
+    <script src="afk-lazy.js?v=f24c307989d7"></script>
     <!-- 設定選單 / 存檔 / 診斷 / 離線紀錄 -->
     <script src="afk-storage.js?v=a2831ae70fbf"></script>
     <!-- 整包備份／還原（本機檔案）：入口掛在 afk-storage 的設定選單裡，必須排在它之後 -->
@@ -762,7 +764,7 @@
     <!-- afk-relicsell：席琳夢域鏡遺物詞條、商人收遺物（龍鑽）、昇華支配分解；排在 afk-relicaffix／relicplus／dreamhell 之後 -->
     <script src="afk-relicsell.js?v=4e2039aa7866"></script>
     <!-- afk-rebirth：輪迴轉生（需核心補丁 20；裝備不限職業沿用 afk-anyclass） -->
-    <script src="afk-rebirth.js?v=174b13556416"></script>
+    <script src="afk-rebirth.js?v=2135520c08f0"></script>
     <!-- afk-ancient：古代藥水系列（天堂透視鏡古代體力恢復劑）、席琳夢域鏡藥水基礎補量 ×3 -->
     <script src="afk-ancient.js?v=5e9d66436878"></script>
     <!-- afk-arts：轉生技藝（奧拉奇里亞；需 afk-rebirth，排在它之後） -->
@@ -855,7 +857,7 @@
     <script src="afk-ringany.js?v=00b4e5b62ef7"></script>
     <!-- afk-resist：屬性抗性查表、無屬性抗性減物理傷害（需核心補丁 31） -->
     <!-- afk-curves：魔防／屬性抗性曲線統一（一份表、一個內插函式；afk-resist 也用這份表） -->
-    <script src="afk-curves.js?v=b2991fdbc9d4"></script>
+    <script src="afk-curves.js?v=34853bcce25c"></script>
     <script src="afk-resist.js?v=c1e195961122"></script>
     <!-- afk-dreamcost：席琳夢域鏡的死亡詛咒、轉生夢域技能／復活代價、寵物 MP 恢復吃玩家面板（需 afk-dreamhell） -->
     <script src="afk-dreamcost.js?v=2c9e163dae8b"></script>
@@ -942,7 +944,6 @@
     <!-- 小百科從目前物品與變身資料生成分階說明。 -->
     <!-- afk-icon-fix：道具圖示對齊天堂透視鏡（由 scripts/gen-icon-fix.mjs 依 data/ttmi-icon-check.json 產生） -->
     <script src="afk-icon-fix.js?v=c5aeec7faab4"></script>
-    <script src="afk-game-guide.js?v=0e03f6b0e305"></script>
     <script src="afk-readability.js?v=2de24dff82d3"></script>
     <!-- afk-craftinfo：製作清單每列多一行「成品能力」（點開看成品資料，手機不用長按）；手機版製作按鈕換到下一行 -->
     <script src="afk-craftinfo.js?v=2f6839046b8f"></script>
@@ -1152,7 +1153,7 @@
     <!-- afk-mapboss：地圖王（野外打倒 300 隻）、副本王（地監待滿 10 分鐘）、王之徽章；要在 afk-lore-kit、afk-region-boss 之後 -->
     <script src="afk-mapboss.js?v=9b23a898c997"></script>
     <script src="afk-bosscard.js?v=d7ddc11a0d1e"></script>
-    <script src="afk-bossrelic.js?v=5dec8c6b74eb"></script>
+    <script src="afk-bossrelic.js?v=6da619f014a7"></script>
 <script src="afk-timeroom.js?v=0c66693ced64"></script>
 <script src="afk-avatar.js?v=645fd5dff69f"></script>
     <!-- afk-dimrift：次元裂縫（世界規則：侵蝕、光蝕、面板減半、怪物倍率、掉落）；要在 afk-rebirth、afk-relic-companions、afk-lore-kit、afk-mio、afk-bracelet 之後 -->

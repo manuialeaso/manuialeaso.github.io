@@ -691,7 +691,7 @@ function applyMobMagicToSummon(mob, sk, s) {
     let baseM = roll(sk.dmg[0], sk.dmg[1]);
     let extra = (sk.db || 0) + (sk.dbLv ? (mob.lv || 0) * (sk.dbLvMult || 1) : 0);
     if (window.__afkPetTankRaw) { let __ptm = window.__afkPetTankRaw(s, baseM + extra, mob, sk.fixedDmg ? 'fixed' : 'magic', sk); baseM *= __ptm; extra *= __ptm; }   /* 🔌 加掛版補丁:頑強抵抗 */
-    let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * mrMult(mr)) - dr);
+    let dmg = sk.fixedDmg ? (baseM + extra) : (Math.floor((baseM + extra) * (window.mrMultTaken || mrMult)(mr)) - dr);
     dmg = Math.max(1, Math.floor(Math.max(1, dmg * shMul) * (typeof teamDmgReduceMult === 'function' ? teamDmgReduceMult(true) : 1)));
     dmg = Math.max(1, Math.floor(dmg * riftDamageMult()));
     if (window.AFK_RELIC_COMPANIONS) dmg=window.AFK_RELIC_COMPANIONS.incoming(s,dmg,mob,{kind:'magic',element:sk.ele||'none',skill:sk}); s.hp -= dmg; if (window.AFK_RELIC_COMPANIONS) window.AFK_RELIC_COMPANIONS.afterIncoming(s,dmg,mob); /* relic-companion:applyMobMagicToSummon-incoming */
