@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-b3a712cbd90a",
+  "build": "merge-0.4-9ed0d057fd95",
   "files": [
     {
       "url": "afk-abnforce.js?v=78f4f979cb9e",
@@ -1133,8 +1133,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-relic-catalog.js?v=6009166fea11",
-      "sha256": "6009166fea115c7dcda6e992d6d2b051fe8fad7245150ce6d8b22589539b4a9c",
+      "url": "afk-relic-catalog.js?v=3a8001402ad9",
+      "sha256": "3a8001402ad9728111fd2460a9497d790538c69e607e1ec586ec84c5f92addda",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1148,8 +1148,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-relic-defense.js?v=1e30b308652d",
-      "sha256": "1e30b308652d50424a07966bfec5beb8dd01335c552ae289527bba07c0d90504",
+      "url": "afk-relic-defense.js?v=7542cbb66223",
+      "sha256": "7542cbb662238c4996b37f8bbfd87de159a1f62a0d09aae3a894a16a7085cdcf",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1173,8 +1173,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-relic-weapons.js?v=806ce9adf600",
-      "sha256": "806ce9adf600521f4600079ccc38bddc6bc3d3c6d7f8a3ecc9c770c6b79c97d0",
+      "url": "afk-relic-weapons.js?v=cff2a350921a",
+      "sha256": "cff2a350921aac064d0307aed8b746b826b8e02878e32203d7c1bb7552b4cf87",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1188,8 +1188,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-relicfx.js?v=cd79e3b1d08e",
-      "sha256": "cd79e3b1d08e38f4ecca10ecc1a756cb110200bc543cde47809f4a14471cc43d",
+      "url": "afk-relicfx.js?v=a00443d4e88f",
+      "sha256": "a00443d4e88ff8cfce7bd145d77d7a500a9d7a648eeed71b94842a52f34132e9",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1198,8 +1198,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-relicplus.js?v=d394c3351e90",
-      "sha256": "d394c3351e9048cbb8544e977c7d6620567a92a647e01422b79c8650937531fc",
+      "url": "afk-relicplus.js?v=81d8faefb132",
+      "sha256": "81d8faefb132495fdff37abe4366b554731a9279572e8e28ed5dfff6f90c7d55",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1639,12 +1639,12 @@
     },
     {
       "url": "index.html",
-      "sha256": "d81144847972b4f2fbd33e31379064a2c69a3a58236562cb3d3900825a9cddde",
+      "sha256": "85fd964142560a25ee552cfc955a268cc6096b14ee3796660fb9b7dbdf757d6e",
       "type": "text/html; charset=utf-8"
     },
     {
-      "url": "js/00-data.js?v=6637104e1fa8",
-      "sha256": "6637104e1fa8c9ad1e617cf6ae215337d0328d5b481c542651d06e17ff10e981",
+      "url": "js/00-data.js?v=579471450eea",
+      "sha256": "579471450eea8088b9a4333adfdaf7822fd34e1caaf06e69e0e25bd291341e85",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1658,13 +1658,13 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/03-combat-core.js?v=95d8f7ae327e",
-      "sha256": "95d8f7ae327e1ef511094bb96f0231b3b26dcc3851d6856d8a40caf24dfaa3b2",
+      "url": "js/03-combat-core.js?v=3348328d330e",
+      "sha256": "3348328d330eece3b8e03c86e29907092cd0d9969303e445352502c6418a7ff0",
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/04-combat-attack.js?v=10982ffa2dc1",
-      "sha256": "10982ffa2dc112759dc1861cb7a02c6bb1b2f70c0486f9280e4e3c09fc5a4208",
+      "url": "js/04-combat-attack.js?v=5dafdde1a48e",
+      "sha256": "5dafdde1a48e3df234b9b7a53f301566e9f60ebd76d10fecde342578d8add82e",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1673,8 +1673,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/06-status-allies.js?v=0b84ed8d1262",
-      "sha256": "0b84ed8d1262ff169e6d704fdf4b07141ea202a7b2f6c93fd6d940d7dd5f6151",
+      "url": "js/06-status-allies.js?v=29de1470a165",
+      "sha256": "29de1470a165ffd92f15352de0e68aae64104e29988d406d71f44f7d89c30259",
       "type": "text/javascript; charset=utf-8"
     },
     {

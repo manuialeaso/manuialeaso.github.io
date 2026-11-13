@@ -90,8 +90,8 @@
     },
     relic_earthshatter_sword: function (d, n, asc) {   // 大地碎裂劍
       if (n >= 10) R4(d, 10); else if (n >= 5) R4(d, 5);
-      if (A5(asc)) hit(d, { t: 'cast', rate: 50, skId: 'sk_rock_prison', label: '陷陣岩崩' });
-      else if (A(asc)) hit(d, { t: 'cast', rate: 25, skId: 'sk_rock_prison', label: '陷陣岩崩' });
+      if (A5(asc)) hit(d, { t: 'cast', rate: 25, skId: 'sk_rock_prison', label: '陷陣岩崩' });
+      else if (A(asc)) hit(d, { t: 'cast', rate: 15, skId: 'sk_rock_prison', label: '陷陣岩崩' });
     },
     relic_sparto_shard: function (d, n, asc) {   // 殘暴骸骨的破片
       if (n >= 10) R4(d, 10); else if (n >= 5) R4(d, 5);

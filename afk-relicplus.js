@@ -48,7 +48,7 @@
     'ac', 'er', 'resFire', 'resWater', 'resWind', 'resEarth', 'weight', 'fireNullifyTicks', 'armguard', 'cls',
     'relicCatalogId', 'relicStage', 'relicRuntime', 'relicLore', 'relicAsc', 'relicEvo', 'relicFxRes', 'noAscUp', 'gmOnly',
     'relicSourceId', 'relicWeaponStage', 'relicHealingCd', 'relicFx3', 'relicInheritedEffects',
-    'allLures']);   // allLures（馴獸師的飼料袋）：要裝著那件遺物本身才有效，第二、第三詞綴抽到不繼承（玩家 2026-11-03）
+    'allLures', 'hardskinFireProc']);   // hardskinFireProc（業火鍛造鎚的剩餘 HP 1%）：不能被第二、第三詞綴繼承（平衡 2026-11-13）   // allLures（馴獸師的飼料袋）：要裝著那件遺物本身才有效，第二、第三詞綴抽到不繼承（玩家 2026-11-03）
   var RES4 = ['resFire', 'resWater', 'resWind', 'resEarth'];
   var ASC_RES = 2, FX_RES = 3;   // 玩家 2026-10-25 抗性下修：昇華每 +1 四抗 +2；第二、第三詞綴保底四抗 +3（全身昇華 +5 約 500）
   var KIND_OK = function (d) { return !!(d && isRelic(d) && !d.gmOnly && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && ['pet', 'petwpn', 'petarm', 'doll'].indexOf(d.slot) < 0); };
@@ -79,6 +79,10 @@
     if (d.relicPlus >= 10 && fields.indexOf('procPoison') >= 0 && d.procPoison && typeof d.procPoison.rate === 'number') d.procPoison.rate = 100;
     if (d.relicPlus >= 10 && fields.indexOf('procPoisonRate') >= 0) d.procPoisonRate = 100;
     if (fields.indexOf('onDmgHeal') >= 0) d.onDmgHealCd = Math.max(10, Number(d.onDmgHealCd) || 0);
+    // 平衡 2026-11-13：繼承來的攻擊施法，觸發率減半
+    if (fields.indexOf('procRateBase') >= 0 && typeof d.procRateBase === 'number') d.procRateBase = d.procRateBase / 2;
+    if (fields.indexOf('procSkill2') >= 0 && d.procSkill2 && typeof d.procSkill2.rate === 'number') d.procSkill2.rate = d.procSkill2.rate / 2;
+    ['procFireSkillRate', 'windSpellProcRate'].forEach(function (f) { if (fields.indexOf(f) >= 0 && typeof d[f] === 'number') d[f] = d[f] / 2; });
     return fields;
   }
   var parseId = function (id) {

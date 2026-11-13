@@ -1034,7 +1034,7 @@ function allyAttackOnce(ally, _arrowDelay) {   // 🏹 v3.2.14 _arrowDelay(選�
             else if (insight) { dmg *= 2; kp = '<span class="text-cyan-300 font-bold">【看破】</span>'; }
             else if (slay) { dmg *= 3; kp = '<span class="text-orange-400 font-bold">【殺戮】</span>'; }
         }
-        if (heavy && allyHasMastery(ally, 'k_cleave') && wpn && wpn.eff === 'cleave') dmg = Math.max(1, Math.floor(dmg * 1.5));   // 🏅 切割精通（傭兵）：觸發重擊時傷害 ×1.5
+        if (heavy && allyHasMastery(ally, 'k_cleave') && wpn && wpn.eff === 'cleave') dmg = Math.max(1, Math.floor(dmg * 1.2));   // 🏅 切割精通（傭兵）：觸發重擊時傷害 ×1.2（平衡 2026-11-13）
         if (heavy && wpn && wpn.heavyMult) dmg = Math.max(1, Math.floor(dmg * wpn.heavyMult));   // 🏺 v3.1.76 鎧甲守衛的笨重巨劍（傭兵）：重擊傷害 ×heavyMult（鏡像玩家 js/03:903）
         if (heavy && wpn && wpn.heavyBonusDmg) dmg += wpn.heavyBonusDmg;   // 🌅 牛鬼的斷角（傭兵）：重擊時額外傷害 +N（固定值·倍率後加算·鏡像玩家 js/03）
         if (ally.statuses && ally.statuses.broken > 0) dmg = Math.max(1, Math.floor(dmg * 0.8));   // 🐍 v3.1.76 壞物術（易碎泥偶自傷·傭兵）：期間物理傷害 -20%（鏡像玩家 js/03:904）
@@ -1089,7 +1089,7 @@ function allyAttackOnce(ally, _arrowDelay) {   // 🏹 v3.2.14 _arrowDelay(選�
         if (wpn && wpn.procBurn && t.curHp > 0 && (wpn.procBurn.magicHit ? allyAbnormalMagicHit(ally, t) : (!wpn.procBurn.rate || Math.random() * 100 < wpn.procBurn.rate))) t._burnDot = { left: (wpn.procBurn.dur || 6) * 10, dmg: wpn.procBurn.dmg || 10, tick: (wpn.procBurn.tick || 1) * 10, src: _dpsAllySrc(ally) };   // 🏺 熔岩灼燒的雙拳（傭兵鏡像玩家）：命中附加灼燒 DoT；🎯 DPS 歸該傭兵；🔥 v3.7.54 magicHit 改用該傭兵的等級／魔法命中
         if (wpn && wpn.procPoisonPct && t.curHp > 0 && dmg > 0 && (window.__afkDebuffAllOff || typeof allyAbnormalMagicHit !== 'function' || allyAbnormalMagicHit(ally, t))) { /* 🔌 加掛版補丁:負面效果抵抗 */ if (!t.st) t.st = newMobStatus(); let _ppd = Math.max(1, Math.floor(dmg * (wpn.procPoisonPct.pct || 50) / 100)); t.st.poison = (wpn.procPoisonPct.dur || 6) * 10; t.st.poisonTick = 10; t.st.poisonStacks = 1; t.st.poisonUnit = _ppd; t.st.poisonDmg = _ppd; t.st.poisonSrc = _dpsAllySrc(ally); }   // 🌅 遺物 毒鵺的黑尾（傭兵鏡像玩家）：命中附加「每秒該次傷害 pct%」中毒（最多 1 層·刷新覆蓋）
         if (wpn && wpn.windbladeProc && t.curHp > 0 && Math.random() * 100 < wpn.windbladeProc) { t.bleeds = t.bleeds || []; t._bleedCap = Math.max(t._bleedCap || 0, 5); while (t.bleeds.length >= t._bleedCap) t.bleeds.shift(); t.bleeds.push({ dmg: 10, ticksLeft: 60 }); t._bleedSrc = _dpsAllySrc(ally); }   // 🏺 v3.6.44 疾風拳刃（傭兵鏡像）：3% 風刃出血（每秒 10 點·6 秒）
-        if (wpn && wpn.hardskinFireProc && t.curHp > 0 && _hsT > 0) { let _hf = Math.max(1, Math.floor(Math.max(1, t.curHp * 0.01) * elementCounterMult('fire', t.e))); t.curHp -= (_hf=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(ally,t,_hf,{nativeRefund:'terror',kind:'magic'}):_hf)); if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, _hf, 'magic'); t.justHit = 'fire'; t._spellHurt = true; }   // 🏺 v3.6.44 業火鍛造鎚（傭兵鏡像）：命中有硬皮敵人→額外剩餘 HP 1% 火魔傷
+        if (wpn && wpn.hardskinFireProc && t.curHp > 0 && _hsT > 0) { let _hf = Math.max(1, Math.floor(Math.max(1, t.curHp * 0.01) * elementCounterMult('fire', t.e))); if (t.boss) _hf = Math.min(_hf, Math.max(1, Math.floor(Number(dmg) || 0)));   /* 平衡 2026-11-13 */ t.curHp -= (_hf=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(ally,t,_hf,{nativeRefund:'terror',kind:'magic'}):_hf)); if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(t, _hf, 'magic'); t.justHit = 'fire'; t._spellHurt = true; }   // 🏺 v3.6.44 業火鍛造鎚（傭兵鏡像）：命中有硬皮敵人→額外剩餘 HP 1% 火魔傷
         if (wpn && wpn.hpOnHit && dmg > 0 && !ally._downed) (window.AFK_RELIC_WEAPON_BRIDGE ? window.AFK_RELIC_WEAPON_BRIDGE.procHeal(ally,wpn.hpOnHit,wpn) : (ally.curHp = Math.min(ally.mhp || 1, (ally.curHp || 0) + wpn.hpOnHit))) /* relic-weapon-bridge:source-heal-9 */;   // 🏺 v3.6.44 嗜血騎士的雙刀（傭兵鏡像）：命中恢復 HP
         if (wpn && wpn.hasteStrike && !(window.AFK_RELIC_WEAPON_BRIDGE && window.AFK_RELIC_WEAPON_BRIDGE.keepHaste(wpn)) && ally.buffs && ally.buffs.haste > 0) { ally.buffs.haste = 0; /* relic-weapon-bridge:ally-haste-preserve */ try { _allyLevelRecompute(ally); } catch (e) {} }   // 🏺 v3.1.76 殺人蜂的尾刺（傭兵）：一般攻擊命中時失去加速狀態（鏡像玩家 js/04:148）
         if (ally._setDragonblood2 && dmg > 0) ally.curHp = Math.min(ally.mhp || 1, (ally.curHp || 0) + Math.max(1, Math.floor(dmg * ((ally.curHp < (ally.mhp || 1) * 0.5) ? 0.05 : 0.01))));   // 🐉 v2.6.9 #1b 龍血2/5（傭兵）：造成物理傷害吸血1%（自身HP<50%→5%）·回復戰鬥HP(curHp)
@@ -1981,7 +1981,8 @@ function allyWeaponProcs(ally, target, hitInfo, instOverride) {
     // 🔧 武器附魔施放（spellProc/procSkill，與玩家一致）：一般武器命中與否皆判定；procOnHit 武器僅命中時判定
     if ((wpn.spellProc || wpn.procSkill) && (!wpn.procOnHit || (hitInfo && hitInfo.hit))) {
         let _en = capWpnEn(wpnInst.en);
-        if (Math.random() * 100 < ((wpn.procRateBase || 1) + (wpn.procRatePerEn != null ? wpn.procRatePerEn : 1) * _en)) {
+        if (!(wpn.relic && state.ticks < (ally._relicProcIcd || 0)) && Math.random() * 100 < ((wpn.procRateBase || 1) + (wpn.procRatePerEn != null ? wpn.procRatePerEn : 1) * _en)) {
+            if (wpn.relic) ally._relicProcIcd = state.ticks + 5;   /* 平衡 2026-11-13：遺物攻擊施法每 0.5 秒最多一次 */
             let st = _allyProcTarget(target);
             // ⚡ v3.7.52 克特之盾（judgmentThunder·傭兵鏡像玩家）：裝備指定武器時 spellProc 升級為審判落雷（同觸發骰＝機率不變）
             let _spA = wpn.spellProc;

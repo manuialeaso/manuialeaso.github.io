@@ -165,7 +165,7 @@ function playerAttack() {
         if (wpn && wpn.procBurn && target.curHp > 0 && (wpn.procBurn.magicHit ? abnormalMagicHit(target) : (!wpn.procBurn.rate || Math.random() * 100 < wpn.procBurn.rate))) target._burnDot = { left: (wpn.procBurn.dur || 6) * 10, dmg: wpn.procBurn.dmg || 10, tick: (wpn.procBurn.tick || 1) * 10 };   // 🏺 熔岩灼燒的雙拳：命中附加灼燒 DoT（每秒 dmg 火傷、持續 dur 秒·刷新）；🔥 v3.7.52 magicHit:true（烈焰死騎劍）＝改走魔法命中公式判定
         if (wpn && wpn.procPoisonPct && target.curHp > 0 && result.dmg > 0 && (window.__afkDebuffAllOff || typeof abnormalMagicHit !== 'function' || abnormalMagicHit(target))) { /* 🔌 加掛版補丁:負面效果抵抗 */ if (!target.st) target.st = newMobStatus(); let _ppd = Math.max(1, Math.floor(result.dmg * (wpn.procPoisonPct.pct || 50) / 100)); target.st.poison = (wpn.procPoisonPct.dur || 6) * 10; target.st.poisonTick = 10; target.st.poisonStacks = 1; target.st.poisonUnit = _ppd; target.st.poisonDmg = _ppd; target.st.poisonSrc = 'player'; }   // 🌅 遺物 毒鵺的黑尾：命中附加「每秒該次傷害 pct%」中毒（最多 1 層·dur 秒·刷新覆蓋）
         if (wpn && wpn.windbladeProc && target.curHp > 0 && Math.random() * 100 < wpn.windbladeProc) { target.bleeds = target.bleeds || []; target._bleedCap = Math.max(target._bleedCap || 0, 5); while (target.bleeds.length >= target._bleedCap) target.bleeds.shift(); target.bleeds.push({ dmg: 10, ticksLeft: 60 }); target._bleedSrc = 'player'; logCombat(`<span class="font-bold text-emerald-300">【風刃】</span>疾風割裂目標，陷入出血（每秒 10 點·6 秒）。`, 'player-special'); }   // 🏺 v3.6.44 疾風拳刃：3% 觸發風刃出血
-        if (wpn && wpn.hardskinFireProc && target.curHp > 0 && _mainHardSkin > 0) { let _hf = Math.max(1, Math.floor(Math.max(1, target.curHp * 0.01) * elementCounterMult('fire', target.e))); target.curHp -= (_hf=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,target,_hf,{nativeRefund:'terror',kind:'magic'}):_hf)); if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(target, _hf, 'magic'); target.justHit = 'fire'; target._spellHurt = true; logCombat(`<span class="font-bold" style="color:#fb923c;text-shadow:0 0 6px #dc2626;">【業火】</span>業火灼穿硬皮，額外造成 ${_hf} 點火屬性魔法傷害。`, 'player-special'); if (target.curHp <= 0) { let _hfIdx = mapState.mobs.findIndex(x => x && x.uid === target.uid); if (_hfIdx !== -1) killMob(_hfIdx); } }   // 🏺 v3.6.44 業火鍛造鎚：命中有硬皮的敵人→額外目標剩餘 HP 1% 火魔傷
+        if (wpn && wpn.hardskinFireProc && target.curHp > 0 && _mainHardSkin > 0) { let _hf = Math.max(1, Math.floor(Math.max(1, target.curHp * 0.01) * elementCounterMult('fire', target.e))); if (target.boss) _hf = Math.min(_hf, Math.max(1, Math.floor(Number(result.dmg) || 0)));   /* 平衡 2026-11-13：對頭目不超過該次普攻傷害 */ target.curHp -= (_hf=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(player,target,_hf,{nativeRefund:'terror',kind:'magic'}):_hf)); if (typeof terrorVisageOnDamage === 'function') terrorVisageOnDamage(target, _hf, 'magic'); target.justHit = 'fire'; target._spellHurt = true; logCombat(`<span class="font-bold" style="color:#fb923c;text-shadow:0 0 6px #dc2626;">【業火】</span>業火灼穿硬皮，額外造成 ${_hf} 點火屬性魔法傷害。`, 'player-special'); if (target.curHp <= 0) { let _hfIdx = mapState.mobs.findIndex(x => x && x.uid === target.uid); if (_hfIdx !== -1) killMob(_hfIdx); } }   // 🏺 v3.6.44 業火鍛造鎚：命中有硬皮的敵人→額外目標剩餘 HP 1% 火魔傷
         if (wpn && wpn.hpOnHit && result.dmg > 0) (window.AFK_RELIC_WEAPON_BRIDGE ? window.AFK_RELIC_WEAPON_BRIDGE.procHeal(player,wpn.hpOnHit,wpn) : (player.hp = Math.min(player.mhp, player.hp + wpn.hpOnHit))) /* relic-weapon-bridge:source-heal-2 */;   // 🏺 v3.6.44 嗜血騎士的雙刀：一般攻擊命中恢復 HP
         // 🔧 黑暗妖精：附加劇毒（命中 50%／劇毒精通 100% 使目標中毒：每秒該次攻擊 60%／劇毒精通 200% 傷害，持續 5 秒，最多 1 層，取較高傷害並刷新持續時間）
         if (player.buffs && player.buffs.sk_dark_poison > 0 && target.curHp > 0 && Math.random() < (hasMastery('d_poison') ? 1 : 0.5) && (window.__afkDebuffAllOff || typeof abnormalMagicHit !== 'function' || abnormalMagicHit(target))) { /* 🔌 加掛版補丁:負面效果抵抗 */
@@ -669,7 +669,8 @@ function weaponSpellProc(target, attackHit, instOverride) {
         }
     }
     // 🌅 遺物 九尾妖狐的怒火 procSkill2：第二觸發槽（獨立機率 rate%·免費施放·同 procSkill 傷害公式）——與主 procSkill 各自判定互不影響
-    if (wpn.procSkill2 && wpn.procSkill2.skId && Math.random() * 100 < (wpn.procSkill2.rate || 5)) {
+    if (wpn.procSkill2 && wpn.procSkill2.skId && !(wpn.relic && state.ticks < (player._relicProc2Icd || 0)) && Math.random() * 100 < (wpn.procSkill2.rate || 5)) {
+        if (wpn.relic) player._relicProc2Icd = state.ticks + 5;   /* 平衡 2026-11-13：遺物攻擊施法每 0.5 秒最多一次 */
         let _t2 = (target && target.curHp > 0) ? target : null;
         if (!_t2) { let _al2 = mapState.mobs.filter(m => m && m.curHp > 0); if (_al2.length) _t2 = _al2[Math.floor(Math.random() * _al2.length)]; }
         if (_t2) procFreeMagicSkill(_t2, wpn.procSkill2.skId, capWpnEn(inst.en), false, wpn);
@@ -679,7 +680,9 @@ function weaponSpellProc(target, attackHit, instOverride) {
     // healing and secondary spell effects retain their own trigger rules.
     if (wpn.procOnHit && !attackHit) return;
     let en = capWpnEn(inst.en);
-    if (Math.random() * 100 >= ((wpn.procRateBase || 1) + (wpn.procRatePerEn != null ? wpn.procRatePerEn : 1) * en)) return;   // 預設 1% + 每強化 +1%；🔧 巴風特魔杖 procRateBase:2/procRatePerEn:2
+    if (wpn.relic && state.ticks < (player._relicProcIcd || 0)) return;   /* 平衡 2026-11-13：遺物攻擊施法每 0.5 秒最多一次 */
+    if (Math.random() * 100 >= ((wpn.procRateBase || 1) + (wpn.procRatePerEn != null ? wpn.procRatePerEn : 1) * en)) return;
+    if (wpn.relic) player._relicProcIcd = state.ticks + 5;   // 預設 1% + 每強化 +1%；🔧 巴風特魔杖 procRateBase:2/procRatePerEn:2
     let t = (target && target.curHp > 0) ? target : null;
     if (!t) {
         let alive = mapState.mobs.filter(m => m && m.curHp > 0);
