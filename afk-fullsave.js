@@ -255,16 +255,82 @@
     // 因為角色指紋一樣而放行,開著的分頁每 5 秒就把還原的內容蓋回去,而且畫面照樣顯示還原成功。
     // ⚠️ AFK_UI.confirm 會把 message 先 esc() 再把 \n 換成 <br>(afk-ui.js) → 塞 HTML 標籤會被當文字印出來,
     //    要條列只能用純文字編號。
+    var G = window.LineageSaveGate;
+    // 11-13：這台已經有角色 → 先問「整台換成備份」還是「合併」；合併時分不出新舊的角色、兩台都動過的共用資料讓玩家選
+    if (window.LineageBoot && G && G.mergePreview) {
+      G.mergePreview(pack).then(function (pv) {
+        if (!pv || !pv.deviceHas) { ask('備份檔：' + when + '\n\n1. 請確認已關閉其他遊戲分頁。\n2. 這台裝置原本的紀錄將被覆蓋。', function () { runApply(pack); }); return; }
+        chooseMode(pack, pv, when);
+      }).catch(function () { ask('備份檔：' + when + '\n\n1. 請確認已關閉其他遊戲分頁。\n2. 這台裝置原本的紀錄將被覆蓋。', function () { runApply(pack); }); });
+      return;
+    }
     ask('備份檔：' + when + '\n\n1. 請確認已關閉其他遊戲分頁。\n2. 這台裝置原本的紀錄將被覆蓋。',
       function () { runApply(pack); });
   }
 
-  function runApply(pack) {
+  // ── 11-13：選擇還原方式（整台換成備份／合併）＋分岔角色逐一選 ──
+  var CLSN = { royal: '王族', knight: '騎士', elf: '妖精', mage: '法師', dark: '黑暗妖精', dragon: '龍騎士', illusion: '幻術士', warrior: '戰士' };
+  function fmtAt(t) { if (!t) return '不明（舊存檔）'; try { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); } catch (e) { return '不明'; } }
+  function sumTxt(x) { return x ? (CLSN[x.cls] || x.cls || '') + ' Lv' + x.lv + '・' + x.rb + ' 轉' : ''; }
+  function nm(x) { return x && x.name ? x.name : '（未命名）'; }
+  function modal(html, bind) {
+    var old = document.getElementById('m-fsv-choose'); if (old) old.remove();
+    var o = document.createElement('div'); o.id = 'm-fsv-choose';
+    o.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(2,6,23,.82);display:flex;align-items:center;justify-content:center;padding:12px';
+    o.innerHTML = '<div style="background:#0f172a;border:1px solid #334155;border-radius:14px;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;padding:16px;color:#e2e8f0;font-size:14px;line-height:1.6">' + html + '</div>';
+    document.body.appendChild(o);
+    var close = function () { o.remove(); };
+    o.addEventListener('click', function (e) { var b = e.target.closest('[data-fsv]'); if (!b) return; bind(b.getAttribute('data-fsv'), o, close); });
+    return o;
+  }
+  var BTN = 'display:block;width:100%;text-align:left;margin:8px 0;padding:10px 12px;border-radius:10px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;font-size:14px';
+  function chooseMode(pack, pv, when) {
+    var div = pv.roles.filter(function (r) { return r.rel === 'diverged'; });
+    var h = '<div style="font-size:17px;font-weight:bold;color:#fde68a;margin-bottom:4px">這台裝置已經有角色</div>'
+      + '<div style="color:#94a3b8;font-size:12px">備份檔：' + esc(when) + '。不管選哪一個，這台目前的資料都會先自動備份一份。請先關閉其他遊戲分頁。</div>'
+      + '<button type="button" data-fsv="replace" style="' + BTN + ';border-color:#ca8a04;background:linear-gradient(180deg,rgba(113,63,18,.45),#1e293b)"><b style="color:#fde68a">📲 整台換成這份備份</b>（換裝置建議用這個）<br><span style="color:#cbd5e1;font-size:13px">角色、倉庫、寵物、血盟、龍之鑽石、收集冊全部換成備份的內容。這台獨有的角色會不見'
+      + (pv.deviceOnly ? '（這台有 ' + pv.deviceOnly + ' 個角色備份裡沒有）' : '') + '。</span></button>'
+      + '<button type="button" data-fsv="merge" style="' + BTN + '"><b style="color:#c4b5fd">🔀 合併</b><br><span style="color:#cbd5e1;font-size:13px">每個角色各自比較，看得出哪邊是接著玩下去的就用那邊；分不出來的' + (div.length ? '（' + div.length + ' 個）' : '') + '讓你選。'
+      + (pv.shared.length ? '兩台都動過的「' + esc(pv.shared.join('、')) + '」也讓你選。' : '') + '</span></button>'
+      + '<button type="button" data-fsv="cancel" style="' + BTN + ';text-align:center;color:#94a3b8">取消</button>';
+    modal(h, function (a, o, close) {
+      if (a === 'cancel') { close(); return; }
+      if (a === 'replace') { close(); runApply(pack, { mode: 'replace' }); return; }
+      if (a === 'merge') { if (!div.length && !pv.shared.length) { close(); runApply(pack, { mode: 'merge' }); return; } pickRoles(pack, pv, div); }
+    });
+  }
+  function pickRoles(pack, pv, div) {
+    var pick = {}, shared = 'device';
+    div.forEach(function (r) { pick[r.id] = (r.bak.at || 0) >= (r.dev.at || 0) ? 'backup' : 'device'; });
+    var card = function (r, side) {
+      var x = side === 'backup' ? r.bak : r.dev, on = pick[r.id] === side;
+      return '<button type="button" data-fsv="p|' + r.id + '|' + side + '" style="flex:1;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid ' + (on ? '#a78bfa' : '#334155') + ';background:' + (on ? 'rgba(76,29,149,.45)' : '#1e293b') + ';color:#e2e8f0;font-size:13px">'
+        + (on ? '◉ ' : '○ ') + '<b>' + (side === 'backup' ? '備份的' : '這台的') + '</b><br>' + esc(sumTxt(x)) + '<br><span style="color:#94a3b8">最後存檔：' + esc(fmtAt(x.at)) + '</span></button>';
+    };
+    var draw = function (o) {
+      var h = '<div style="font-size:17px;font-weight:bold;color:#fde68a">要留哪一邊？</div><div style="color:#94a3b8;font-size:12px;margin-bottom:6px">這些角色兩台都各自玩過，分不出哪一邊比較新，請自己選。沒選到的那一邊會被蓋掉（還原前會自動備份）。</div>';
+      div.forEach(function (r) { h += '<div style="margin:10px 0 4px;color:#c4b5fd;font-weight:bold">第 ' + r.slot + ' 格「' + esc(nm(r.dev)) + '」</div><div style="display:flex;gap:8px">' + card(r, 'device') + card(r, 'backup') + '</div>'; });
+      if (pv.shared.length) {
+        var sb = function (side, label) { var on = shared === side; return '<button type="button" data-fsv="s|' + side + '" style="flex:1;padding:8px 10px;border-radius:10px;border:1px solid ' + (on ? '#a78bfa' : '#334155') + ';background:' + (on ? 'rgba(76,29,149,.45)' : '#1e293b') + ';color:#e2e8f0;font-size:13px">' + (on ? '◉ ' : '○ ') + label + '</button>'; };
+        h += '<div style="margin:12px 0 4px;color:#c4b5fd;font-weight:bold">' + esc(pv.shared.join('、')) + '</div><div style="color:#94a3b8;font-size:12px">兩台都有變動，選一邊：</div><div style="display:flex;gap:8px;margin-top:4px">' + sb('device', '這台的') + sb('backup', '備份的') + '</div>';
+      }
+      h += '<div style="display:flex;gap:8px;margin-top:14px"><button type="button" data-fsv="back" style="flex:1;padding:10px;border-radius:10px;border:1px solid #475569;background:#1e293b;color:#cbd5e1">返回</button><button type="button" data-fsv="go" style="flex:2;padding:10px;border-radius:10px;border:1px solid #a78bfa;background:linear-gradient(180deg,#7c3aed,#5b21b6);color:#fff;font-weight:bold">照這樣合併</button></div>';
+      o.firstChild.innerHTML = h;
+    };
+    var o = modal('', function (a, o2, close) {
+      if (a === 'back') { close(); chooseMode(pack, pv, ''); return; }
+      if (a === 'go') { close(); runApply(pack, { mode: 'merge', pick: pick, shared: shared }); return; }
+      var t = a.split('|'); if (t[0] === 'p') pick[t[1]] = t[2]; else if (t[0] === 's') shared = t[1]; draw(o2);
+    });
+    draw(o);
+  }
+
+  function runApply(pack, opt) {
     // Unified build: file and transfer-code restores share the same verified, reversible transaction.
     if (window.LineageBoot) {
       if (!window.LineageSaveGate) { note('存檔保護工具尚未載入，請重新開啟合併版。', true); return; }
       note('正在備份目前資料並還原…');
-      window.LineageSaveGate.restoreFull(pack).then(function () {
+      window.LineageSaveGate.restoreFull(pack, opt).then(function () {
         note('✅ 已還原，操作前資料已保留，重新載入中…');
         setTimeout(function () { location.reload(); }, 900);
       }).catch(function (e) { note('❌ 還原未完成：' + String(e.message || '').replace(/。$/, '') + (e.causeCode ? '（' + ({ QuotaExceededError: '這台裝置的瀏覽器空間不夠', 22: '這台裝置的瀏覽器空間不夠', VERIFY: '寫入後讀回不一致', CONFLICT: '還原時資料被其他分頁改動' }[e.causeCode] || e.causeCode) + (e.failKey ? '；卡在 ' + e.failKey + '，' + Math.round((e.failSize || 0) / 1024) + 'K 字' : '') + (e.used ? '；目前已用 ' + Math.round(e.used / 1024) + 'K 字' : '') + '）' : '') + '。' + (VER ? '（程式版本 ' + VER.slice(0, 6) + '）' : '') + '可到「存檔與修復」查看操作前備份。', true); });

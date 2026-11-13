@@ -30,8 +30,8 @@
  * 圖桶失效走 reconcileImages 逐張對帳(見上);不再背景預抓——圖片一律 on-demand 用到才抓、不主動下載整包。
  * ========================================================================== */
 <<<<<<< HEAD
-const CODE_VERSION = 'code-b8a4854dd478';   // ← scripts/stamp-sw-version.mjs 自動覆寫,勿手改(只用來讓 sw.js 內容變動→觸發更新偵測,不是桶名)
-const BUILD_ID     = 'merge-0.4-b8a485'; // ← stamp 在 CODE_VERSION 變動時一起更新成台灣時間 MMDD-HHMM(僅供畫面辨識版本)
+const CODE_VERSION = 'code-c4f0a0649671';   // ← scripts/stamp-sw-version.mjs 自動覆寫,勿手改(只用來讓 sw.js 內容變動→觸發更新偵測,不是桶名)
+const BUILD_ID     = 'merge-0.4-c4f0a0'; // ← stamp 在 CODE_VERSION 變動時一起更新成台灣時間 MMDD-HHMM(僅供畫面辨識版本)
 =======
 const CODE_VERSION = 'code-560db0678f3e';   // ← scripts/stamp-sw-version.mjs 自動覆寫,勿手改(只用來讓 sw.js 內容變動→觸發更新偵測,不是桶名)
 const BUILD_ID     = 'merge-0.4-560db0'; // ← stamp 在 CODE_VERSION 變動時一起更新成台灣時間 MMDD-HHMM(僅供畫面辨識版本)

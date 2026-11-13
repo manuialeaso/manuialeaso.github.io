@@ -50,14 +50,14 @@
     if (mr) {
       sessionStorage.removeItem('lineage_merge_report');
       var R0 = JSON.parse(mr), lines = [];
-      if (R0.replaced.length) lines.push('換成備份（備份比較新）：' + R0.replaced.join('、'));
-      if (R0.kept.length) lines.push('保留這台（這台比較新或一樣）：' + R0.kept.join('、'));
+      if (R0.replaced.length) lines.push('換成備份：' + R0.replaced.join('、'));
+      if (R0.kept.length) lines.push('保留這台：' + R0.kept.join('、'));
       if (R0.added.length) lines.push('新加入：' + R0.added.join('、'));
       if (R0.skipped.length) lines.push('略過：' + R0.skipped.join('、'));
-      var SN = { backup: '用備份的（備份是接著這台動下去的）', same: '兩邊一樣', 'device-newer': '保留這台的（這台比較新）', both: '兩台都有變動，保留這台的' };
+      var SN = { backup: '用備份的（備份是接著這台動下去的）', same: '兩邊一樣', 'device-newer': '保留這台的（這台比較新）', both: '兩台都有變動，你選了保留這台的', 'both-backup': '兩台都有變動，你選了用備份的' };
       var sh = R0.shared && typeof R0.shared === 'object' ? R0.shared : {};
       Object.keys(sh).forEach(function (k) { lines.push(k + '：' + (SN[sh[k]] || '保留這台的')); });
-      lines.push('收集冊：兩邊合起來');
+      if (R0.mode === 'replace') lines.push('倉庫、寵物、血盟、收集冊等共用資料：全部換成備份的'); else lines.push('收集冊：兩邊合起來');
       setTimeout(function () { var msg = '合併還原完成\n\n' + lines.join('\n'); if (W.AFK_UI && AFK_UI.confirm) AFK_UI.confirm({ title: '合併還原完成', message: lines.join('\n'), okText: '知道了', cancelText: '關閉' }); else alert(msg); }, 2000);
     }
   } catch (e) {}
@@ -69,6 +69,10 @@
     W.saveGame = function () {
       if (restoring) return false;
       try { stampAcct(P()); } catch (e) {}
+      try {   // 11-13：每台裝置存到第幾次＋存檔時間（合併還原判斷哪一邊是接著玩下去的，merged/save-gate roleRel）
+        var p0 = P(), LD = W.LineageDevice;
+        if (p0 && LD) { var dm = (p0._devSeq && typeof p0._devSeq === 'object') ? p0._devSeq : (p0._devSeq = {}); dm[LD.id()] = (Number(p0._saveSeq) || 0) + 1; p0._savedAt = Date.now(); }
+      } catch (e) {}
       chainRec();
       return oSave.apply(this, arguments);
     };

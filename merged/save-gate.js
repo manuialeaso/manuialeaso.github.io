@@ -28,6 +28,25 @@
  const unionDex=(a,b)=>{try{const x=JSON.parse(a),y=JSON.parse(b);if(!x||!y||typeof x!=='object'||typeof y!=='object'||Array.isArray(x)||Array.isArray(y))return null;const flat=o=>Object.values(o).every(v=>v===true||v===false||typeof v==='number');if(!flat(x)||!flat(y))return null;const o={...x};for(const k of Object.keys(y))if(y[k]&&!o[k])o[k]=y[k];return JSON.stringify(o);}catch(e){return null;}};
  window.LineageSharedChain={SHARED,DEX,KEY:CHAIN,hash:fnv,chainOf,name:SHARED_N,
   record(){try{const c=chainOf({[CHAIN]:localStorage.getItem(CHAIN)});let changed=false;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!SHARED.test(k))continue;const h=fnv(localStorage.getItem(k)),L=c.keys[k]||(c.keys[k]=[]);if(L[L.length-1]!==h){L.push(h);if(L.length>60)L.splice(0,L.length-60);changed=true;}}if(changed)localStorage.setItem(CHAIN,JSON.stringify({v:2,keys:c.keys}));return changed;}catch(e){return false;}}};
+ // 11-13（Ping）：換裝置匯入回到舊進度 → 角色多記「每台裝置存到第幾次」（p._devSeq，afk-antisl 存檔時寫）與存檔時間（p._savedAt）
+ //   比較兩份同一個角色：某一邊每台裝置的次數都 ≥ 另一邊 → 那邊是接著玩下去的（自動用它）；兩邊各自在不同裝置往前走過 → 分岔，讓玩家選
+ //   舊存檔沒有 _devSeq：備份的存檔次數比較多 → 用備份；否則一律讓玩家選（不再自動留這台）
+ const DEV_KEY='lineage_device_id_v1';
+ const devId=()=>{try{let d=localStorage.getItem(DEV_KEY);if(!d){d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem(DEV_KEY,d);}return d;}catch(e){return 'd0';}};
+ const roleRel=(pB,pD,rawB,rawD)=>{
+  if(rawB===rawD)return 'same';
+  const sq=p=>{const n=Number(p&&p._saveSeq);return Number.isSafeInteger(n)&&n>0?n:0;};
+  const mB=pB&&pB._devSeq&&typeof pB._devSeq==='object'?pB._devSeq:null,mD=pD&&pD._devSeq&&typeof pD._devSeq==='object'?pD._devSeq:null;
+  if(mB&&mD&&Object.keys(mB).length&&Object.keys(mD).length){
+   let bA=false,dA=false;for(const k of new Set([...Object.keys(mB),...Object.keys(mD)])){const b=Number(mB[k])||0,d=Number(mD[k])||0;if(b>d)bA=true;if(d>b)dA=true;}
+   return bA&&!dA?'backup':dA&&!bA?'device':!bA&&!dA?'same':'diverged';
+  }
+  if(sq(pB)>sq(pD))return 'backup';
+  if(sq(pB)===sq(pD)&&sq(pB)>0&&(pB&&pB.lv)===(pD&&pD.lv)&&(pB&&pB.exp)===(pD&&pD.exp))return 'same';
+  return 'diverged';
+ };
+ const roleSum=p=>({name:(p&&p.name)||'',cls:(p&&p.cls)||'',lv:Number(p&&p.lv)||0,rb:Math.floor(Number(p&&p.rebirth)||0),at:Number(p&&p._savedAt)||0});
+ window.LineageDevice={id:devId,KEY:DEV_KEY,rel:roleRel};
  window.LineageSaveGate={
   async importRole(raw,slot){
    trace.start(raw,slot);
@@ -114,7 +133,21 @@
     return true;
    }catch(e){alert(trace.fail(e));return false;}
   },
-  async restoreFull(pack){
+  // 匯入前預覽：這台已經有角色時，列出每個角色的比較結果與「兩台都有變動」的共用資料（afk-fullsave 用來問玩家）
+  async mergePreview(pack){
+   const data=B.inspect(JSON.stringify(pack));if(data.kind!=='full')return null;
+   const cur0=R.capture(localStorage),curRoles=B.roleKeys(cur0);if(!curRoles.length)return {roles:[],shared:[],deviceHas:false};
+   const IC=window.LineageIntegrityCore,idOf=p=>{const q=Object.assign({},p);q.enSeed=IC.seed(p);return IC.identity(q);},dec=raw=>{try{return B.decode(raw).value.p;}catch(e){return null;}};
+   const mine={};for(const k of curRoles){const p=dec(cur0[k]);if(p)mine[idOf(p)]={key:k,p};}
+   const roles=[];for(const k of B.roleKeys(data.keys)){const p=dec(data.keys[k]);if(!p)continue;const id=idOf(p),m=mine[id];
+    if(m)roles.push({id,slot:Number(String(m.key).replace(/\D+/g,''))||0,rel:roleRel(p,m.p,data.keys[k],cur0[m.key]),dev:roleSum(m.p),bak:roleSum(p)});else roles.push({id,slot:0,rel:'new',bak:roleSum(p)});}
+   const cB=chainOf(data.keys),cD=chainOf(cur0),shared=[];
+   for(const k of Object.keys(data.keys)){if(!SHARED.test(k)||!Object.prototype.hasOwnProperty.call(cur0,k))continue;const hB=fnv(data.keys[k]),hD=fnv(cur0[k]);if(hB===hD)continue;const histB=cB.keys[k]||[],histD=cD.keys[k]||[];if(histB.includes(hD)||histD.includes(hB))continue;if(!shared.includes(SHARED_N(k)))shared.push(SHARED_N(k));}
+   return {roles,shared,deviceHas:true,deviceOnly:curRoles.filter(k=>{const p=dec(cur0[k]);return p&&!roles.some(r=>r.id===idOf(p));}).length};
+  },
+  // opt.mode：'replace'＝整台換成這份備份；'merge'（預設）＝逐格比較。opt.pick[id]：分岔的角色選 'backup'／'device'；opt.shared：兩台都動過的共用資料選 'backup'／'device'
+  async restoreFull(pack,opt){
+   opt=opt||{};
    if(typeof state!=='undefined'&&state.running)throw Error('請先返回角色選擇畫面再還原。');
    const data=B.inspect(JSON.stringify(pack));if(data.kind!=='full')throw Error('不是完整資料備份。');
    const qp=R.quarantinePlan(data.keys);
@@ -133,16 +166,31 @@
    const soulKey=window.LineageClasses?.KEY;if(soulKey&&data.keys[soulKey]&&!LineageClassCore.validVault(JSON.parse(data.keys[soulKey])))throw Error('備份中的魂魄簿無法驗證');
    // 11-12（Ping）：已經在玩的裝置 → 合併還原：每格角色留比較新的；共用資料只有「備份是從這台接著動下去的」才用備份的
    const cur0=R.capture(localStorage),curRoles=B.roleKeys(cur0);let report=null;
-   if(curRoles.length){
+   const bumpTo=(raw,n)=>{try{const doc=B.decode(raw).value;if(!doc||!doc.p)return raw;doc.p._saveSeq=n;return LineageLegacyCodec.wrap(JSON.stringify(doc));}catch(e){return raw;}};
+   if(curRoles.length&&opt.mode==='replace'){
+    // 整台換成備份：角色、共用資料全部用備份的；只有「備份是這台同一個角色的舊進度」的不換（讀舊檔＝重，不能拿自己的舊備份回到過去）
+    const IC=window.LineageIntegrityCore,idOf=p=>{const q=Object.assign({},p);q.enSeed=IC.seed(p);return IC.identity(q);},dec=raw=>{try{return B.decode(raw).value.p;}catch(e){return null;}};
+    let led=null;try{led=(await window.LineageIntegrityStore.read()).ledger;}catch(e){}
+    const mine={};for(const k of curRoles){const p=dec(cur0[k]);if(p)mine[idOf(p)]={key:k,p};}
+    report={replaced:[],kept:[],added:[],skipped:[],shared:{},mode:'replace'};const out={...data.keys},name=p=>(p&&p.name)||'（未命名）',slotN=k=>Number(String(k).replace(/\D+/g,''))||k;
+    for(const k of B.roleKeys(data.keys)){const p=dec(data.keys[k]);if(!p)continue;const id=idOf(p),m=mine[id],last=Math.max(m?(Number(m.p._saveSeq)||0):0,led&&led.seq?Number(led.seq[id])||0:0);
+     if(m&&roleRel(p,m.p,data.keys[k],cur0[m.key])==='device'){delete out[k];let dest=Object.prototype.hasOwnProperty.call(out,m.key)?null:m.key;if(!dest)for(let n=1;n<=(typeof SAVE_SLOT_MAX!=='undefined'?SAVE_SLOT_MAX:40);n++){const kk='lineage_idle_save_'+n;if(!Object.prototype.hasOwnProperty.call(out,kk)){dest=kk;break;}}if(dest)out[dest]=cur0[m.key];report.kept.push('第 '+slotN(dest||m.key)+' 格「'+name(m.p)+'」（備份是這個角色比較舊的進度）');continue;}
+     if((Number(p._saveSeq)||0)<=last)out[k]=bumpTo(data.keys[k],last+1);
+     report.replaced.push('第 '+slotN(k)+' 格「'+name(p)+'」');}
+    data.keys=out;
+   }
+   else if(curRoles.length){
     const IC=window.LineageIntegrityCore,seqOf=p=>IC.saveSeq?IC.saveSeq(p):(Number(p&&p._saveSeq)||0),idOf=p=>{const q=Object.assign({},p);q.enSeed=IC.seed(p);return IC.identity(q);};
     const dec=raw=>{try{return B.decode(raw).value.p;}catch(e){return null;}};
     let led=null;try{led=(await window.LineageIntegrityStore.read()).ledger;}catch(e){}
     const mine={};for(const k of curRoles){const p=dec(cur0[k]);if(p)mine[idOf(p)]={key:k,p};}
     const impIds={};const out={...cur0};report={replaced:[],kept:[],added:[],skipped:[],shared:''};
-    const name=p=>(p&&p.name)||'?',slotN=k=>Number(String(k).replace(/\D+/g,''))||k;
+    const name=p=>(p&&p.name)||'（未命名）',slotN=k=>Number(String(k).replace(/\D+/g,''))||k;
     for(const k of B.roleKeys(data.keys)){
      const p=dec(data.keys[k]);if(!p)continue;const id=idOf(p),m=mine[id];
-     if(m){if(seqOf(p)>seqOf(m.p)){out[m.key]=data.keys[k];impIds[id]=Date.now();report.replaced.push('第 '+slotN(m.key)+' 格「'+name(p)+'」');}else report.kept.push('第 '+slotN(m.key)+' 格「'+name(m.p)+'」');continue;}
+     if(m){const rel=roleRel(p,m.p,data.keys[k],cur0[m.key]),useB=rel==='backup'||(rel==='diverged'&&(opt.pick&&opt.pick[id])==='backup');
+      if(useB){const last=Math.max(seqOf(m.p),led&&led.seq?Number(led.seq[id])||0:0);out[m.key]=seqOf(p)>last?data.keys[k]:bumpTo(data.keys[k],last+1);impIds[id]=Date.now();report.replaced.push('第 '+slotN(m.key)+' 格「'+name(p)+'」'+(rel==='diverged'?'（你選了備份）':'（備份比較新）'));}
+      else report.kept.push('第 '+slotN(m.key)+' 格「'+name(m.p)+'」'+(rel==='diverged'?'（你選了這台）':rel==='same'?'（兩邊一樣）':'（這台比較新）'));continue;}
      const last=led&&led.seq?Number(led.seq[id])||0:0,seen=!!(led&&led.seen&&Object.prototype.hasOwnProperty.call(led.seen,id));
      if(seen&&seqOf(p)<=last){report.skipped.push('「'+name(p)+'」（這台以前有過、這份比較舊）');continue;}
      let dest=Object.prototype.hasOwnProperty.call(out,k)?null:k;
@@ -160,13 +208,17 @@
      if(!inD){out[k]=data.keys[k];r='backup';}
      else if(hB===hD)r='same';
      else if(histB.includes(hD)){out[k]=data.keys[k];r='backup';const L=histD.slice();for(const h of histB)if(!L.includes(h))L.push(h);cD.keys[k]=L.slice(-60);}
-     else r=histD.includes(hB)?'device-newer':'both';
+     else if(histD.includes(hB))r='device-newer';
+     else if(opt.shared==='backup'){out[k]=data.keys[k];r='both-backup';}
+     else r='both';
      sh[SHARED_N(k)]=r;
     }
     out[CHAIN]=JSON.stringify({v:2,keys:cD.keys});report.shared=sh;
     try{const m=JSON.parse(out['lineage_uid_imported_v1']||'{}');Object.assign(m,impIds);out['lineage_uid_imported_v1']=JSON.stringify(m);}catch(e){}
     data.keys=out;
    }
+   // 11-13：裝置代號是這台自己的，不跟著備份搬（否則兩台會變成同一個代號）
+   data.keys={...data.keys};if(Object.prototype.hasOwnProperty.call(cur0,DEV_KEY))data.keys[DEV_KEY]=cur0[DEV_KEY];else delete data.keys[DEV_KEY];
    // 11-11 14:13：電腦上的角色存檔有時是沒壓縮的明文（一格 180 萬字），手機寫不進去 → 角色與倉庫在寫入前先壓縮（遊戲讀取本來就會自動解壓）
    if(typeof LZString!=='undefined'){data.keys={...data.keys};for(const k of Object.keys(data.keys)){const v=data.keys[k];if((/^lineage_idle_save(?:_\d+)?$/.test(k)||/^lineage_idle_warehouse(?:_[a-z]+)*$/.test(k))&&typeof v==='string'&&v.length>20000&&v.slice(0,4)!=='LZ1:'){try{const z='LZ1:'+LZString.compressToUTF16(v);if(LZString.decompressFromUTF16(z.slice(4))===v)data.keys[k]=z;}catch{}}}}
    const apply=()=>{if(typeof _lzWorkerRev!=='undefined')for(const k of new Set([...Object.keys(data.keys),...Object.keys(R.capture(localStorage))]))_lzWorkerRev[k]=(_lzWorkerRev[k]||0)+1;return R.transact(localStorage,R.fullRestorePlan(data.keys,R.capture(localStorage)),snapshot=>LineageBackups.save(snapshot,'full-restore'),{canWrite:()=>R.scan(R.capture(localStorage)).canRepair});};
