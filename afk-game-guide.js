@@ -59,9 +59,10 @@
   var extraCache=null;
   function extraRelicRows(){
     if(extraCache)return extraCache;var out=[],B=window.__afkBossRelic,E=window.__afkRelicEvo,MB=window.__afkMapBoss,SN=['本體','+5','+10','昇華支配','昇華支配 +5'];
-    if(B&&B.LIST)B.LIST.forEach(function(r){var key='relic_boss_'+r[0],b=MB&&MB.BY[r[0]],st=[0,1,2,3,4].map(function(s){return [SN[s],B.text(r,s)];});
-      out.push({n:r[2],search:(r[2]+' '+(b?b.n:'')+' 王者遺物 '+B.BASE[r[1]].cat+' '+st.map(function(x){return x[1];}).join(' ')).toLowerCase(),
-        html:factCard(esc(r[2]),'王者遺物・'+esc(B.BASE[r[1]].cat)+(b?'・'+esc(b.n)+'掉落':''),esc(r[3]),st.map(function(x){return '<b>'+x[0]+'</b>：'+esc(x[1]);}))});});
+    // 王者遺物接在一般遺物後面編號（251 起），卡片跟一般遺物同一個樣子（Ping 11-14 00:04）
+    var base=(W.AFK_RELIC_CATALOG||[]).reduce(function(m,c){return Math.max(m,c.id||0);},0),TY={wpn:'武器',arm:'防具',acc:'飾品'};
+    if(B&&B.LIST)B.LIST.forEach(function(r,i){var b=MB&&MB.BY[r[0]],cat=B.BASE[r[1]],row={id:base+1+i,key:'relic_boss_'+r[0],n:r[2],type:TY[cat.type]||'',slot:cat.cat,lore:r[3]+'（王者遺物：'+(b?b.n:'地圖王、副本王')+'掉落）',stages:[0,1,2,3,4].map(function(s){return B.text(r,s);})};
+      row.search=[row.id,String(row.id).padStart(3,'0'),row.n,row.type,row.slot,row.lore,'王者遺物'].concat(row.stages).join(' ').toLowerCase();out.push(row);});
     if(B&&E&&E.MAP)Object.keys(E.MAP).forEach(function(k){var d=DB.items[k];if(!d)return;var st=[1,2,3,4].map(function(s){return [SN[s],B.evoText(k,s)];});
       out.push({n:d.n,search:(d.n+' 進階特效 '+st.map(function(x){return x[1];}).join(' ')).toLowerCase(),html:factCard(esc(d.n),'進階特效（+5 起）',esc(String(d.d||'').replace(/^【遺物】/,'').split(' 〔')[0]),st.map(function(x){return '<b>'+x[0]+'</b>：'+esc(x[1]);}))});});
     return extraCache=out;
