@@ -126,7 +126,10 @@
       h += '<button type="button" class="btn ag-btn ag-wear" data-ag-wear="1">穿上</button>';
     }
     h += '</div><div class="ag-hint">點背包裡的裝備再按「穿上」（或雙擊）；點左邊有裝備的部位再按「卸下」（或雙擊）；點左邊部位也會只列出那個部位的裝備。Enter 也可以穿上選到的裝備。只能在安全區操作。</div></div></div>';
+    // 重畫時保留捲動位置（點了候選裝備不跳回最上面）
+    var keep = []; try { ['.ag-grid', '.ag-right', '.ag-left'].forEach(function (q) { var e = div.querySelector(q); if (e) keep.push([q, e.scrollTop]); }); keep.push([null, div.scrollTop]); var pc = div.parentElement; if (pc) keep.push(['^', pc.scrollTop]); } catch (e) {}
     div.innerHTML = h;
+    try { keep.forEach(function (k) { var e = k[0] === null ? div : k[0] === '^' ? div.parentElement : div.querySelector(k[0]); if (e && k[1]) e.scrollTop = k[1]; }); } catch (e) {}
     bindGuild(div);
     if (G.focusQ) { var qi = div.querySelector('[data-ag-q]'); if (qi) { qi.focus(); try { qi.setSelectionRange(qi.value.length, qi.value.length); } catch (e) {} } G.focusQ = false; }
   };
