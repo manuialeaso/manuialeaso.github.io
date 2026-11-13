@@ -1115,9 +1115,11 @@
         ready = !miss.length; label = '昇華支配 +' + A;
         btn = '<button class="rp-go rp-asc" type="button" data-k="' + esc(g.key) + '"' + (miss.length ? ' disabled' : '') + '>昇華支配 +' + A + '<br><span style="font-weight:600;font-size:13px">成功率 ' + Math.round(rate * 100) + '%</span></button>';
         var need = [];
-        if (ac.dia) need.push('龍鑽 ' + ac.dia.toLocaleString());
+        // 11-14：龍鑽也標出持有量；裝備要放在背包、沒上鎖才算（穿在身上的不算），缺的標紅並寫出來
+        if (ac.dia) { var dh = diamonds(); need.push('<span class="' + (dh >= ac.dia ? '' : 'rp-miss') + '">龍鑽 ' + dh.toLocaleString() + '/' + ac.dia.toLocaleString() + '</span>'); }
         Object.keys(ac.items).forEach(function (id) { var h = invCnt(id), ok = h >= ac.items[id]; need.push('<span class="' + (ok ? '' : 'rp-miss') + '">' + esc((DB.items[id] || {}).n || id) + ' ' + h + '/' + ac.items[id] + '</span>'); });
-        ac.equip.forEach(function (nm) { need.push('<span class="' + (nameCnt(nm) ? '' : 'rp-miss') + '">' + esc(nm) + '</span>'); });
+        ac.equip.forEach(function (nm) { var hc = nameCnt(nm); need.push('<span class="' + (hc ? '' : 'rp-miss') + '">' + esc(nm) + (hc ? '' : '（背包沒有）') + '</span>'); });
+        if (miss.length) need.push('<br><span class="rp-miss">還缺：' + esc(miss.join('、')) + '。裝備要放在背包裡、沒有上鎖才算，穿在身上的不算。</span>');
         var nd2 = buildDef(g.base, g.n, g.fx, A);
         ascTxt = '<div class="rp-sub" style="color:#f0abfc">昇華支配 +' + A + '：' + esc(pretty(statLine(nd2, g.base))) + '</div><div class="rp-sub">需要：' + need.join('、') + '</div>';
       }
