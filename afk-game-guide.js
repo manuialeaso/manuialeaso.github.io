@@ -43,17 +43,28 @@
     body+=table(['階段','特殊效果'],r.stages.map(function(s,i){return s==null?null:[labels[i],esc(s)];}).filter(Boolean));
     return '<details class="m-wiki-card afk-guide-relic"'+(open?' open':'')+'><summary class="m-wiki-name">'+String(r.id).padStart(3,'0')+' '+esc(r.n)+' <small>'+esc(r.slot)+'</small></summary>'+body+'</details>';
   }
-  function filteredRelics(){var terms=relicQuery.toLowerCase().split(/\s+/).filter(Boolean);return relicRows().filter(function(r){return terms.every(function(t){return r.search.indexOf(t)>=0;});});}
+  function filteredRelics(){var terms=relicQuery.toLowerCase().split(/\s+/).filter(Boolean);return relicRows().concat(extraRelicRows()).filter(function(r){return terms.every(function(t){return r.search.indexOf(t)>=0;});});}
   function relicResults(){
     var all=filteredRelics(),pages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));relicPage=Math.min(relicPage,pages-1);
     var controls='<div class="afk-guide-page"><button type="button" class="btn" data-guide-page="-1"'+(relicPage===0?' disabled':'')+'>上一頁</button><span>'+(relicPage+1)+'／'+pages+' 頁・'+all.length+' 件</span><button type="button" class="btn" data-guide-page="1"'+(relicPage+1>=pages?' disabled':'')+'>下一頁</button></div>';
-    return controls+(all.length?all.slice(relicPage*PAGE_SIZE,(relicPage+1)*PAGE_SIZE).map(function(r){return relicCard(r,false);}).join(''):note('找不到符合的遺物，請縮短名稱或改用效果關鍵字。'))+controls;
+    return controls+(all.length?all.slice(relicPage*PAGE_SIZE,(relicPage+1)*PAGE_SIZE).map(function(r){return r.html||relicCard(r,false);}).join(''):note('找不到符合的遺物，請縮短名稱或改用效果關鍵字。'))+controls;
   }
   function relics(){
-    return note('翻開遺物的來歷與力量，查看 +5、+10、昇華支配及終階效果。這裡收錄有專屬特殊效果的 '+relicRows().length+' 件遺物。')+
+    return note('翻開遺物的來歷與力量，查看 +5、+10、昇華支配及終階效果。這裡收錄有專屬特殊效果的 '+(relicRows().length+extraRelicRows().length)+' 件遺物（含王者遺物、補上進階特效的遺物）。')+
       note('遺物在燃柳村「哈瑪大師」合成強化：武器、防具最高 +15，飾品（戒指、耳環、項鍊、腰帶）最高 +10；到頂之後可以昇華支配（+0～+5）。每一階要的材料、成功率請看「遺物強化」分頁；下方表格列出特殊效果有變化的階段。')+
       '<label class="afk-guide-search">搜尋遺物<input id="afk-guide-relic-query" type="search" value="'+esc(relicQuery)+'" placeholder="名稱、編號或效果，例如：護盾"></label><div id="afk-guide-relic-results">'+relicResults()+'</div>'+
       evoCard()+bossRelicCard()+relicEvoCard();
+  }
+  // 搜尋用：王者遺物、補上進階特效的遺物（不在 AFK_RELIC_CATALOG 裡）
+  var extraCache=null;
+  function extraRelicRows(){
+    if(extraCache)return extraCache;var out=[],B=window.__afkBossRelic,E=window.__afkRelicEvo,MB=window.__afkMapBoss,SN=['本體','+5','+10','昇華支配','昇華支配 +5'];
+    if(B&&B.LIST)B.LIST.forEach(function(r){var key='relic_boss_'+r[0],b=MB&&MB.BY[r[0]],st=[0,1,2,3,4].map(function(s){return [SN[s],B.text(r,s)];});
+      out.push({n:r[2],search:(r[2]+' '+(b?b.n:'')+' 王者遺物 '+B.BASE[r[1]].cat+' '+st.map(function(x){return x[1];}).join(' ')).toLowerCase(),
+        html:factCard(esc(r[2]),'王者遺物・'+esc(B.BASE[r[1]].cat)+(b?'・'+esc(b.n)+'掉落':''),esc(r[3]),st.map(function(x){return '<b>'+x[0]+'</b>：'+esc(x[1]);}))});});
+    if(B&&E&&E.MAP)Object.keys(E.MAP).forEach(function(k){var d=DB.items[k];if(!d)return;var st=[1,2,3,4].map(function(s){return [SN[s],B.evoText(k,s)];});
+      out.push({n:d.n,search:(d.n+' 進階特效 '+st.map(function(x){return x[1];}).join(' ')).toLowerCase(),html:factCard(esc(d.n),'進階特效（+5 起）',esc(String(d.d||'').replace(/^【遺物】/,'').split(' 〔')[0]),st.map(function(x){return '<b>'+x[0]+'</b>：'+esc(x[1]);}))});});
+    return extraCache=out;
   }
   // 原本沒有進階特效的遺物（afk-relicevo.js）：+5 起每階加一層效果
   function relicEvoCard(){
@@ -697,7 +708,7 @@
   var guide=W.AFK_GAME_GUIDE={
     render:function(key,cls){var progression=progressionGuide(key,cls);if(progression!==null)return progression;return key==='relicstages'?relics():key==='cardforms'?formRules():key==='versionrules'?rules():key==='rebirtharts'?arts(cls):key==='reborn'?reborn():key==='lore'?lore():null;},
     augment:augment,newbieCard:newbieCard,expeditionCard:expeditionCard,villageCard:villageCard,starroadCard:starroadCard,
-    searchRelics:function(terms,max){return relicRows().filter(function(r){return terms.every(function(t){return r.search.indexOf(t.toLowerCase())>=0;});}).slice(0,max||60).map(function(r){return {title:r.n,html:relicCard(r,true)};});},
+    searchRelics:function(terms,max){var hit=function(r){return terms.every(function(t){return r.search.indexOf(t.toLowerCase())>=0;});};return relicRows().filter(hit).map(function(r){return {title:r.n,html:relicCard(r,true)};}).concat(extraRelicRows().filter(hit).map(function(r){return {title:r.n,html:r.html};})).slice(0,max||60);},
     searchClasses:function(fusion,terms,max){var C=W.LineageClassCore;if(!C)return [];var out=[];C.trees.forEach(function(t){if(!!t.requiresFusionTransfer!==fusion)return;t.skills.forEach(function(s){if(out.length>=(max||60))return;var title=C.CLS[t.base]+'・'+t.name+'・'+s.name,text=C.description(s),q=(title+' '+text).toLowerCase();if(terms.every(function(term){return q.indexOf(term.toLowerCase())>=0;}))out.push({title:title,html:factCard(esc(title),'第 '+s.stage+' 段・'+esc(s.type),esc(text),[])});});});return out;},
     relicRows:relicRows,
     invalidate:function(){relicCache=null;}
