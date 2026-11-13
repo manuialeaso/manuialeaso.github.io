@@ -76,6 +76,11 @@
   // 階級、上限、傷害全部仍由核心決定（我們不自己造骷髏，作者改設計自動跟上）。離場時只收回「在木人場
   // 多召出來的那幾隻」，進場前就跟著的留著——木人場的產物不外溢到野外。
   var skele = false;
+  // 11-13（Ping）：單人進場（傭兵不進場）、怪物會掉血（照實際 HP 扣、最低鎖在 1 HP，不會死）
+  var solo = false, hpDrop = false;
+  var SOLO_KEY = 'afk_training_solo', HPDROP_KEY = 'afk_training_hpdrop';
+  var benched = null;   // 單人進場時暫時收起來的傭兵（離場、存檔時放回）
+  function topOf(m) { return hpDrop ? Math.max(1, Number(m.hp) || 1) : TRAIN_HP; }
   var skeleBefore = null;            // 進場前既有骷髏的 uid 集合（離場時據此分辨哪些是木人場召的）
   var backup = null;                 // 進場前的狀態（離場還原用）
   var dps = null;                    // { startTick, perUid:{uid:累計傷害}, window:[每tick總傷害] }
@@ -111,7 +116,32 @@
     }
     dismissExtraSkeletons();
     skeleBefore = null;
+    unbench();
     closeHud();
+  }
+
+  // ---- 單人進場：傭兵暫時收起來（離場、存檔時放回，存檔永遠帶著原本的傭兵）----
+  function applySolo() {
+    if (!player) return;
+    if (solo && !benched) { benched = player.allies || []; player.allies = []; }
+    else if (!solo && benched) unbench();
+    try { if (typeof window.calcStats === 'function') window.calcStats(); } catch (e) {}
+    try { if (typeof window.updateUI === 'function') window.updateUI(); } catch (e) {}
+  }
+  function unbench() {
+    if (!benched) return;
+    if (player && (!player.allies || !player.allies.length)) player.allies = benched;
+    benched = null;
+    try { if (typeof window.calcStats === 'function') window.calcStats(); } catch (e) {}
+  }
+  if (typeof window.saveGame === 'function') {
+    var _origSaveTrain = window.saveGame;
+    window.saveGame = function () {
+      if (!benched || !player) return _origSaveTrain.apply(this, arguments);
+      var cur = player.allies; player.allies = benched;
+      try { return _origSaveTrain.apply(this, arguments); } finally { player.allies = cur; }
+    };
+    try { (0, eval)('saveGame = window.saveGame'); } catch (e) {}
   }
 
   // ---- DPS 量測：包住 tick ------------------------------------------------
@@ -125,7 +155,7 @@
     var i, m, mobs = mapState.mobs;
     for (i = 0; i < mobs.length; i++) {
       m = mobs[i];
-      if (m && m._train) { m.curHp = TRAIN_HP; m._dead = false; before[m.uid] = TRAIN_HP; }
+      if (m && m._train) { if (!hpDrop) m.curHp = TRAIN_HP; else if (!(m.curHp >= 1)) m.curHp = 1; m._dead = false; before[m.uid] = m.curHp; }
     }
     var allies = (player && player.allies) || [];
     srcTickBegin();
@@ -137,14 +167,15 @@
     for (i = 0; i < mobs.length; i++) {
       m = mobs[i];
       if (m && m._train) {
-        var base = (before[m.uid] != null) ? before[m.uid] : TRAIN_HP;
+        var base = (before[m.uid] != null) ? before[m.uid] : topOf(m);
         var drain = (base - m.curHp) + (midDrain[m.uid] || 0);   // 加回怪物階段開始前就先收走的那段（見 processMobStatusTick 包裝）
         if (drain > 0) { dps.perUid[m.uid] = (dps.perUid[m.uid] || 0) + drain; tickTotal += drain; }
-        m.curHp = TRAIN_HP; m._dead = false;
+        if (hpDrop) m.curHp = Math.max(1, Math.min(topOf(m), Number(m.curHp) || 0)); else m.curHp = TRAIN_HP;
+        m._dead = false;
         // 傷害飄字(09-vfx-render 的 _vfxQueueDmg)是「tick 結束後 flushTickRender 才取樣 curHp、用跨幀差反推傷害」。
         // 木人場已在這裡把 curHp 補回 TRAIN_HP→若不處理,flush 取樣到的差是 0、永遠不飄字(DPS 仍準,那是上面自己量的)。
         // 解法:把特效層基準 _vfxHp 墊成「補滿值＋這拍傷害」→ flush 取樣時 差值=這拍真實傷害 → 每拍跳一個總傷數字。
-        m._vfxHp = TRAIN_HP + drain;
+        m._vfxHp = m.curHp + drain;
       }
     }
     dps.window.push(tickTotal);
@@ -399,8 +430,12 @@
   if (typeof window.processMobStatusTick === 'function') {
     var _origProcessMobStatusTick = window.processMobStatusTick;
     window.processMobStatusTick = function (m) {
+      var pre = (m && m._train) ? (Number(m.curHp) || 0) : 0;
       var r = _origProcessMobStatusTick.apply(this, arguments);
-      if (midDrain && m && m._train) {
+      if (midDrain && m && m._train && hpDrop) {   // 掉血模式：怪照常回血（畫面上看得到），但回的量從量測裡扣回來，DPS 不受影響
+        var g = (Number(m.curHp) || 0) - pre;
+        if (g > 0) midDrain[m.uid] = (midDrain[m.uid] || 0) + g;
+      } else if (midDrain && m && m._train) {
         var d = TRAIN_HP - m.curHp;
         if (d > 0) { midDrain[m.uid] = (midDrain[m.uid] || 0) + d; m.curHp = TRAIN_HP; }
       }
@@ -413,7 +448,7 @@
   window.killMob = function (idx) {
     if (inTrain()) {
       var m = mapState.mobs[idx];
-      if (m && m._train) { m.curHp = TRAIN_HP; m._dead = false; return; }   // 不結算獎勵、不移除
+      if (m && m._train) { if (hpDrop && midDrain && (Number(m.curHp) || 0) < 1) midDrain[m.uid] = (midDrain[m.uid] || 0) + (1 - (Number(m.curHp) || 0)); m.curHp = hpDrop ? 1 : TRAIN_HP; m._dead = false; return; }   // 不結算獎勵、不移除；掉血模式鎖在 1 HP
     }
     return _origKillMob.apply(this, arguments);
   };
@@ -537,7 +572,7 @@
       if (!id || !DB.mobs[id]) continue;
       var base = DB.mobs[id];
       var inst = Object.assign({}, base, {
-        hp: TRAIN_HP, curHp: TRAIN_HP, uid: window.uid(),
+        hp: hpDrop ? Math.max(1, Number(base.hp) || 1) : TRAIN_HP, curHp: hpDrop ? Math.max(1, Number(base.hp) || 1) : TRAIN_HP, uid: window.uid(),
         _magCd: {}, justHit: false, st: window.newMobStatus(),
         _born: nextBorn(), _bornMs: Date.now(),   // 欄位對齊核心 spawnMob（_born 是自動鎖定目標的依據，見上）
         _train: true, _slotLabel: i
@@ -565,7 +600,7 @@
         var m = mapState.mobs[i];
         if (!m || !m._train) continue;
         window.applySherineBuff(i);
-        m.hp = TRAIN_HP; m.curHp = TRAIN_HP;   // buff 會把 HP ×3/×5，統一回木人場天文血量
+        if (!hpDrop) { m.hp = TRAIN_HP; m.curHp = TRAIN_HP; } else m.curHp = m.hp;   // buff 會把 HP ×3/×5：一般模式統一回木人場天文血量；掉血模式就用加強後的真實血量
       }
     } finally {
       player.sherineWorld = sw; player.sherineMad = sm;
@@ -576,7 +611,7 @@
   function enterTraining() {
     if (!player || !player.cls) { alert('請先載入角色，再進木人場。'); return; }
     // 防重入：人已在木人場地圖上 → 只重擺怪+DPS歸零，絕不重抓 backup（避免把木人場狀態記成「進場前」）
-    if (inTrain()) { if (!skele) dismissExtraSkeletons(); refillTeam(); spawnTrainingMobs(); resetDps(); closePicker(); openHud(); refreshHud(); return; }
+    if (inTrain()) { applySolo(); if (!skele) dismissExtraSkeletons(); refillTeam(); spawnTrainingMobs(); resetDps(); closePicker(); openHud(); refreshHud(); return; }
     // 進場前：把整個 mapState 全鍵快照存起來（離場還原用，確保離開時換回真實狀態）
     var msSnap = {}; for (var bk in mapState) msSnap[bk] = mapState[bk];
     backup = { ms: msSnap };
@@ -586,6 +621,7 @@
     }
     if (player.dead) { player.dead = false; player.hp = player.mhp; }
     mapState.current = TRAIN_MAP;   // ← 設了這個 inTrain() 就成立(零旗標)
+    applySolo();
     mapState.mobs = [null, null, null, null, null];
     mapState.spawnAt = [null, null, null, null, null];
     mapState.forceBoss = false;
@@ -606,6 +642,7 @@
     if (!inTrain()) return;
     // 先把 mapState 還原成進場前真實狀態 → current 不再是 afk_dummy（之後任何時點存檔都安全）
     swapAllKeys(mapState, (backup && backup.ms) ? backup.ms : SAFE_MS);
+    unbench();
     deactivate();   // 清掉殘留 _train 假怪 + 收 HUD
     player.dead = false;
     if (player.hp < player.mhp) player.hp = player.mhp;
@@ -790,7 +827,9 @@
 
     var modeTag = (worldMode === 'mad') ? '<div class="m-train-mode-tag m-train-mode-mad">🔥 瘋狂的席琳世界</div>'
       : (worldMode === 'sherine') ? '<div class="m-train-mode-tag">🔮 席琳的世界</div>' : '';
-    if (noMp) modeTag += '<div class="m-train-mode-tag m-train-mode-nomp">💧 MP 不消耗</div>';   // 數字是「無限藍」下的，要標出來免得跟真實消耗的紀錄搞混
+    if (noMp) modeTag += '<div class="m-train-mode-tag m-train-mode-nomp">💧 MP 不消耗</div>';
+    if (solo) modeTag += '<div class="m-train-mode-tag m-train-mode-nomp">🧍 單人（傭兵不進場）</div>';
+    if (hpDrop) modeTag += '<div class="m-train-mode-tag m-train-mode-nomp">🩸 怪物會掉血（最低 1 HP）</div>';   // 數字是「無限藍」下的，要標出來免得跟真實消耗的紀錄搞混
     totalEl.innerHTML = modeTag +
       '<div class="m-train-total-inst">即時 <b>' + fmt(instTotal) + '</b> <span>/秒</span></div>' +
       '<div class="m-train-total-avg">平均 ' + fmt(avgTotal) + ' /秒　·　' + elapsedSec.toFixed(0) + ' 秒</div>';
@@ -872,7 +911,7 @@
         '<div class="m-train-modal-box">' +
         '<div class="m-train-modal-head">🥊 木人場 — 選擇怪物' +
         '<button id="m-train-modal-x" type="button">✕</button></div>' +
-        '<div class="m-train-modal-note">選 1~5 隻怪（每隻可不同）。怪打不死、你也打不死，旁邊即時顯示 DPS。<br>每格先在左邊輸入關鍵字篩選，再從右邊下拉選怪。</div>' +
+        '<div class="m-train-modal-note">選 1~5 隻怪（每隻可不同）。怪打不死、你也打不死，旁邊即時顯示 DPS。可以選單人進場、讓怪物會掉血（最低 1 HP）。<br>每格先在左邊輸入關鍵字篩選，再從右邊下拉選怪。</div>' +
         '<div class="m-train-mode-row"><span>世界模式</span><select id="m-train-mode">' +
         '<option value="normal">一般（無強化）</option>' +
         '<option value="sherine">🔮 席琳的世界</option>' +
@@ -883,6 +922,10 @@
         '<label class="m-train-opt-row" title="木人場的怪不會死＝沒有擊殺，骷髏平常靠擊殺喚起。勾起來就直接補到滿，離開木人場時收回。">' +
         '<input type="checkbox" id="m-train-skele"><span>召喚骷髏（死靈之書）</span></label>' +
         '<div id="m-train-skele-hint" class="m-train-opt-hint"></div>' +
+        '<label class="m-train-opt-row" title="勾起來：傭兵不進場（寵物、召喚物、城堡護衛照常），只量你自己的輸出。離開木人場後傭兵照常回到隊伍。">' +
+        '<input type="checkbox" id="m-train-solo"><span>單人進場（傭兵不進場）</span></label>' +
+        '<label class="m-train-opt-row" title="勾起來：怪物用牠真實的 HP，會被打到掉血（看得到斬殺、低血量觸發的效果），但最低鎖在 1 HP、不會死。按「重新計算」補滿。DPS 照樣準確。">' +
+        '<input type="checkbox" id="m-train-hpdrop"><span>怪物會掉血（最低 1 HP）</span></label>' +
         '<div id="m-train-rows"></div>' +
         '<div class="m-train-modal-btns">' +
         '<button id="m-train-go" type="button" class="m-train-btn m-train-btn-amber">進入木人場</button>' +
@@ -901,6 +944,8 @@
         if (nchk) noMp = !!nchk.checked;
         var schk = document.getElementById('m-train-skele');
         if (schk) skele = !!schk.checked;
+        var solk = document.getElementById('m-train-solo'); if (solk) solo = !!solk.checked;
+        var hdk = document.getElementById('m-train-hpdrop'); if (hdk) hpDrop = !!hdk.checked;
         saveSlots();
         enterTraining();
       });
@@ -912,6 +957,8 @@
     if (nchk0) nchk0.checked = noMp;
     var schk0 = document.getElementById('m-train-skele');
     if (schk0) schk0.checked = skele;
+    var solk0 = document.getElementById('m-train-solo'); if (solk0) solk0.checked = solo;
+    var hdk0 = document.getElementById('m-train-hpdrop'); if (hdk0) hdk0.checked = hpDrop;
     // 條件不足時勾了也不會有骷髏出現（核心的 necroBookOnKill 會直接 return）→ 直接說出要補什麼
     var shint = document.getElementById('m-train-skele-hint');
     if (shint) {
@@ -991,8 +1038,11 @@
     try { noMp = localStorage.getItem(nompKey()) === '1'; } catch (e) { /* ignore */ }
     skele = false;
     try { skele = localStorage.getItem(skeleKey()) === '1'; } catch (e) { /* ignore */ }
+    var sn = (typeof currentSlot !== 'undefined') ? currentSlot : 1;
+    solo = false; hpDrop = false;
+    try { solo = localStorage.getItem(SOLO_KEY + '_' + sn) === '1'; hpDrop = localStorage.getItem(HPDROP_KEY + '_' + sn) === '1'; } catch (e) { /* ignore */ }
   }
-  function saveSlots() { try { localStorage.setItem(slotsKey(), JSON.stringify(slots)); localStorage.setItem(modeKey(), worldMode); localStorage.setItem(nompKey(), noMp ? '1' : '0'); localStorage.setItem(skeleKey(), skele ? '1' : '0'); } catch (e) { /* ignore */ } }
+  function saveSlots() { try { localStorage.setItem(slotsKey(), JSON.stringify(slots)); localStorage.setItem(modeKey(), worldMode); localStorage.setItem(nompKey(), noMp ? '1' : '0'); localStorage.setItem(skeleKey(), skele ? '1' : '0'); var sn = (typeof currentSlot !== 'undefined') ? currentSlot : 1; localStorage.setItem(SOLO_KEY + '_' + sn, solo ? '1' : '0'); localStorage.setItem(HPDROP_KEY + '_' + sn, hpDrop ? '1' : '0'); } catch (e) { /* ignore */ } }
 
   // ---- 入口：自動化面板「🔌 外掛」列加一顆鈕（沿用 afk-dex 的共用列 id；木人場自成一列、不擠進查詢鈕排） ----
   function injectAutoNav() {
