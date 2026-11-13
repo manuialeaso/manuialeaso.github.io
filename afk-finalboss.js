@@ -62,8 +62,8 @@
   FB.novice = { hp: 0.51, def: 1, dmg: 0.86 };
   FB.chainTicks = 30;   // 沉沒之鎖：必定暈眩 3 秒
   FB.blessHp = 1000000;   // 一轉女神：玩家巴黎的祝福（11-11 22:15）
-  // 冥界的使徒倒下時自爆：全隊失去最大 HP 的這個比例（一轉 20%、二轉一階段 25%、二階段 35%、三階段 50%；單人試煉不爆）
-  FB.blast = { r1: 0.20, r2a: 0.25, r2b: 0.35, r2c: 0.50 };
+  // 冥界的使徒倒下時自爆：全隊失去最大 HP 的這個比例（Ping 11-13 16:37：一轉 5%、二轉一階段 10%、二階段 15%、三階段 20%；單人試煉不爆）
+  FB.blast = { r1: 0.05, r2a: 0.10, r2b: 0.15, r2c: 0.20 };
   window.__afkFinalCfg = FB;
   // 動態血量：隊伍人數（你＋還站著的傭兵）÷ 16，最多 1 倍
   var partyN = function () { try { return 1 + (player.allies || []).filter(function (a) { return a && !a._downed; }).length; } catch (e) { return 1; } };

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-f95e8e9f25e7",
+  "build": "merge-0.4-ad015e405b14",
   "files": [
     {
       "url": "afk-aden-quests.js?v=2914274d1613",
@@ -548,8 +548,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-finalboss.js?v=7e09f46294ef",
-      "sha256": "7e09f46294efc4da2f9a709c9465b46bbb4294e7852d885ceb253532ee154dbf",
+      "url": "afk-finalboss.js?v=aa3ff45ccf67",
+      "sha256": "aa3ff45ccf6746084b24d3ecbb79287a529e44e50fd73807744af53f24eb94ef",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -598,8 +598,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-game-guide.js?v=6bc08118d4a6",
-      "sha256": "6bc08118d4a669c701097370cb08af1af9267e4bdeda795603cf8763a59eae92",
+      "url": "afk-game-guide.js?v=ec8299eb32a2",
+      "sha256": "ec8299eb32a2e6328bffc88b970d9c84ec24604846a3163b0811d2385f452635",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1629,7 +1629,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "c70f2e1834e90a4bcb6d02711708e9712146c0459f538d58601cc5c8b23e956d",
+      "sha256": "aeb0e1f4ba458de0c00fa96f15f1b494dcfc2e8694750437e8fc2b719ae1a9b0",
       "type": "text/html; charset=utf-8"
     },
     {
