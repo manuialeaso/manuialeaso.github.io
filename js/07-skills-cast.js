@@ -196,7 +196,7 @@ function cubeTick() {
 //   歐吉：每2秒 3D20+(智力/5)×(1+等級/10) 近戰，命中=等級+10-怪等+智力+怪AC；巫妖：每3秒 同骰魔法必中受MR；鑽石高崙：每1秒 2D20+(智力/5)×(1+等級/5) 近戰，命中+20，10%冰矛圍籬
 function illuSummonTick(owner) {
     owner = owner || player;   // 🩸 v2.6.26 owner 參數化：owner=player 或 i_illusion 傭兵(ally)
-    if ((owner === player ? player.dead : owner._downed) || !state.running || owner.mastery !== 'i_illusion') return;
+    if ((owner === player ? player.dead : owner._downed) || !state.running || !((typeof _afkM === 'function') ? _afkM(owner, 'i_illusion') : owner.mastery === 'i_illusion')) return;   /* 2026-11-13：轉生後不用選幻術精通也有幻象 */
     const MAP = {
         sk_illu_ogre:  { iv: 20, dice: [3, 20], div: 10, kind: 'melee', hitOff: 10, n: '歐吉' },
         sk_illu_lich:  { iv: 30, dice: [3, 20], div: 10, kind: 'magic', n: '巫妖' },
@@ -227,7 +227,7 @@ function illuSummonTick(owner) {
             { let _ieMr = (t.st && t.st.mrhalf > 0) ? (t.mr / 2) : t.mr; if (t.st && (t.st.confuse > 0 || t.st.panic > 0)) _ieMr -= 10; dmg = Math.max(1, Math.floor(base * mrMult(Math.max(0, _ieMr)))); }   /* 🔌 加掛版補丁:幻覺吃魔傷魔點 */
             dmg += traumaPhysicalBonus(t);
         }
-        dmg = Math.max(1, Math.floor(dmg * fragileMult(t) * illuLvMult(owner)));   // 🔮 幻覺召喚物：幻術士等級加成 ×(1+等級/50)
+        dmg = Math.max(1, Math.floor(dmg * fragileMult(t) * illuLvMult(owner) * ((window.__afkArtTune && window.__afkArtTune.illuPhantom) || 1)));   /* 2026-11-13：幻象傷害倍率 */   // 🔮 幻覺召喚物：幻術士等級加成 ×(1+等級/50)
         t.curHp -= (dmg=(window.AFK_CARD_COMBAT?window.AFK_CARD_COMBAT.damage(owner,t,dmg,{kind:c.kind==='magic'?'magic':'melee'}):dmg)); /* card-combat:settle-illuSummonTick */ t.justHit = (c.kind === 'magic') ? 'magic' : 'none'; mobWake(t);
         logCombat(`<span class="text-purple-300 font-bold">【幻覺：${c.n}】</span>對 <span class="${getMobColor(t.lv)}">${t.n}</span> 造成 ${dmg} 點傷害。`, 'magic', 'summon');
         let idx = mapState.mobs.findIndex(m => m && m.uid === t.uid);

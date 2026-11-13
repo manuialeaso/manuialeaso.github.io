@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-9ed0d057fd95",
+  "build": "merge-0.4-c6d65357d352",
   "files": [
     {
       "url": "afk-abnforce.js?v=78f4f979cb9e",
@@ -78,8 +78,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-arts.js?v=9b9a1b6ca610",
-      "sha256": "9b9a1b6ca610832d3d9398408e212f40fa0ad9a53d118e733fcc4f16de8da7fa",
+      "url": "afk-arts.js?v=16a9df6567a1",
+      "sha256": "16a9df6567a1a4b5f9c172d7623da4ae7e5aee66b7ab6e647a4da1d5da48dc35",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1573,8 +1573,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-wiki.js?v=ce4c6176dd86",
-      "sha256": "ce4c6176dd863f5a57ac1d8fa85b10b355f191fe7ab9c0b1f6dac42b29903c31",
+      "url": "afk-wiki.js?v=b47351a56a5d",
+      "sha256": "b47351a56a5d50f6d25b0397271e0ad0a20e73ddf6fe973c81f0f13d8e257f37",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1639,7 +1639,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "85fd964142560a25ee552cfc955a268cc6096b14ee3796660fb9b7dbdf757d6e",
+      "sha256": "4c99aa4df54320d5a7e72454c5416b37534d9c6205c9def2647c9b2f82aaee3c",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1673,13 +1673,13 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/06-status-allies.js?v=29de1470a165",
-      "sha256": "29de1470a165ffd92f15352de0e68aae64104e29988d406d71f44f7d89c30259",
+      "url": "js/06-status-allies.js?v=d43ffca5592e",
+      "sha256": "d43ffca5592e584affce272a99fb98cf424b3c34933071a130cf9db7f6eea3ce",
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/07-skills-cast.js?v=ae0aa698cf5b",
-      "sha256": "ae0aa698cf5b9c0f2de3b6a34c68336b48447dd1bc5b0afa66b1476df0f3900a",
+      "url": "js/07-skills-cast.js?v=efe5d1d687d5",
+      "sha256": "efe5d1d687d57877019f9cb4f63c4bcbcf97b0a6964e34de0af6f2ac5ade59c8",
       "type": "text/javascript; charset=utf-8"
     },
     {
