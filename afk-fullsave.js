@@ -276,7 +276,7 @@
   function modal(html, bind) {
     var old = document.getElementById('m-fsv-choose'); if (old) old.remove();
     var o = document.createElement('div'); o.id = 'm-fsv-choose';
-    o.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(2,6,23,.82);display:flex;align-items:center;justify-content:center;padding:12px';
+    o.style.cssText = 'position:fixed;inset:0;z-index:100200;background:rgba(2,6,23,.82);display:flex;align-items:center;justify-content:center;padding:12px';
     o.innerHTML = '<div style="background:#0f172a;border:1px solid #334155;border-radius:14px;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;padding:16px;color:#e2e8f0;font-size:14px;line-height:1.6">' + html + '</div>';
     document.body.appendChild(o);
     var close = function () { o.remove(); };
