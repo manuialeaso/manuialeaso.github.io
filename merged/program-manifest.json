@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-0aede4beefe2",
+  "build": "merge-0.4-b7ab6b0a53ee",
   "files": [
     {
       "url": "afk-abnforce.js?v=78f4f979cb9e",
@@ -608,8 +608,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-game-guide.js?v=9d70aa9430fa",
-      "sha256": "9d70aa9430fad46f164356409c76742009c7d32cd696c522a4ff6d12fb620713",
+      "url": "afk-game-guide.js?v=13d51a7a05cf",
+      "sha256": "13d51a7a05cf908df686d8694d3dfd911210a1091b14e866b3f6b946ff8c0f36",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1438,13 +1438,13 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-talent2.js?v=199ae4a18636",
-      "sha256": "199ae4a1863617a15f4950959eb06cfe13e024920d611165ff4645c65f73d773",
+      "url": "afk-talent2.js?v=1f98d3e6ecc7",
+      "sha256": "1f98d3e6ecc75f717563c4b15513f9e78c48fc95bfdc28bd6f3a5842c3ea2b85",
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-talent3.js?v=9ec96a86541f",
-      "sha256": "9ec96a86541f8ec5ad79d6519166fa1592e960115e0615cec3feaf52d80ff774",
+      "url": "afk-talent3.js?v=19ae23860660",
+      "sha256": "19ae238606607b97f7cbdb012f70556004ea31b3200880be09c4d1fe0b2f482f",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1573,8 +1573,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-wiki.js?v=1aae11f1fa83",
-      "sha256": "1aae11f1fa83555b82b39f0a620dbfa91a51068e5700e70d2c2bcc505dede48f",
+      "url": "afk-wiki.js?v=ce4c6176dd86",
+      "sha256": "ce4c6176dd863f5a57ac1d8fa85b10b355f191fe7ab9c0b1f6dac42b29903c31",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1639,7 +1639,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "579b9b327b932f48affdbe50e0a9bede2856bdbfe7193a26007b281d373b73db",
+      "sha256": "47ed1d3d02f465c34ddaa86d1e9d46b2338941c6ce3d9bdd702e9c2fe1a43bb3",
       "type": "text/html; charset=utf-8"
     },
     {

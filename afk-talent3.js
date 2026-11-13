@@ -65,7 +65,7 @@
     hpR: ['HP 自然恢復', '%'], mpR: ['MP 自然恢復', '%'], leech: ['傷害轉換 HP', '%'], healRecv: ['受到的治療', '%'], lowHeal: ['HP 首次 < 30% 時回 HP（60 秒一次）', '%'], castMp: ['施放技能回 MP', '%'], killHeal: ['擊殺回 HP', '%'],
     dmg: ['造成的傷害', '%'], crit: ['爆擊率', ' 百分點'], skillDmg: ['技能傷害', '%'], atkDmg: ['一般攻擊傷害', '%'], morphDmg: ['變身後 10 秒內傷害', '%'], starburst: ['爆擊時星爆（全部敵人 100% 傷害）的機率', '%'], ignore: ['無視目標傷害減免', '%'],
     dr: ['受到的傷害', '%', true], shield: ['自己產生的護盾量', '%'], critDef: ['受到的爆擊傷害', '%', true], lowDr: ['HP < 30% 時受到的傷害', '%', true], statusRes: ['受到的持續傷害', '%', true], shieldTick: ['每 30 秒得到最大 HP 護盾', '%'],
-    boss: ['對頭目傷害', '%'], bossDef: ['受到頭目傷害', '%', true], starAll: ['升星效果套用到所有頭目', '%'], starPct: ['每星的效果', '%'], starMat: ['（升星材料少 1 片：尚未開放，先改為每星效果 +1%）', ''], bossHalf: ['頭目 HP < 50% 時傷害', '%'], finalDr: ['最終頭目戰受到的傷害', '%', true]
+    boss: ['對頭目傷害', '%'], bossDef: ['受到頭目傷害', '%', true], starAll: ['升星效果套用到所有頭目', '%'], starPct: ['每星的效果', '%'], starMat: ['每星的效果 +1%', ''], bossHalf: ['頭目 HP < 50% 時傷害', '%'], finalDr: ['最終頭目戰受到的傷害', '%', true]
   };
   var COMBO = {
     'glory+zodiac+soul': ['星海', '星座能力觸發時，回復 3% 最大 HP', { cHealZ: 3 }],
@@ -82,8 +82,8 @@
     'zodiac+soul+sanct': ['庇護', '星座能力觸發時，全隊回 5% HP', { cShelter: 5 }],
     'zodiac+soul+end': ['星辰不滅', '「不滅星魂」觸發後 5 秒內，傷害 +30%', { cUndying: 30 }],
     'zodiac+burst+sanct': ['星環', '星座能力觸發時，全部敵人受到 100% 傷害', { cRing: 100 }],
-    'zodiac+burst+end': ['審判之星', '對頭目時，星座能力造成的額外效果 +50%（觸發機率 +5% 的近似）', { cZodBoss: 50 }],
-    'zodiac+sanct+end': ['守宮', '頭目戰中，星座能力造成的額外效果 +30%（持續時間 +30% 的近似）', { cZodBoss: 30 }],
+    'zodiac+burst+end': ['審判之星', '對頭目時，星座能力造成的額外效果 +50%', { cZodBoss: 50 }],
+    'zodiac+sanct+end': ['守宮', '頭目戰中，星座能力造成的額外效果 +30%', { cZodBoss: 30 }],
     'soul+burst+sanct': ['戰魂', '每次擊殺，5 秒內傷害 +5%（最多 +20%）', { cWarSoul: 5 }],
     'soul+burst+end': ['嗜王', '對頭目造成傷害的 2% 轉為 HP', { cBossLeech: 2 }],
     'soul+sanct+end': ['長城', '頭目戰中，每 15 秒回 5% HP', { cWall: 5 }],
