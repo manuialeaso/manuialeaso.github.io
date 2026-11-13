@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/style.css?v=b74c8c865c05">
     <link rel="stylesheet" href="css/floating-ui.css?v=bc8be4ac7f11">
     <link rel="stylesheet" href="css/tailwind-built.css?v=932535789fee"><!-- 🔧 預編譯 Tailwind（取代執行期 JIT tailwind.js）：只含實際用到的 class，省 407KB runtime + 移除持續掃描 DOM 的成本。置於 style.css 之後以保留原 cascade（utility 平手時勝過自訂 class，與舊 JIT 注入順序一致） -->
-    <link rel="stylesheet" href="merged/mobile-shell.css?v=e6b3ffd8d492">
+    <link rel="stylesheet" href="merged/mobile-shell.css?v=b9c55633f825">
     <link rel="stylesheet" href="merged/mobile-theme.css?v=54bf1614a1fd">
     <link rel="stylesheet" href="merged/mobile-finish.css?v=0feb233c1679">
     <link rel="stylesheet" href="merged/interface-materials.css?v=df4d36674acd">
@@ -788,7 +788,7 @@
     <!-- afk-npclabel：村莊 NPC 名牌不要跑出畫面 -->
     <script src="afk-npclabel.js?v=271145f7e68a"></script>
     <script src="afk-mobname.js?v=807ec4cd7482"></script>
-    <script src="afk-trackinfo.js?v=1546947bea4a"></script>
+    <script src="afk-trackinfo.js?v=7d966bd6aa7e"></script>
     <!-- afk-trackmaps：追蹤選單補上選不到的圖（黑暗妖精聖地＝地獄奴隸唯一產地、傲慢之塔2~10樓、六張隱藏區域）；三批來歷不同,檔頭有表 -->
     <script src="afk-trackmaps.js?v=84f835107bb7"></script>
     <script src="afk-relicguard.js?v=ff25ab39c330"></script>
@@ -1046,7 +1046,7 @@
     <!-- afk-allypoly：隊伍與夥伴→技能設定，幫隊員選變身（照隊員的等級、武器、收集冊）；要在 afk-card-ascension、afk-ttmi-items 之後（最外層包 confirmPolySelect） -->
     <script src="afk-allypoly.js?v=1b96ead58570"></script>
     <!-- afk-balance1101：範圍魔法 3 秒冷卻（玩家與傭兵）、奇古獸額外傷害不乘魔法倍率（核心補丁 79）；要在其他包 castSkill／allyActWithSkillGate 的外掛之後 -->
-    <script src="afk-balance1101.js?v=b9ee88e806a6"></script>
+    <script src="afk-balance1101.js?v=31e2697ab097"></script>
     <!-- afk-autosupply：技能設定藥水區多「三段加速藥水」「增益料理」自動喝／自動買（照洛依的售價）；要在 afk-ttmi-items 之後 -->
     <script src="afk-autosupply.js?v=3df52b984c4a"></script>
     <!-- afk-riftsupply：裂痕專用補給增強（加速、魔力 ×2 可疊加；治癒 5000、魔力 200、解毒清全部負面＋免疫 5 秒，各 15 秒冷卻；裂痕裡自動使用）；要在 afk-ttmi-items、afk-rift2 之後 -->
@@ -1248,5 +1248,7 @@
     <script src="afk-enemyx.js?v=d227114432ee"></script>
     <!-- afk-talent3：第三套天賦「匣之」＋匣之聖衣／血魔聖衣／鐵聖衣的數值（Ping 11-13）；要在 afk-talent2、afk-zodiac 之後 -->
     <script src="afk-talent3.js?v=9ec96a86541f"></script>
+    <!-- afk-abnforce：次元裂縫／GD之子的期待的強制異常（隱藏規則，Ping 11-13）；要在 afk-carve、afk-guardring 之後 -->
+    <script src="afk-abnforce.js?v=78f4f979cb9e"></script>
 </body>
 </html>

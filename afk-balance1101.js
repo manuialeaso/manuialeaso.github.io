@@ -119,6 +119,7 @@
   //   多件抵抗加起來到 100% 不算免疫。遺物、技藝等的免疫暈眩由遺物防禦橋接在寫入暈眩時照樣擋下。
   var stunImmune = function (who) {
     if (!who) return false;
+    try { if (W.__afkAbnForce && W.__afkAbnForce.scope()) return false; } catch (e) {}   // 次元裂縫／GD：強制異常（afk-abnforce），免疫不算
     if (who.immStun || (who.d && who.d.immStun)) return true;
     var eq = who.eq || {}, ks = SLOTS();
     for (var i = 0; i < ks.length; i++) { var e = eq[ks[i]], dd = e && DB.items[e.id]; if (dd && (dd.immStun || (Number(dd.stunResist) || 0) >= 100)) return true; }

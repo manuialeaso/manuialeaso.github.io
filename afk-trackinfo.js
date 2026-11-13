@@ -213,10 +213,12 @@
         try { var FBo = window.__afkFinalBoss; if (FBo && FBo.won && FBo.won(player)) ttl.push('勝者的榮耀'); } catch (e) {}
         try { var SWv = window.__afkStarWeaver; if (SWv && SWv.has && SWv.has(player)) ttl.push('織星者'); } catch (e) {}   // 2026-11-04：稱號「織星者」（afk-starweaver）
         try { var GRg = window.__afkGuardRing; if (GRg && GRg.legacy && GRg.legacy(player)) ttl.push('守護傳承'); } catch (e) {}   // 守護者之戒（afk-guardring）
+        var lbTip = ''; try { var LBk = window.__afkLimitBreak, ld = LBk && LBk.describe && LBk.describe(); if (ld && ld.active) { ttl.push('限界解放'); lbTip = '\n限界解放・' + ld.cls + '：' + ld.rule + '\n目前：' + ld.now; } } catch (e) {}   // 11-13 Ping：限界解放（二轉後自動生效，沒有 NPC）跟轉生資訊一起顯示
         rs.textContent = '🔄 ' + (rb === 1 ? '轉生者' : rb >= 2 ? '轉生者（' + (RB_N[rb] || (rb + ' 轉')) + '）' : RB_N[0]) + (ttl.length ? '・' + ttl.join('・') : '');
         // 玩家 11-06：打贏死亡女神（勝者的榮耀）還沒轉生也亮黃色
         rs.style.color = rb >= 2 ? '#f0abfc' : (rb === 1 || ttl.indexOf('勝者的榮耀') >= 0) ? '#fcd34d' : '#94a3b8';
         rs.title = rb ? '已轉生 ' + rb + ' 次' : '還沒轉生';
+        if (lbTip) rs.title += lbTip;
         if (ttl.indexOf('勝者的榮耀') >= 0) rs.title += '\n勝者的榮耀：全能力 +50、五屬性抗性 +100、AC −50、魔防 +50、傷害減免 +10、受到一般攻擊 10% 閃避';
         rebirthTag = rs;
       }
