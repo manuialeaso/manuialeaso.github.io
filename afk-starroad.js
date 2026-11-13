@@ -2,6 +2,7 @@
  * afk-starroad.js — 副本「星途遠征」與「星辰藥水」（玩家 2026-11-02 18:08 提出、18:24 確認；外掛開關 starroad，預設開；經典模式沒有）
  *
  *   入口：席琳神殿的 NPC「喬斯達」。一般／瘋狂席琳／夢域鏡三個世界每天各 5 次（進場就算一次，每天 0 點重置；2026-11-04 改成分開算）。
+ *   次元裂縫開著時是第四個世界「取回繁星之力」（11-13）：每天 1 次、血龍鑽 500；頭目吃 afk-dimrift 的裂縫倍率；通關 afkDimRift.stars +1（最多 3＝取回力量 15%）；星辰藥水上限 30。
  *   內容：10 波，每波 1 隻頭目，從「地監頭目＋地區霸主」裡隨機抽（照你的等級挑：等級 ±15 的地監頭目；地區霸主調到你的等級）。
  *         第 w 波 HP 與傷害 ×(1 ＋ 0.1 ×(w − 1))。時限 15 分鐘；你倒下、時間到或離開＝失敗。傭兵可以一起進。
  *   獎勵：打贏 10 波 → 星辰藥水 ×1；副本裡每隻頭目 1% 再掉 1 罐（頭目原本的掉落照舊）。
@@ -25,15 +26,15 @@
   var dayKey = function () { return Math.floor((Date.now() + 8 * 3600000) / 86400000); };
   var mobs = function () { return (typeof mapState !== 'undefined' && mapState.mobs) || []; };
 
-  var CFG = { daily: 5, waves: 10, step: 0.10, dropRate: 0.01, timeMs: 15 * 60 * 1000, lvWin: 15, cap: { normal: 50, mad: 80, dream: 110 } };
-  var WORLD_N = { normal: '一般', mad: '瘋狂席琳', dream: '席琳夢域鏡' };
+  var CFG = { daily: 5, waves: 10, step: 0.10, dropRate: 0.01, timeMs: 15 * 60 * 1000, lvWin: 15, cap: { normal: 50, mad: 80, dream: 110, rift: 30 }, riftDaily: 1, riftBlood: 500, starsMax: 3 };   // Ping 11-13 17:07：次元裂縫世界「取回繁星之力」每天 1 次、通關取回力量 +5%（最多 3 次）、星辰藥水上限 30
+  var WORLD_N = { normal: '一般', mad: '瘋狂席琳', dream: '席琳夢域鏡', rift: '次元裂縫' };
   var NPC_ID = 'npc_afk_josda', NPC_N = '喬斯達', NPC_T = '星途嚮導', TOWN = 'town_sherine';
   var MAP = 'afk_starroad', MAP_N = '星途遠征';
   var ITEM = 'afk_star_elixir';
 
   // ── 道具 ──
   L.addItem(ITEM, { n: '星辰藥水', type: 'misc', eff: 'afk_star_elixir', c: 'text-sky-200', img: 'assets/icons/items/afk_star_elixir.png', p: 0, noTrade: true, afkStarElixir: true,
-    d: '星途遠征的盡頭凝結出的藥水，泛著星光的藍。喝下後得到 1 點升級點數，可以自由分配。每個世界能喝的數量不同：一般 ' + CFG.cap.normal + ' 罐、瘋狂席琳 ' + CFG.cap.mad + ' 罐、席琳夢域鏡 ' + CFG.cap.dream + ' 罐（各自計算）。' });
+    d: '星途遠征的盡頭凝結出的藥水，泛著星光的藍。喝下後得到 1 點升級點數，可以自由分配。每個世界能喝的數量不同：一般 ' + CFG.cap.normal + ' 罐、瘋狂席琳 ' + CFG.cap.mad + ' 罐、席琳夢域鏡 ' + CFG.cap.dream + ' 罐、次元裂縫 ' + CFG.cap.rift + ' 罐（各自計算）。' });
 
   // ── 存檔 ──
   var store = function (p) {
@@ -46,12 +47,14 @@
   };
   // 每天 5 次，一般／瘋狂席琳／夢域鏡三個世界分開算（玩家 2026-11-04 11:41：一天最多 15 次）
   var usedToday = function (p) { p = p || P(); var s = store(p); return Number(s.usedW[worldOf(p)]) || 0; };
-  var worldOf = function (p) { p = p || P(); if (!p) return 'normal'; if (p.sherineDream && p.sherineMad) return 'dream'; if (p.sherineMad) return 'mad'; return 'normal'; };
+  var riftOn = function () { try { return !!(W.__afkDimRift && W.__afkDimRift.on()); } catch (e) { return false; } };
+  var dailyOf = function (w) { return w === 'rift' ? CFG.riftDaily : CFG.daily; };
+  var worldOf = function (p) { p = p || P(); if (!p) return 'normal'; if (riftOn()) return 'rift'; if (p.sherineDream && p.sherineMad) return 'dream'; if (p.sherineMad) return 'mad'; return 'normal'; };
   // 玩家 2026-11-02 19:23：面板上已經有兩項能力的基本值（出生＋配點＋萬能藥）到 200，星辰藥水就不再掉
   var STATS = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
   var natural = function (p, k) { return (Number((p.base || {})[k]) || 0) + (Number((p.alloc || {})[k]) || 0) + (Number((p.panacea || {})[k]) || 0); };
   var noDrop = function (p) { p = p || P(); if (!p) return false; return STATS.filter(function (k) { return natural(p, k) >= 200; }).length >= 2; };
-  var ptsTotal = function (p) { var s = store(p).pts; return (Number(s.normal) || 0) + (Number(s.mad) || 0) + (Number(s.dream) || 0); };
+  var ptsTotal = function (p) { var s = store(p).pts; return (Number(s.normal) || 0) + (Number(s.mad) || 0) + (Number(s.dream) || 0) + (Number(s.rift) || 0); };
 
   // ── 星辰藥水：+1 升級點數 ──
   var drink = function (it) {
@@ -127,6 +130,7 @@
   var discLeft = function (p) { p = p || P(); if (!p || worldOf(p) !== 'normal') return 0; return Math.max(0, DISC.n - (Number(store(p).disc) || 0)); };
   var costOf = function (p) {
     var DC = W.__afkDiaCost, noFee = !!W.__afkTestNoFee;
+    if (worldOf(p) === 'rift') return { disc: false, dia: 0, gold: 0, crystal: 0, dream: 0, blood: noFee ? 0 : CFG.riftBlood };   // 裂縫裡的花費一律用血龍鑽
     if (discLeft(p) > 0) return { disc: true, dia: 0, gold: noFee ? 0 : DISC.gold, crystal: noFee ? 0 : DISC.crystal, dream: 0 };
     return { disc: false, dia: DC ? DC.COST.starroad : 0, gold: 0, crystal: (DC && !noFee) ? DC.COST.starroadCrystal : 0, dream: (DC && !noFee && worldOf(p) === 'dream') ? DREAM_CRY : 0 };
   };
@@ -136,17 +140,19 @@
     if (c.gold) a.push('金幣 ' + c.gold.toLocaleString());
     if (c.crystal) a.push('席琳結晶 ' + c.crystal.toLocaleString());
     if (c.dream) a.push('夢艷結晶 ' + c.dream.toLocaleString());
-    return a.join('＋');
+    if (c.blood) a.push('血龍鑽 ' + c.blood.toLocaleString());
+    return a.join('＋') || '免費';
   };
   var canEnter = function () {
     var p = P(); if (!p) return '請先進入遊戲。';
     if (p.classicMode) return '經典模式沒有星途遠征。';
-    if (usedToday(p) >= CFG.daily) return '在' + WORLD_N[worldOf(p)] + '的世界，今天的 ' + CFG.daily + ' 次已經用完，明天再來（三個世界各自 ' + CFG.daily + ' 次）。';
+    var dl = dailyOf(worldOf(p)); if (usedToday(p) >= dl) return '在' + WORLD_N[worldOf(p)] + '的世界，今天的 ' + dl + ' 次已經用完，明天再來。';
     var DC = W.__afkDiaCost, c = costOf(p), miss = null;
     var add = function (t) { miss = (miss ? miss + '；' : '') + t; };
     if (c.dia && DC) miss = DC.check(c.dia);
     var g = Math.floor(Number(p.gold) || 0); if (c.gold && g < c.gold) add('金幣還差 ' + (c.gold - g).toLocaleString() + '（需要 ' + c.gold.toLocaleString() + '）');
     var cr = cnt('sherine_crystal'); if (cr < c.crystal) add('席琳結晶還差 ' + (c.crystal - cr).toLocaleString() + '（需要 ' + c.crystal.toLocaleString() + '）');
+    var bh = cnt('afk_blood_dia'); if (bh < (c.blood || 0)) add('血龍鑽還差 ' + (c.blood - bh).toLocaleString() + '（需要 ' + c.blood.toLocaleString() + '）');
     var dh = cnt('afk_dream_crystal'); if (dh < c.dream) add('夢艷結晶還差 ' + (c.dream - dh).toLocaleString() + '（需要 ' + c.dream.toLocaleString() + '）');
     if (miss) return '進場要' + costTxt(c) + '：' + miss + '。';
     return null;
@@ -165,18 +171,18 @@
     try { if (typeof closeWarehouseWindow === 'function') closeWarehouseWindow(); } catch (e) {}
     try { if (typeof saveSiegeBossHp === 'function') saveSiegeBossHp(); } catch (e) {}
     var c = costOf(p), DCx = W.__afkDiaCost;
-    if (!takeId('sherine_crystal', c.crystal) || !takeId('afk_dream_crystal', c.dream)) { sys('<span class="text-amber-300">倉庫暫時無法取出材料，沒有進場。</span>'); return false; }
+    if (!takeId('sherine_crystal', c.crystal) || !takeId('afk_dream_crystal', c.dream) || !takeId('afk_blood_dia', c.blood || 0)) { sys('<span class="text-amber-300">倉庫暫時無法取出材料，沒有進場。</span>'); return false; }
     if (c.dia && DCx && !DCx.pay(c.dia)) { if (c.crystal) gainItem('sherine_crystal', c.crystal, true, true); if (c.dream) gainItem('afk_dream_crystal', c.dream, true, true); sys('<span class="text-amber-300">龍之鑽石帳戶暫時無法寫入，沒有進場。</span>'); return false; }
     if (c.gold) p.gold = Math.max(0, Math.floor(Number(p.gold) || 0) - c.gold);
     if (c.disc) store(p).disc = (Number(store(p).disc) || 0) + 1;
-    var s = store(p); s.used++; s.usedW[worldOf(p)] = (Number(s.usedW[worldOf(p)]) || 0) + 1; s.runs = (Number(s.runs) || 0) + 1;
+    var s = store(p); s.runW = worldOf(p); s.used++; s.usedW[worldOf(p)] = (Number(s.usedW[worldOf(p)]) || 0) + 1; s.runs = (Number(s.runs) || 0) + 1;
     mapState.current = MAP; p.lastBattleMap = MAP;
     mapState.mobs = [null, null, null, null, null]; mapState.spawnAt = [null, null, null, null, null];
     mapState.targetIdx = -1; mapState.forceBoss = false;
     run = { wave: 1, pending: true, done: false, until: Date.now() + CFG.timeMs };
     s.run = run;   // 存進角色：換角色再回來、重新整理都接得上（玩家 2026-11-05「打星圖切去看其他角色，再回來就停住」）
     lastMap = MAP;
-    sys('<span class="font-bold" style="color:#7dd3fc">喬斯達揮動星盤，你踏上了星之通道——第 1／' + CFG.waves + ' 道星門。（今天第 ' + usedToday(p) + '／' + CFG.daily + ' 次）</span>');
+    sys('<span class="font-bold" style="color:#7dd3fc">喬斯達揮動星盤，你踏上了星之通道——第 1／' + CFG.waves + ' 道星門。（今天第 ' + usedToday(p) + '／' + dailyOf(worldOf(p)) + ' 次）</span>');
     try { if (typeof _vfxClearAll === 'function') _vfxClearAll(); } catch (e) {}
     try {
       var mapPanel = document.getElementById('town-view').parentElement;
@@ -200,6 +206,7 @@
   var victory = function () {
     var p = P(), s = store(p);
     s.clears = (Number(s.clears) || 0) + 1;
+    if (s.runW === 'rift') { var dr = p.afkDimRift || (p.afkDimRift = {}); if ((Number(dr.stars) || 0) < CFG.starsMax) { dr.stars = (Number(dr.stars) || 0) + 1; sys('<span class="font-bold" style="color:#f0abfc">✨ 取回繁星之力（' + dr.stars + '／' + CFG.starsMax + '）：星光回到你身上，次元裂縫裡的取回力量 +5%。</span>'); try { calcStats(); } catch (e) {} } }
     if (noDrop(p)) { leave('<span class="text-yellow-300 font-bold">🏆 第 ' + CFG.waves + ' 道星門關上了。</span>喬斯達看了看你：「你的身體已經裝不下更多星光了。」（兩項能力的基本值已經到 200，不再給星辰藥水）'); return; }
     gainItem(ITEM, 1, true, true);
     leave('<span class="text-yellow-300 font-bold">🏆 第 ' + CFG.waves + ' 道星門關上了。喬斯達的星盤亮起：你得到星辰藥水 ×1。</span>');
@@ -275,13 +282,14 @@
     var box = div.querySelector('#afk-star-josda'); if (!box) return;
     var p = P(); if (!p) return;
     var s = store(p), why = canEnter(), w = worldOf(p);
-    var h = '<div class="ax-h">星途遠征</div><div class="ax-note" style="color:#bae6fd">「我的力量有限——在' + ({ normal: '這個世界', mad: '瘋狂席琳的世界', dream: '席琳夢域鏡' }[w]) + '，我只能為你開啟 ' + CFG.cap[w] + ' 次星門。」（已開啟 ' + (Number(s.pts[w]) || 0) + ' 次）</div>'
+    var h = '<div class="ax-h">星途遠征</div><div class="ax-note" style="color:#bae6fd">「我的力量有限——在' + ({ normal: '這個世界', mad: '瘋狂席琳的世界', dream: '席琳夢域鏡', rift: '次元裂縫' }[w]) + '，我只能為你開啟 ' + CFG.cap[w] + ' 次星門。」（已開啟 ' + (Number(s.pts[w]) || 0) + ' 次）</div>'
       + '<div class="ax-note">穿過 ' + CFG.waves + ' 道星門，每道門後是一名頭目（地監頭目或地區霸主，照你的等級挑選；越後面越強）。打贏 ' + CFG.waves + ' 道門得到星辰藥水 ×1，副本裡每名頭目另有 1% 掉 1 罐。有兩項能力的基本值（出生＋配點＋萬能藥）到 200 之後就不再掉。'
-      + '一般、瘋狂席琳、夢域鏡三個世界每天各 ' + CFG.daily + ' 次（進場就算），時限 15 分鐘；倒下、時間到或離開就失敗。傭兵可以一起進。</div>'
+      + '一般、瘋狂席琳、夢域鏡三個世界每天各 ' + CFG.daily + ' 次，次元裂縫每天 ' + CFG.riftDaily + ' 次（進場就算），時限 15 分鐘；倒下、時間到或離開就失敗。傭兵可以一起進。</div>'
+      + (w === 'rift' ? '<div class="ax-note" style="color:#f0abfc">次元裂縫：「取回繁星之力」——頭目照次元裂縫的強度。通關一次，次元裂縫裡的取回力量 +5%，最多 ' + CFG.starsMax + ' 次（目前 ' + Math.min(CFG.starsMax, Number(p.afkDimRift && p.afkDimRift.stars) || 0) + '／' + CFG.starsMax + '）；拿滿後只有一般報酬。</div>' : '')
       + '<div class="ax-note">今天（' + WORLD_N[w] + '）：' + usedToday(p) + '／' + CFG.daily + ' 次　通關 ' + (Number(s.clears) || 0) + ' 次</div>'
       + '<div class="ax-note">進場費用：' + costTxt(costOf(p)) + (w === 'normal' ? '（一般世界前 ' + DISC.n + ' 次只要金幣 ' + DISC.gold.toLocaleString() + '＋席琳結晶 ' + DISC.crystal + '，還剩 ' + discLeft(p) + ' 次）' : '') + '　持有席琳結晶 ' + matTxt('sherine_crystal') + (w === 'dream' ? '、夢艷結晶 ' + matTxt('afk_dream_crystal') : '') + '</div>'
-      + '<div class="ax-note">星辰藥水（升級點數 +1）已喝：一般 ' + (Number(s.pts.normal) || 0) + '／' + CFG.cap.normal + '、瘋狂席琳 ' + (Number(s.pts.mad) || 0) + '／' + CFG.cap.mad + '、席琳夢域鏡 ' + (Number(s.pts.dream) || 0) + '／' + CFG.cap.dream + '（你現在的世界：' + WORLD_N[w] + '）</div>';
-    h += K.rowHtml({ key: 'enter', name: '進入星途遠征', color: '#bae6fd', desc: '今天在這個世界還剩 ' + Math.max(0, CFG.daily - usedToday(p)) + ' 次（三個世界各自 ' + CFG.daily + ' 次）。', why: why || '', btns: [['enter', '進入', !why]] }, 'data-star');
+      + '<div class="ax-note">星辰藥水（升級點數 +1）已喝：一般 ' + (Number(s.pts.normal) || 0) + '／' + CFG.cap.normal + '、瘋狂席琳 ' + (Number(s.pts.mad) || 0) + '／' + CFG.cap.mad + '、席琳夢域鏡 ' + (Number(s.pts.dream) || 0) + '／' + CFG.cap.dream + '、次元裂縫 ' + (Number(s.pts.rift) || 0) + '／' + CFG.cap.rift + '（你現在的世界：' + WORLD_N[w] + '）</div>';
+    h += K.rowHtml({ key: 'enter', name: '進入星途遠征', color: '#bae6fd', desc: '今天在這個世界還剩 ' + Math.max(0, dailyOf(w) - usedToday(p)) + ' 次。', why: why || '', btns: [['enter', '進入', !why]] }, 'data-star');
     K.repaint(box, h);
   };
   var render = function (div) {
@@ -298,5 +306,5 @@
   K.hookNpc(NPC_ID, NPC_N, NPC_T, render);
 
   W.__afkStarRoad = { CFG: CFG, noDrop: noDrop, MAP: MAP, ITEM: ITEM, NPC_ID: NPC_ID, store: store, worldOf: worldOf, usedToday: usedToday, ptsTotal: ptsTotal, drink: drink, enter: enter, canEnter: canEnter,
-    DISC: DISC, discLeft: discLeft, costOf: costOf, run: function () { return run; }, pickBoss: pickBoss, dungeonBosses: dungeonBosses, render: render };
+    DISC: DISC, discLeft: discLeft, dailyOf: dailyOf, costOf: costOf, run: function () { return run; }, pickBoss: pickBoss, dungeonBosses: dungeonBosses, render: render };
 })();

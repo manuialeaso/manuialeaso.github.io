@@ -195,7 +195,7 @@
     stages: [
       { n: '第一艘船', waves: 2, pool: ['zone_04', 'zone_05'], boss: { n: '亡靈船長', re: '船長|海賊', hpX: 5 } },
       { n: '第二艘船', waves: 2, pool: ['zone_04', 'zone_05'], boss: { n: '溺死的船長', re: '船長|海賊', hpX: 6 } },
-      { n: '船底的巢', waves: 1, boss: { n: '深淵的大王烏賊', re: '烏賊|章魚|海', hpX: 20, final: true, adds: 4, addN: '觸手', tentacles: 8,
+      { n: '船底的巢', waves: 1, boss: { n: '深淵的大王烏賊', re: '^大王烏賊$',   /* 11-13 Ping：原本 '烏賊|章魚|海' 先抓到別的頭目（海音守護塔／冥法軍王）的圖 */ hpX: 20, final: true, adds: 4, addN: '觸手', tentacles: 8,
         mech: function (run, b, t, M) { if (M.cut == null) M.cut = 0; if (every(M, 'ink', 30, t)) { party().forEach(function (x) { status(x, 'blind', 50); }); clog(tag('#64748b', '墨潮') + '全隊命中 −50%（5 秒）。'); } if (M.cut < 8 && !alive(function (x) { return x._rdAdd; }).length) { summonRd(findBase('觸手|烏賊|章魚'), Math.min(4, 8 - M.cut), { _rd: true, _dimRift: true, _rdAdd: true, _rdTent: true, n: '觸手', noAutoTeleport: true }); } },
         dmgIn: function (run, b, amt, kind, M) { return (M.cut || 0) < 8 ? 0 : amt; } } }
     ],

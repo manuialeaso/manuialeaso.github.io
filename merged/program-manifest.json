@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-8ced1af219c0",
+  "build": "merge-0.4-499f1b692c62",
   "files": [
     {
       "url": "afk-aden-quests.js?v=2914274d1613",
@@ -398,8 +398,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-dimrift.js?v=e9e52ed68cbe",
-      "sha256": "e9e52ed68cbef27a9e0586bba093b39f2d7d472df5e9bf13f46cb9fba80be9f2",
+      "url": "afk-dimrift.js?v=5027bc5f1940",
+      "sha256": "5027bc5f1940f4d559598083abea9c85284fe74834cd0f46b36e695e1931820f",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -598,8 +598,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-game-guide.js?v=ec8299eb32a2",
-      "sha256": "ec8299eb32a2e6328bffc88b970d9c84ec24604846a3163b0811d2385f452635",
+      "url": "afk-game-guide.js?v=9d70aa9430fa",
+      "sha256": "9d70aa9430fad46f164356409c76742009c7d32cd696c522a4ff6d12fb620713",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1248,8 +1248,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-riftdungeons.js?v=484663d3b3a9",
-      "sha256": "484663d3b3a946e0de458b284781cb2500cce00ba2bea3a34a444911448363a0",
+      "url": "afk-riftdungeons.js?v=02f0c9413a2b",
+      "sha256": "02f0c9413a2b9b491331a05a69c5390ce2a3afa3b58adbd26962d0be04eaf77b",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1378,8 +1378,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-starroad.js?v=1a612d8b1010",
-      "sha256": "1a612d8b10102818c39815acb63c97fd4377d6e99bca1f060d3bfa2819311e7d",
+      "url": "afk-starroad.js?v=7ef39ea8bc14",
+      "sha256": "7ef39ea8bc14d47d563e632ad2db1c6432a2537a4eba1aa7433d0fd6f4e6ef30",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1563,8 +1563,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-wiki.js?v=989137dcbca9",
-      "sha256": "989137dcbca900c3937e9312c73bdb7d9aa3d888b315454109891c6cc353281d",
+      "url": "afk-wiki.js?v=1aae11f1fa83",
+      "sha256": "1aae11f1fa83555b82b39f0a620dbfa91a51068e5700e70d2c2bcc505dede48f",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1629,7 +1629,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "36c8e55bebad4563d57668b28fa466288c95499665e7ede89da3109925c8951d",
+      "sha256": "536189d216cf97d5c70dd14bffe56e8fa0bd8d93a9467ce297c35574a864fcd9",
       "type": "text/html; charset=utf-8"
     },
     {
