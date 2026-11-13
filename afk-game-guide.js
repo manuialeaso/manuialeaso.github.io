@@ -53,7 +53,18 @@
     return note('翻開遺物的來歷與力量，查看 +5、+10、昇華支配及終階效果。這裡收錄有專屬特殊效果的 '+relicRows().length+' 件遺物。')+
       note('遺物在燃柳村「哈瑪大師」合成強化：武器、防具最高 +15，飾品（戒指、耳環、項鍊、腰帶）最高 +10；到頂之後可以昇華支配（+0～+5）。每一階要的材料、成功率請看「遺物強化」分頁；下方表格列出特殊效果有變化的階段。')+
       '<label class="afk-guide-search">搜尋遺物<input id="afk-guide-relic-query" type="search" value="'+esc(relicQuery)+'" placeholder="名稱、編號或效果，例如：護盾"></label><div id="afk-guide-relic-results">'+relicResults()+'</div>'+
-      evoCard();
+      evoCard()+bossRelicCard();
+  }
+  // 王者遺物（afk-bossrelic.js）：規則＋79 件一覽（本體、昇華支配 +5）
+  function bossRelicCard(){
+    var B=window.__afkBossRelic;if(!B)return '';
+    var MB=window.__afkMapBoss,rows=B.LIST.map(function(r,i){var b=MB&&MB.BY[r[0]];return '<tr><td>'+(i+1)+'</td><td><b>'+esc(r[2])+'</b><br><span style="opacity:.75">'+esc(B.BASE[r[1]].cat)+'・'+esc(b?b.n:'')+'</span></td><td>'+esc(B.text(r,0))+'</td><td>'+esc(B.text(r,4))+'</td></tr>';}).join('');
+    return factCard('王者遺物','79 隻地圖王、副本王各有一件專屬遺物','打倒王時有機率掉落（跟一般遺物一樣），合成、昇華支配、詞綴都跟一般遺物相同。',[
+      '特效分 5 階：本體、+5、+10、昇華支配、昇華支配 +5，越往上越強',
+      '武器多一項「王者之威」：造成的傷害提升（各種武器不同）',
+      '「近 5 秒每秒傷害」＝你最近 5 秒平均每秒造成的傷害；召喚、砲擊、地震、中毒這類追加傷害都照它算',
+      '保命效果（短暫無敵、保住 1 HP、倒下站起來）：同一個人身上只算階段最高的一件；保住 1 HP、站起來只對你自己有效'
+    ])+'<details class="m-wiki-card"><summary class="m-wiki-name" style="cursor:pointer">王者遺物一覽（79 件）</summary><div style="overflow-x:auto"><table class="m-wiki-table"><tr><th>#</th><th>遺物</th><th>本體</th><th>昇華支配 +5</th></tr>'+rows+'</table></div></details>';
   }
   function evoCard(){
     return factCard('至高的支配（昇華支配 +5 再進化）','遺物的最後一個階段','在燃柳村「哈瑪大師」把「+5 昇華支配」遺物進化，成功率 100%。',[
