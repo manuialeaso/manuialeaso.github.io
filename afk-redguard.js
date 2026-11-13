@@ -80,12 +80,26 @@
   //   每個宣戰中的血盟 100 龍之鑽石或 1,000 萬金幣。不影響每週守城戰、強制宣戰、你自己主動宣戰；連續擊殺數不動。
   var WAR_COST = { dia: 100, gold: 10000000 };
   var CWa = function () { return W.__afkCastleWar || null; };
-  var warN = function () { try { var c = CWa(); return c ? (c.data().warIds || []).length : 0; } catch (e) { return 0; } };
+  // Ping 11-13 22:26：只有一座城卻被 30 個血盟宣戰（殺了他們的人、仇恨滿 50 就會「對方宣戰」，不是城堡帶來的）→ 消除宣戰改成「所有對你宣戰的 NPC 血盟」都算；強制宣戰那一個不算
+  var mode = function () { try { return typeof clanModeKey === 'function' ? clanModeKey(P()) : (P() && P().classicMode ? 'classic' : 'normal'); } catch (e) { return 'normal'; } };
+  var world = function (st) { if (!st || !st.npcWorlds) return null; var w = st.npcWorlds[mode()]; if (w && Array.isArray(w.clans)) return w; var ks = Object.keys(st.npcWorlds); for (var i = 0; i < ks.length; i++) { var x = st.npcWorlds[ks[i]]; if (x && Array.isArray(x.clans) && x.clans.some(function (c) { return c && c.hostile; })) return x; } return null; };
+  var forcedId = function () { try { var c = CWa(), f = c && c.data().forced; return f && f.until > Date.now() ? f.clanId : null; } catch (e) { return null; } };
+  var hostileIds = function () {
+    var ids = [];
+    try {
+      var c = CWa(); if (c) (c.data().warIds || []).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+      var st = typeof _clanReadState === 'function' ? _clanReadState() : null;
+      var w = world(st), fid = forcedId();
+      if (w) w.clans.forEach(function (cl) { if (cl && cl.hostile && cl.id !== fid && ids.indexOf(cl.id) < 0) ids.push(cl.id); });
+    } catch (e) {}
+    return ids;
+  };
+  var warN = function () { return hostileIds().length; };
   var truceOn = function () { try { var c = CWa(); if (!c) return false; var d = c.data(); return !!(d.truceN && d.truceN === c.held().length); } catch (e) { return false; } };
   var endWar = function (pay) {
     var p = P(), c = CWa(); if (!p || !c) return '請先進入遊戲。';
-    var d = c.data(), ids = (d.warIds || []).slice(), n = ids.length;
-    if (!n) return '目前沒有血盟因為你持有的城堡而對你宣戰。';
+    var d = c.data(), ids = hostileIds(), n = ids.length;
+    if (!n) return '目前沒有血盟對你宣戰。';
     if (pay === 'dia') {
       var need = n * WAR_COST.dia;
       if (typeof W.pandoraAdjustSharedDiamonds !== 'function') return '龍之鑽石帳戶暫時無法使用。';
@@ -97,10 +111,19 @@
       if ((Number(p.gold) || 0) < g) return '金幣不夠（需要 ' + g.toLocaleString() + '）。';
       p.gold -= g;
     }
-    d.truceN = c.held().length; c.save(d);
+    if ((d.warIds || []).length) { d.truceN = c.held().length; }
+    c.save(d);
     try { c.syncWar(true); } catch (e) {}
+    // 其他對你宣戰的血盟（仇恨帶來的）：撤回宣戰、仇恨歸零
+    try {
+      if (typeof _clanWithLock === 'function') _clanWithLock(function (st) {
+        var w = world(st), ch = false; if (!w) return { commit: false };
+        w.clans.forEach(function (cl) { if (cl && ids.indexOf(cl.id) >= 0 && cl.hostile) { cl.hostile = false; cl.hatred = 0; cl.counterWarChance = 0; if (cl.mercy && cl.mercy.pending) cl.mercy = null; ch = true; } });
+        return ch ? {} : { commit: false };
+      });
+    } catch (e) {}
     try { (mapState.mobs || []).forEach(function (m, i) { if (m && m.trollPlayer && m._npcClanId && ids.indexOf(m._npcClanId) >= 0 && !m._afkForcedWar) mapState.mobs[i] = null; }); } catch (e) {}
-    say('<span class="font-bold" style="color:#f9a8d4">🕊 ' + NPC_N + '為你向女神祈禱：' + n + ' 個血盟撤回了對你的宣戰。只要你持有的城堡數不變，他們就不會再來。</span>');
+    say('<span class="font-bold" style="color:#f9a8d4">🕊 ' + NPC_N + '為你向女神祈禱：' + n + ' 個血盟撤回了對你的宣戰。</span>');
     try { renderMobs(); } catch (e) {} try { updateUI(); } catch (e) {} try { saveGame(); } catch (e) {}
     return null;
   };
@@ -120,8 +143,8 @@
     h += K.rowHtml({ key: 'gold', ico: '', name: '用金幣淨化', color: '#fde68a', desc: '同上。', req: K.reqTxt(Number(p.gold) || 0, COST.gold, '金幣'), btns: [['gold', '淨化', (Number(p.gold) || 0) >= COST.gold]] }, 'data-rg');
     if (CWa()) {
       var wn = warN(), nd = wn * WAR_COST.dia, ng = wn * WAR_COST.gold;
-      var wdesc = (truceOn() ? '<b style="color:#86efac">停戰中</b>：城堡數不變就不會再被宣戰。' : '目前因為你持有的城堡而對你宣戰的血盟：<b>' + wn + '</b> 個。') +
-        '<br>消除後這些血盟全部撤回宣戰，一直到你持有的城堡數再變動為止。每個血盟 ' + WAR_COST.dia + ' 龍之鑽石或 ' + WAR_COST.gold.toLocaleString() + ' 金幣。每週五的守城戰、強制宣戰不在這裡。';
+      var wdesc = '目前對你宣戰的血盟：<b>' + wn + '</b> 個' + (truceOn() ? '（城堡帶來的宣戰<b style="color:#86efac">停戰中</b>，城堡數不變就不會再來）' : '') + '。' +
+        '<br>消除後這些血盟全部撤回宣戰、仇恨歸零：城堡帶來的宣戰一直到你持有的城堡數再變動為止；因為你殺了他們的人而宣戰的，之後再殺他們的人仇恨又會累積。每個血盟 ' + WAR_COST.dia + ' 龍之鑽石或 ' + WAR_COST.gold.toLocaleString() + ' 金幣。每週五的守城戰、強制宣戰不在這裡。';
       h += K.rowHtml({ key: 'wdia', ico: '', name: '消除宣戰（龍之鑽石）', color: '#fca5a5', desc: wdesc, req: wn ? K.reqTxt(dia(), nd, '龍之鑽石') : '沒有宣戰中的血盟', btns: [['wdia', '消除', wn > 0 && dia() >= nd]] }, 'data-rg');
       h += K.rowHtml({ key: 'wgold', ico: '', name: '消除宣戰（金幣）', color: '#fde68a', desc: '同上。', req: wn ? K.reqTxt(Number(p.gold) || 0, ng, '金幣') : '沒有宣戰中的血盟', btns: [['wgold', '消除', wn > 0 && (Number(p.gold) || 0) >= ng]] }, 'data-rg');
     }
