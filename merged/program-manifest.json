@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "merge-0.4-a950ceccb8ef",
+  "build": "merge-0.4-f88a7ce2ef61",
   "files": [
     {
       "url": "afk-abnforce.js?v=75f657efeabc",
@@ -1408,8 +1408,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-starroad.js?v=585aba1f9f2c",
-      "sha256": "585aba1f9f2c87729a6466008b4ce433fcff9dbc08ea027f0aaa39ec4ae3bc0f",
+      "url": "afk-starroad.js?v=7ef39ea8bc14",
+      "sha256": "7ef39ea8bc14d47d563e632ad2db1c6432a2537a4eba1aa7433d0fd6f4e6ef30",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1654,7 +1654,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "6be8a89c38b92f05d07cba2b9482742494cb5568df3819f3f9cb5616632fd987",
+      "sha256": "710e45878706ed4322d11071754009df59ef000c862ae37ac4b7f74c1de8b06d",
       "type": "text/html; charset=utf-8"
     },
     {
