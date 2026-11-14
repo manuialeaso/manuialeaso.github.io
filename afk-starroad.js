@@ -2,7 +2,7 @@
  * afk-starroad.js — 副本「星途遠征」與「星辰藥水」（玩家 2026-11-02 18:08 提出、18:24 確認；外掛開關 starroad，預設開；經典模式沒有）
  *
  *   入口：席琳神殿的 NPC「喬斯達」。一般／瘋狂席琳／夢域鏡三個世界每天各 5 次（進場就算一次，每天 0 點重置；2026-11-04 改成分開算）。
- *   次元裂縫開著時是第四個世界「取回繁星之力」（11-13）：每天 1 次、血龍鑽 500；頭目吃 afk-dimrift 的裂縫倍率；通關 afkDimRift.stars +1（最多 3＝取回力量 15%）；星辰藥水上限 30。
+ *   次元裂縫開著時是第四個世界「取回繁星之力」（11-13）：每天 1 次、血龍鑽 1,000（11-15 從 500 調高）；頭目吃 afk-dimrift 的裂縫倍率；通關 afkDimRift.stars +1（最多 3＝取回力量 15%）；星辰藥水上限 30。
  *   內容：10 波，每波 1 隻頭目，從「地監頭目＋地區霸主」裡隨機抽（照你的等級挑：等級 ±15 的地監頭目；地區霸主調到你的等級）。
  *         第 w 波 HP 與傷害 ×(1 ＋ 0.1 ×(w − 1))。時限 15 分鐘；你倒下、時間到或離開＝失敗。傭兵可以一起進。
  *   獎勵：打贏 10 波 → 星辰藥水 ×1；副本裡每隻頭目 1% 再掉 1 罐（頭目原本的掉落照舊）。
@@ -10,7 +10,7 @@
  *     一般（含一般席琳）50 罐、瘋狂席琳 80 罐、席琳夢域鏡 110 罐（各自算，合計 240）。
  *     用掉的點數在回憶蠟燭重置配點時會一起算進可重配點數。
  *   跟原本的「純白的萬能藥」（做萬能藥的原料）是不同的道具。
- *   進場費（2026-11-03）：一般世界（含一般席琳）每個角色前 30 次只收金幣 500 萬＋席琳結晶 100（player.afkStar.disc 計數）；之後與其他世界照 afk-diacost。
+ *   進場費（2026-11-03）：席琳夢域鏡龍鑽 10,000（11-15，其他世界 1,000）；一般世界（含一般席琳）每個角色前 30 次只收金幣 500 萬＋席琳結晶 100（player.afkStar.disc 計數）；之後與其他世界照 afk-diacost。
  *     材料背包不夠時從倉庫補（afk-matwh）。
  * ========================================================================== */
 (function () {
@@ -26,7 +26,7 @@
   var dayKey = function () { return Math.floor((Date.now() + 8 * 3600000) / 86400000); };
   var mobs = function () { return (typeof mapState !== 'undefined' && mapState.mobs) || []; };
 
-  var CFG = { daily: 5, waves: 10, step: 0.10, dropRate: 0.01, timeMs: 15 * 60 * 1000, lvWin: 15, cap: { normal: 50, mad: 80, dream: 110, rift: 30 }, riftDaily: 1, riftBlood: 500, starsMax: 3 };   // Ping 11-13 17:07：次元裂縫世界「取回繁星之力」每天 1 次、通關取回力量 +5%（最多 3 次）、星辰藥水上限 30
+  var CFG = { daily: 5, waves: 10, step: 0.10, dropRate: 0.01, timeMs: 15 * 60 * 1000, lvWin: 15, cap: { normal: 50, mad: 80, dream: 110, rift: 30 }, riftDaily: 1, riftBlood: 1000, dreamDia: 10000, starsMax: 3 };   // Ping 11-15：夢域鏡進場龍鑽 10,000、取回繁星之力血龍鑽 1,000   // Ping 11-13 17:07：次元裂縫世界「取回繁星之力」每天 1 次、通關取回力量 +5%（最多 3 次）、星辰藥水上限 30
   var WORLD_N = { normal: '一般', mad: '瘋狂席琳', dream: '席琳夢域鏡', rift: '次元裂縫' };
   var NPC_ID = 'npc_afk_josda', NPC_N = '喬斯達', NPC_T = '星途嚮導', TOWN = 'town_sherine';
   var MAP = 'afk_starroad', MAP_N = '星途遠征';
@@ -132,7 +132,7 @@
     var DC = W.__afkDiaCost, noFee = !!W.__afkTestNoFee;
     if (worldOf(p) === 'rift') return { disc: false, dia: 0, gold: 0, crystal: 0, dream: 0, blood: noFee ? 0 : CFG.riftBlood };   // 裂縫裡的花費一律用血龍鑽
     if (discLeft(p) > 0) return { disc: true, dia: 0, gold: noFee ? 0 : DISC.gold, crystal: noFee ? 0 : DISC.crystal, dream: 0 };
-    return { disc: false, dia: DC ? DC.COST.starroad : 0, gold: 0, crystal: (DC && !noFee) ? DC.COST.starroadCrystal : 0, dream: (DC && !noFee && worldOf(p) === 'dream') ? DREAM_CRY : 0 };
+    return { disc: false, dia: DC ? (worldOf(p) === 'dream' ? CFG.dreamDia : DC.COST.starroad) : 0, gold: 0, crystal: (DC && !noFee) ? DC.COST.starroadCrystal : 0, dream: (DC && !noFee && worldOf(p) === 'dream') ? DREAM_CRY : 0 };
   };
   var costTxt = function (c) {
     var DC = W.__afkDiaCost, a = [];
