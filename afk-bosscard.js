@@ -191,7 +191,7 @@
     if (sb && sb.type === tk) {
       var st = tierOf(sb.id), killed = !!d.k[sb.id];
       h += '<div class="bc-det"><b style="color:#fbbf24;font-size:16px">' + esc(sb.n) + '</b>　' + (st ? '<span class="' + TIERS[st - 1].col + '">' + TIERS[st - 1].n + '</span>' : '未登錄') + '　積分 ' + score(sb.id) + '/100'
-        + '<br>出沒：' + sb.maps.map(mapName).map(esc).join('、') + (sb.type === 'field' ? '（在那張地圖打倒 300 隻怪後出現）' : '（進入後待滿 10 分鐘出現）')
+        + '<br>出沒：' + sb.maps.map(mapName).map(esc).join('、') + (sb.type === 'field' ? '（在那張地圖打倒 300 隻怪後出現；累計打倒 3000 隻之後改成每 100 隻 1% 機率）' : '（進入後待滿 10 分鐘出現；累計待超過 100 分鐘之後改成每打倒 100 隻 0.5% 機率）')
         + (killed ? '' : '<br><span style="color:#fca5a5">還沒打倒過這隻王，打倒一次後才能用王之徽章兌換。</span>')
         + '<br>' + EX.map(function (e) { var x = TIERS[e.t - 1]; return '<button type="button" data-ex="' + e.t + '"' + (killed && badges() >= e.cost ? '' : ' disabled') + '>王之徽章 ×' + e.cost + ' → ' + x.n + '</button>'; }).join('')
         + '</div>';

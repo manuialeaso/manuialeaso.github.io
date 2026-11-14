@@ -3,6 +3,8 @@
  *
  *   地圖王（野外）：在那張地圖打倒 300 隻一般怪後出現；倒下後要再打 300 隻。離開地圖時牠會回去，回來就再出現。
  *   副本王（地監）：進入那一層、待滿 10 分鐘（遊戲時間）後出現；倒下後 30 分鐘（現實時間）才會再出現。
+ *   Ping 11-14 18:46：同一隻王的地圖累計打倒 3000 隻（野外）／累計待超過 100 分鐘（地監，現實時間）之後，改成
+ *     在那張地圖每打倒 100 隻一般怪骰一次：野外 1%、地監 0.5%，不保證出現；不吃任何速度、隊伍、模式加成。
  *   等級＝那張地圖一般怪的最高等級 +5；HP＝同等級地區霸主的 1.5 倍（再 ×(1＋0.15×傭兵數)）。
  *   每隻王兩種招式（見 MECH_D）；打倒得到原型怪的掉落、經驗與金幣 ×3、「王之徽章」×1（收集 30 個換地圖王卡片：之後設計）。
  *   設計稿裡的「獨眼巨人地區」「黑龍的傷痕」「盜賊地區」「沉船之墓」遊戲裡沒有這幾張圖，改放到最接近的地圖；大王烏賊留給次元裂縫副本 D。
@@ -12,7 +14,7 @@
 (function () {
   'use strict';
   var W = window, T = W.AFK_TOGGLES, L = W.__afkLore;
-  if (T && T.register) T.register({ id: 'mapboss', name: '地圖王、副本王', group: '遊戲內容', desc: '野外打倒 300 隻怪出現地圖王；地監待滿 10 分鐘出現副本王（倒下 30 分鐘重生）；掉王之徽章' });
+  if (T && T.register) T.register({ id: 'mapboss', name: '地圖王、副本王', group: '遊戲內容', desc: '野外打倒 300 隻怪出現地圖王；地監待滿 10 分鐘出現副本王（倒下 30 分鐘重生）；累計 3000 隻／100 分鐘之後改成每 100 隻怪骰一次（1%／0.5%）；掉王之徽章' });
   if (T && !T.enabled('mapboss')) return;
   if (!L || typeof DB === 'undefined' || !DB.mobs || !DB.maps) return;
   var P = function () { return (typeof player !== 'undefined' && player && player.cls) ? player : null; };
@@ -20,6 +22,7 @@
   var tk = function () { return Number(S().ticks) || 0; };
   var esc = L.esc, sys = L.sys, clog = L.clog;
   var REF = 65, KILLS = 300, DUNGEON_WAIT = 6000, RESPAWN_MS = 30 * 60 * 1000, DUR_MAX = 18000;
+  var LATE_FIELD = 3000, LATE_DG_MS = 100 * 60 * 1000, ROLL_EVERY = 100, ROLL_RATE = { field: 0.01, dungeon: 0.005 };
 
   // ── 名單 ── type: field／dungeon；mech 兩個；proto＝外觀與掉落來源；minion＝手下
   var K = [
@@ -192,22 +195,34 @@
     onField().forEach(function (x) { if (why !== 'kill' || !x[0]._mbBoss) mapState.mobs[x[1]] = null; });
     try { if (!S().ff) renderMobs(); } catch (e) {}
     if (why === 'kill') giveBack();
-    if (why === 'leave') { sys('<span style="color:#fcd34d">👑 ' + esc(b.n) + ' 回到了巢穴。</span>'); if (b.type === 'field') store().kills[b.id] = KILLS; }
+    if (why === 'leave') { sys('<span style="color:#fcd34d">👑 ' + esc(b.n) + ' 回到了巢穴。</span>'); if (late(b)) lateRec().lucky[b.id] = 1; else if (b.type === 'field') store().kills[b.id] = KILLS; }
     if (why === 'time') sys('<span style="color:#fcd34d">👑 ' + esc(b.n) + ' 不再理會你們，回到了巢穴。</span>');
     act = null;
   };
 
   // 野外：打倒一般怪計數
+  // 累計（野外：打倒數；地監：待的毫秒數）、機率階段的計數與「骰中了」
+  var lateRec = function () { var s = store(); s.life = s.life || {}; s.roll = s.roll || {}; s.lucky = s.lucky || {}; return s; };
+  var late = function (b) { var v = lateRec().life[b.id] || 0; return b.type === 'field' ? v >= LATE_FIELD : v >= LATE_DG_MS; };
   var countKill = function (m) {
     if (!m || m.boss || m._afkMb || classic()) return;
-    var b = BYMAP[mapState.current]; if (!b || b.type !== 'field') return;
-    var s = store(); s.kills[b.id] = Math.min(KILLS, (s.kills[b.id] || 0) + 1);
+    var b = BYMAP[mapState.current]; if (!b) return;
+    var s = lateRec();
+    if (late(b)) {
+      if (!act && !s.lucky[b.id]) { s.roll[b.id] = (s.roll[b.id] || 0) + 1; if (s.roll[b.id] >= ROLL_EVERY) { s.roll[b.id] = 0; if (Math.random() < ROLL_RATE[b.type]) s.lucky[b.id] = 1; } }
+      if (b.type === 'field') s.life[b.id] = (s.life[b.id] || 0) + 1;
+      return;
+    }
+    if (b.type !== 'field') return;
+    s.life[b.id] = (s.life[b.id] || 0) + 1;
+    s.kills[b.id] = Math.min(KILLS, (s.kills[b.id] || 0) + 1);
   };
   var tryStart = function () {
     if (act || classic() || busy()) return;
     var p = P(); if (!p || p.dead) return;
     var b = BYMAP[mapState.current]; if (!b) return;
-    var s = store();
+    var s = lateRec();
+    if (late(b)) { if (s.lucky[b.id] && start(b)) s.lucky[b.id] = 0; return; }
     if (b.type === 'field') { if ((s.kills[b.id] || 0) >= KILLS && start(b)) s.kills[b.id] = 0; return; }
     if (Date.now() < (s.next[b.id] || 0)) return;
     if (S()._mbEnterMap !== mapState.current) { S()._mbEnterMap = mapState.current; S()._mbEnterAt = tk(); return; }
@@ -243,7 +258,10 @@
     }
     if (has('invuln') && t >= act.invulnAt) { act.invulnAt = t + 300; act.invulnUntil = t + 30; clog('<span class="font-bold" style="color:#94a3b8">【遁形】</span>' + esc(m.n) + ' 遁形了——3 秒內不受傷害。'); }
   };
+  var stayAt = 0, stayMap = '';
   var step = function () {
+    // 地監累計停留（現實時間，不吃加速）
+    try { var sb = BYMAP[mapState.current], nw = Date.now(); if (sb && sb.type === 'dungeon' && !classic()) { if (stayMap === mapState.current && stayAt) { var lr = lateRec(); lr.life[sb.id] = (lr.life[sb.id] || 0) + Math.min(5000, Math.max(0, nw - stayAt)); } stayMap = mapState.current; stayAt = nw; } else { stayMap = ''; stayAt = 0; } } catch (e) {}
     if (!act) { if (tk() % 10 === 0) tryStart(); return; }
     if (mapState.current !== act.map) { end('leave'); return; }
     var bb = onField('boss')[0]; if (!bb) { end('leave'); return; }
