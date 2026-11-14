@@ -15,7 +15,7 @@
 (function () {
   'use strict';
   var W = window, T = W.AFK_TOGGLES, L = W.__afkLore;
-  if (T && T.register) T.register({ id: 'mapboss', name: '地圖王、副本王', group: '遊戲內容', desc: '在那張地圖打倒 300 隻怪出現地圖王／副本王；累計 3000 隻之後改成每 100 隻怪骰一次（野外 1%、地監 0.5%）；掉王之徽章' });
+  if (T && T.register) T.register({ id: 'mapboss', name: '地圖王、副本王', group: '遊戲內容', desc: '在牠的地圖打倒一般怪會遇到地圖王、副本王；掉王之徽章' });
   if (T && !T.enabled('mapboss')) return;
   if (!L || typeof DB === 'undefined' || !DB.mobs || !DB.maps) return;
   var P = function () { return (typeof player !== 'undefined' && player && player.cls) ? player : null; };
