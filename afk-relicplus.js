@@ -49,9 +49,11 @@
     'relicCatalogId', 'relicStage', 'relicRuntime', 'relicLore', 'relicAsc', 'relicEvo', 'relicFxRes', 'noAscUp', 'gmOnly',
     'relicSourceId', 'relicWeaponStage', 'relicHealingCd', 'relicFx3', 'relicInheritedEffects',
     'allLures', 'hardskinFireProc']);   // hardskinFireProc（業火鍛造鎚的剩餘 HP 1%）：不能被第二、第三詞綴繼承（平衡 2026-11-13）   // allLures（馴獸師的飼料袋）：要裝著那件遺物本身才有效，第二、第三詞綴抽到不繼承（玩家 2026-11-03）
+  try { ['relic_tamer_petarm', 'relic_imp_fang'].forEach(function (id) { var d = DB.items[id]; if (d && d.d) d.d = d.d.replace('寵物專用，無法強化。', '寵物專用，可以在哈瑪大師合成、昇華。'); }); } catch (e) {}
   var RES4 = ['resFire', 'resWater', 'resWind', 'resEarth'];
   var ASC_RES = 2, FX_RES = 3;   // 玩家 2026-10-25 抗性下修：昇華每 +1 四抗 +2；第二、第三詞綴保底四抗 +3（全身昇華 +5 約 500）
-  var KIND_OK = function (d) { return !!(d && isRelic(d) && !d.gmOnly && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && ['pet', 'petwpn', 'petarm', 'doll'].indexOf(d.slot) < 0); };
+  var KIND_OK = function (d) { return !!(d && isRelic(d) && !d.gmOnly && (d.type === 'wpn' || d.type === 'arm' || d.type === 'acc') && ['pet', 'doll'].indexOf(d.slot) < 0); };   // 寵物的武器、盔甲遺物也能合成、昇華（Ping 11-15）
+  var PET_SLOT = { petwpn: 1, petarm: 1 };
   // 戒指／耳環／項鍊／腰帶等強化上限 +5 的飾品：新增 +6～+10 的設計里程碑
   //   判斷依原作者的強化上限（enhanceCap）：上限 +5 的道具都算這一類
   // 第二詞綴在第幾級抽：飾品 +5、武器防具 +10（玩家 2026-10-23）
@@ -114,7 +116,11 @@
     d.gachaWeight = 0;
     try { d.img = getIconUrl(b); } catch (e) {}
     var r = Math.floor(n / 5) * 5, k3 = Math.floor(n / 3), k5 = Math.floor(n / 5);
-    if (b.type === 'wpn') {
+    if (PET_SLOT[b.slot]) {
+      // 寵物裝備遺物（Ping 11-15）：寵物武器 每 +1 寵物傷害 +1、每 +3 寵物命中 +1；寵物盔甲 每 +1 寵物 AC −1、MR +1，每 +5 寵物受到傷害再 −1%
+      if (b.slot === 'petwpn') { d.petDmg = (Number(b.petDmg) || 0) + n; d.petHit = (Number(b.petHit) || 0) + k3; }
+      else { d.petAc = (Number(b.petAc) || 0) + n; d.petMr = (Number(b.petMr) || 0) + n; if (k5) d.petDmgReduce = Math.round(((Number(b.petDmgReduce) || 0) + k5 * 0.01) * 100) / 100; }
+    } else if (b.type === 'wpn') {
       // 武器：每 +1 大小傷 +1；每 +3 白字各 +1
       d.dmgS = (Number(b.dmgS) || 0) + n;
       d.dmgL = (Number(b.dmgL) || 0) + n;
@@ -226,7 +232,7 @@
   };
   var scanAll = function () {
     registry().forEach(ensure);
-    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/lineage|wh|warehouse/i.test(k)) scanKey(k); } } catch (e) {}
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (/lineage|wh|warehouse|pet_roster/i.test(k)) scanKey(k); } } catch (e) {}
   };
   function ensureItems(items) { (items || []).forEach(function (it) { if (it && it.id) ensure(it.id); }); }
   function ensureActor(actor) {
@@ -396,10 +402,31 @@
     return base + '|' + n + '|' + (fxOf(it.id) || '') + '|' + (asc != null ? asc : '') + '|' + (evo != null ? evo : '') + '|' + (fx3Of(it.id) || '');
   };
   // 身上裝備中、沒有鎖定的遺物（玩家 2026-10-27：裝備在身上的也要能直接強化，而且排前面）
+  // 穿在身上的遺物：你自己、傭兵、寵物（寵物武器、盔甲）都算（Ping 11-15：傭兵身上的箭筒、寵物裝備原本找不到）
+  //   h＝那件裝備所在的欄位物件（p.eq／傭兵.eq／寵物.eq），k＝欄位名稱；pet＝寵物本身（改完要寫回寵物名冊）
+  var petList = function () { try { var r = (0, eval)('typeof _petRoster !== "undefined" ? _petRoster : null'); return Array.isArray(r) ? r : []; } catch (e) { return []; } };
   var eqRelics = function (p) {
     var out = [];
-    Object.keys((p && p.eq) || {}).forEach(function (slot) { var it = p.eq[slot]; if (it && !it.lock && it.id && KIND_OK(DB.items[baseOf(it.id)])) out.push({ slot: slot, it: it }); });
+    var scan = function (eq, who, pet) {
+      Object.keys(eq || {}).forEach(function (k) { var it = eq[k]; if (it && !it.lock && it.id && KIND_OK(DB.items[baseOf(it.id)])) out.push({ slot: who + k, it: it, h: eq, k: k, pet: pet || null }); });
+    };
+    if (!p) return out;
+    scan(p.eq, '');
+    (p.allies || []).forEach(function (a, i) { if (a && a.eq) scan(a.eq, 'ally' + i + ':'); });
+    petList().forEach(function (pt, i) { if (pt && pt.eq) scan(pt.eq, 'pet' + i + ':', pt); });
     return out;
+  };
+  // 一組遺物最多動到「一個人」身上的：你自己穿的全算（例如兩手同款戒指）；你沒穿才算一件傭兵或寵物身上的（同款穿在好幾隻寵物身上時，只拿第一隻的來合，其他的不動）
+  var withDepth = 0;   // 合成進行中：身上那件已經暫時放回背包，其他人身上的不再算進來（不然數量對不上）
+  var usableEq = function (p) {
+    var all = eqRelics(p), own = {}, other = {};
+    if (withDepth > 0) return all.filter(function (e) { return e.h === p.eq; });
+    all.forEach(function (e) { if (e.h === p.eq) own[keyOf(e.it)] = 1; });
+    return all.filter(function (e) {
+      if (e.h === p.eq) return true;
+      var k = keyOf(e.it); if (own[k] || other[k]) return false;
+      other[k] = 1; return true;
+    });
   };
   // 清單排序（玩家 2026-10-27）：裝備在身上的 → 強化過的（+1 以上、昇華支配、至高的支配）→ 其他；同一層再照昇華、強化值、名稱
   function groups(invOnly) {
@@ -414,7 +441,7 @@
       if (slot) g.eqSlots.push(slot); else g.stacks.push(it);
     };
     (p.inv || []).forEach(function (it) { if (it && !it.lock && it.id) add(it, null); });
-    if (!invOnly) eqRelics(p).forEach(function (e) { add(e.it, e.slot); });
+    if (!invOnly) usableEq(p).forEach(function (e) { add(e.it, e.slot); });
     var tier = function (g) { return (g.eqSlots.length ? 2 : 0) + ((g.n > 0 || g.asc != null || g.evo != null) ? 1 : 0); };
     return Object.keys(map).map(function (k) { return map[k]; })
       .sort(function (a, b) { return (tier(b) - tier(a)) || ((b.asc != null ? b.asc + 1 : 0) - (a.asc != null ? a.asc + 1 : 0)) || (b.n - a.n) || ((DB.items[a.base].n || '') < (DB.items[b.base].n || '') ? -1 : 1); });
@@ -423,20 +450,23 @@
   function withEq(fn) {
     return function (key) {
       var p = P(); if (!p || !p.eq || !p.inv) return fn.apply(this, arguments);
-      var moved = eqRelics(p).filter(function (e) { return keyOf(e.it) === key; });
+      var moved = usableEq(p).filter(function (e) { return keyOf(e.it) === key; });
       if (!moved.length) return fn.apply(this, arguments);
-      moved.forEach(function (e) { p.eq[e.slot] = null; e.it._rpEq = 1; p.inv.push(e.it); });
+      moved.forEach(function (e) { e.h[e.k] = null; e.it._rpEq = 1; p.inv.push(e.it); });
       var r;
+      withDepth++;
       try { r = fn.apply(this, arguments); }
       finally {
+        withDepth--;
         var newer = (r && r.ok && r.id) ? p.inv.filter(function (x) { return x && x.id === r.id; }) : [];
         moved.forEach(function (e) {
           delete e.it._rpEq;
           var i = p.inv.indexOf(e.it);
-          if (i >= 0) { p.inv.splice(i, 1); p.eq[e.slot] = e.it; return; }
-          var nx = newer.pop();
-          if (nx) { p.inv.splice(p.inv.indexOf(nx), 1); p.eq[e.slot] = nx; }
+          if (i >= 0) { p.inv.splice(i, 1); e.h[e.k] = e.it; }
+          else { var nx = newer.pop(); if (nx) { p.inv.splice(p.inv.indexOf(nx), 1); e.h[e.k] = nx; } }
+          if (e.pet) { try { e.pet.eqV = (typeof _petNowStamp === 'function') ? _petNowStamp() : Date.now(); } catch (x) {} }
         });
+        if (moved.some(function (e) { return e.pet; })) { try { if (typeof petMarkDirty === 'function') petMarkDirty(); if (typeof petRosterSave === 'function') petRosterSave(); } catch (x) {} }
         try { if (typeof recomputeStats === 'function') recomputeStats(); } catch (e) {}
         if (r && r.ok) { try { saveGame(); } catch (e) {} }
         try { if (typeof renderTabs === 'function') renderTabs(true); if (typeof updateUI === 'function') updateUI(); } catch (e) {}

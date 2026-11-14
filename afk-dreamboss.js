@@ -16,7 +16,7 @@
  *     ‧群體衝擊之暈：每 20 秒，你與所有傭兵暈眩 2 秒（照常判定暈眩抵抗）。
  *     ‧相消術：每 30 秒，驅散你與所有傭兵的增益（保留變身、迷魅、誘捕、召喚，跟原本的集體相消一樣）。
  *     ‧疼痛的歡愉：每 20 秒對隨機一名角色（你或傭兵）施放 10 秒：那名角色下一次打這隻王的傷害 25% 反彈給他自己（物理、魔法都算），反彈一次就消失（2026-10-31 00:47：50% → 25%、只反彈一下）。
- *     ‧吸魔：每 30 秒吸走你與所有傭兵最大 MP 的 5%。
+ *     ‧吸魔：每 30 秒吸走你與所有傭兵最大 MP 的 5%；MP 不夠的部分照比例改扣最大 HP（沒有 MP 的人扣 5%；最少留 1 HP）（Ping 11-15）。
  *     ‧蝕抗：每 45 秒，你與所有傭兵的五屬性抗性（火、水、風、地、無）−50，最多 −300；離開副本或王都倒下就恢復。
  *   三、副本侵蝕（玩家 2026-10-30 21:46）：夢域鏡的副本裡，你與傭兵每秒失去最大 HP 與最大 MP 的 1%；每過 1 分鐘再 +1%
  *       （0～60 秒每秒 1%、60～120 秒每秒 2%……），離開副本就停。四龍副本原本的副本傷害照舊另外算。
@@ -163,8 +163,19 @@
   };
   var drainMp = function (m) {
     var sum = 0;
-    chars().forEach(function (c) { var mx = Number(c.mmp) || 0, cur = Number(c.mp) || 0, d = Math.min(cur, Math.floor(mx * SK.mpPct)); if (d > 0) { c.mp = cur - d; sum += d; } });
-    log(tag('吸魔', '#818cf8') + esc(m.n) + ' 吸走了全隊最大 MP 的 5%（共 ' + sum + ' 點）。');
+    // Ping 11-15：MP 不夠吸的部分改扣 HP（照比例：缺幾 % 的最大 MP 就扣幾 % 的最大 HP；沒有 MP 的人扣最大 HP 5%）；最少留 1 HP，不會因此倒下
+    var p = P(), hpSum = 0;
+    chars().forEach(function (c) {
+      var mx = Number(c.mmp) || 0, cur = Number(c.mp) || 0, want = Math.floor(mx * SK.mpPct), d = Math.min(cur, want);
+      if (d > 0) { c.mp = cur - d; sum += d; }
+      var shortPct = mx > 0 ? (want > 0 ? (want - d) / mx : 0) : SK.mpPct;
+      if (shortPct > 0) {
+        var mhp = Math.max(1, Number(c.mhp) || 1), cut = Math.max(1, Math.floor(mhp * shortPct));
+        if (c === p) { var h0 = Number(p.hp) || 1; p.hp = Math.max(1, h0 - cut); hpSum += h0 - p.hp; }
+        else { var a0 = Number(c.curHp) || 1; c.curHp = Math.max(1, a0 - cut); hpSum += a0 - c.curHp; }
+      }
+    });
+    log(tag('吸魔', '#818cf8') + esc(m.n) + ' 吸走了全隊最大 MP 的 5%（共 ' + sum + ' 點）' + (hpSum > 0 ? '；MP 不夠的人改被吸走 HP（共 ' + hpSum + ' 點）' : '') + '。');
   };
   var resCut = 0, resMap = null, resIdle = 0;
   var applyResPlayer = function () { try { if (typeof recomputeStats === 'function') recomputeStats(); else if (typeof calcStats === 'function') calcStats(); } catch (e) {} };

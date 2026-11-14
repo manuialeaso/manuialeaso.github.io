@@ -10,7 +10,8 @@
  *        純頭目房（PURE_BOSS_MAPS：龍的棲息地、受詛咒的聖地、崩壞的長老會議廳）、黑暗妖精聖地、
  *        外掛副本（afk_ 開頭的地圖：星途遠征、幽靈船、異界祭壇、哈汀的時空、謀叛者的低語、哈爾巴斯…；木人場 afk_dummy 除外）。
  *   時空裂痕裡每秒最多一次（同一秒好幾隻王倒下只算一次；2026-11-03 fixE，上一次的 tick 記在 window.__afkDrainAt，不存檔）。
- * 二、隱藏規則：不死系（race 不死）怪物死亡時屍爆，隊伍裡每個角色受到最大 HP 5% 的真實傷害（只在夢域鏡；會倒下；吃符文「骸」的真實傷害減免）。
+ * 二、隱藏規則：怪物死亡時屍爆，隊伍裡每個角色受到最大 HP 3% 的真實傷害（只在夢域鏡；會倒下；吃符文「骸」的真實傷害減免）。
+ *     Ping 11-15：原本只有不死系、5%；改成全部怪物（建築與暗夢星迴自爆的那隻除外）、3%。
  * ========================================================================== */
 (function () {
   'use strict';
@@ -22,7 +23,7 @@
   var drainOn = function () { var p = P(); return !!(p && !p.classicMode && (!T || T.enabled('bossdrain'))); };
   var hiddenOn = function () { if (W.__afkTestNoCorpse) return false; var p = P(); return !!(p && !p.classicMode && (!T || T.enabled('hiddenbonus'))); };   // 測試瀏覽器預設關（只有 test-fixb 打開）
   var dreamOn = function () { try { return !!(W.__afkDreamHell && W.__afkDreamHell.on()); } catch (e) { return false; } };
-  var CFG = { mp: 0.10, hp: 0.10, corpse: 0.05 };
+  var CFG = { mp: 0.10, hp: 0.10, corpse: 0.03 };
   var SANCT = ['dark_elf_sanctuary', 'cursed_dark_elf_sanctuary', 'collapsed_elder_council_hall'];
   var instance = function () {
     try {
@@ -79,7 +80,7 @@
             var tk0 = Number(S().ticks) || 0, inRift = !!(S().riftRun && mapState.current === 'rift_battle');
             if (!inRift || !(W.__afkDrainAt != null && tk0 - W.__afkDrainAt < 10 && tk0 >= W.__afkDrainAt)) { if (inRift) W.__afkDrainAt = tk0; drain(); }
           }
-          if (m.race === '不死' && hiddenOn() && dreamOn() && !P().dead && (typeof window.__afkRiftOnce !== 'function' || window.__afkRiftOnce('corpse'))) corpse();   // 時空裂痕裡每秒最多一次（2026-11-03 23:39）
+          if (m.race !== '建築' && !m._dsBlast && hiddenOn() && dreamOn() && !P().dead && (typeof window.__afkRiftOnce !== 'function' || window.__afkRiftOnce('corpse'))) corpse();   // 時空裂痕裡每秒最多一次（2026-11-03 23:39）
         }
       } catch (e) { console.warn('[AFK-bossdrain]', e); }
       return r;
