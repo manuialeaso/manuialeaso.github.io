@@ -113,10 +113,11 @@
       if (isImage) {
         if (!decoding.has(key) && decoding.size < 48) {
           decoding.add(key);
-          createImageBitmap(source).then(bitmap => {
+          // 半透明的影子要先乘好透明度再上傳，不然會畫成一團黑（PixiJS 的 premultiplied-alpha 模式）
+          createImageBitmap(source, { premultiplyAlpha: 'premultiply' }).then(bitmap => {
             decoding.delete(key);
             if (state !== 'ready' || textures.has(key)) { bitmap.close(); return; }
-            const src = new P.ImageSource({ resource: bitmap, scaleMode: pixel ? 'nearest' : 'linear' });
+            const src = new P.ImageSource({ resource: bitmap, alphaMode: 'premultiplied-alpha', scaleMode: pixel ? 'nearest' : 'linear' });
             const added = { tex: new P.Texture({ source: src }), used: frameNo, ver: 0, bitmap };
             textures.set(key, added);
             fresh.push(added);
