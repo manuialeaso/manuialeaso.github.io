@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-6633b117ba1d",
+  "build": "giran-0.8.25-cbf78fac8635",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -408,8 +408,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-corrupt.js?v=8eda58cf17c0",
-      "sha256": "8eda58cf17c051ce3d030e5369d56e0d61459f0f3a9370888e9004d94004e49f",
+      "url": "afk-corrupt.js?v=adfc728feeeb",
+      "sha256": "adfc728feeeb9e1f30910cfb37fc7142a438af5009cc934152012abf1e46d629",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1873,8 +1873,8 @@
       "type": "application/json; charset=utf-8"
     },
     {
-      "url": "dimension-map/battle-actions.js?v=383794899279",
-      "sha256": "383794899279da57a57bf692060dc886d4dd78e9894e3f0f7491a9f035b1ee5d",
+      "url": "dimension-map/battle-actions.js?v=3727af609dbe",
+      "sha256": "3727af609dbeebb6ea782015f469390c83a10e9d1564c01c9ea7b48a304123f5",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1908,8 +1908,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "dimension-map/stride-view.js?v=b57546506674",
-      "sha256": "b57546506674962aeacf6c42f5ccd9eb788edea52028297aa6736099b536ad4a",
+      "url": "dimension-map/stride-view.js?v=d5bc6cf37efa",
+      "sha256": "d5bc6cf37efa15e9da95922f175b19ca5ae5f52ee5422f8e8b1b4bf60a2878e0",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1949,7 +1949,7 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "4650566ffbd6d465e3fed6a3a1265ae969f940218101389e5e05943667bdced2",
+      "sha256": "2e0ccbcd0b818ce78e4cdd62e90463e2beb469cfb484bcba8c1d5c9d50b8de4d",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1959,7 +1959,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "8fecbfb0625ada2cdba94713aedb5d8e693cf8a87e5201413de6207b6f571873",
+      "sha256": "1425732fb952d42952a8c3c65ed69d40da001feefb9cef9bf7f48969dc1102f5",
       "type": "text/html; charset=utf-8"
     },
     {

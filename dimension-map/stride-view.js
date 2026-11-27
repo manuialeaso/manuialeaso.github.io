@@ -29,6 +29,28 @@ function image(url, waitForSheet = false) {
   return im;
 }
 function loaded(im) { return im instanceof HTMLCanvasElement ? im.width>0 : im?.complete && im.naturalWidth > 0; }
+// 11-28 Ping：畫過一次的圖轉成已解碼的點陣圖留著。原本每次把 <img> 畫到畫布，瀏覽器常常要當場重新解碼（實測每次約 3 毫秒、每秒十幾次）。
+// 第一次仍照舊直接畫，同時在背景轉；之後都用轉好的。最多留 900 張（手機 300），滿了先丟最久沒用的。
+const bitmaps = new Map();
+function drawable(im) {
+  if (!(im instanceof HTMLImageElement) || typeof createImageBitmap !== 'function') return im;
+  const held = bitmaps.get(im);
+  if (held && held !== 1) { bitmaps.delete(im); bitmaps.set(im, held); return held; }
+  if (!held) {
+    bitmaps.set(im, 1);
+    createImageBitmap(im).then(bitmap => {
+      if (bitmaps.get(im) !== 1) { bitmap.close(); return; }
+      bitmaps.set(im, bitmap);
+      const cap = window.GiranPartyView?.mobile() ? 300 : 900;
+      while (bitmaps.size > cap) {
+        const [key, value] = bitmaps.entries().next().value;
+        bitmaps.delete(key);
+        if (value && value !== 1) value.close();
+      }
+    }, () => bitmaps.delete(im));
+  }
+  return im;
+}
 function origin(folder, action, index = 0) {
   const o = meta?.ORIGIN?.[folder]?.[action];
   return o?.[5]?.[index] || o;
@@ -404,7 +426,7 @@ function paint(el,set,progress,isMob,mode='dm-walking') {
         if(dest.getAttribute('height')!==String(height)) dest.height=height;
         if(dest instanceof HTMLCanvasElement){
           const ctx=dest.getContext('2d');
-          ctx.clearRect(0,0,width,height);ctx.drawImage(im,0,0);
+          ctx.clearRect(0,0,width,height);ctx.drawImage(drawable(im),0,0);
           dest.dmSourceFrame=im;
         }else dest.src=im.currentSrc||im.src||(im.dmURL||=im.toDataURL());
         dest.dmImage=im;

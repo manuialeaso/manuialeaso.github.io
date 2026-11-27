@@ -639,6 +639,23 @@
       logSys('<span class="text-amber-200">你仍在' + nm + '（' + ((typeof ANTHARAS_AREA_NAMES !== 'undefined' && ANTHARAS_AREA_NAMES[mp]) || '') + '），挑戰繼續；擊敗這一區的頭目就會往更深處前進。</span>');
     } catch (e) { console.warn('[AFK-corrupt] 接回進度', e); }
   };
+  // 11-28 Ping：四龍又出現「打倒王不往下走、王一直重生」。11-24 只在讀檔時接回進度；進度若是在遊戲進行中被別的流程清掉（例如自動遠征接回、切換流程），就沒有人接。
+  //   改成每秒檢查：人活著、站在巢穴地圖裡、進度卻是空的，連續 2 秒都這樣就照所在地圖接回去。正常離開副本一定會同時換地圖，不會被這裡誤接。
+  var healSeen = 0, oTickHeal = window.tick;
+  if (typeof oTickHeal === 'function') {
+    window.tick = function () {
+      var r = oTickHeal.apply(this, arguments);
+      try {
+        var s = S();
+        if ((s.ticks || 0) % 10 === 0) {
+          var mp = mapState && mapState.current;
+          if (mp && !s.antharas && player && !player.dead && typeof ANTHARAS_AREA_BOSS !== 'undefined' && ANTHARAS_AREA_BOSS[mp]) { if (++healSeen >= 2) { healSeen = 0; resumeRun(); } }
+          else healSeen = 0;
+        }
+      } catch (e) {}
+      return r;
+    };
+  }
   if (typeof window.loadGame === 'function') {
     var oLoad = window.loadGame;
     window.loadGame = function () { var r = oLoad.apply(this, arguments); resumeRun(); return r; };

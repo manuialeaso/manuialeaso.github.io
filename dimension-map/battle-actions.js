@@ -285,7 +285,8 @@ function battleActions(field,resolve,available) {
     if(point.actor)point.actor.hurtUntil=now+250;
     const card=point.el;
     if(card){card.dmWound?.cancel();
-      card.dmWound=card.animate([{filter:'brightness(1)',rotate:'0deg'},{filter:'brightness(1.6) sepia(.3)',rotate:'-4deg',offset:.26},{filter:'brightness(1)',rotate:'2deg',offset:.58},{filter:'brightness(1)',rotate:'0deg'}],{id:'giran-wound',duration:360,easing:'ease-out'});}
+      // 11-28 Ping：受擊只留晃動，拿掉整隻怪變亮的濾鏡。濾鏡要把整隻怪（本體、影子、武器、血條）重新合成一次，場上每隻怪被打都在跑；受擊的閃光本來就另外畫在特效畫布上。
+      card.dmWound=card.animate([{rotate:'0deg'},{rotate:'-4deg',offset:.26},{rotate:'2deg',offset:.58},{rotate:'0deg'}],{id:'giran-wound',duration:360,easing:'ease-out'});}
   }
   let lastDraw=false;
   function frame(now,w,h) {
