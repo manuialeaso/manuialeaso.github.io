@@ -476,6 +476,8 @@ function install() {
       const at=point(mob);if(at)options.push({mob,at,d:GiranGeometry.distance(actor,at)});
     }
     options.sort((a,b)=>a.d-b.d);
+    // 11-27 Ping：只試最近的 5 隻。原本會把場上每一隻都試一遍，每試一隻就要找一次位子，場上 25 隻怪時一次要卡幾十毫秒。
+    options.length=Math.min(options.length,5);
     for(const {mob,at} of options)if(engage(actor,at,range,formation)){
       actor.otherOpponent={focus,mob,until:previous+1400};return;
     }
@@ -542,9 +544,20 @@ function install() {
         livingParty||=[leader,...GiranPartyView.combatAllies().filter(a=>a && !a._downed && a.curHp>0).map(point).filter(Boolean)];
         const nearest=livingParty.reduce((a,b)=>GiranGeometry.distance(actor,a)<=GiranGeometry.distance(actor,b)?a:b);
         const intent=home?GiranBossRooms.intent(home,mob,actor,nearest):GiranRoam.ai(mob,actor,nearest,previous,roam);
-        if(intent==='engage')engage(actor,nearest,GiranCombat.reach(mob,'basic'));
+        // 11-27 Ping：怪擠不進去（對象周圍站滿、或被人牆擋住）時，原本每一輪規劃都重新找位子、重新尋路，8 人被一群怪圍住時最花時間。
+        // 同一個對象、同一個位置剛找過而且失敗 → 半秒內不重找；對象一移動就立刻重找。
+        if(intent==='engage'){
+          if(!(actor.engageHold>previous&&actor.engageX===nearest.x&&actor.engageY===nearest.y)){
+            const ok=engage(actor,nearest,GiranCombat.reach(mob,'basic'));
+            actor.engageX=nearest.x;actor.engageY=nearest.y;actor.engageHold=ok?0:previous+500;
+          }
+        }
         else if(intent&&(!actor.path.length||actor.goalX!==intent[0]||actor.goalY!==intent[1])){
-          [actor.goalX,actor.goalY]=route(actor,intent,terrain,(x,y)=>board.occupied(actor,x,y));
+          if(!(actor.routeHold>previous&&actor.routeAimX===intent[0]&&actor.routeAimY===intent[1])){
+            [actor.goalX,actor.goalY]=route(actor,intent,terrain,board.blockers(actor),false);
+            actor.routeAimX=intent[0];actor.routeAimY=intent[1];
+            actor.routeHold=actor.goalX===intent[0]&&actor.goalY===intent[1]?0:previous+500;
+          }
         }
         GiranRoam.observe(mob,actor);
       }

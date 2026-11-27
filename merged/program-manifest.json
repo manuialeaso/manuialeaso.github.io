@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-19963161b873",
+  "build": "giran-0.8.25-6633b117ba1d",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -1933,13 +1933,13 @@
       "type": "application/json; charset=utf-8"
     },
     {
-      "url": "dimension-map/terrain-view.js?v=df891b4da955",
-      "sha256": "df891b4da955be199341516779fd2c6e81bb09a59a940a0bc7fdf8032123642b",
+      "url": "dimension-map/terrain-view.js?v=4f16d4ba5c86",
+      "sha256": "4f16d4ba5c869307fd9862947ed9caafe79d3963fa67dfb1a594019773077d5b",
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "dimension-map/terrain-world.js?v=b121c67f6569",
-      "sha256": "b121c67f65690967f1ef79b734e99582e2e464058e6fa1fb5a460eb1e2ab0239",
+      "url": "dimension-map/terrain-world.js?v=e07d5811b84b",
+      "sha256": "e07d5811b84bb43473575854cc6cb63130faa38fea51bfc6c1d015e07ca57f5b",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1959,7 +1959,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "713c62d6044dedb1db024720aafce9ae37a0462fd16b79fdd5478a74648f189b",
+      "sha256": "8fecbfb0625ada2cdba94713aedb5d8e693cf8a87e5201413de6207b6f571873",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2618,8 +2618,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "world/field.js?v=4f6c86b50c45",
-      "sha256": "4f6c86b50c45d37fe5f898098e050925702d5a9eccb784969bc0917bcf305228",
+      "url": "world/field.js?v=1cb092b75319",
+      "sha256": "1cb092b75319e78433152635ffe9627f1bebe5de5fc299bb140fc3e1fba49521",
       "type": "text/javascript; charset=utf-8"
     },
     {

@@ -68,9 +68,9 @@ function advance(actor, seconds, pace, terrain, occupied) {
   }
 }
 
-function route(actor,to,terrain,occupied) {
+function route(actor,to,terrain,occupied,wide=true) {
   const start=actor.step || [actor.x,actor.y];
-  const found=terrain.world.findPathNear(...start,...to,occupied);
+  const found=terrain.world.findPathNear(...start,...to,occupied,24,wide);
   actor.path=found?.path || [];
   return found?.to || start;
 }

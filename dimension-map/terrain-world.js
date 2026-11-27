@@ -452,7 +452,7 @@ class World {
         const cell=ly*d.cw+lx,bit=1<<h,known=bit<<8,mask=this.edges.get(cell)||0;
         if(!(mask&known)){
             const open=this.pass(lx+dx,ly+dy)&&(!dx||!dy||this.pass(lx+dx,ly)||this.pass(lx,ly+dy))&&this.nativeStep(x,y,h);
-            if(this.edges.size>=8192)this.edges.clear();
+            if(this.edges.size>=65536)this.edges.clear();
             this.edges.set(cell,mask|known|(open?bit:0));if(!open)return false;
         }else if(!(mask&bit))return false;
         return (noZone||!this.noEnter||!this.noEnter(x,y,x+dx,y+dy))&&(!occupied||!occupied(x+dx,y+dy));
@@ -649,8 +649,10 @@ class World {
     //   （A* 本來就往點的方向先搜，搜到的最近格＝點擊點旁邊走得到的格子；整個不連通時＝往那個方向走得到的最遠處）
     //   點的格子能站、但近的範圍裡繞不過去（要繞大圈）：範圍放大、上限放寬再找一次，找到就繞過去
     //   回傳 { path, to:[x,y] }；起點本身就是最近（已經貼著牆）回 path 空陣列
-    findPathNear(sx, sy, gx, gy, occupied, pad = 24) {
+    // 11-27 Ping：wide=false 時到不了就直接用「最接近的那格」，不再放大範圍重找一次（那一次最多要搜兩萬格，怪物追擊被人牆擋住時每隻每輪都會跑到）
+    findPathNear(sx, sy, gx, gy, occupied, pad = 24, wide = true) {
         const r = this.astar(sx, sy, gx, gy, occupied, pad, true);
+        if (!wide) return r;
         const d = this.map && this.map.d;
         if (!r || (r.to[0] === gx && r.to[1] === gy) || !d || !this.pass(gx - d.gameX0, gy - d.gameY0) || (this.noEnter && this.noEnter(gx, gy, gx, gy))) return r;   // 點在萬物百貨商那圈裡：走到圈邊就好，不再大範圍找
         const r2 = this.astar(sx, sy, gx, gy, occupied, 64, true, 20000);
