@@ -117,7 +117,9 @@
             decoding.delete(key);
             if (state !== 'ready' || textures.has(key)) { bitmap.close(); return; }
             const src = new P.ImageSource({ resource: bitmap, scaleMode: pixel ? 'nearest' : 'linear' });
-            textures.set(key, { tex: new P.Texture({ source: src }), used: frameNo, ver: 0, bitmap });
+            const added = { tex: new P.Texture({ source: src }), used: frameNo, ver: 0, bitmap };
+            textures.set(key, added);
+            fresh.push(added);
             stats.uploads++;
           }, () => decoding.delete(key));
         }
@@ -229,6 +231,18 @@
   }
 
   const NATIVE = ':scope > img.pm-shadow, :scope > img.pm-body, :scope > img.pm-weapon, :scope > img.pet-shadow, :scope > img.pet-body, .mob-img-inner > img';
+  // 每個角色有哪些圖片元素：子元素數量沒變就沿用上次查到的，不用每幀重查。
+  const parts = new WeakMap();
+  function partsOf(node) {
+    const inner = node.querySelector(':scope > .mob-img-wrap > .mob-img-inner, :scope .mob-img-inner');
+    const sig = node.childElementCount * 1000 + (inner ? inner.childElementCount : 0);
+    let p = parts.get(node);
+    if (!p || p.sig !== sig) {
+      p = { sig, imgs: Array.from(node.querySelectorAll(NATIVE)), box: node.querySelector(':scope > .dm-stride') };
+      parts.set(node, p);
+    }
+    return p;
+  }
   function collect(field, g, fr) {
     const items = [];
     let order = 0;
@@ -263,14 +277,16 @@
       const pet = node.parentElement?.id === 'pet-layer';
       const z = pet ? 6 : (parseInt(node.style.zIndex) || parseInt(ns.zIndex) || 0);
       const striding = node.classList.contains('dm-walking') || node.classList.contains('dm-performing');
+      const p = partsOf(node);
       if (striding) {
-        const box = node.querySelector(':scope > .dm-stride');
+        const box = p.box;
         if (box) for (const c of box.children) {
           if (c.hidden || !c.dmImage || !c.checkVisibility({ opacityProperty: true })) continue;
           leaf(items, c, field, g, fr, z, order, { node, source: c.dmImage, fit: 'fill', pixel: true });
         }
       }
-      for (const img of node.querySelectorAll(NATIVE)) {
+      for (const img of p.imgs) {
+        if (!img.isConnected) { parts.delete(node); continue; }
         if (!img.complete || !img.naturalWidth || !img.checkVisibility({ opacityProperty: true })) continue;
         leaf(items, img, field, g, fr, z, order, { node });
       }
@@ -326,8 +342,10 @@
     renderer.render(stage);
     stats.render += performance.now() - r0;
     // 已經上傳到 GPU 的點陣圖可以放掉，CPU 端不用再留一份。
-    for (const entry of textures.values()) {
-      if (entry.bitmap && entry.used === frameNo) { try { entry.bitmap.close(); } catch {} entry.bitmap = null; }
+    for (let i = fresh.length - 1; i >= 0; i--) {
+      const entry = fresh[i];
+      if (!entry.bitmap || entry.tex.destroyed) { fresh.splice(i, 1); continue; }
+      if (entry.used === frameNo) { try { entry.bitmap.close(); } catch {} entry.bitmap = null; fresh.splice(i, 1); }
     }
     for (const t of temporary) t.destroy(false);
     temporary.length = 0;
