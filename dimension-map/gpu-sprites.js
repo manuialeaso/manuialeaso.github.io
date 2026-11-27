@@ -93,10 +93,14 @@
     }
   }
 
-  function texture(source, canvasSource) {
+  // 圖片先在背景解碼成點陣圖（createImageBitmap，不佔主執行緒）再上傳；還沒好的這一兩幀，畫同一個位置上一張圖。
+  const decoding = new Set();
+  const fresh = [];
+  function texture(source, pixel) {
     const P = W.GiranPixi;
     let key = source, version = 0;
-    if (source instanceof HTMLImageElement) key = source.currentSrc || source.src;
+    const isImage = source instanceof HTMLImageElement;
+    if (isImage) key = source.currentSrc || source.src;
     else if (source instanceof HTMLCanvasElement) version = source.__gpuVer | 0;
     let entry = textures.get(key);
     if (entry && entry.ver !== version) {
@@ -105,10 +109,20 @@
       stats.uploads++;
     }
     if (!entry) {
-      const pixel = source instanceof HTMLCanvasElement && canvasSource;
-      const src = source instanceof HTMLCanvasElement
-        ? new P.CanvasSource({ resource: source, scaleMode: pixel ? 'nearest' : 'linear' })
-        : new P.ImageSource({ resource: source, scaleMode: canvasSource ? 'nearest' : 'linear' });
+      if (isImage) {
+        if (!decoding.has(key) && decoding.size < 48) {
+          decoding.add(key);
+          createImageBitmap(source).then(bitmap => {
+            decoding.delete(key);
+            if (state !== 'ready' || textures.has(key)) { bitmap.close(); return; }
+            const src = new P.ImageSource({ resource: bitmap, scaleMode: pixel ? 'nearest' : 'linear' });
+            textures.set(key, { tex: new P.Texture({ source: src }), used: frameNo, ver: 0, bitmap });
+            stats.uploads++;
+          }, () => decoding.delete(key));
+        }
+        return null;
+      }
+      const src = new P.CanvasSource({ resource: source, scaleMode: pixel ? 'nearest' : 'linear' });
       entry = { tex: new P.Texture({ source: src }), used: 0, ver: version };
       textures.set(key, entry);
       stats.uploads++;
@@ -126,6 +140,7 @@
       if (textures.size <= cap) break;
       if (entry.used === frameNo) continue;
       try { entry.tex.destroy(true); } catch {}
+      try { entry.bitmap?.close(); } catch {}
       textures.delete(key);
       stats.evicted++;
     }
@@ -189,7 +204,7 @@
     }
     const cx = cx0 + (pl - pr) / 2, cy = cy0 + (pt - pb) / 2;
     const blend = s.mixBlendMode === 'multiply' || s.mixBlendMode === 'screen' ? s.mixBlendMode : 'normal';
-    items.push({ z, order, source, frame: options.frame || null, x: cx, y: cy, w, h, sign, alpha, blend,
+    items.push({ z, order, source, holder: el, frame: options.frame || null, x: cx, y: cy, w, h, sign, alpha, blend,
       outline: outlineColor, pixel: !!options.pixel });
   }
 
@@ -218,7 +233,7 @@
         const x0 = (rect.left - fr.left) / g, y0 = (rect.top - fr.top) / g;
         const k = rect.width / g / node.width || 1;
         const [fx, fy, fw, fh] = frame || [0, 0, node.width, node.height];
-        items.push({ z, order, source: node, frame, x: x0 + (fx + fw / 2) * k, y: y0 + (fy + fh / 2) * k, w: fw * k, h: fh * k,
+        items.push({ z, order, source: node, holder: node, frame, x: x0 + (fx + fw / 2) * k, y: y0 + (fy + fh / 2) * k, w: fw * k, h: fh * k,
           sign: 1, alpha: Number(s.opacity), blend: 'normal', outline: null, pixel: false, cover: true });
         continue;
       }
@@ -245,28 +260,41 @@
     return items;
   }
 
-  function draw(field) {
-    const P = W.GiranPixi;
+  // 量位置放在每一幀最前面：那時上一幀的版面已經排好，讀位置不會逼瀏覽器重排。
+  // 畫的時候再依鏡頭移動量平移，地面和角色就不會差一幀。
+  let snapshot = null;
+  function measure(field, camera) {
     const fr = field.getBoundingClientRect();
     const cw = field.clientWidth, ch = field.clientHeight;
-    if (!cw || !ch || !fr.width) return;
+    if (!cw || !ch || !fr.width) { snapshot = null; return; }
     const g = fr.width / cw;
+    snapshot = { items: collect(field, g, fr), cw, ch, g, cx: camera ? camera[0] : 0, cy: camera ? camera[1] : 0 };
+  }
+  function draw(field, camera) {
+    const P = W.GiranPixi;
+    if (!snapshot) return;
+    const { items, cw, ch, g } = snapshot;
+    const dx = camera ? snapshot.cx - camera[0] : 0, dy = camera ? snapshot.cy - camera[1] : 0;
     const res = resolution(g);
     if (renderer.width !== cw || renderer.height !== ch || renderer.resolution !== res) renderer.resize(cw, ch, res);
-    const items = collect(field, g, fr);
     stage.removeChildren();
+    let n = 0;
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
-      let sp = sprites[i];
-      if (!sp) { sp = new P.Sprite(); sp.anchor.set(0.5); sprites[i] = sp; }
       let tex = texture(it.source, it.pixel);
+      if (!tex) tex = it.holder.__gpuLast;
+      if (!tex || tex.destroyed) continue;
+      it.holder.__gpuLast = tex;
+      let sp = sprites[n];
+      if (!sp) { sp = new P.Sprite(); sp.anchor.set(0.5); sprites[n] = sp; }
+      n++;
       if (it.frame) {
         const [x, y, w, h] = it.frame;
         tex = new P.Texture({ source: tex.source, frame: new P.Rectangle(x, y, w, h) });
         temporary.push(tex);
       }
       sp.texture = tex;
-      sp.position.set(it.x, it.y);
+      sp.position.set(it.x + dx, it.y + dy);
       sp.width = it.w; sp.height = it.h;
       if (it.sign < 0) sp.scale.x = -Math.abs(sp.scale.x);
       sp.alpha = it.alpha;
@@ -275,13 +303,22 @@
       stage.addChild(sp);
     }
     renderer.render(stage);
+    // 已經上傳到 GPU 的點陣圖可以放掉，CPU 端不用再留一份。
+    for (const entry of textures.values()) {
+      if (entry.bitmap && entry.used === frameNo) { try { entry.bitmap.close(); } catch {} entry.bitmap = null; }
+    }
     for (const t of temporary) t.destroy(false);
     temporary.length = 0;
-    stats.items = items.length;
+    stats.items = n;
     trim();
   }
 
-  function frame(field) {
+  // 每幀開頭呼叫：量上一幀排好的位置
+  function begin(field, camera) {
+    if (!active || state !== 'ready' || !field?.classList.contains('dm-map')) { snapshot = null; return; }
+    try { measure(field, camera); } catch (error) { fail(error); }
+  }
+  function frame(field, camera) {
     if (!wanted || state === 'failed' || !field) return;
     if (state === 'idle') {
       if (!W.GiranPixi) return;
@@ -295,8 +332,8 @@
     const t0 = performance.now();
     frameNo++;
     try {
-      if (!active) { active = true; field.classList.add('dm-gpu'); }
-      draw(field);
+      if (!active) { active = true; field.classList.add('dm-gpu'); measure(field, camera); }
+      draw(field, camera);
     } catch (error) {
       fail(error);
       return;
@@ -306,6 +343,7 @@
   }
 
   W.GiranGpu = {
+    begin,
     frame,
     get active() { return active; },
     status() {

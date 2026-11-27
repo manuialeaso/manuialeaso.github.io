@@ -762,6 +762,7 @@ function install() {
         if(!width||!height){request=requestAnimationFrame(frame);return;}
         const resized=terrain.width!==width || terrain.height!==height;
         probe?.begin();
+        window.GiranGpu?.begin(field,terrain.camera);
         terrain.prepare(width,height,now);
         if(terrain.kind==='loading'||terrain.pending||terrain.resolving){GiranFieldUI.update(terrain);request=requestAnimationFrame(frame);return;}
         if (renderedRevision !== terrain.revision) { clearMovement(); renderedRevision = terrain.revision; }
@@ -816,7 +817,7 @@ function install() {
         probe?.mark('戰鬥同步');
         actions.frame(now,terrain.width,terrain.height);
         probe?.mark('動作特效');
-        window.GiranGpu?.frame(field);
+        window.GiranGpu?.frame(field,terrain.camera);
         probe?.mark('GPU繪製');
         GiranFieldUI.update(terrain);
         probe?.mark('介面');
