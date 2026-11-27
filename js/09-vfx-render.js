@@ -663,6 +663,8 @@ function vfxMiss(mob) {
     _vfxRequestFlush();
 }
 const _numberPools={plain:[],tagged:[]};
+// 11-27 Ping：自由走動同時最多 15 個傷害數字，超過就直接收掉最舊的（8 人隊伍打一群怪時原本會同時飄一百多個）。舊版次元不限。
+const _liveNumbers=[], _numberCap=document.documentElement.dataset.playMode==='fusion'?15:0;
 function _vfxNumber(x, y, dmg, ele, big, parent) {
     if (window.__vfxNumOff) return;   // 🔢 v3.0.2 「只關傷害數字」獨立開關：關掉所有飄動傷害數字(致命/非致命皆走此唯一渲染點)·其餘特效不受影響
     const tagged=big==='crit'||big==='heavy',pool=tagged?_numberPools.tagged:_numberPools.plain;
@@ -691,10 +693,16 @@ function _vfxNumber(x, y, dmg, ele, big, parent) {
         if (event && event.target!==el) return;
         clearTimeout(el.dmTimer);el.onanimationend=null;el.remove();
         el.dmCombo?.remove();
+        if (_numberCap) { const at=_liveNumbers.indexOf(el); if (at>=0) _liveNumbers.splice(at,1); }
         if (pool.length<64) pool.push(el);
     };
     el.onanimationend=release;
     el.dmTimer=setTimeout(release,1400);
+    if (_numberCap) {
+        el.dmRelease=release;
+        _liveNumbers.push(el);
+        while (_liveNumbers.length>_numberCap) _liveNumbers[0].dmRelease();
+    }
     return el;
 }
 // 🩸 v3.0.103 命中濺血：命中點噴數顆小紅血滴（帶重力弧線→淡出·無殘留貼花·怪物不變色）。爆擊/重擊噴更多。純裝飾·吃 window.__vfxOff。顆粒小、不上 box-shadow 保持不搶眼。

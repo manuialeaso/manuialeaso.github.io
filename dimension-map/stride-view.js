@@ -359,9 +359,9 @@ function paint(el,set,progress,isMob,mode='dm-walking') {
     const box=document.createElement('span');
     box.className='dm-stride'; box.setAttribute('aria-hidden','true');
     const make=kind=>{
-      const frame=window.GiranPartyView?.mobile()?document.createElement('canvas'):new Image();
+      // 11-27 Ping：電腦版也改用畫布（原本只有手機用）。原本每換一格就改一次 <img> 網址，合成的步伐還要先轉成 data 網址，8 人打一群怪時每幀要花二十幾毫秒。
+      const frame=document.createElement('canvas');
       frame.className='stride-'+kind;frame.hidden=true;
-      if(frame instanceof HTMLImageElement){frame.alt='';frame.draggable=false;}
       box.append(frame);return frame;
     };
     layer={box,shadow:make('shadow'),body:make('body'),weapon:make('weapon')};
@@ -425,8 +425,11 @@ function poseStride(actor,el,dir,isMob=false){
   const im=el.querySelector(isMob?'.mob-img-inner img:not(.mob-anim-shadow):not(.mob-anim-weapon):not(.mob-anim-weapon2)':'.pm-body,.pet-body');
   if(!loaded(im))return null;
   if(actor.poseDir===dir&&actor.poseEl===el&&actor.poseSet)return actor.poseSet;
-  const key=(im.currentSrc||im.src).replace(/_\d+\.(png|webp)(?:\?.*)?$/i,'_$1')+'/'+(dx[dir]-dy[dir]<0?'left':'right');
+  const shown=im.currentSrc||im.src;
+  const key=String(window.__afkFrameSource?window.__afkFrameSource(shown):shown).replace(/_\d+\.(png|webp)(?:\?.*)?$/i,'_$1')+'/'+(dx[dir]-dy[dir]<0?'left':'right');
   let set=rigCache.get(key);
+  // 最近用過的排到最後面，滿了先丟最久沒用的
+  if(set){rigCache.delete(key);rigCache.set(key,set);}
   if(!set){
     const [fx,fy]=foot(im),w=im.naturalWidth,h=im.naturalHeight,inkHeight=ink.get(im.src)||h;
     if(!w||!h||w*h>1000000)return null;
@@ -453,7 +456,7 @@ function poseStride(actor,el,dir,isMob=false){
       }
       set.ready=true;
     }catch{set.missing=true;}
-    if(rigCache.size>=48)rigCache.delete(rigCache.keys().next().value);rigCache.set(key,set);
+    if(rigCache.size>=(window.GiranPartyView?.mobile()?48:96))rigCache.delete(rigCache.keys().next().value);rigCache.set(key,set);
   }
   actor.poseSet=set;actor.poseDir=dir;actor.poseEl=el;return set;
 }

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-f57115b029b2",
+  "build": "giran-0.8.25-7b25516a0fbb",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -1908,8 +1908,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "dimension-map/stride-view.js?v=7a23a4294082",
-      "sha256": "7a23a4294082bc0040eacb547b1774bbad71ea4d5d04a8f47a24153499542bbb",
+      "url": "dimension-map/stride-view.js?v=b57546506674",
+      "sha256": "b57546506674962aeacf6c42f5ccd9eb788edea52028297aa6736099b536ad4a",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1949,7 +1949,7 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "93ccd8f32abc8218ddd1ab5c90be313df9ceb1b6cb196ac4d807fddf33585d88",
+      "sha256": "9394d5339aeaead24823f1e49787a5f6a37a510e782f15c9d4c927c1e576ea49",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1959,7 +1959,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "2bf098f95cae39f0f344da5f3b3e7673dd4da7a1219b9600b7ab106d773ce96c",
+      "sha256": "0da96829a48da0ed8e861d8f221669c181df5031224124a560da9b65368a6f8a",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2008,8 +2008,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/09-vfx-render.js?v=60449a45620f",
-      "sha256": "60449a45620f8d34e6afd31130890ace151df5620f53100bdda3a61196dee28d",
+      "url": "js/09-vfx-render.js?v=f5e1670c075e",
+      "sha256": "f5e1670c075e2e82d8ce16d05eca565a823f70f20dd0b29f18a2924a1a13aa6b",
       "type": "text/javascript; charset=utf-8"
     },
     {
