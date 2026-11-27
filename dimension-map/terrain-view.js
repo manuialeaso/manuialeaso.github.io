@@ -422,6 +422,7 @@ class TerrainView {
     if(mask.width!==w)mask.width=w;if(mask.height!==hh)mask.height=hh;
     const ctx=mask.getContext('2d');ctx.clearRect(0,0,w,hh);
     for(const {r,k} of entry.tiles)world.blit(ctx,r,r.tIdx[k],r.tX[k]-left,r.tY[k]-top);
+    mask.__gpuVer=(mask.__gpuVer|0)+1;   // 11-28：GPU 繪製要知道遮蔽重畫過
   }
   endCovers(){
     for(const canvas of this.coverPool)if(canvas.owner&&canvas.frame!==this.coverFrame){

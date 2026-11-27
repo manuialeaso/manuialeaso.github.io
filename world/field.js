@@ -816,6 +816,8 @@ function install() {
         probe?.mark('戰鬥同步');
         actions.frame(now,terrain.width,terrain.height);
         probe?.mark('動作特效');
+        window.GiranGpu?.frame(field);
+        probe?.mark('GPU繪製');
         GiranFieldUI.update(terrain);
         probe?.mark('介面');
         serviceForegroundClock();

@@ -189,3 +189,12 @@ body.m-unified.dm-viewing #vfx-layer .vfx-boss-sub { font-size:11px;letter-spaci
 
 /* 自由走動：席琳恩賜光暈每隻怪每幀重算濾鏡，是高階地圖掉幀主因，這裡停用（固定站位不受影響） */
 #battle-view.dm-map .grace-glow { animation: none !important; filter: none !important; }
+
+/* 11-28 Ping：GPU 繪製（gpu-sprites.js）開著時，角色、怪物、寵物的圖與遮蔽改畫在同一張畫布；原本的圖留著當位置但看不見 */
+#battle-view .dm-gpu-canvas { display:none; }
+#battle-view.dm-map.dm-gpu .dm-gpu-canvas { display:block; position:absolute; inset:0; width:100%; height:100%; z-index:66; pointer-events:none; }
+#battle-view.dm-map.dm-gpu .mob-target.dm-placed .mob-img-inner > img,
+#battle-view.dm-map.dm-gpu :is(#player-morph-sprite,.party-sprite).dm-placed > :is(img.pm-shadow,img.pm-body,img.pm-weapon),
+#battle-view.dm-map.dm-gpu #pet-layer > [data-pet].dm-placed > :is(img.pet-shadow,img.pet-body),
+#battle-view.dm-map.dm-gpu .dm-placed .dm-stride > canvas,
+#battle-view.dm-map.dm-gpu canvas.g-terrain-cover { visibility:hidden !important; }
