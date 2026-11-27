@@ -56,11 +56,26 @@ window.GiranTown=(()=>{
     const [x,y]=terrain.project(p.fx??p.x,p.fy??p.y);
     el.style.left=x.toFixed(1)+'px';el.style.top=y.toFixed(1)+'px';el.style.zIndex=String(10+Math.max(0,Math.round(y)));
   }
+  const stills=new Map();
+  function stillOf(who,isAlly){
+    const form=api.battleForm(who,isAlly);if(!form?.base)return null;
+    const folder=decodeURIComponent(form.base).replace(/^\/|\/$/g,'');
+    const url=new URL('../'+folder.split('/').map(encodeURIComponent).join('/')+'/'+(form.wpn?form.wpn+'_':'')+'idle_0.png',window.AFK_DIMENSION_VIEW.mediaBase).href;
+    let set=stills.get(url);
+    if(!set){
+      const im=new Image();set={body:[im],ready:false,missing:false,anchor:null};
+      im.onload=()=>{set.ready=true;};im.onerror=()=>{set.missing=true;};im.src=url;
+      if(stills.size>32)stills.delete(stills.keys().next().value);stills.set(url,set);
+    }
+    return set;
+  }
   function paint(el,who,actor,isAlly) {
     const dir=actor.heading;
     const pick=w=>actor.walking?api.setFor(api.memberSpec(w,isAlly,dir)):api.actionSet(w,isAlly,dir,'idle');
     let set=pick(who);
-    // 11-27：變身沒有城鎮用的待機／走路圖時改用原職業外觀，不要整個人消失（戰場上照樣顯示變身）
+    // 11-27 Ping：變身（例：神聖衣）沒有城鎮用的待機／走路動畫時，用它戰鬥待機的第一張圖站著／走動，維持變身外觀
+    if(!set||set.missing)set=stillOf(who,isAlly)||set;
+    // 連那張都沒有才改用原職業外觀，不要整個人消失
     if(!set||set.missing){
       const plain=Object.create(who);plain._setPoly=null;plain.poly=null;plain.buffs=Object.assign({},who.buffs,{poly:0});
       const alt=pick(plain);if(alt){set=alt;who=plain;}
