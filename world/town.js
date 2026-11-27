@@ -58,7 +58,13 @@ window.GiranTown=(()=>{
   }
   function paint(el,who,actor,isAlly) {
     const dir=actor.heading;
-    const set=actor.walking?api.setFor(api.memberSpec(who,isAlly,dir)):api.actionSet(who,isAlly,dir,'idle');
+    const pick=w=>actor.walking?api.setFor(api.memberSpec(w,isAlly,dir)):api.actionSet(w,isAlly,dir,'idle');
+    let set=pick(who);
+    // 11-27：變身沒有城鎮用的待機／走路圖時改用原職業外觀，不要整個人消失（戰場上照樣顯示變身）
+    if(!set||set.missing){
+      const plain=Object.create(who);plain._setPoly=null;plain.poly=null;plain.buffs=Object.assign({},who.buffs,{poly:0});
+      const alt=pick(plain);if(alt){set=alt;who=plain;}
+    }
     if(!set?.ready)return;
     const phase=actor.walking?actor.progress:(performance.now()%1000)/1000;
     const i=Math.min(set.body.length-1,Math.floor(phase*set.body.length)), im=set.body[i];
