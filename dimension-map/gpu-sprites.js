@@ -260,9 +260,9 @@
     return items;
   }
 
-  // 量位置放在每一幀最前面：那時上一幀的版面已經排好，讀位置不會逼瀏覽器重排。
-  // 畫的時候再依鏡頭移動量平移，地面和角色就不會差一幀。
-  let snapshot = null;
+  // 量位置與繪製放在瀏覽器排完版面之後（ResizeObserver 的回呼就在那個時間點，還沒上畫面），
+  // 讀位置不會逼瀏覽器多排一次版面，也不會差一幀。每幀改一下哨兵元素的寬度，讓回呼每幀都觸發。
+  let snapshot = null, sentinel = null, observer = null, flip = false, pendingField = null;
   function measure(field, camera) {
     const fr = field.getBoundingClientRect();
     const cw = field.clientWidth, ch = field.clientHeight;
@@ -313,10 +313,18 @@
     trim();
   }
 
-  // 每幀開頭呼叫：量上一幀排好的位置
-  function begin(field, camera) {
-    if (!active || state !== 'ready' || !field?.classList.contains('dm-map')) { snapshot = null; return; }
-    try { measure(field, camera); } catch (error) { fail(error); }
+  function begin() {}
+  function afterLayout() {
+    const field = pendingField;
+    pendingField = null;
+    if (!field || !active || state !== 'ready') return;
+    const t0 = performance.now();
+    try {
+      measure(field, null);
+      draw(field, null);
+    } catch (error) { fail(error); return; }
+    stats.frames++;
+    stats.ms += performance.now() - t0;
   }
   function frame(field, camera) {
     if (!wanted || state === 'failed' || !field) return;
@@ -329,17 +337,19 @@
     if (state !== 'ready') return;
     if (!field.classList.contains('dm-map')) return;
     if (canvas.parentElement !== field) field.append(canvas);
-    const t0 = performance.now();
-    frameNo++;
-    try {
-      if (!active) { active = true; field.classList.add('dm-gpu'); measure(field, camera); }
-      draw(field, camera);
-    } catch (error) {
-      fail(error);
-      return;
+    if (!sentinel) {
+      sentinel = document.createElement('div');
+      sentinel.className = 'dm-gpu-sentinel';
+      sentinel.setAttribute('aria-hidden', 'true');
+      observer = new ResizeObserver(afterLayout);
+      observer.observe(sentinel);
     }
-    stats.frames++;
-    stats.ms += performance.now() - t0;
+    if (sentinel.parentElement !== field) field.append(sentinel);
+    frameNo++;
+    if (!active) { active = true; field.classList.add('dm-gpu'); }
+    pendingField = field;
+    flip = !flip;
+    sentinel.style.width = flip ? '2px' : '1px';
   }
 
   W.GiranGpu = {

@@ -198,3 +198,4 @@ body.m-unified.dm-viewing #vfx-layer .vfx-boss-sub { font-size:11px;letter-spaci
 #battle-view.dm-map.dm-gpu #pet-layer > [data-pet].dm-placed > :is(img.pet-shadow,img.pet-body),
 #battle-view.dm-map.dm-gpu .dm-placed .dm-stride > canvas,
 #battle-view.dm-map.dm-gpu canvas.g-terrain-cover { visibility:hidden !important; }
+#battle-view .dm-gpu-sentinel { position:absolute; left:0; top:0; height:0; visibility:hidden; pointer-events:none; }
