@@ -100,7 +100,8 @@
     const P = W.GiranPixi;
     let key = source, version = 0;
     const isImage = source instanceof HTMLImageElement;
-    if (isImage) key = source.currentSrc || source.src;
+    // 動畫切格會換成新的 blob 網址（#giran-frame= 後面是原圖路徑），用原圖路徑當鍵，同一格不重複上傳。
+    if (isImage) { key = source.currentSrc || source.src; if (key.startsWith('blob:') && W.__afkFrameSource) key = W.__afkFrameSource(key); }
     else if (source instanceof HTMLCanvasElement) version = source.__gpuVer | 0;
     let entry = textures.get(key);
     if (entry && entry.ver !== version) {
