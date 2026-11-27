@@ -21,7 +21,7 @@
   const styles = new WeakMap();
   const matrices = new Map();
   let frameNo = 0, lastError = '';
-  const stats = { items: 0, uploads: 0, evicted: 0, ms: 0, frames: 0 };
+  const stats = { items: 0, uploads: 0, evicted: 0, ms: 0, frames: 0, measure: 0, render: 0 };
 
   const style = el => { let s = styles.get(el); if (!s) { s = getComputedStyle(el); styles.set(el, s); } return s; };
   // transform 字串 → [x 方向縮放, 是否左右翻轉]
@@ -181,7 +181,7 @@
       outline: s.filter !== 'none' && s.filter.includes('drop-shadow') ? colorOf(s.filter) : null,
       blend: s.mixBlendMode === 'multiply' || s.mixBlendMode === 'screen' ? s.mixBlendMode : 'normal',
       pad: [parseFloat(s.paddingLeft) || 0, parseFloat(s.paddingRight) || 0, parseFloat(s.paddingTop) || 0, parseFloat(s.paddingBottom) || 0],
-      fit: s.objectFit, animated: s.transitionProperty !== 'all' || s.animationName !== 'none' };
+      opacity: Number(s.opacity), fit: s.objectFit, animated: s.transitionProperty !== 'all' || s.animationName !== 'none' };
     looks.set(x, v);
     return v;
   }
@@ -194,7 +194,8 @@
     for (let x = el; x && x !== field; x = x.parentElement) {
       const v = look(x, x === options.node ? '' : outer);
       scale *= v.scale; sign *= v.sign;
-      alpha *= Number(style(x).opacity);
+      // 角色節點本身會有淡入淡出，照讀；裡面的元素透明度只跟 class 有關，用記住的值。
+      alpha *= x === options.node ? Number(style(x).opacity) : v.opacity;
       if (alpha <= 0.01) return;
       if (outlineColor === null && v.outline !== null) outlineColor = v.outline;
       if (x === options.node) {
@@ -321,7 +322,9 @@
       sp.filters = it.outline === null ? null : [outline(it.outline)];
       stage.addChild(sp);
     }
+    const r0 = performance.now();
     renderer.render(stage);
+    stats.render += performance.now() - r0;
     // 已經上傳到 GPU 的點陣圖可以放掉，CPU 端不用再留一份。
     for (const entry of textures.values()) {
       if (entry.bitmap && entry.used === frameNo) { try { entry.bitmap.close(); } catch {} entry.bitmap = null; }
@@ -340,6 +343,8 @@
     const t0 = performance.now();
     try {
       measure(field, null);
+      const t1 = performance.now();
+      stats.measure += t1 - t0;
       draw(field, null);
     } catch (error) { fail(error); return; }
     stats.frames++;
@@ -377,7 +382,10 @@
     get active() { return active; },
     status() {
       return { 狀態: state, 啟用: active, 想要: wanted, 錯誤: lastError, 圖數: stats.items, 貼圖: textures.size,
-        上傳: stats.uploads, 淘汰: stats.evicted, 每幀毫秒: stats.frames ? +(stats.ms / stats.frames).toFixed(2) : 0 };
+        上傳: stats.uploads, 淘汰: stats.evicted, 每幀毫秒: stats.frames ? +(stats.ms / stats.frames).toFixed(2) : 0,
+        量位置: stats.frames ? +(stats.measure / stats.frames).toFixed(2) : 0, 繪製: stats.frames ? +(stats.render / stats.frames).toFixed(2) : 0 };
+    },
+    resetStats() { Object.assign(stats, { ms: 0, frames: 0, measure: 0, render: 0 });
     },
     disable() { wanted = false; try { localStorage.setItem(KEY, '0'); } catch {} deactivate(); },
     enable() { wanted = true; try { localStorage.removeItem(KEY); } catch {} }
