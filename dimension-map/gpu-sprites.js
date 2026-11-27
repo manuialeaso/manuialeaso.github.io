@@ -319,7 +319,8 @@
       const it = items[i];
       let tex = texture(it.source, it.pixel);
       if (!tex) tex = it.holder.__gpuLast;
-      if (!tex || tex.destroyed) continue;
+      it.drawn = !!(tex && !tex.destroyed);
+      if (!it.drawn) continue;
       it.holder.__gpuLast = tex;
       let sp = sprites[n];
       if (!sp) { sp = new P.Sprite(); sp.anchor.set(0.5); sprites[n] = sp; }
@@ -402,6 +403,12 @@
       return { 狀態: state, 啟用: active, 想要: wanted, 錯誤: lastError, 圖數: stats.items, 貼圖: textures.size,
         上傳: stats.uploads, 淘汰: stats.evicted, 每幀毫秒: stats.frames ? +(stats.ms / stats.frames).toFixed(2) : 0,
         量位置: stats.frames ? +(stats.measure / stats.frames).toFixed(2) : 0, 繪製: stats.frames ? +(stats.render / stats.frames).toFixed(2) : 0 };
+    },
+    // 測試用：上一幀畫了哪些圖
+    debug() {
+      return (snapshot?.items || []).map(it => ({ z: it.z, x: Math.round(it.x), y: Math.round(it.y), w: Math.round(it.w), h: Math.round(it.h),
+        a: +it.alpha.toFixed(2), sign: it.sign, blend: it.blend, outline: it.outline, drawn: it.drawn,
+        el: (it.holder.className || it.holder.tagName) + '', src: String(it.source.currentSrc || it.source.src || it.source.tagName).split('/').slice(-2).join('/').slice(0, 60) }));
     },
     resetStats() { Object.assign(stats, { ms: 0, frames: 0, measure: 0, render: 0 });
     },
