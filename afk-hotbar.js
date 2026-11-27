@@ -117,10 +117,10 @@
       var skId = id.slice(3);
       if (!learned(skId)) { sys('<span class="text-slate-400">還沒學會 ' + esc(sk.n) + '。</span>'); return; }
       var el0 = document.querySelector('#afk-hotbar .hb-slot[data-i="' + i + '"]'); if (el0) { el0.classList.remove('flash'); void el0.offsetWidth; el0.classList.add('flash'); }
-      if (HC.on() && HC.lane(sk)) { HC.press(skId); schedule(); return; }   // 攻擊類魔法：插隊（共用施法間隔）
+      if (HC.on() && HC.lane(sk)) { HC.press(skId); schedule(true); return; }   // 攻擊類魔法：插隊（共用施法間隔）
       try { if (sk.type === 'manual') manualCast(skId); else if (typeof castSkill === 'function' && !castSkill(skId)) sys('<span class="text-slate-400">' + esc(sk.n) + ' 現在無法施放（MP、冷卻或目標）。</span>'); } catch (e) { console.warn('[AFK-hotbar]', e); }
       try { if (typeof updateUI === 'function') updateUI(); } catch (e) {}
-      schedule(); return;
+      schedule(true); return;
     }
     var d = DB.items[id]; if (!d) { b[i] = null; render(); return; }
     var el = document.querySelector('#afk-hotbar .hb-slot[data-i="' + i + '"]'); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
@@ -133,7 +133,7 @@
       var it2 = findInv(id); if (!it2) { sys('<span class="text-slate-400">背包裡沒有 ' + esc(d.n) + '。</span>'); return; }
       try { useItem(it2.uid, false, true); } catch (e) { console.warn('[AFK-hotbar]', e); }
     }
-    schedule();
+    schedule(true);
   };
 
   // ── 選擇要放什麼 ──
@@ -303,7 +303,15 @@
     placeLock(host, lk);
   };
   var pending = false;
-  var schedule = function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; try { render(); } catch (e) {} }); };
+  // 11-28 Ping：遊戲每次更新介面都會叫快捷列重組一次（每秒數十次）。非玩家操作的重組最多每 0.25 秒一次；按鍵、點擊照舊立即更新。
+  var lastRender = 0, timer = 0;
+  var run = function () { pending = false; timer = 0; lastRender = performance.now(); try { render(); } catch (e) {} };
+  var schedule = function (urgent) {
+    if (urgent === true) { if (timer) { clearTimeout(timer); timer = 0; pending = false; } if (pending) return; pending = true; requestAnimationFrame(run); return; }
+    if (pending) return; pending = true;
+    var wait = 250 - (performance.now() - lastRender);
+    if (wait > 0) timer = setTimeout(function () { requestAnimationFrame(run); }, wait); else requestAnimationFrame(run);
+  };
   ['renderTabs', 'updateUI', 'loadGame'].forEach(function (fn) { var o = W[fn]; if (typeof o !== 'function') return; W[fn] = function () { var r = o.apply(this, arguments); schedule(); return r; }; });
 
   // ── 自動施法引擎（共用施法間隔＋法系 1.5 秒冷卻＋插隊）──

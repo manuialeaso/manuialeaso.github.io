@@ -730,11 +730,15 @@ function install() {
     window.GiranProbe = state;
     return state;
   })();
+  // 11-28 Ping：省電——2 分鐘沒有任何操作（滑鼠、鍵盤、觸控、滾輪）時，電腦版也降到約 30 幀；一操作就回到全速。
+  let lastInput=performance.now();
+  for(const type of ['pointerdown','keydown','wheel','touchstart'])window.addEventListener(type,()=>{lastInput=performance.now();},{capture:true,passive:true});
   function frame(now) {
     request = 0;
     if (!active || suspended) return;
     // 11-27 Ping：電腦版地圖畫面原本固定約 30 幀，改成跟著螢幕更新（60 幀螢幕就是 60 幀）；手機維持約 30 幀省電
-    if (now-previous < (GiranPartyView.mobile()?31:15)) { request=requestAnimationFrame(frame); return; }
+    const slow=GiranPartyView.mobile()||now-lastInput>120000;
+    if (now-previous < (slow?31:15)) { request=requestAnimationFrame(frame); return; }
     const seconds = previous ? Math.min(.30,(now-previous)/1000) : 0;
     previous = now;
     try {
