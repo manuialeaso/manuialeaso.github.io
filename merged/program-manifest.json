@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-cbf78fac8635",
+  "build": "giran-0.8.25-867bab27abb6",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -103,8 +103,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-autoreload.js?v=f83f431d70a8",
-      "sha256": "f83f431d70a8a922fbe25eba5d6e1e43ee4c884a505bf3d7c2162ed704a2298f",
+      "url": "afk-autoreload.js?v=42d0104819e7",
+      "sha256": "42d0104819e71cbc5a05d2a366e88d785f3dde609866210bcdcf8d2ef26d7c80",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1143,8 +1143,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-perf.js?v=98a7690377f7",
-      "sha256": "98a7690377f76e1ba89ad3c7ef91bc02073255776955941b53b8eccd44d6c33e",
+      "url": "afk-perf.js?v=8896bb012e25",
+      "sha256": "8896bb012e2559864289222a32220e8b433bfd371f37d4cf0baa7b0db8fcc26d",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1673,8 +1673,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-toggles.js?v=a248e4258a15",
-      "sha256": "a248e4258a150a37fd4879e06d8ce28e60a3e190130ca059141e69432654d86f",
+      "url": "afk-toggles.js?v=48ea4e2c78ec",
+      "sha256": "48ea4e2c78ec942d9cea2244b4bb20eecd699695eebac69ac6cc1128ca379d35",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1949,7 +1949,7 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "2e0ccbcd0b818ce78e4cdd62e90463e2beb469cfb484bcba8c1d5c9d50b8de4d",
+      "sha256": "a437cbfb4a50731e1230497b5ff983c0091b474929a24ce4d6691d8e4541ce09",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1959,7 +1959,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "1425732fb952d42952a8c3c65ed69d40da001feefb9cef9bf7f48969dc1102f5",
+      "sha256": "833736381587ad239a7f9d6956e637c8b6fe68cac9468536f04f326488b82281",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2193,8 +2193,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "merged/class-combat.js?v=feab6ad60977",
-      "sha256": "feab6ad60977622746bb067b6742fa0e10aeced141b126fb6382bce86519a7fc",
+      "url": "merged/class-combat.js?v=ed9feb7757ea",
+      "sha256": "ed9feb7757eaa99dd7f4dad300c62269dc8dec1817cbbbfb144a2c5c2c4c3a0c",
       "type": "text/javascript; charset=utf-8"
     },
     {

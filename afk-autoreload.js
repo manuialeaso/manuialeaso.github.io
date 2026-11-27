@@ -56,6 +56,10 @@
     if (state.prideClimb) return '傲慢之塔攀登中';
     if (state.oblivion) return '遺忘之島旅程中';
     if (state.antharas) return '安塔瑞斯巢穴挑戰中';
+    // 11-28 Ping：四龍進度只存在執行中的狀態，重整就會消失；人在龍穴地圖就不重整，不看會消失的進度紀錄
+    try { var mp = mapState.current; if (mp && ((typeof ANTHARAS_AREA_BOSS !== 'undefined' && ANTHARAS_AREA_BOSS[mp]) || /^antharas_/.test(mp))) return '人在龍穴地圖'; } catch (e) {}
+    // 11-28 Ping：自動遠征進行中（含兩項之間的切換）不重整
+    try { var ex = window.LineageActivities && LineageActivities.round(); if (ex && /^(running|between|starting)$/.test(ex.status)) return '自動遠征進行中'; } catch (e) {}
     if (player.siege && player.siege.active) return '攻城進行中';
     return '';
   };

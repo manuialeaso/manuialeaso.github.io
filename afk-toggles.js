@@ -214,7 +214,7 @@
         { id: 'mapsync', name: '地圖選單自我校正', desc: '回城／出發後地區與地圖下拉若與所在地不符，自動校正（不改回城規則）', group: '遊戲介面' },
         { id: 'perf', name: '卡頓修正', desc: '合併日誌與位置量測，減少重複畫面更新並限制動畫快取；可分別調整下方選項。', group: '系統與其他' },
         { id: 'perf-log', name: '日誌批次寫入', desc: '戰鬥／系統／世界日誌每一幀合併寫入一次', group: '系統與其他', parent: 'perf' },
-        { id: 'perf-mem', name: '動畫快取記憶體上限', desc: '不在畫面上的動畫圖片最多保留約 192MB，長時間掛機記憶體不再一直長（舊怪再出現時會重新載入）', group: '系統與其他', parent: 'perf' },
+        { id: 'perf-mem', name: '動畫快取記憶體上限', desc: '不在畫面上的動畫圖片最多保留約 200MB，長時間掛機記憶體不再一直長（舊怪再出現時會重新載入）', group: '系統與其他', parent: 'perf' },
         { id: 'perf-dom', name: '內容相同就不重寫', desc: '能力分頁、狀態列等數值沒變時不重建畫面', group: '系統與其他', parent: 'perf' },
         { id: 'perf-tabs', name: '背包分頁按需重建', desc: '撿物時只重建正在看的分頁；其他分頁切過去時才更新（大背包差最多）', group: '系統與其他', parent: 'perf' },
         { id: 'perf-vfx', name: '特效讀位置合併', desc: '傷害數字／未命中／法術起點的位置量測合併到下一幀、寵物圖層快取戰場大小', group: '系統與其他', parent: 'perf' },

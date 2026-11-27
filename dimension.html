@@ -632,7 +632,7 @@
          無開關：這是顯示正確性，不是功能。實測 forceDarkModeEnabled+darkModeImagePolicy=smart 可重現、加這行即解。 -->
     <style>:root{color-scheme:dark}</style>
     <!-- afk-toggles 必須最先載入：外掛開關中樞（逃生門，自己不可被關；某支外掛壞掉時玩家關掉它就能用原版繼續玩） -->
-    <script src="afk-toggles.js?v=a248e4258a15"></script>
+    <script src="afk-toggles.js?v=48ea4e2c78ec"></script>
     <!-- afk-dup-frames：重複動畫幀改指向同一張圖（公開版只留一張；清單由 scripts/build-dup-frames.py 產生） -->
     <!-- afk-webp-frames-data：動畫幀改讀 WebP 的開關（開發版關、公開版部署時換成開；scripts/build-webp-frames.py） -->
     <script src="afk-webp-frames-data.js?v=5f5a153623eb"></script>
@@ -665,12 +665,12 @@
     <!-- 存檔解壓快取：必須排在所有會讀 localStorage 的外掛之前（核心每殺一隻怪都重解壓一次血盟狀態） -->
     <script src="afk-lzcache.js?v=c466838d97c0"></script>
     <!-- afk-perf：卡頓修正（日誌批次寫入／背包分頁按需重建）。必須排在 afk-toast（包 logSys）與 afk-itemsearch（包 renderTabs）之前 -->
-    <script src="afk-perf.js?v=98a7690377f7"></script>
+    <script src="afk-perf.js?v=8896bb012e25"></script>
     <script src="afk-display.js?v=d126f73ab790"></script>
     <!-- afk-mapsync：地圖下拉自我校正（回城／出發後地區/地圖下拉與所在地不符時自動校正） -->
     <script src="afk-mapsync.js?v=3349ebbc7cc1"></script>
     <!-- afk-autoreload：定時自動重新整理（預設每 4 小時，安全時機才做，重整後自動回到原角色） -->
-    <script src="afk-autoreload.js?v=f83f431d70a8"></script>
+    <script src="afk-autoreload.js?v=42d0104819e7"></script>
     <!-- afk-update：網站有新版本時提示更新（按一下存檔重整回原角色；閒置時由 afk-autoreload 自動更新） -->
     <script src="afk-update.js?v=850c0917fa5c"></script>
     <!-- afk-dreamhell：瘋狂席琳席琳夢域鏡模式（需核心補丁 18）；排在 afk-droplog／afk-dropcount 之前，讓它們看得到新掉落 -->
@@ -1274,7 +1274,7 @@
 <script src="merged/class-catalog.js?v=a65731deed9a"></script>
 <script src="merged/class-core.js?v=267db78020c4"></script>
 <script src="merged/class-runtime.js?v=9984ffd4d018"></script>
-<script src="merged/class-combat.js?v=feab6ad60977"></script>
+<script src="merged/class-combat.js?v=ed9feb7757ea"></script>
 <script src="merged/sherine-catalog.js?v=0c410293e90b"></script>
 <script src="merged/sherine-core.js?v=9e19403e14a4"></script>
 <script src="merged/sherine-runtime.js?v=ccca8279450b"></script>

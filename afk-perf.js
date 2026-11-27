@@ -407,7 +407,8 @@
   //    核心會照原本流程重新載入（讀瀏覽器快取，看到的只是第一次出現時那半秒靜態圖）。
   // ──────────────────────────────────────────────────────────────────────
   if (on('perf-mem')) {
-    var BUDGET = 192 * 1048576;   // 不在畫面上的動畫圖片，最多保留這麼多（解碼後估計）
+    var BUDGET = 200 * 1048576;   // 11-28 Ping：192→200MB
+      // 不在畫面上的動畫圖片，最多保留這麼多（解碼後估計）
     window.AFK_PERF_MEM = { setBudget: function (b) { b = Number(b); if (b > 16 * 1048576) BUDGET = b; }, budget: function () { return BUDGET; } };   // 🔋 afk-lowend：低階裝置縮小預算
     var GET = {
       mob: function () { return typeof _mobAnimCache !== 'undefined' ? _mobAnimCache : null; },

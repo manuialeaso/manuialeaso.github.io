@@ -5,7 +5,7 @@
  const hp=x=>N(x===player?x.hp:x.curHp==null?x.hp:x.curHp),hpKey=x=>x===player||x.curHp==null?'hp':'curHp';
  const maxhp=x=>x.cls?N(x.mhp)||1:W.AFK_RELIC_COMPANIONS?.maxHp(x)||N(x.mhp||x.maxHp||x.hp)||1;
  const live=x=>!!(x&&!x.dead&&!x._downed&&!x._dead&&hp(x)>0);
- function st(p){let s=states.get(p);if(!s){s={buffs:{},marks:new Map(),cd:{},resources:{corpse:0},delayed:[],dots:[],damageLog:[],shieldLog:[],elementHistory:new Set(),lastAuto:-10,baseline:1};states.set(p,s);}return s;}
+ function st(p){let s=states.get(p);if(!s){s={buffs:{},marks:new WeakMap(),cd:{},resources:{corpse:0},delayed:[],dots:[],damageLog:[],shieldLog:[],elementHistory:new Set(),lastAuto:-10,baseline:1};states.set(p,s);}return s;}
  function ms(m){if(!m)return {born:now(),debuffs:{},breaches:{}};let s=mobStates.get(m);if(!s){s={born:now(),debuffs:{},breaches:{}};mobStates.set(m,s);}return s;}
  function enemies(){return (mapState.mobs||[]).filter(live);}
  function castMode(s){return s?.plan.channel==='melee'?'basic':s?.plan.channel==='ranged'?'ranged':'magic';}
@@ -37,7 +37,8 @@
   if(o.filter==='single')return c.normalAttack&&!c.aoe;
   if(o.filter==='heavy')return !!c.heavy;
   return o.filter===c.kind;} function value(p,key,target,ctx){let n=0;for(const o of passive(p))if(o.kind==='passive'&&o.key===key&&condition(p,o,target))n+=o.value;let timed=0,negative=0;for(const b of buffs(p))if(b.key===key&&condition(p,b,target)&&filter(b,ctx)){timed=Math.max(timed,b.value);negative=Math.min(negative,b.value);}return n+negative+Math.max(timed,aura(p,key,target,ctx));}
- function mark(p,t){const s=st(p);if(!t)return {};let m=s.marks.get(t);if(!m){m={stack:0,mark:0,casts:new Set(),last:0};s.marks.set(t,m);}if(now()-m.last>12){m.stack=0;m.casts.clear();}return m;}
+ // 11-28 Ping：印記改用 WeakMap。原本的 Map 把每一隻查過的怪都留著，打死也不放（4 人掛機 4 小時累積 3.5 萬隻、約 230MB）
+ function mark(p,t){const s=st(p);if(!t)return {};const store=typeof t==='object'||typeof t==='function'?s.marks:(s.idMarks||=new Map());let m=store.get(t);if(!m){m={stack:0,mark:0,casts:new Set(),last:0};store.set(t,m);}if(now()-m.last>12){m.stack=0;m.casts.clear();}return m;}
  function putMark(p,t,sec,stack){if(!live(t))return;const m=mark(p,t);m.mark=now()+sec+value(p,'markDuration');m.last=now();if(stack)m.stack=Math.min(3,N(m.stack)+1);mapRecipient(t,'mark');}
  function usable(p,id){return !!(live(p)&&!p.classicMode&&C.valid(p)&&C.canUse(p,id));}
  function cooldown(p,s){const cds=p.classPath?.cooldowns||{},key=s.type==='大絕'?'ult':s.type==='龍魔法'?'dragon:'+s.id:s.id;return Math.max(0,(N(cds[key])-Date.now())/1000,s.type==='龍魔法'?(N(cds.dragonGlobal)-Date.now())/1000:0);}
