@@ -169,8 +169,9 @@
   // 讀算好的樣式很慢（每個屬性都要查一次），所以照元素的 class 與 style 屬性記住結果，沒變就不重讀。
   // 透明度會有漸變動畫，每幀照讀。
   const looks = new WeakMap();
-  function look(x) {
-    const sig = x.className + '|' + (x.getAttribute('style') || '');
+  // 子元素的樣式也受外層 class 影響（例如 .mob-target.active 底下的外框），所以把角色節點的 class 一起算進去。
+  function look(x, outer = '') {
+    const sig = x.className + '|' + (x.getAttribute('style') || '') + '|' + outer;
     let v = looks.get(x);
     if (v && v.sig === sig) return v;
     const s = style(x);
@@ -188,8 +189,9 @@
     const rect = el.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     let scale = 1, sign = 1, alpha = 1, outlineColor = null;
+    const outer = options.node ? options.node.className : '';
     for (let x = el; x && x !== field; x = x.parentElement) {
-      const v = look(x);
+      const v = look(x, x === options.node ? '' : outer);
       scale *= v.scale; sign *= v.sign;
       alpha *= Number(style(x).opacity);
       if (alpha <= 0.01) return;
@@ -203,7 +205,7 @@
     const source = options.source || el;
     const nw = source.naturalWidth || source.width, nh = source.naturalHeight || source.height;
     if (!nw || !nh) return;
-    const v = look(el);
+    const v = look(el, el === options.node ? '' : outer);
     const s = { objectFit: v.fit, mixBlendMode: v.blend };
     // 版面上的大小（不含旋轉）×累積縮放 → 畫布單位
     let bw = (el.offsetWidth || rect.width / g) * scale, bh = (el.offsetHeight || rect.height / g) * scale;
