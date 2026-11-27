@@ -706,6 +706,17 @@ function install() {
     }
     for(const id of companions.keys())if(!seen.has(id))companions.delete(id);
   }
+  // 11-27 Ping：量測點。只有帶測試口令的裝置會記錄（一般玩家進不了自由走動，也不會跑到這裡）；結果放在 window.GiranProbe，用來找每一幀花最多時間的段落。
+  const probe = (() => {
+    let on = false;
+    try { on = !!localStorage.getItem('giran.tester.v1'); } catch {}
+    if (!on) return null;
+    const totals = {}, state = {frames:0, totals, last:0, reset(){ for (const k in totals) delete totals[k]; state.frames = 0; }};
+    state.begin = () => { state.last = performance.now(); state.frames++; };
+    state.mark = name => { const t = performance.now(); totals[name] = (totals[name] || 0) + t - state.last; state.last = t; };
+    window.GiranProbe = state;
+    return state;
+  })();
   function frame(now) {
     request = 0;
     if (!active || suspended) return;
@@ -737,10 +748,12 @@ function install() {
         const width=fieldWidth || field.clientWidth,height=fieldHeight || field.clientHeight;
         if(!width||!height){request=requestAnimationFrame(frame);return;}
         const resized=terrain.width!==width || terrain.height!==height;
+        probe?.begin();
         terrain.prepare(width,height,now);
         if(terrain.kind==='loading'||terrain.pending||terrain.resolving){GiranFieldUI.update(terrain);request=requestAnimationFrame(frame);return;}
         if (renderedRevision !== terrain.revision) { clearMovement(); renderedRevision = terrain.revision; }
         terrain.draw(leader,width,height,now);
+        probe?.mark('地形');
         if(resized)plannedAt=0;
         if(field.dataset.dmMap!==mapKey)field.dataset.dmMap=mapKey;
         if(field.dataset.dmScene!==sceneId)field.dataset.dmScene=sceneId;
@@ -753,7 +766,9 @@ function install() {
         if (plan) { plannedAt=now+320; cachedTarget=uid; }
         board.begin([leader,...allies.values(),...mobs.values(),...companions.values()],leader,plan);
         if(blinkMap===mapKey&&!terrain.resolving&&!terrain.pending){relocate();board.begin([leader],leader,true);}
+        probe?.mark('站位表');
         batchWorldRender(GiranRoam.update,worldState,now);
+        probe?.mark('走動決策');
         const deployed=GiranPartyView.combatAllies();
         const spaced=mobileQuery.matches && deployed.length>=5;
         const crowd=mobs.size>=16;
@@ -772,11 +787,24 @@ function install() {
             mobPlan=(mobPlan+count)%Math.max(1,enemies.length);mobPlanAt=now+75;
           }
         }
+        probe?.mark('分批規劃');
         updateMobs(seconds,spaced||crowd?false:plan);
+        probe?.mark('怪物');
         if(heads.hidden)heads.hidden=false;
         updateParty(seconds,spaced?(plan?'captain':false):plan,now,deployed);
-        updateCompanions(seconds,plan);terrain.endCovers();
-        placeDoors();batchWorldRender(GiranCombat.update,now); actions.frame(now,terrain.width,terrain.height);GiranFieldUI.update(terrain);
+        probe?.mark('隊伍');
+        updateCompanions(seconds,plan);
+        probe?.mark('寵物召喚');
+        terrain.endCovers();
+        probe?.mark('遮蔽');
+        placeDoors();
+        probe?.mark('傳送門');
+        batchWorldRender(GiranCombat.update,now);
+        probe?.mark('戰鬥同步');
+        actions.frame(now,terrain.width,terrain.height);
+        probe?.mark('動作特效');
+        GiranFieldUI.update(terrain);
+        probe?.mark('介面');
         serviceForegroundClock();
       }
     } catch (error) {

@@ -665,6 +665,16 @@ function vfxMiss(mob) {
 const _numberPools={plain:[],tagged:[]};
 // 11-27 Ping：自由走動同時最多 15 個傷害數字，超過就直接收掉最舊的（8 人隊伍打一群怪時原本會同時飄一百多個）。舊版次元不限。
 const _liveNumbers=[], _numberCap=document.documentElement.dataset.playMode==='fusion'?15:0;
+// 11-27 Ping：數字本體拆成「光暈層＋字本體」兩層。字體販賣所的字原本用濾鏡畫光暈，每個數字每一幀都要重算，數字一多就卡；
+// 改成光暈用文字陰影畫在底下那層（.vfx-dmg-glow，沒換字體時不顯示）、漸層字畫在上面那層（.vfx-dmg-ink）。回傳值的 data 一次改兩層。
+function _vfxInk(holder) {
+    const glow=document.createElement('i'),ink=document.createElement('span');
+    const under=document.createTextNode(''),over=document.createTextNode('');
+    glow.className='vfx-dmg-glow';glow.style.display='none';glow.setAttribute('aria-hidden','true');
+    ink.className='vfx-dmg-ink';
+    glow.append(under);ink.append(over);holder.append(glow,ink);
+    return {get data(){return over.data;},set data(v){under.data=v;over.data=v;}};
+}
 function _vfxNumber(x, y, dmg, ele, big, parent) {
     if (window.__vfxNumOff) return;   // 🔢 v3.0.2 「只關傷害數字」獨立開關：關掉所有飄動傷害數字(致命/非致命皆走此唯一渲染點)·其餘特效不受影響
     const tagged=big==='crit'||big==='heavy',pool=tagged?_numberPools.tagged:_numberPools.plain;
@@ -675,8 +685,8 @@ function _vfxNumber(x, y, dmg, ele, big, parent) {
             const tag=document.createElement('span'),value=document.createElement('span');
             tag.className='vfx-dmg-tag';value.className='vfx-dmg-value';
             el.dmTag=document.createTextNode('');tag.append(el.dmTag);
-            el.dmValue=document.createTextNode('');value.append(el.dmValue);el.append(tag,value);
-        } else {el.dmValue=document.createTextNode('');el.append(el.dmValue);}
+            el.dmValue=_vfxInk(value);el.append(tag,value);
+        } else el.dmValue=_vfxInk(el);
     }
     let isMiss = ele === 'miss';
     el.className = 'vfx-dmg' + (big ? ' vfx-crit' : '') + (big === 'crit' ? ' vfx-critical' : (big === 'heavy' ? ' vfx-heavy' : '')) + (isMiss ? ' vfx-miss' : '');
