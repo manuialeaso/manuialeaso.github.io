@@ -44,7 +44,7 @@
     const x = Number.isFinite(n[0]) ? n[0] : 1;
     return [Math.abs(x) || 1, x < 0 ? -1 : 1];
   }
-  const capacity = () => mobile() ? 400 : 1500;
+  const capacity = () => mobile() ? 600 : 2500;
   const resolution = scale => Math.max(1, Math.min((W.devicePixelRatio || 1) * scale, mobile() ? 1.5 : 2));
 
   function fail(error) {
@@ -166,18 +166,34 @@
     return (r << 16) | (g << 8) | b;
   }
 
+  // 讀算好的樣式很慢（每個屬性都要查一次），所以照元素的 class 與 style 屬性記住結果，沒變就不重讀。
+  // 透明度會有漸變動畫，每幀照讀。
+  const looks = new WeakMap();
+  function look(x) {
+    const sig = x.className + '|' + (x.getAttribute('style') || '');
+    let v = looks.get(x);
+    if (v && v.sig === sig) return v;
+    const s = style(x);
+    const [ts, tf] = parseTransform(s.transform), [ss, sf] = parseScale(s.scale);
+    v = { sig, scale: ts * ss, sign: tf * sf,
+      outline: s.filter !== 'none' && s.filter.includes('drop-shadow') ? colorOf(s.filter) : null,
+      blend: s.mixBlendMode === 'multiply' || s.mixBlendMode === 'screen' ? s.mixBlendMode : 'normal',
+      pad: [parseFloat(s.paddingLeft) || 0, parseFloat(s.paddingRight) || 0, parseFloat(s.paddingTop) || 0, parseFloat(s.paddingBottom) || 0],
+      fit: s.objectFit, animated: s.transitionProperty !== 'all' || s.animationName !== 'none' };
+    looks.set(x, v);
+    return v;
+  }
   // 一張圖：在畫布上的中心、寬高、翻轉、透明度、混色、外框
   function leaf(items, el, field, g, fr, z, order, options = {}) {
     const rect = el.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     let scale = 1, sign = 1, alpha = 1, outlineColor = null;
     for (let x = el; x && x !== field; x = x.parentElement) {
-      const s = style(x);
-      const [ts, tf] = parseTransform(s.transform), [ss, sf] = parseScale(s.scale);
-      scale *= ts * ss; sign *= tf * sf;
-      alpha *= Number(s.opacity);
+      const v = look(x);
+      scale *= v.scale; sign *= v.sign;
+      alpha *= Number(style(x).opacity);
       if (alpha <= 0.01) return;
-      if (outlineColor === null && s.filter !== 'none' && s.filter.includes('drop-shadow')) outlineColor = colorOf(s.filter);
+      if (outlineColor === null && v.outline !== null) outlineColor = v.outline;
       if (x === options.node) {
         // 節點外面（#mob-list、#pet-layer）只看透明度
         for (let p = x.parentElement; p && p !== field; p = p.parentElement) alpha *= Number(style(p).opacity);
@@ -187,11 +203,11 @@
     const source = options.source || el;
     const nw = source.naturalWidth || source.width, nh = source.naturalHeight || source.height;
     if (!nw || !nh) return;
-    const s = style(el);
+    const v = look(el);
+    const s = { objectFit: v.fit, mixBlendMode: v.blend };
     // 版面上的大小（不含旋轉）×累積縮放 → 畫布單位
     let bw = (el.offsetWidth || rect.width / g) * scale, bh = (el.offsetHeight || rect.height / g) * scale;
-    const pl = parseFloat(s.paddingLeft) * scale || 0, pr = parseFloat(s.paddingRight) * scale || 0;
-    const pt = parseFloat(s.paddingTop) * scale || 0, pb = parseFloat(s.paddingBottom) * scale || 0;
+    const pl = v.pad[0] * scale, pr = v.pad[1] * scale, pt = v.pad[2] * scale, pb = v.pad[3] * scale;
     const cx0 = ((rect.left + rect.right) / 2 - fr.left) / g, cy0 = ((rect.top + rect.bottom) / 2 - fr.top) / g;
     const cw = Math.max(0, bw - pl - pr), ch = Math.max(0, bh - pt - pb);
     let w = cw, h = ch;
