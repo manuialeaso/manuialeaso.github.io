@@ -151,7 +151,9 @@
   function outline(color) {
     let f = outlines.get(color);
     if (!f) {
-      f = new W.GiranPixi.OutlineFilter({ thickness: 1.5, color, quality: 0.15 });
+      // 解析度跟著畫布（預設 1 倍會讓有外框的角色變糊）
+      f = new W.GiranPixi.OutlineFilter({ thickness: 1, color, alpha: 0.85, quality: 0.15 });
+      f.resolution = 'inherit';
       outlines.set(color, f);
     }
     return f;
