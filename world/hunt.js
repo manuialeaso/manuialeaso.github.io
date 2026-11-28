@@ -1,19 +1,21 @@
 'use strict';
 window.GiranHunt=(()=>{
-  const tiers=[[3,3],[5,8],[12,16],[20,26],[32,40]];
+  // 11-28 Ping：三檔——1＝原版、2＝每個出生點 2 倍、3＝3 倍（原版 3 隻的點最多 9 隻）
+  const tiers=[[3,3],[6,6],[9,9]];
   function population(value){
     const n=Number(value);
-    if(Number.isInteger(n)&&n>=1&&n<=5)return n;
-    if([18,20,24,32].includes(n))return 5;
+    if(Number.isInteger(n)&&n>=1&&n<=3)return n;
     return 1;
   }
+  // 舊存檔是 5 檔：1→1、2～3→2、4～5→3
+  const legacy=v=>{const n=Number(v);return Number.isInteger(n)&&n>=1&&n<=5?[1,2,2,3,3][n-1]:1;};
+  function stored(settings,key){const v=settings?.[key];return settings?.popV===2?population(v):legacy(v);}
   function activePopulation(settings){
-    if(!window.GiranPartyView?.mobile())return population(settings?.population);
-    return Math.min(2,population(settings?.mobilePopulation??settings?.population));
+    if(!window.GiranPartyView?.mobile())return stored(settings,'population');
+    return stored(settings,settings?.mobilePopulation!=null?'mobilePopulation':'population');
   }
   function rollPopulation(tier){
-    const limit=window.GiranPartyView?.mobile()?2:tiers.length;
-    const [min,max]=tiers[Math.min(limit,population(tier))-1];
+    const [min,max]=tiers[population(tier)-1];
     return min+Math.floor(Math.random()*(max-min+1));
   }
   const empty=()=>({radius:0,home:0,idle:0,rest:0,resume:60,escape:false,bossFirst:false,population:1,lists:{}});
@@ -129,11 +131,10 @@ window.GiranHunt=(()=>{
   function exactSettlement(){const h=player.giranHunt;return !!(h&&(h.home||h.idle||h.rest||h.escape||Object.keys(h.lists||{}).length)&&normal());}
   const selector=document.querySelector('#giran-hunt-options [name="population"]');
   const panel=selector?.closest('details');
-  const options=tiers.map(([min,max],i)=>new Option('第'+'一二三四五'[i]+'階段 · '+(min===max?min:min+'–'+max)+' 隻',String(i+1)));
+  const options=['原版數量','原版 2 倍','原版 3 倍'].map((t,i)=>new Option('第'+'一二三'[i]+'檔 · '+t,String(i+1)));
   function refreshPopulation(){
     if(!selector)return;
-    const count=window.GiranPartyView?.mobile()?2:options.length;
-    if(selector.options.length!==count)selector.replaceChildren(...options.slice(0,count));
+    if(selector.options.length!==options.length)selector.replaceChildren(...options);
     const settings=typeof player==='object'?player?.giranHunt:null;
     selector.value=String(activePopulation(settings));
   }
@@ -148,7 +149,7 @@ window.GiranHunt=(()=>{
       else if(hunting||roam.instanceSlots()||key==='afk_riftdg'||key==='afk_zodiac'){
         const count=mapState.mobs.filter(m=>m&&!m._dead&&m.curHp>0&&!m.boss&&(!hunting||m._giranSpawn?.kind==='ordinary')).length;
         note='場上普通怪 '+count+' 隻';
-        if(hunting)note+='／本區目標 '+roam.cap+' 隻';
+        if(hunting)note+=roam.fixedNote?.()||'／本區目標 '+roam.cap+' 隻';
         else note+=' · 依關卡波次出場';
       }else note='此戰場依關卡編制出場';
     }
@@ -177,7 +178,8 @@ window.GiranHunt=(()=>{
       if(!k||!player?.cls||document.body.classList.contains('giran-guest'))return;
       const h=player.giranHunt||=empty();
       if(k==='population'){
-        if(window.GiranPartyView?.mobile())h.mobilePopulation=Math.min(2,population(input.value));
+        if(h.popV!==2){h.population=legacy(h.population);if(h.mobilePopulation!=null)h.mobilePopulation=legacy(h.mobilePopulation);h.popV=2;}
+        if(window.GiranPartyView?.mobile())h.mobilePopulation=population(input.value);
         else h.population=population(input.value);
         refreshPopulation();
       }else if(k==='ignore'||k==='avoid'){

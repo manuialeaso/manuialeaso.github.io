@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-6026358fd4ee",
+  "build": "giran-0.8.25-f175fb7b70ae",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -1918,8 +1918,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "dimension-map/stride-view.js?v=5e831b24101c",
-      "sha256": "5e831b24101c9a0314763b8e17a67d212a1ed3167b13e7b4ba75396511731015",
+      "url": "dimension-map/stride-view.js?v=55b6667d8a46",
+      "sha256": "55b6667d8a469977c56f28cf2de9124e65ed41ed4a9b0fafd7110614bbfdfd3c",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1959,7 +1959,7 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "a12fa406b5ba8665c5ed824c389d2032e7279f5c4bf9f94cacc0d0de08a99d23",
+      "sha256": "1283472ef0c7a5600adb40a5f9e3dec6cf9742340007fb0acf2724ec03ee58d9",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1969,7 +1969,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "f2e656ca71ee1135f014f914060f3bea9a13cbd6c25b4afdef9b13bec00fad74",
+      "sha256": "1cb19f7622f0f7d31479d23309e0bfbb977f42663b02d2342187d83540cdc253",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2524,7 +2524,7 @@
     },
     {
       "url": "recovery.html",
-      "sha256": "d2f98771930e17d615d06fab989b27618bf1c9f865b9d6a8d3b7dec987423686",
+      "sha256": "d0e60a1b0c0f76c719f65621557cbd49c1cd39daa5211983000017801c2e17b6",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2653,8 +2653,8 @@
       "type": "application/json; charset=utf-8"
     },
     {
-      "url": "world/hunt.js?v=0646f922a519",
-      "sha256": "0646f922a5191eaf2ecdf7f36c7f0e80c455c7780524c0f266de1896c1745363",
+      "url": "world/hunt.js?v=00c4532f2a32",
+      "sha256": "00c4532f2a329a3646bfb14f376d9afaa9ae34b72ee16887b92248bfe74dbb8d",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -2663,8 +2663,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "world/journal-view.js?v=d210b37a7612",
-      "sha256": "d210b37a7612ec4df99a2d8172c826da4ad3d98388bbf7025473b48550209536",
+      "url": "world/journal-view.js?v=48c10aeb74a1",
+      "sha256": "48c10aeb74a1ff523afd96af2dcd72b02296c64d00254b5cdd5bd4e86c8578d6",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -2703,8 +2703,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "world/open-world.js?v=d7fbca60b816",
-      "sha256": "d7fbca60b816872bc814dfee00cb0fdc67531aac5de8827973b9e2cae7f06dcc",
+      "url": "world/open-world.js?v=f1fc54b2a5dc",
+      "sha256": "f1fc54b2a5dc16738dff78608777f7b6ed83efdcb274594104a06ebdc2b09091",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -2755,6 +2755,11 @@
     {
       "url": "world/spatial.js?v=84e5e93277e6",
       "sha256": "84e5e93277e616e4c10ca4d42e4b946340d0303829ab4a1a4e00cb7893dd9ba6",
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "world/spawn-points.js?v=179b7f60d154",
+      "sha256": "179b7f60d154daf15bd9422599bde61c419a96126651249d240805e76584d23d",
       "type": "text/javascript; charset=utf-8"
     },
     {

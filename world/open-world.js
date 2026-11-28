@@ -205,6 +205,113 @@ window.GiranRoam=(()=>{
       return !mob.boss||!mapState.mobs.some(other=>alive(other)&&other.boss&&other.n===mob.n);
     }
   }
+  // ── 11-28 Ping：生怪跟奇岩版一樣——怪固定在原版出生點，走過去才遇到；打掉後該點 10 秒重生 ──
+  //   主大陸用 GiranHuntingData（奇岩來源 3,232 點）；其他地圖用 3.50C 伺服器 spawnlist（GiranSpawnPoints）；
+  //   兩者都沒有的地圖，依地形在每個 16×16 區塊固定算出出生點（同一張圖每次都一樣）。扭亂時空照舊用自己的規則。
+  //   密度三檔：每個出生點的隻數 ×1／×2／×3。效能保護：同時在場最多 60 隻（手機 24 隻），先補離隊長近的。
+  const FIXED_CAP=()=>GiranPartyView.mobile()?24:60, FIXED_REACH=30, FIXED_RELEASE=34;
+  let fixedPts={map:null}, fixedFloor={floor:null,set:null}, fixedSlots=0;
+  function hash32(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+  function fixedPoints(f){
+    const map=f.terrain.sourceMap??f.terrain.world.map?.id;
+    if(fixedPts.map===map&&fixedPts.zone===zone)return fixedPts;
+    const list=[],grid=new Map();
+    if(fieldSource&&map===fieldSource.map){for(const rows of Object.values(fieldSource.buckets))for(const [n,x,y,c] of rows)list.push({npc:n,x,y,c:Math.max(1,c||1)});}
+    else for(const r of window.GiranSpawnPoints?.maps?.[map]||[])list.push({npc:r[0],x:r[1],y:r[2],c:Math.max(1,r[3]||1),rx:r[4]||0,ry:r[5]||0,box:r[6]||r[8]?[r[6],r[7],r[8],r[9]]:null});
+    list.forEach((p,i)=>{p.i=i;const k=(p.x>>4)+','+(p.y>>4);let g=grid.get(k);if(!g)grid.set(k,g=[]);g.push(p);});
+    return fixedPts={map,zone,list,grid,made:new Set(),generated:!list.length};
+  }
+  function fixedPool(){return (DB.maps[mapState.current]||[]).filter(id=>DB.mobs[id]&&!DB.mobs[id].boss&&!DB.mobs[id].trollPlayer);}
+  function fixedMob(p,pool){
+    if(p.id!==undefined)return p.id;
+    let id=null;
+    if(p.npc&&Object.hasOwn(GiranAtlasData.nativeFallback,p.npc)){const k=GiranAtlas.mobKey(p.npc);if(DB.mobs[k])id=k;}
+    if(!id&&pool.length){
+      const lv=window.GiranSpawnPoints?.levels?.[p.npc];
+      if(lv>0){let best=null,bd=1e9;for(const k of pool){const d=Math.abs((DB.mobs[k].lv||1)-lv);if(d<bd){bd=d;best=k;}}id=best;}
+      else id=pool[hash32(zone+'/'+p.i)%pool.length];
+    }
+    return p.id=id;
+  }
+  // 沒有出生資料的地圖：每個 16×16 區塊整塊載入後，依地形固定算出出生點（約每 100 格可走地 1 點、每點 1～2 隻）
+  function generateBlock(f,P,bx,by,pool){
+    const key=bx+','+by;if(P.made.has(key)||!pool.length)return;
+    const w=f.terrain.world,d=w.map?.d;if(!d)return;
+    const x0=bx*16-d.gameX0,y0=by*16-d.gameY0;
+    if(!w.viewReady([x0,y0,x0+15,y0+15],true))return;
+    P.made.add(key);
+    const cells=[];
+    for(let y=0;y<16;y++)for(let x=0;x<16;x++)if(w.pass(x0+x,y0+y)&&w.hasGround(x0+x,y0+y))cells.push([bx*16+x,by*16+y]);
+    const n=Math.floor((cells.length+hash32(P.map+'/'+key)%100)/100);
+    const out=[];
+    for(let i=0;i<n&&cells.length;i++){
+      const h=hash32(P.map+'/'+key+'/'+i),[x,y]=cells[h%cells.length];
+      const p={i:P.list.length,x,y,c:1+(h>>>8)%2,id:pool[(h>>>12)%pool.length]};
+      P.list.push(p);out.push(p);
+    }
+    if(out.length)P.grid.set(key,(P.grid.get(key)||[]).concat(out));
+  }
+  function floorSet(f){
+    if(fixedFloor.floor!==f.board.floor){const s=new Set();for(const [x,y] of f.board.floor)s.add(x*131072+y);fixedFloor={floor:f.board.floor,set:s};}
+    return fixedFloor.set;
+  }
+  function fixedSites(f){
+    const P=fixedPoints(f),pool=fixedPool(),floor=floorSet(f),leader=f.leader,mult=GiranHunt.activePopulation(player?.giranHunt);
+    const out=[],bx0=(leader.x-FIXED_REACH)>>4,bx1=(leader.x+FIXED_REACH)>>4,by0=(leader.y-FIXED_REACH)>>4,by1=(leader.y+FIXED_REACH)>>4;
+    for(let bx=bx0;bx<=bx1;bx++)for(let by=by0;by<=by1;by++){
+      if(P.generated)generateBlock(f,P,bx,by,pool);
+      for(const p of P.grid.get(bx+','+by)||[]){
+        if(gap(p,leader)>FIXED_REACH)continue;
+        const id=fixedMob(p,pool);if(!id)continue;
+        const n=p.c*mult;
+        for(let k=0;k<n;k++){
+          let x=p.x,y=p.y;
+          const box=p.box||(p.rx||p.ry?[p.x-p.rx,p.y-p.ry,p.x+p.rx,p.y+p.ry]:null);
+          if(box){   // 原版的隨機範圍：在範圍內固定挑一格可站的地
+            const w=Math.max(1,box[2]-box[0]+1),h=Math.max(1,box[3]-box[1]+1);
+            for(let t=0;t<8;t++){const r=hash32(P.map+'/'+p.i+'/'+k+'/'+t),cx=box[0]+r%w,cy=box[1]+(r>>>12)%h;if(floor.has(cx*131072+cy)){x=cx;y=cy;break;}}
+          }
+          if(!floor.has(x*131072+y)||!GiranGates.outsideVillage(f.terrain,x,y))continue;
+          out.push({x,y,id,key:'sp/'+P.map+'/'+p.i+'/'+k});
+        }
+      }
+    }
+    out.sort((a,b)=>gap(a,leader)-gap(b,leader));
+    return out;
+  }
+  function updateFixed(f,now){
+    const {leader}=f,cap=FIXED_CAP();
+    nextScan=now+500;
+    let changed=false;
+    const sites=fixedSites(f);fixedSlots=sites.length;
+    const used=new Set();let live=0;
+    for(const [i,m] of mapState.mobs.entries()){
+      if(!alive(m))continue;
+      const tag=m._giranSpawn;
+      if(tag&&tag.kind!=='ordinary'){live++;continue;}   // 事件、首領等照舊
+      const at=f.point(m),pos=at||(tag?{x:tag.cell[0],y:tag.cell[1]}:null);
+      if(!tag||!tag.key.startsWith('sp/')||!pos||gap(leader,pos)>FIXED_RELEASE||!GiranGates.outsideVillage(f.terrain,pos.x,pos.y)){
+        if(tag&&tag.key.startsWith('sp/')){const rec=store(m,tag);rec.x=pos?.x;rec.y=pos?.y;}
+        mapState.mobs[i]=null;if(mapState.targetIdx===i)mapState.targetIdx=-1;
+        if(focus===m||candidate===m)resetChoice();changed=true;continue;
+      }
+      const rec=store(m,tag);rec.x=pos.x;rec.y=pos.y;used.add(tag.key);live++;
+    }
+    if(GiranWorldBosses.spawn(freeSlot()))changed=true;   // 原版首領：固定點、10 分鐘重生（照舊）
+    let arrivals=0;const wave=enteringField?24:8;enteringField=false;
+    for(const p of sites){
+      if(live>=cap||arrivals>=wave)break;
+      if(used.has(p.key)||(player.giranHuntRecovery?.[p.key]||0)>Date.now())continue;
+      if(!make(f,p,false))continue;
+      used.add(p.key);live++;arrivals++;changed=true;
+    }
+    if(arrivals>=wave)nextScan=now+120;
+    if(residents.size>600){
+      const stale=[...residents].filter(([,r])=>!mapState.mobs.includes(r.mob)).sort((a,b)=>a[1].seen-b[1].seen);
+      for(const [k] of stale.slice(0,residents.size-480))residents.delete(k);
+    }
+    if(changed){renderMobs();nextSearch=0;}
+  }
   function update(f,now){
     actorChanged();
     if(!owns()||!f.ready())return;
@@ -227,6 +334,7 @@ window.GiranRoam=(()=>{
       return;
     }
     const twisted=window.TwistedSpace?.here()?TwistedSpace:null;
+    if(!twisted)return updateFixed(f,now);
     const living=mapState.mobs.filter(alive);
     const existing=living.filter(m=>twisted?twisted.resident(m):m._giranSpawn?.kind==='ordinary');
     const guests=living.length-existing.length;
@@ -344,6 +452,7 @@ window.GiranRoam=(()=>{
   }
   return {manual,mode,choose,locked,selectTarget,owns,update,given,ai,patrol,alive,leaveVillage,instanceSlots,waveSize,waveCell,
     get spawning(){return !!request;},get cap(){return capacity();},
+    fixedNote(){return window.TwistedSpace?.here()?'':'／附近出生點 '+fixedSlots+' 隻（第'+'一二三'[GiranHunt.activePopulation(player?.giranHunt)-1]+'檔）';},
     defeated(m){if(m?._giranSpawn){residents.delete(m._giranSpawn.key);nextScan=0;}if(focus===m||candidate===m)resetChoice();},
     observe(m,at){const r=residents.get(m?._giranSpawn?.key);if(r&&at){r.x=at.x;r.y=at.y;}},
     refresh(){stamp='';nextScan=0;nextSearch=0;},

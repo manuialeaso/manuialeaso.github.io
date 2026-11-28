@@ -127,7 +127,8 @@ function terrainCellWidth(terrain){
 function figureHeight(terrain,kind,standingInk){
   const cell=terrainCellWidth(terrain);
   if(kind==='character')return cell*1.48;
-  if(kind==='npc')return cell*1.16;
+  // 11-28 Ping：NPC 照原圖比例（人形約等於玩家 1.48 格，小惡魔這類小型 NPC 最低 0.85 格），不再一律 1.16 格
+  if(kind==='npc')return cell*Math.max(.85,Math.min(1.48,standingInk/48));
   // 11-27 Ping：一般怪 0.85～1.5 格（照原圖比例，太小的才放大；1.0 下限會把哥布林放得跟人一樣高）、寵物 0.7～1.0 格、王上限 2.0 格（角色固定 1.48 格）
   const range=kind==='boss'?[1.55,2.0]:kind==='pet'?[.70,1.0]:[.85,1.5];
   return cell*Math.max(range[0],Math.min(range[1],standingInk/48));

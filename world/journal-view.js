@@ -29,12 +29,8 @@
     if(!dialog.open)dialog.showModal();
     try{rows=journal.current().slice().sort((a,b)=>b.at-a.at);limit=40;render();}catch(e){list.replaceChildren();summary.textContent=e.message;more.hidden=true;}
   };
-  if(game){
-    game.after(open);
-    const mobileLogs=document.getElementById('lm-logs');
-    if(mobileLogs){const mobile=open.cloneNode(true);mobile.className='gh-mobile-open';mobile.onclick=open.onclick;mobileLogs.prepend(mobile);}
-    return;
-  }
+  // 11-28 Ping：遊戲畫面的「歷史紀錄」分頁拿掉（紀錄照常保存，修復頁面仍可匯出／匯入）
+  if(game)return;
   const actions=recovery.querySelector('.actions');actions.append(open);
   const details=document.createElement('details');details.innerHTML='<summary>只匯入戰鬥與系統紀錄</summary><p>選擇匯出的紀錄檔。角色、道具及任務進度分開保存。合併後，戰鬥保留最近 400 筆，系統保留最近 600 筆。</p><label class="file-zone">選擇紀錄檔<input type="file" accept=".json,application/json"></label><div class="actions"><button type="button" disabled>合併紀錄</button></div><output aria-live="polite"></output>';recovery.append(details);
   const input=details.querySelector('input'),apply=details.querySelector('button'),status=details.querySelector('output');
