@@ -658,26 +658,8 @@
     box.style.display = show ? 'flex' : 'none';
     if (!show) { var cb = document.getElementById(CONV_ID); if (cb) cb.checked = false; }
   };
-  ['renderLoadSelect', 'updateLoadInfo'].forEach(function (fn) {
-    var o = W[fn]; if (typeof o !== 'function') return;
-    W[fn] = function () { var r = o.apply(this, arguments); try { paintConv(); } catch (e) {} return r; };
-  });
+  // 2026-11-28 Ping：一般角色不能轉經典，經典只能建角時選；選角畫面的「轉為經典模式」拿掉。
   var pendingConvert = false;
-  if (typeof W.loadEnterSelected === 'function') {
-    var oEnter = W.loadEnterSelected;
-    W.loadEnterSelected = function () {
-      var cb = document.getElementById(CONV_ID), sp = selSlotPlayer();
-      if (cb && cb.checked && sp && !sp.classicMode) {
-        var nm = sp.name || '這個角色', tri = false;
-        if (trilogyUnlocked()) tri = confirm('帳號已經開啟黑妖三部曲。\n要讓「' + nm + '」直接進入黑妖三部曲嗎？\n（確定＝三部曲，等級上限 80；取消＝序章，等級上限 50）');
-        var cap = tri ? 80 : 50;
-        if (!confirm('確定要把「' + nm + '」（Lv.' + sp.lv + '）轉為經典模式？\n\n‧等級變成 ' + Math.min(sp.lv || 1, cap) + '、六大屬性全部 18，' + Math.max(0, Math.min(sp.lv || 1, cap) - 50) + ' 點可分配，萬能藥重喝\n‧轉生、精通、傭兵、血盟、席琳的世界不會跟過去\n‧裝備保留，但只剩武器大小傷、防具 AC 與強化值，其他效果封印\n\n轉換後永遠不能轉回一般模式。')) return;
-        if (!confirm('最後確認：真的要把「' + nm + '」轉為經典模式嗎？這個動作無法復原。')) return;
-        pendingConvert = tri ? 2 : 1;
-      }
-      return oEnter.apply(this, arguments);
-    };
-  }
 
   // ── 十一、聖使阿卡塔贖回裝備：經典模式一次一件，冷卻現實時間 12 小時 ──
   var REDEEM_CD = 12 * 3600 * 1000;
@@ -984,25 +966,6 @@
     W.__afkMaxAdd = function (p) { if (p && p.classicMode) return; return oMax.apply(this, arguments); };
     W.__afkMaxAdd.add = adds;
   }
-  // 總閘：經典角色把「新增的玩法、內容、劇情、成長、隱藏規則、平衡調整」全部當成關閉；
-  //   錯誤修正、效能、介面、存檔、自動化與便利功能照常。以後新增的玩法開關預設也一樣不會漏到經典。
-  var GATE_GROUPS = { '遊戲內容': 1, '遊戲玩法': 1, '劇情': 1, '成長': 1, '隱藏規則': 1, '遊戲平衡': 1 };
-  var CLASSIC_KEEP = {};
-  ('offline offlinenodeath offlinechase newbiepvp castlewar maps corrupt traditional wpnfix magefix stunfix autosupply autocancel hotcast ' +
-   'retrial attrbatch cursebatch trackmaps bosstrack matwh redguard').split(' ').forEach(function (k) { CLASSIC_KEEP[k] = 1; });
-  var TG = W.AFK_TOGGLES;
-  if (TG && typeof TG.enabled === 'function' && typeof TG.list === 'function') {
-    var oEnabled = TG.enabled, groupOf = {}, known = 0;
-    var group = function (id) {
-      if (!groupOf[id]) { try { var L = TG.list(); if (L.length !== known) { known = L.length; L.forEach(function (x) { groupOf[x.id] = x.group; }); } } catch (e) {} if (!groupOf[id]) groupOf[id] = ''; }
-      return groupOf[id];
-    };
-    TG.enabled = function (id) {
-      var r = oEnabled.apply(this, arguments);
-      if (!r || CLASSIC_KEEP[id]) return r;
-      var p = P(); if (!(p && p.classicMode)) return r;
-      return GATE_GROUPS[group(id)] ? false : r;
-    };
-  }
+  // 總閘：移到 afk-toggles（經典模式開機分流，2026-11-28），這裡不再重複包 enabled。
   console.log('[AFK-classic] 已啟用：經典模式補正（256K 撥接、不死系頭目、古魯丁地監攀爬、歐林、職業封印）');
 })();

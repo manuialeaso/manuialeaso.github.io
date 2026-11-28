@@ -123,6 +123,97 @@
         openPanel: openPanel
     };
     window.AFK_TOGGLES = api;
+
+    // ── 經典模式開機分流（2026-11-28 Ping：經典版不該有地區霸主、新增的 NPC）──
+    //   新增的玩法外掛大多只在「網頁剛載入」時問一次開關，那時還在首頁、不知道等一下進的是不是經典角色，
+    //   原本放在 afk-classic 的總閘只擋得到「進場後才問」的少數幾支。所以改成：
+    //   這一頁用哪種模式開機記在 sessionStorage；按「進入遊戲」時先看角色存檔，模式不同就先重新整理成
+    //   對的模式再自動進角色（角色還沒載入，離線時間不會被吃掉）。經典開機時，下面這些分組的外掛一開始就不載入。
+    (function () {
+        var BOOT = 'afk_classic_boot', RES = 'afk_classic_resume';
+        var boot = false;
+        try { boot = sessionStorage.getItem(BOOT) === '1'; } catch (e) {}
+        var GATE = { '遊戲內容': 1, '遊戲玩法': 1, '劇情': 1, '成長': 1, '隱藏規則': 1, '遊戲平衡': 1 };
+        var KEEP = {};   // 經典也要的：錯誤修正、離線、攻城、傳統規則等（原 afk-classic 名單）
+        ('offline offlinenodeath offlinechase newbiepvp castlewar maps corrupt traditional wpnfix magefix stunfix autosupply autocancel hotcast ' +
+         'retrial attrbatch cursebatch trackmaps bosstrack matwh redguard').split(' ').forEach(function (k) { KEEP[k] = 1; });
+        var curP = function () { try { return (typeof player !== 'undefined' && player && player.cls) ? player : null; } catch (e) { return null; } };
+        var isClassic = function () { var p = curP(); return p ? !!p.classicMode : boot; };
+        var oEnabled = api.enabled;
+        api.enabled = function (id) {
+            var r = oEnabled(id);
+            if (!r || KEEP[id]) return r;
+            var e = byId[id];
+            if (!e || !GATE[e.group]) return r;
+            return isClassic() ? false : r;
+        };
+        api.classicBoot = function () { return boot; };
+        api.classicGated = function (id) { var e = byId[id]; return !!(e && GATE[e.group] && !KEEP[id]); };
+
+        var switching = false;
+        var cover = function (c) {
+            try {
+                if (document.getElementById('afk-classic-cover')) return;
+                var d = document.createElement('div'); d.id = 'afk-classic-cover';
+                d.style.cssText = 'position:fixed;inset:0;z-index:2147483600;background:#05070b;color:#a39a8e;display:flex;align-items:center;justify-content:center;font:15px/1.6 system-ui,sans-serif;text-align:center;padding:20px';
+                d.textContent = c ? '🕰️ 正在切換為經典模式，馬上進入角色…' : '🔄 正在切換回一般模式，馬上進入角色…';
+                (document.body || document.documentElement).appendChild(d);
+                setTimeout(function () { try { d.remove(); } catch (e) {} }, 20000);
+            } catch (e) {}
+        };
+        var relaunch = function (slot, c) {
+            if (switching) return; switching = true;
+            try { sessionStorage.setItem(BOOT, c ? '1' : '0'); sessionStorage.setItem(RES, JSON.stringify({ slot: slot, at: Date.now(), c: c })); } catch (e) { switching = false; return false; }
+            cover(c);
+            setTimeout(function () { location.reload(); }, 50);
+            return true;
+        };
+        api.classicRelaunch = relaunch;
+
+        // 按「進入遊戲」／手機換角／自動重整回角色：都走 loadGame → 先看存檔是不是經典
+        if (typeof window.loadGame === 'function') {
+            var oLoad = window.loadGame;
+            window.loadGame = function () {
+                try {
+                    var slot = (typeof currentSlot !== 'undefined') ? currentSlot : null;
+                    var sp = (slot && typeof _roleReadSavePlayer === 'function') ? _roleReadSavePlayer(slot) : null;
+                    if (sp && !!sp.classicMode !== boot && relaunch(slot, !!sp.classicMode)) return;
+                } catch (e) {}
+                return oLoad.apply(this, arguments);
+            };
+        }
+        // 保險：新建的經典角色（沒經過 loadGame）或其他路徑進來的 → 存檔後切換
+        setInterval(function () {
+            if (switching) return;
+            var p = curP(); if (!p || !!p.classicMode === boot) return;
+            var gs = document.getElementById('game-screen'); if (!gs || gs.classList.contains('hidden')) return;
+            try { if (typeof state !== 'undefined' && state && state.ff) return; } catch (e) {}
+            try { if (typeof saveGame === 'function') saveGame(); } catch (e) {}
+            relaunch(typeof currentSlot !== 'undefined' ? currentSlot : null, !!p.classicMode);
+        }, 1500);
+
+        // 切換後：自動進回同一格角色
+        var raw = null;
+        try { raw = sessionStorage.getItem(RES); sessionStorage.removeItem(RES); } catch (e) {}
+        var info = null; try { info = raw ? JSON.parse(raw) : null; } catch (e) {}
+        if (info && info.slot && Date.now() - info.at < 3 * 60 * 1000) {
+            if (document.body) cover(info.c); else document.addEventListener('DOMContentLoaded', function () { cover(info.c); });
+            var tries = 0;
+            var enter = function () {
+                tries++;
+                var ready = typeof slotSummary === 'function' && document.readyState === 'complete';
+                var drop = function () { var d = document.getElementById('afk-classic-cover'); if (d) d.remove(); };
+                if (!ready) { if (tries < 60) setTimeout(enter, 500); else drop(); return; }
+                try {
+                    if (!slotSummary(info.slot)) { drop(); return; }
+                    currentSlot = info.slot;
+                    window.loadGame();
+                } catch (e) { try { console.warn('[AFK-toggles] 經典切換後進入角色失敗：', e); } catch (e2) {} }
+                setTimeout(drop, 600);
+            };
+            setTimeout(enter, 800);
+        }
+    })();
     // 核心原始函式的原始碼快照（這支最先載入，其他外掛還沒包過）：有外掛要從核心原始碼讀資料時用這份（afk-trackinfo 讀套裝門檻；2026-10-30 QA）
     try { window.__afkCoreSrc = { recomputeStats: typeof recomputeStats === 'function' ? String(recomputeStats) : '' }; } catch (e) {}
 
