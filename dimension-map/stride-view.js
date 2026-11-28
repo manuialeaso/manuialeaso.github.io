@@ -143,7 +143,10 @@ function bodyHeight(im) {
 function townFigureRatio(reference,terrain) {
   return figureHeight(terrain,'character',bodyHeight(reference))/bodyHeight(reference);
 }
+// 11-28：這幾隻的方向走路圖畫錯角色（或大小跟站立圖差太多），在 GPT 重畫好之前一律不用，走路時用站立圖擺腿代替。
+const WALK_OFF=new Set(['底比斯 巴斯','底比斯 斯芬克斯','火蜥蜴','底比斯 曼陀羅草','底比斯 聖甲蟲','高等蜥蜴人','地獄束縛犬','火焰戰士','水靈之主','希爾黛斯']);
 function monsterSpec(name,dir) {
+  if(WALK_OFF.has(name))return null;
   const anchor=window.GiranBossArt?.anchors[name];
   if(anchor)return {folder:'assets/anim/'+name+'/d'+dir,prefix:'walk_',anchor:()=>anchor};
   const tab=meta?.ANIM?.[name]?.[dir], directory='assets/anim/'+name;
@@ -500,7 +503,7 @@ function stride(actor,el,who,kind) {
     actor.strideDir=dir; actor.strideId=id;
     const folder=isMob && typeof _animDir==='function'?(who._giranArt||_animDir(who.n)):who.n;
     const spec=isMob && /冥皇丹特斯/.test(folder)?{folder:'world/art/dantes/d'+dir,prefix:'walk_'}:isMob?monsterSpec(folder,dir):memberSpec(who,kind==='ally',dir);
-    actor.strideSet=setFor(spec || (isMob && folder ? {folder:'assets/anim/'+folder,prefix:'walk_'} : null));
+    actor.strideSet=setFor(spec || (isMob && folder && !WALK_OFF.has(folder) ? {folder:'assets/anim/'+folder,prefix:'walk_'} : null));
   }
   let set=actor.strideSet;
   if(!set||set.missing)set=poseStride(actor,el,dir,isMob);

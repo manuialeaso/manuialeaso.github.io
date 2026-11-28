@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-8c83e4dae212",
+  "build": "giran-0.8.25-cea04cf36a83",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -1478,8 +1478,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-savelite.js?v=93b8a7efe0d9",
-      "sha256": "93b8a7efe0d994b746ef671b43d3dd03e71a1634fda66b14f51b301546fb540e",
+      "url": "afk-savelite.js?v=b4eb430e00bb",
+      "sha256": "b4eb430e00bbc599620dea073f30e997ddff2984d49eb79667b3b8d9779f55f9",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1623,8 +1623,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-synccompress.js?v=dbf787c7172d",
-      "sha256": "dbf787c7172de5be2e836c608da3ffb5ca9fe69b85567885e0de9924d5605616",
+      "url": "afk-synccompress.js?v=c019b454e4e0",
+      "sha256": "c019b454e4e0c1b33b1f010e31680d35f65c6969f2a8deefdec82045803e2a15",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1849,7 +1849,7 @@
     },
     {
       "url": "class-preview.html",
-      "sha256": "896c0c86e3191f1c55cb65e03c20e0daddb170371cad3dbccb486e29e43074ba",
+      "sha256": "2290258af8c43e2891030db0a6049947cbdee154651d58b7acb227e001d8655a",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1918,8 +1918,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "dimension-map/stride-view.js?v=64ca70199915",
-      "sha256": "64ca70199915c171077f54bf9481d93e0b2a9ec43f7048813e7e5b21ca1158c7",
+      "url": "dimension-map/stride-view.js?v=5e831b24101c",
+      "sha256": "5e831b24101c9a0314763b8e17a67d212a1ed3167b13e7b4ba75396511731015",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1959,17 +1959,17 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "01b2f225298d14ad2ef2d6f0a13d0cb7783b38d3628022118ee46c8b46a10bf3",
+      "sha256": "51c48b351271f33a4307267603b7c80d3f019bbc931682f13069e20d65d40e76",
       "type": "text/html; charset=utf-8"
     },
     {
       "url": "growth-preview.html",
-      "sha256": "c41b40a6c39a1e9dbfbc2ebd458a62ae3716336366ba8885c2522c14b7514f90",
+      "sha256": "d7814df0f70e969bb546d2301f66e42a2fe8665199240b6c01affb9359457517",
       "type": "text/html; charset=utf-8"
     },
     {
       "url": "index.html",
-      "sha256": "17c43451f7f8efcc9b25f97998490199e5918922505fdc0a9161feaf2fc8c6f4",
+      "sha256": "c541fc37b4ec67f1d2c39a064a763734bcb02a27b39662fec646db3292015ad5",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2363,8 +2363,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "merged/media-router.js?v=c072390f3de8",
-      "sha256": "c072390f3de8a4b6fbd3c780c3a47aba02fa9d09e0a2ae664ce42ba84fcac49e",
+      "url": "merged/media-router.js?v=cbd2e7d4ca0a",
+      "sha256": "cbd2e7d4ca0a395ab4823c15ab16876bab7afaea60262230d402002724563cf2",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -2524,7 +2524,7 @@
     },
     {
       "url": "recovery.html",
-      "sha256": "a4c315eca5d0ffff0b2e8a4ad98abcbebc0614f8b745e20f870d266bf215397e",
+      "sha256": "d2f98771930e17d615d06fab989b27618bf1c9f865b9d6a8d3b7dec987423686",
       "type": "text/html; charset=utf-8"
     },
     {

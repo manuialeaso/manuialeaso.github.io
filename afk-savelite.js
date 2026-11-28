@@ -112,5 +112,5 @@
     } catch (e) {}
   };
   setInterval(flushTick, 1000);
-  W.__afkSaveLite = { GAP: GAP, tick: flushTick, stats: function () { return { saves: st.saves, skipped: st.skipped, cacheHit: st.cacheHit, cacheMiss: st.cacheMiss, pending: pending }; }, _cache: function () { return cache; } };
+  W.__afkSaveLite = { adopt: function (k, raw, fp) { if (k === KEY() && raw && fp) cache = { key: k, raw: raw, fp: fp }; }, GAP: GAP, tick: flushTick, stats: function () { return { saves: st.saves, skipped: st.skipped, cacheHit: st.cacheHit, cacheMiss: st.cacheMiss, pending: pending }; }, _cache: function () { return cache; } };
 })();

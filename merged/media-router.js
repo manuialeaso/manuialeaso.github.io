@@ -11,6 +11,9 @@
   const localServer=!!root.LINEAGE_LOCAL_SERVER;
   const data=root.LineageMediaPaths, locals=new Set(data.local), sets=new Map();
   const native=/^(?:assets|public|art-fix|art-v3|brace-art|guardring-art)\//;
+  // 11-28：這些怪物的方向走路圖去掉了黑底（同路徑換新圖）。R2 圖片快取一年，加上版本參數讓玩過的人也拿到新圖。
+  const refreshed=new Set(["卡魯塔", "土精靈王", "地之牙", "地靈之主", "夢幻之島地精靈王", "夢幻之島大鬼火", "夢幻之島水精靈王", "夢幻之島火炎蛋", "夢幻之島火精靈王", "夢幻之島閃電球", "夢幻之島風精靈王", "夢幻之島鬼火", "恐怖的火炎蛋", "水之牙", "水精靈王", "污染的地精靈", "深淵地靈", "深淵水靈", "深淵火靈", "深淵風靈", "火之牙", "火炎蛋", "火焰之靈魂(紅)", "火焰之靈魂(藍)", "火精靈王", "紅鬼魂", "象牙塔閃電球", "風之牙", "風精靈王", "風靈之主", "鬼魂"]);
+  function stamp(key){const m=/^assets\/anim\/([^/]+)\/d[0-7]\/walk_\d+\.png$/.exec(key);return m&&refreshed.has(m[1])?'?v=w1128b':'';}
   function has(key) {
     const pos=key.lastIndexOf('/'), dir=key.slice(0,pos);
     if (!Object.hasOwn(data.dirs,dir)) return false;
@@ -44,7 +47,7 @@
     const key=keyFor(input);
     if (!key) return null;
     const target=new URL(key.split('/').map(encodeURIComponent).join('/'),remote);
-    target.search=u.search;target.hash=u.hash;
+    target.search=u.search||stamp(key);target.hash=u.hash;
     return {url:target.href,key,crossOrigin:target.origin!==site.origin};
   }
   function resolve(value,relativeTo) {
