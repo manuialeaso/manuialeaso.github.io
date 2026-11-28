@@ -483,6 +483,7 @@ d.mr += (baseMr + bonusMr);
     // 騎士／王族／戰士：背包中持有的魔法頭盔也授予技能（擁有即可、不需裝備；背包與裝備都沒有對應頭盔時技能才會消失）
     __rp(464);
     if (p.cls === 'knight' || p.cls === 'royal' || p.cls === 'warrior') {
+        __rp(465);
         (p.inv || []).forEach(it => {
             let _gd = DB.items[it.id];
             if (_gd && _gd.grantSkills && !_gd.grantSkillsEquipOnly) {
@@ -493,6 +494,7 @@ d.mr += (baseMr + bonusMr);
             }
         });
     }
+    __rp(475);
     // ⚠️ 套裝效果唯一真相在此；DB.sets(js/00) 僅供 initSetTags 反向標記、不承載數值
     __rp(476);
     if (typeof window.__afkSetBoost === 'function') { try { window.__afkSetBoost(p, setCheck); } catch (e) {} }   /* 🔌 加掛版補丁:至高的支配套裝特效 */
