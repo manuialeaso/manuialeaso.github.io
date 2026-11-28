@@ -329,7 +329,7 @@ function _guardDown(s) {
 }
 
 // ---------- 隊伍面板 HP 卡（比照召喚物·由 renderSquadPanel 併入） ----------
-let _guardPanelSig = '';
+let _guardPanelSig = '', _guardPanelAt = 0;
 function guardTeamSignature() {
     try {
         let list = guardV2List();
@@ -362,6 +362,10 @@ function renderGuardPanel(force) {
     try {
         let sig = guardTeamSignature();
         if (!force && sig === _guardPanelSig) return;
+        // ⚡ 11-28：護衛血量每 5% 就會讓整個隊伍面板重建；非強制的重繪最多每 0.25 秒一次（每 0.5 秒的定時重繪會補上）
+        let _gt = Date.now();
+        if (!force && _gt - _guardPanelAt < 250) return;
+        _guardPanelAt = _gt;
         _guardPanelSig = sig;
         if (typeof _squadSigTeam !== 'undefined') _squadSigTeam = '';
         if (typeof renderSquadPanel === 'function') renderSquadPanel();

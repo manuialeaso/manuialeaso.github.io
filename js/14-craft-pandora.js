@@ -899,9 +899,17 @@ function buildRecipeIndex() {
 // ⚠️ 只給「唯讀」用途。任何會 mutate 倉庫物件再 saveWarehouse 的路徑（whConsumeId／whRemoveStackByUid）
 //    一律直接呼叫 loadWarehouse()，不得走這裡，否則會改到共用實例。
 let _whSyncCache = null;
+// ⚡ 11-28 效能：每殺一隻怪都會經 questCountId 讀一次倉庫（解壓＋JSON.parse＋外掛補欄位，約 1ms）。
+//    原始字串（倉庫桶＋墓碑桶）沒變就沿用上次讀出的唯讀副本；任何寫入（本分頁、別的分頁、還原備份）都會換掉字串而自動重讀。
+let _whRawCache = null;
 function _whReadCached() {
     if (_whSyncCache) return _whSyncCache;
+    let key = whKey(), a = null, b = null;
+    try { a = _lsGet(key); b = _lsGet(key + '_rm'); } catch (e) { a = null; }
+    let c = _whRawCache;
+    if (a != null && c && c.key === key && c.a === a && c.b === b) { _whSyncCache = c.w; queueMicrotask(() => { _whSyncCache = null; }); return c.w; }
     let w = loadWarehouse();
+    _whRawCache = (a != null && _whLoadOk !== false) ? { key: key, a: a, b: b, w: w } : null;
     _whSyncCache = w;
     let clear = () => { _whSyncCache = null; };
     if (typeof queueMicrotask === 'function') queueMicrotask(clear); else Promise.resolve().then(clear);
@@ -955,7 +963,7 @@ function _lkWhLockedIdx() {
     _lkWhIdx = idx; _lkWhIdxAt = now; _lkWhIdxKey = k;
     return idx;
 }
-function _lkInvalidateWhCache() { _lkWhIdx = null; _whSyncCache = null; }   // 倉庫寫入後由 js/12 saveWarehouse 呼叫，避免存/取後提示數字還是舊的（⚡ v3.5.93 同步快照一併清，否則同一區塊內先扣倉庫再重算會讀到扣除前的量）
+function _lkInvalidateWhCache() { _lkWhIdx = null; _whSyncCache = null; _whRawCache = null; }   // 倉庫寫入後由 js/12 saveWarehouse 呼叫，避免存/取後提示數字還是舊的（⚡ v3.5.93 同步快照一併清，否則同一區塊內先扣倉庫再重算會讀到扣除前的量）
 function lockedCountId(id) {
     let n = player.inv.filter(i => i.id === id && i.lock).reduce((s, i) => s + (i.cnt || 1), 0);
     return n + (_lkWhLockedIdx()[id] || 0);

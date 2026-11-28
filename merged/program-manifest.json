@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-e2f6012418b9",
+  "build": "giran-0.8.25-8c83e4dae212",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -488,8 +488,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-dimrift.js?v=2cb620138abf",
-      "sha256": "2cb620138abfba1baf1d35e810ab8d71f4775d55994f19f15c059f3b6b7e83be",
+      "url": "afk-dimrift.js?v=cbb118d713c4",
+      "sha256": "cbb118d713c4f1641a9c29a1c27cc3830c680a85f6be5ac1ae8f3a7afd0a2ec4",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -658,8 +658,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-finalboss.js?v=29b55b5289c1",
-      "sha256": "29b55b5289c1e5d59df159db9a513ef5f0cbc8644976a92ed367101570d1a289",
+      "url": "afk-finalboss.js?v=5e4d213ebdae",
+      "sha256": "5e4d213ebdae596f3e7eae3520ddc3f6ba5f78f77e688244e69bff9407c1b529",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1959,7 +1959,7 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "9fd9a4d0b68a10081707cd60492d06e7e950a08a6a1a9bda62cb44b004e4b88a",
+      "sha256": "01b2f225298d14ad2ef2d6f0a13d0cb7783b38d3628022118ee46c8b46a10bf3",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1969,7 +1969,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "8fb00e915dc5e28950372986d0814031dba6dd66441c17436e26d94b9d5390d7",
+      "sha256": "17c43451f7f8efcc9b25f97998490199e5918922505fdc0a9161feaf2fc8c6f4",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2043,8 +2043,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/14-craft-pandora.js?v=06e91663763c",
-      "sha256": "06e91663763c6bb1909c108ad87d3eb1da42f54d437c63f174f5057224845aef",
+      "url": "js/14-craft-pandora.js?v=46cbff766060",
+      "sha256": "46cbff766060818411063d320b30b51a3a585f4260005d7bc7dcdc45579225dc",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -2098,8 +2098,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/25-clan-system.js?v=9f104b862b0f",
-      "sha256": "9f104b862b0fbb488ad4e4983c19c2874058c354da8a3a5f7beba496d8dba477",
+      "url": "js/25-clan-system.js?v=f3617b1d9533",
+      "sha256": "f3617b1d9533e83a40b2adcee9bcdde52fb86faee294f9b2b7ec88eeb219e5f0",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -2123,8 +2123,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "js/31-castle-guards.js?v=b23efd4474a3",
-      "sha256": "b23efd4474a3475e0465cd7c7e59648d3bf93329e95e28beeab95607cfa8a5e8",
+      "url": "js/31-castle-guards.js?v=361ecf0e6539",
+      "sha256": "361ecf0e653960da07e0144007ff68e124025f97a9a08d1b3e2c81dbf5d670b7",
       "type": "text/javascript; charset=utf-8"
     },
     {

@@ -260,7 +260,17 @@
     };
   }
   // 面板壓制（不在 p.d 上的數字）：攻擊速度、移動速度、MP 回復間隔、藥水恢復量；異常狀態抵抗、持續時間由 afk-abnforce／afk-carve 讀 __afkDimPanelF
-  W.__afkDimPanelF = function (x) { var p = P(); return (on() && p && (!x || x === p)) ? panelF(p) : 1; };
+  // ⚡ 11-28 效能：戰鬥中每 tick 會被問十幾次（攻速、藥水、異常抵抗…），同一個 tick 內結果不變 → 記住這個 tick 的答案（只在 tick 內，介面操作照舊即時算）
+  var pfMemo = { t: -1, p: null, m: '', v: 1 };
+  W.__afkDimPanelF = function (x) {
+    var p = P(); if (!p || (x && x !== p)) return 1;
+    if (typeof state !== 'undefined' && state.inTick) {
+      var t = state.ticks, m = mapState.current;
+      if (pfMemo.t === t && pfMemo.p === p && pfMemo.m === m) return pfMemo.v;
+      var v = on() ? panelF(p) : 1; pfMemo = { t: t, p: p, m: m, v: v }; return v;
+    }
+    return on() ? panelF(p) : 1;
+  };
   var wrapG = function (fn, make) { var o = W[fn]; if (typeof o !== 'function' || o.__afkDimPanel) return; var f = make(o); f.__afkDimPanel = true; W[fn] = f; try { (0, eval)(fn + ' = window.' + fn); } catch (e) {} };
   var hookPanel = function () {
     wrapG('playerAttackIntervalTicks', function (o) { return function () { var v = o.apply(this, arguments); var f = W.__afkDimPanelF(); return f < 1 && v > 0 ? Math.ceil(v / f) : v; }; });

@@ -694,9 +694,11 @@
     r.rebirthApplied = true;
     if (r.result === 'win' && r.panel && player.base && player.alloc) {
       var pn = player.panacea || {};
+      // Ping 11-28 15:34：覺醒職業 0 轉時能力上限保留 200（平常練功用），但勝者傳承比照一般 0 轉，最多 100
+      var cap = (window.__afkAwaken && typeof window.__afkAwaken.isAw === 'function' && window.__afkAwaken.isAw(player)) ? 100 : 200;
       PANEL.forEach(function (k) {
         var rfd = (player._afkRebirthRefund && Number(player._afkRebirthRefund[k])) || 0;   // 轉生收回的升級點數不算進來（不然傳承會把收回的補回去）
-        var want = Math.min(200, Math.floor(r.panel[k] || 0)), cur = (player.base[k] || 0) + (player.alloc[k] || 0) + (pn[k] || 0) + rfd;
+        var want = Math.min(cap, Math.floor(r.panel[k] || 0)), cur = (player.base[k] || 0) + (player.alloc[k] || 0) + (pn[k] || 0) + rfd;
         if (want > cur) player.base[k] = (player.base[k] || 0) + (want - cur);
       });
       sys('<span class="text-amber-200 font-bold">勝者的榮耀：打倒席琳時的六大主屬性傳承到了新生的身軀。</span>');

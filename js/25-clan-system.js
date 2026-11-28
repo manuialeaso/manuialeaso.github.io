@@ -1517,6 +1517,16 @@ function clanSetCastle(city) {
 }
 
 let _clanScanCache = { mode:null, at:0, roles:null };
+// ⚡ 11-28 效能：掃描每 3 秒要把 8 個存檔位整份解析一次（約 60ms 的卡頓）；存檔原始字串沒變就沿用上次解析的角色（唯讀）。
+let _clanRoleParsed = {};
+function _clanRoleRead(slot) {
+    let raw = null; try { raw = _lsGet('lineage_idle_save_' + slot); } catch (e) { raw = null; }
+    let c = _clanRoleParsed[slot];
+    if (c && c.raw === raw) return c.p;
+    let p = _roleReadSavePlayer(slot);
+    _clanRoleParsed[slot] = { raw: raw, p: p };
+    return p;
+}
 function clanScanRoles(mode) {
     mode = mode || clanModeKey(player);
     // ⚡ v3.6.01 3 秒 TTL 快取：每次掃描要解壓＋解析全部 8 個存檔位，而城鎮地圖渲染（含叫賣 NPC 每次進退場
@@ -1527,7 +1537,7 @@ function clanScanRoles(mode) {
     let byId = {};
     if (typeof _roleReadSavePlayer === 'function') {
         for (let slot = 1; slot <= SAVE_SLOT_MAX; slot++) {
-            let p = _roleReadSavePlayer(slot);
+            let p = _clanRoleRead(slot);
             if (!p || !p.cls || clanModeKey(p) !== mode) continue;
             let id = clanRoleId(p);
             if (id) byId[id] = { id:id, slot:slot, player:p };
