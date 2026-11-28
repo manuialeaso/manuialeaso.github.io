@@ -123,7 +123,19 @@
   var hookDrop = function () {
     var R = W.__afkRiftDg, d = R && R.BYID && R.BYID.dragons; if (!d || typeof d.reward !== 'function' || d.reward.__afkNemesis) return !!d;
     var o = d.reward;
-    var f = function () { var got = o.apply(this, arguments) || []; try { if (Math.random() < 0.01 && typeof gainItem === 'function') { gainItem(KEY, 1, true, true); got = got.concat([NAME]); } } catch (e) {} return got; };
+    // 11-28 Ping：符石劍比照頭目遺物——拿到時必定帶遠古系詞條（遠古／永恆／不朽／太初）＋屬性五階（火水風地）。
+    //   夢域鏡的遺物詞條只套用在打怪掉落；這把是通關結算直接給的，原本走不到詞條判定，拿到的都是白板。已拿到的不補。
+    var R = function (k) { try { return typeof lootRng === 'function' ? lootRng(k) : Math.random(); } catch (e) { return Math.random(); } };
+    var grant = function () {
+      var ANC = [true, 'eternal', 'immortal', 'primordial'], ELE = ['fr', 'wa', 'wi', 'ea'];
+      var oA = W.__afkRelicAffix;
+      W.__afkRelicAffix = function (d, id) {
+        if (id === KEY) return { bless: false, anc: ANC[Math.min(3, Math.floor(R('nemanc') * 4))], attr: ELE[Math.min(3, Math.floor(R('nemattr') * 4))] + '5' };
+        return typeof oA === 'function' ? oA.apply(this, arguments) : null;
+      };
+      try { gainItem(KEY, 1, true, false); } finally { if (oA === undefined) delete W.__afkRelicAffix; else W.__afkRelicAffix = oA; }
+    };
+    var f = function () { var got = o.apply(this, arguments) || []; try { if (Math.random() < 0.01 && typeof gainItem === 'function') { grant(); got = got.concat([NAME]); } } catch (e) {} return got; };
     f.__afkNemesis = true; d.reward = f; return true;
   };
   if (!hookDrop()) W.addEventListener('load', hookDrop);

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-867bab27abb6",
+  "build": "giran-0.8.25-e2f6012418b9",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -408,8 +408,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-corrupt.js?v=adfc728feeeb",
-      "sha256": "adfc728feeeb9e1f30910cfb37fc7142a438af5009cc934152012abf1e46d629",
+      "url": "afk-corrupt.js?v=ced373e81eeb",
+      "sha256": "ced373e81eebaebd40bba6110843a13f2a40897cc63e22dd36659e23ef19b4c5",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -818,8 +818,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-hotbar.js?v=11e757661c0b",
-      "sha256": "11e757661c0befd3fc23945ff13c18537afd2636f90c4ba571425385b288147a",
+      "url": "afk-hotbar.js?v=33377b33fff4",
+      "sha256": "33377b33fff48c41c344a4cacde310ba35c9313c05a912e9c3db30c36bd5533d",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1043,8 +1043,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-nemesis.js?v=223a023ce5d9",
-      "sha256": "223a023ce5d92be74cc8564a8002782245229eaa8d5b6b444881eb0b803b600f",
+      "url": "afk-nemesis.js?v=d60753fecb24",
+      "sha256": "d60753fecb2418eca504ed5f1c9e1999acb24783b577ac764dd1ab52b7469e5c",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1888,6 +1888,16 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
+      "url": "dimension-map/gpu-pixi.js?v=cedfdb069c08",
+      "sha256": "cedfdb069c08f7048b1b94b948d07d76458b595d7231058efc22c47425f0c153",
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "dimension-map/gpu-sprites.js?v=2af7f3dda060",
+      "sha256": "2af7f3dda0601fe808ae2c0485287ffd461e788e955c7a7b08afaa2315421dd0",
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
       "url": "dimension-map/hunting-field.js?v=f453f775d49e",
       "sha256": "f453f775d49ecb9849012ee63e9fb4d4a5a010a1113bc1198374720e595d4458",
       "type": "text/javascript; charset=utf-8"
@@ -1898,8 +1908,8 @@
       "type": "application/json; charset=utf-8"
     },
     {
-      "url": "dimension-map/map-view.css?v=8d89f919a532",
-      "sha256": "8d89f919a532c48f4af4014b3108660d98878234059144a805cdd749d97c376d",
+      "url": "dimension-map/map-view.css?v=61c83dde80b7",
+      "sha256": "61c83dde80b7b8be8e86853a5d1bdbd41e7c3c7970284154c3e4a1b2c2d2b7ff",
       "type": "text/css; charset=utf-8"
     },
     {
@@ -1908,8 +1918,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "dimension-map/stride-view.js?v=d5bc6cf37efa",
-      "sha256": "d5bc6cf37efa15e9da95922f175b19ca5ae5f52ee5422f8e8b1b4bf60a2878e0",
+      "url": "dimension-map/stride-view.js?v=64ca70199915",
+      "sha256": "64ca70199915c171077f54bf9481d93e0b2a9ec43f7048813e7e5b21ca1158c7",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1933,8 +1943,8 @@
       "type": "application/json; charset=utf-8"
     },
     {
-      "url": "dimension-map/terrain-view.js?v=4f16d4ba5c86",
-      "sha256": "4f16d4ba5c869307fd9862947ed9caafe79d3963fa67dfb1a594019773077d5b",
+      "url": "dimension-map/terrain-view.js?v=0dcdfe484000",
+      "sha256": "0dcdfe4840009af8832532603ac4af9b9cd98ca5d59e4c82b34f151b5f411801",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1949,7 +1959,7 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "a437cbfb4a50731e1230497b5ff983c0091b474929a24ce4d6691d8e4541ce09",
+      "sha256": "9fd9a4d0b68a10081707cd60492d06e7e950a08a6a1a9bda62cb44b004e4b88a",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1959,7 +1969,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "833736381587ad239a7f9d6956e637c8b6fe68cac9468536f04f326488b82281",
+      "sha256": "8fb00e915dc5e28950372986d0814031dba6dd66441c17436e26d94b9d5390d7",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -2133,8 +2143,8 @@
       "type": "application/manifest+json"
     },
     {
-      "url": "merged/activities.js?v=dcf7c398a97f",
-      "sha256": "dcf7c398a97f591d85beab112db9c208e0693515635af64eb01f4cf39623f609",
+      "url": "merged/activities.js?v=101b69a1bb79",
+      "sha256": "101b69a1bb79fccd5f6ca7ae3fe785b9668c30f4914d1bc525215a6d0055f97d",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -2618,8 +2628,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "world/field.js?v=1cb092b75319",
-      "sha256": "1cb092b75319e78433152635ffe9627f1bebe5de5fc299bb140fc3e1fba49521",
+      "url": "world/field.js?v=48510528b8e3",
+      "sha256": "48510528b8e3448e3c34115affb664949867011af1b3ee6a1579aa07ac3bcff2",
       "type": "text/javascript; charset=utf-8"
     },
     {

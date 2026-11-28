@@ -123,6 +123,9 @@
         state.antharas=cp.antharas;state._afkDragon=cp.dragon;
         if(cp.hardin)W.__afkHardin.growthRestore(cp.hardin);if(cp.halpas)W.__afkHalpas.growthRestore(cp.halpas);if(cp.rd)W.__afkRiftDg.growthRestore(cp.rd);
         r.status='running';r.reason='';state.running=true;
+      }else if(!native&&!String(id).startsWith('rd:')&&(r.maps||[]).includes(mapState.current)&&(state.antharas=0,state._afkDragon=null,W.__afkCorrupt?.resumeHere?.())){
+        // 11-28 Ping：人還在這條龍的巢穴裡（例如手機重新整理時剛好換到下一區、進度點還停在上一區），照所在地圖接著打，不要從入口重打
+        r.status='running';r.reason='';state.running=true;checkpoint();
       }else{state.antharas=0;state._afkDragon=null;enter(id);}
     });
   }
@@ -146,6 +149,7 @@
     if(!(r.maps||[r.map]).includes(mapState.current)){pause('已離開副本，繼續時重新進場',!!native);return;}
     if(native&&!native.api.run()){pause('試煉已結束或失敗，重新進場仍受每日次數限制',true);return;}
     if(r.queue[r.index]==='hardin'){const h=W.__afkHardin.run();if(h&&h.stage==='choice')W.__afkHardin.choose(r.choice);}
+    if(r.checkpoint&&r.checkpoint.map!==mapState.current&&(r.maps||[]).includes(mapState.current)){checkpoint();lastCheckpoint=state.ticks;}   // 11-28：換到下一區就馬上記進度點
     if(state.ticks-lastCheckpoint>=300){checkpoint();if(!saved()){pause('存檔失敗，已暫停遠征');state.running=false;}lastCheckpoint=state.ticks;}
   }}
   function shortcut(before){

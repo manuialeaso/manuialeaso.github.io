@@ -624,6 +624,8 @@
   }
 
   window.__afkCorrupt = { DRAGONS: DRAGONS, areasOf: areasOf, finals: finals, cur: cur, debuff: function (t) { return debuff.get(t); }, pulse: pulse, withCtx: withCtx };
+  // 11-28：自動遠征「繼續」時，人若還在這條龍的巢穴裡，就照所在地圖接回進度（見下方 resumeRun），不要整個副本從入口重打。
+  window.__afkCorrupt.resumeHere = function () { try { resumeRun(); } catch (e) {} return !!S().antharas; };
   // ── 讀檔後接回副本進度（11-24 Ping：深淵巴拉卡斯巢穴通道打一小時還在半路）──
   //   副本進度（第幾區、哪一座龍）只放在執行中的狀態、不進存檔；重新整理／自動更新後人還在巢穴地圖裡，但進度歸零，
   //   打倒區域頭目不會再往前推，就卡在原地。這裡依「目前所在的巢穴地圖」把進度接回去（四大龍副本都適用；存檔內容不變）。
@@ -641,12 +643,34 @@
   };
   // 11-28 Ping：四龍又出現「打倒王不往下走、王一直重生」。11-24 只在讀檔時接回進度；進度若是在遊戲進行中被別的流程清掉（例如自動遠征接回、切換流程），就沒有人接。
   //   改成每秒檢查：人活著、站在巢穴地圖裡、進度卻是空的，連續 2 秒都這樣就照所在地圖接回去。正常離開副本一定會同時換地圖，不會被這裡誤接。
+  // 11-28 Ping：自動遠征打四龍又出現「血沒了、死掉了，王還是一直復活」。核心只在「你還活著」時才記下打倒區域頭目要推進
+  //   （js/05 擊殺清算：state.antharas && mob.boss && !player.dead）。你倒下時傭兵把區域頭目打死 → 沒有推進，頭目照區域規則重生，
+  //   就一直打下去。改成：你倒下時打倒的區域頭目先記著；你在同一張巢穴地圖裡站起來（原地復活）就補推進；回村或換地圖就作廢。
+  var oKillPend = window.killMob;
+  if (typeof oKillPend === 'function') {
+    window.killMob = function (idx) {
+      var m = mapState && mapState.mobs && mapState.mobs[idx];
+      var r = oKillPend.apply(this, arguments);
+      try {
+        var s = S(), mp = mapState.current;
+        if (m && m._dead && m.boss && player && player.dead && s.antharas && typeof ANTHARAS_AREA_BOSS !== 'undefined' && ANTHARAS_AREA_BOSS[mp]) { s._afkPendAdvance = m.n; s._afkPendMap = mp; }
+      } catch (e) {}
+      return r;
+    };
+  }
   var healSeen = 0, oTickHeal = window.tick;
   if (typeof oTickHeal === 'function') {
     window.tick = function () {
       var r = oTickHeal.apply(this, arguments);
       try {
         var s = S();
+        if (s._afkPendAdvance) {
+          if (!s.antharas || mapState.current !== s._afkPendMap) s._afkPendAdvance = null;
+          else if (player && !player.dead && !s._antAdvance) {
+            s._antAdvance = s._afkPendAdvance; s._afkPendAdvance = null;
+            logSys('<span class="text-amber-200">你倒下時隊伍已擊敗這一區的頭目，站起來後繼續往前推進。</span>');
+          }
+        }
         if ((s.ticks || 0) % 10 === 0) {
           var mp = mapState && mapState.current;
           if (mp && !s.antharas && player && !player.dead && typeof ANTHARAS_AREA_BOSS !== 'undefined' && ANTHARAS_AREA_BOSS[mp]) { if (++healSeen >= 2) { healSeen = 0; resumeRun(); } }
