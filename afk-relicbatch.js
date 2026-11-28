@@ -147,7 +147,11 @@
 
   // ── 掃描:把背包＋倉庫的遺物依 id 分組、組內依詞綴分列 ──────
   var groups = [];      // [{ id, def, name, icon, total, locked, keepKey, variants:[...] , expanded }]
-  var sel = Object.create(null);   // rowKey('id::variantKey') -> true
+  var sel = Object.create(null);   // rowKey('id::variantKey') -> 要整理幾件(true = 全部;舊寫法相容)
+  // 2026-11-28 玩家建議:每列可以設數量,不必整列全賣;「全選／只選白板」可以每種另外多留 N 件
+  var KEEPN_KEY = 'afk.relicbatch.keepN';
+  var keepN = 0;
+  try { keepN = Math.max(0, Math.min(999, parseInt(localStorage.getItem(KEEPN_KEY), 10) || 0)); } catch (e) {}
   var filter = 'avail';
   var search = '';
 
@@ -212,11 +216,35 @@
   function selectableRows(g) {
     return g.variants.filter(function (v) { return v.avail > 0; });
   }
+  // 這一列實際要整理幾件(沒選 → 0;超過可整理件數就壓回去)
+  function qtyOf(g, v) {
+    if (!(v.avail > 0)) return 0;
+    var q = sel[rowKey(g.id, v.key)];
+    if (!q) return 0;
+    if (q === true) return v.avail;
+    q = Math.floor(Number(q) || 0);
+    return Math.max(0, Math.min(v.avail, q));
+  }
+  // 全選／只選白板:pick(v) 決定哪些列要勾;每種遺物從最好的開始先多留 keepN 件,剩下的才選進去
+  function pickRows(pick) {
+    visibleGroups().forEach(function (g) {
+      var left = keepN;
+      selectableRows(g).forEach(function (v) {   // variants 已依「好的排前面」排序
+        if (!pick(v)) return;
+        var skip = Math.min(left, v.avail);
+        left -= skip;
+        var q = v.avail - skip;
+        var k = rowKey(g.id, v.key);
+        if (q > 0) sel[k] = q; else delete sel[k];
+      });
+    });
+  }
   function selTotals() {
     var n = 0, gold = 0, dia = 0, plus = 0;
     groups.forEach(function (g) {
       g.variants.forEach(function (v) {
-        if (v.avail > 0 && sel[rowKey(g.id, v.key)]) { n += v.avail; gold += v.avail * v.gold; dia += v.avail * diaOf(v.sample && v.sample.id); if (v.plus) plus += v.avail; }
+        var q = qtyOf(g, v);
+        if (q > 0) { n += q; gold += q * v.gold; dia += q * diaOf(v.sample && v.sample.id); if (v.plus) plus += q; }
       });
     });
     return { n: n, gold: gold, dia: dia, plus: plus };
@@ -244,11 +272,14 @@
             '<button class="rb-chip" data-f="all" type="button">全部</button>' +
           '</div>' +
         '</div>' +
-        '<div class="rb-note">每個遺物會自動留最好的 1 件（未強化的），標「保留」的那列不會被清掉。強化過的（+N、昇華）可以賣，但「全選」不會勾到，要自己點。</div>' +
+        '<div class="rb-note">每個遺物會自動留最好的 1 件（未強化的），標「保留」的那列不會被清掉。強化過的（+N、昇華）可以賣，但「全選」不會勾到，要自己點。選取後可以用 －／＋ 調整這一列要整理幾件。</div>' +
         '<div class="rb-acts">' +
           '<button id="rb-all" class="rb-mini" type="button">全選</button>' +
           '<button id="rb-plain" class="rb-mini" type="button">只選白板</button>' +
           '<button id="rb-none" class="rb-mini" type="button">取消選取</button>' +
+          '<label class="rb-keepn" title="按「全選」「只選白板」時，每種遺物除了自動保留的那 1 件，再從最好的開始多留這麼多件">' +
+            '每種多留 <input id="rb-keepn" class="rb-num" type="number" min="0" max="999" step="1" inputmode="numeric" value="' + keepN + '"> 件' +
+          '</label>' +
         '</div>' +
         '<div id="rb-list" class="rb-list"></div>' +
         '<div class="rb-foot">' +
@@ -267,15 +298,19 @@
     document.getElementById('rb-dia').addEventListener('click', function () { runAction('dia'); });
 
     document.getElementById('rb-all').addEventListener('click', function () {
-      visibleGroups().forEach(function (g) { selectableRows(g).forEach(function (v) { if (!v.plus) sel[rowKey(g.id, v.key)] = true; }); });   // 強化過的要自己點
+      pickRows(function (v) { return !v.plus; });   // 強化過的要自己點
       render();
     });
     document.getElementById('rb-plain').addEventListener('click', function () {
       sel = Object.create(null);
-      visibleGroups().forEach(function (g) {
-        selectableRows(g).forEach(function (v) { if (v.score === 0 && !v.plus) sel[rowKey(g.id, v.key)] = true; });
-      });
+      pickRows(function (v) { return v.score === 0 && !v.plus; });
       render();
+    });
+    var kn = document.getElementById('rb-keepn');
+    kn.addEventListener('change', function () {
+      keepN = Math.max(0, Math.min(999, Math.floor(Number(kn.value) || 0)));
+      kn.value = keepN;
+      try { localStorage.setItem(KEEPN_KEY, String(keepN)); } catch (e) {}
     });
     document.getElementById('rb-none').addEventListener('click', function () { sel = Object.create(null); render(); });
 
@@ -307,8 +342,35 @@
       var row = e.target.closest ? e.target.closest('.rb-v[data-k]') : null;
       if (!row) return;
       var k = row.dataset.k;
+      var qb = e.target.closest('[data-q]');
+      if (qb || e.target.closest('.rb-q')) {   // 數量控制:不切換勾選
+        if (!qb) return;
+        var av = Number(row.dataset.av) || 0;
+        var cur = sel[k] === true ? av : Math.floor(Number(sel[k]) || 0);
+        var op = qb.dataset.q;
+        var nq = op === 'all' ? av : op === '+' ? cur + 1 : cur - 1;
+        nq = Math.max(1, Math.min(av, nq));
+        sel[k] = nq;
+        render();
+        return;
+      }
       if (sel[k]) delete sel[k]; else sel[k] = true;
       render();
+    });
+    // 直接打數字(按 Enter 或離開輸入框才生效,避免打到一半畫面重畫)
+    document.getElementById('rb-list').addEventListener('change', function (e) {
+      var inp = e.target;
+      if (!inp || !inp.classList || !inp.classList.contains('rb-qin')) return;
+      var row = inp.closest('.rb-v[data-k]');
+      if (!row) return;
+      var av = Number(row.dataset.av) || 0;
+      var nq = Math.floor(Number(inp.value) || 0);
+      if (nq <= 0) delete sel[row.dataset.k];
+      else sel[row.dataset.k] = Math.min(av, nq);
+      render();
+    });
+    document.getElementById('rb-list').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('rb-qin')) e.target.blur();
     });
   }
 
@@ -341,8 +403,7 @@
   }
 
   function renderGroup(g) {
-    var picked = selectableRows(g).filter(function (v) { return sel[rowKey(g.id, v.key)]; })
-                                  .reduce(function (s, v) { return s + v.avail; }, 0);
+    var picked = selectableRows(g).reduce(function (s, v) { return s + qtyOf(g, v); }, 0);
     var head =
       '<div class="rb-g-head' + (g.expanded ? ' is-open' : '') + '" data-id="' + esc(g.id) + '">' +
         '<img class="rb-ico" src="' + esc(g.icon) + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
@@ -361,23 +422,32 @@
     var rows = g.variants.map(function (v) {
       var keep = (v.key === g.keepKey);
       var k = rowKey(g.id, v.key);
-      var isSel = v.avail > 0 && !!sel[k];
+      var q = qtyOf(g, v);
+      var isSel = q > 0;
       var srcTxt = [];
       if (v.inv) srcTxt.push('背包 ' + v.inv);
       if (v.wh) srcTxt.push('倉庫 ' + v.wh);
       return '<div class="rb-v' + (isSel ? ' is-sel' : '') + (v.avail > 0 ? '' : ' is-keep') + '"' +
-             (v.avail > 0 ? ' data-k="' + esc(k) + '"' : '') + '>' +
+             (v.avail > 0 ? ' data-k="' + esc(k) + '" data-av="' + v.avail + '"' : '') + '>' +
         '<span class="rb-ck' + (isSel ? ' on' : '') + '">' + (v.avail > 0 ? (isSel ? '✓' : '') : '🔒') + '</span>' +
         '<span class="rb-v-name">' + fullNameHtml(v.sample) + affixPills(v.sample) + '</span>' +
         '<span class="rb-v-src">' + esc(srcTxt.join('・')) + '</span>' +
+        (isSel && v.avail > 1
+          ? '<span class="rb-q">' +
+              '<button class="rb-qb" type="button" data-q="-"' + (q <= 1 ? ' disabled' : '') + '>－</button>' +
+              '<input class="rb-qin rb-num" type="number" min="1" max="' + v.avail + '" step="1" inputmode="numeric" value="' + q + '">' +
+              '<button class="rb-qb" type="button" data-q="+"' + (q >= v.avail ? ' disabled' : '') + '>＋</button>' +
+              '<button class="rb-qb rb-qall" type="button" data-q="all"' + (q >= v.avail ? ' disabled' : '') + '>全部</button>' +
+            '</span>'
+          : '') +
         '<span class="rb-v-n">' +
           (keep && v.cnt > v.avail ? '<i class="rb-pill rb-pill-keep">保留 1</i>' : '') +
-          (v.avail > 0 ? '<b>' + v.avail + '</b> 件' : '') +
+          (v.avail > 0 ? (isSel && v.avail > 1 ? '/ ' : '') + '<b>' + v.avail + '</b> 件' : '') +
         '</span>' +
         // 整列都被保留(avail 0)就不印價格——那是「拿不到的錢」,寫出來只會誤導
         (v.avail > 0
-          ? '<span class="rb-v-price"><i class="rb-gold">💰 ' + (v.gold * v.avail).toLocaleString() + '</i>' +
-            (diaReady() ? '<i class="rb-dia">🔷 ' + (v.avail * diaOf(v.sample && v.sample.id)) + '</i>' : '') + '</span>'
+          ? '<span class="rb-v-price"><i class="rb-gold">💰 ' + (v.gold * (q || v.avail)).toLocaleString() + '</i>' +
+            (diaReady() ? '<i class="rb-dia">🔷 ' + ((q || v.avail) * diaOf(v.sample && v.sample.id)) + '</i>' : '') + '</span>'
           : '<span class="rb-v-price"></span>') +
       '</div>';
     }).join('');
@@ -394,7 +464,8 @@
     var goldSum = 0, takenTotal = 0;
     groups.forEach(function (g) {
       g.variants.forEach(function (v) {
-        if (v.avail > 0 && sel[rowKey(g.id, v.key)]) want[rowKey(g.id, v.key)] = v.avail;
+        var q = qtyOf(g, v);
+        if (q > 0) want[rowKey(g.id, v.key)] = q;
       });
     });
 
@@ -634,7 +705,7 @@
       '.rb-chip:hover{border-color:#475569;color:#cbd5e1}',
       '.rb-chip.is-on{background:#0e7490;border-color:#22d3ee;color:#ecfeff}',
       '.rb-note{flex:0 0 auto;padding:0 14px 8px;font-size:12px;color:#7dd3fc;}',
-      '.rb-acts{flex:0 0 auto;display:flex;gap:6px;padding:0 14px 9px;border-bottom:1px solid #1e293b;}',
+      '.rb-acts{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 14px 9px;border-bottom:1px solid #1e293b;}',
       '.rb-mini{padding:5px 10px;border:1px solid #475569;border-radius:7px;background:#1e293b;color:#cbd5e1;',
       '  font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}',
       '.rb-mini:hover{background:#334155}',
@@ -669,6 +740,16 @@
       '.rb-v-n b{color:#e2e8f0;font-size:12.5px}',
       '.rb-v-price{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-size:10.5px;font-style:normal;min-width:66px}',
       '.rb-v-price i{font-style:normal}',
+      /* 數量 */
+      '.rb-q{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;cursor:default}',
+      '.rb-qb{min-width:24px;height:24px;padding:0 6px;border-radius:6px;border:1px solid #155e75;background:#0f2a36;',
+      '  color:#a5f3fc;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;}',
+      '.rb-qb:disabled{opacity:.35;cursor:default}',
+      '.rb-qb:not(:disabled):hover{background:#164e63}',
+      '.rb-num{width:46px;height:24px;padding:0 4px;border-radius:6px;border:1px solid #334155;background:#0b1220;',
+      '  color:#f8fafc;font-size:12px;text-align:center;font-family:inherit;-moz-appearance:textfield;}',
+      '.rb-num::-webkit-inner-spin-button,.rb-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}',
+      '.rb-keepn{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:11.5px;color:#94a3b8;white-space:nowrap}',
       '.rb-gold{color:#fbbf24;font-style:normal}',
       '.rb-dia{color:#67e8f9;font-style:normal}',
       '.rb-dim{color:#64748b}',
@@ -699,6 +780,8 @@
       '    height:calc(100vh - var(--orig-bar-h,0px) - var(--m-nav-h,0px));',
       '    height:calc(100dvh - var(--orig-bar-h,0px) - var(--m-nav-h,0px));}',
       '  .rb-v-src{display:none}',
+      '  .rb-v{flex-wrap:wrap}',
+      '  .rb-q{order:9;flex-basis:100%;justify-content:flex-end;margin-top:2px}',
       '  .rb-title{font-size:16px}',
       '  .rb-go{flex:1;padding:11px 10px}',
       '  .rb-btns{width:100%}',
