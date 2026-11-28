@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "giran-0.8.25-cea04cf36a83",
+  "build": "giran-0.8.25-2a266a7983ab",
   "files": [
     {
       "url": "afk-abnforce.js?v=89425fe81415",
@@ -818,8 +818,8 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "afk-hotbar.js?v=33377b33fff4",
-      "sha256": "33377b33fff48c41c344a4cacde310ba35c9313c05a912e9c3db30c36bd5533d",
+      "url": "afk-hotbar.js?v=f9dc16bed178",
+      "sha256": "f9dc16bed1788309e8c4f84226ae8c37d1658105410b88dd8cb61f2c80fedf82",
       "type": "text/javascript; charset=utf-8"
     },
     {
@@ -1959,7 +1959,7 @@
     },
     {
       "url": "dimension.html",
-      "sha256": "51c48b351271f33a4307267603b7c80d3f019bbc931682f13069e20d65d40e76",
+      "sha256": "6444516d826a1fe859889fd8fec5a31f0b5151a847d5023abf39731e559795ea",
       "type": "text/html; charset=utf-8"
     },
     {
@@ -1969,7 +1969,7 @@
     },
     {
       "url": "index.html",
-      "sha256": "c541fc37b4ec67f1d2c39a064a763734bcb02a27b39662fec646db3292015ad5",
+      "sha256": "34e1f382e9d86dd5bc64dc829d24c49008c1bd1f1dbf1a13a4bbac8375dbfc29",
       "type": "text/html; charset=utf-8"
     },
     {

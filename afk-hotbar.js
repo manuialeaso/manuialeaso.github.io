@@ -382,10 +382,9 @@
       try { thr = parseInt(document.getElementById('set-mp-atk').value, 10) || 0; } catch (e) {}
       if (mpPct < thr) return;
       var atk = ''; try { atk = document.getElementById('sel-atk-skill').value || ''; } catch (e) {}
-      // All assigned attacks share the native casting lane. Resume after the last
-      // successful spell so a short-cooldown main skill cannot starve the slots.
+      // 11-28 Ping：「自動施放設定」選的攻擊技能優先；它這次放不了（冷卻、目標不合）才輪到熱鍵上勾自動的格子。
+      if(atk && lane(DB.skills[atk]) && learned(atk) && !cdLeft(atk) && targetOk(atk,tg) && cast(atk,true)){previousSpell=atk;return;}
       var choices=[];
-      if(atk && lane(DB.skills[atk]))choices.push(atk);
       for(var i=0;i<N;i++){
         var id=b[i], sk=skOf(id);
         if(au[i]&&lane(sk)&&condOk(cd[i],tg)&&!choices.includes(id.slice(3)))choices.push(id.slice(3));
@@ -404,9 +403,54 @@
       if (canAct() && laneFree() && !cdLeft(sid) && tg && targetOk(sid, tg) && !queue) { if (cast(sid, false)) return; }
       queue = { sk: sid, until: tk() + QWAIT }; stats.queued++;
     };
+    // ── 11-28 Ping：流派／職業轉職的技能也能在「自動施放設定 → 攻擊技能」選（選項值 cp:技能編號），而且最優先 ──
+    var CP = 'cp:';
+    var cpList = function (p) {
+      var C = W.LineageClasses && W.LineageClasses.C; if (!C || !C.skills || !p || !p.classPath) return [];
+      var out = []; C.skills.forEach(function (s, id) { try { if ((s.type === '法術' || s.type === '龍魔法') && C.canUse(p, id)) out.push(s); } catch (e) {} });
+      return out;
+    };
+    var cpStep = function () {
+      var el = document.getElementById('sel-atk-skill'), v = el && el.value; if (!v || v.indexOf(CP) !== 0) return;
+      if (!canAct() || !laneFree()) return;
+      var tg = null; try { tg = getTarget(); } catch (e) {} if (!tg) return;
+      var thr = 0; try { thr = parseInt(document.getElementById('set-mp-atk').value, 10) || 0; } catch (e) {}
+      if ((player.mp / Math.max(1, player.mmp)) * 100 < thr) return;
+      var CC = W.LineageClassCombat, C = W.LineageClasses && W.LineageClasses.C, id = v.slice(CP.length);
+      if (!CC || !C || !player.classPath || !C.skills.get(id)) return;
+      try { if (!C.canUse(player, id)) return; var r = CC.cast(id, tg); if (r && r.ok) { try { player.cds.castLock = getAutoCastInterval(player, false, player.cds.castLock); } catch (e) { player.cds.castLock = 10; } stats.lane++; } } catch (e) {}
+    };
+    var hookCpSel = function () {
+      var o = W.renderSkillSelects; if (typeof o !== 'function' || o.__afkCp) return;
+      var f = function () {
+        var el = document.getElementById('sel-atk-skill'), prev = el ? el.value : '', p = P();
+        if (el && el.__cpFor !== p) { el.__cpFor = p; var c = p && p.config && p.config.selAtkSkill; if (c && String(c).indexOf(CP) === 0) prev = c; }   // 剛讀檔：選項還沒建好時存檔裡的設定先記著
+        var r = o.apply(this, arguments);
+        try {
+          el = document.getElementById('sel-atk-skill'); if (!el) return r;
+          var old = el.querySelector('optgroup[data-cp]'); if (old) old.remove();
+          var list = cpList(P());
+          if (list.length) {
+            var g = document.createElement('optgroup'); g.label = '流派技能'; g.setAttribute('data-cp', '1');
+            list.forEach(function (s) { var op = document.createElement('option'); op.value = CP + s.id; op.textContent = s.name; g.appendChild(op); });
+            el.appendChild(g);
+          }
+          if (prev && prev.indexOf(CP) === 0) el.value = el.querySelector('option[value="' + prev.replace(/"/g, '\\"') + '"]') ? prev : '';
+        } catch (e) {}
+        return r;
+      };
+      f.__afkCp = true; W.renderSkillSelects = f; try { (0, eval)('renderSkillSelects = window.renderSkillSelects'); } catch (e) {}
+    };
+    hookCpSel(); W.addEventListener('load', function () { hookCpSel(); try { if (P()) renderSkillSelects(); } catch (e) {} });
     if (typeof W.autoCastSpells === 'function') {
       var oACS = W.autoCastSpells;
-      W.autoCastSpells = function () { try { step(); } catch (e) { console.warn('[AFK-hotcast]', e); } return oACS.apply(this, arguments); };
+      W.autoCastSpells = function () {
+        try { cpStep(); } catch (e) {}
+        try { step(); } catch (e) { console.warn('[AFK-hotcast]', e); }
+        var el = document.getElementById('sel-atk-skill'), v = el && el.value;
+        if (v && v.indexOf(CP) === 0) { el.value = ''; try { return oACS.apply(this, arguments); } finally { el.value = v; } }   // 原生自動施法不認得流派技能：這段期間當作「無」
+        return oACS.apply(this, arguments);
+      };
       try { (0, eval)('autoCastSpells = window.autoCastSpells'); } catch (e) {}
     }
     setInterval(function () {   // 冷卻遮罩
