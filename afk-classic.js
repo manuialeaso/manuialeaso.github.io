@@ -628,12 +628,15 @@
     p.lv = Math.max(1, Math.min(p.lv || 1, cap)); p.exp = 0; p._afkExpOrig = 1;
     p.base = { str: 18, dex: 18, con: 18, int: 18, wis: 18, cha: 18 };
     p.alloc = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
+    var back = panaceaBack(p);
     p.panacea = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 }; p.panaceaUsed = 0;
     p.bonus = Math.max(0, p.lv - 50);
+    p.rebirthHpKeep = 0; p.rebirthMpKeep = 0; p._afkPanaceaBack = 1; p._afkClassicMig = CLASSIC_MIG;
     p._afkBonusDebt = 0;
     try { sealAll(p); } catch (e) {}
     try { if (typeof clanSyncCurrentPlayer === 'function') clanSyncCurrentPlayer(); } catch (e) {}
     try { calcStats(); p.hp = p.mhp; p.mp = p.mmp; } catch (e) {}
+    if (back) sys('<span class="text-violet-300">喝過的萬能藥 ' + back + ' 瓶已退回背包，可以重新喝（經典模式最多 5 瓶）。</span>');
     sys('<span class="text-violet-300 font-bold">🕰️ 你回到了天堂最初的時代：Lv.' + p.lv + '、六大屬性全部 18，還有 ' + p.bonus + ' 點可以分配。這個角色從此是經典模式，永遠不能轉回來。</span>');
     try { saveGame(); } catch (e) {}
     return true;
@@ -806,7 +809,7 @@
         var r = CORE.recomputeStats.apply(self, args);
         try {
           if (acBase != null) p.d.ac = Math.round(acBase + (p.d.ac - acBase) * 0.3);
-          if (p._afkPreClassic) { p.mhp = Math.max(1, Math.floor(p.mhp * HP_CONVERTED)); if (p.hp > p.mhp) p.hp = p.mhp; }   // 一般模式轉來的角色：HP ×0.15
+          if (p._afkPreClassic && !(p._afkClassicMig >= 1)) { p.mhp = Math.max(1, Math.floor(p.mhp * HP_CONVERTED)); if (p.hp > p.mhp) p.hp = p.mhp; }   // 一般模式轉來的角色：HP ×0.15
         } catch (e) {}
         return r;
       }
@@ -936,5 +939,70 @@
   };
   var ERA_TXT = { '0': '序章起', '1': '黑妖三部曲起', '-1': '經典沒有' };
   W.AFK_CLASSIC = { mapEra: mapEra, itemEra: itemEra, eraText: function (n) { return ERA_TXT[String(n)] || ''; }, shopBlocked: shopBlocked, trilogyUnlocked: trilogyUnlocked, CHAPTERS: CHAPTERS, skillLocked: skillLocked, itemOutOfEra: itemOutOfEra, ownStats: ownStats, convertToClassic: convertToClassic, redeemLeft: redeemLeft, classicReq: classicReq, deathPct: deathPct, dropRate: dropRate, migrateAll: migrateAll, rollDog: rollDog, era: era, setEra: setEra, ERAS: ERAS, part1: PART1, sealedMap: sealedMap, openCls: openCls, ancStock: ancStock, syncAncient: syncAncient, net: net, NET: NET, lagging: lagging, bugged: bugged, floors: FLOORS, stairs: STAIRS, orin: ORIN, syncOrin: syncOrin, open: OPEN, rollNet: rollNet, goFloor: goFloor };
+
+  // ── 十六、（Ping 11-28 18:03）一般模式轉來的經典角色：轉生紀錄全部消除 ──
+  //   等級＝這個時代的最高等級（序章 50／三部曲 80）、經驗歸零；六大屬性回到 18、配點全部退回重新分配（可分配＝等級−50）；
+  //   喝過的萬能藥全部退回背包；精通、轉生保留的 HP／MP 都不算，HP／MP 照經典的算法重算。每個角色只做一次。
+  var CLASSIC_MIG = 1;
+  var NUM = function (x) { return Number(x) || 0; };
+  function panaceaBack(p, extra) {
+    var n = 0;
+    STAT_KEYS.forEach(function (k) {
+      var c = Math.max(0, Math.floor(NUM(p.panacea && p.panacea[k]) + NUM(extra && extra[k])));
+      if (c > 0 && typeof gainItem === 'function' && RAW && RAW['panacea_' + k]) { try { gainItem('panacea_' + k, c, true, false); n += c; } catch (e) {} }
+    });
+    return n;
+  }
+  var migrate = function () {
+    var p = P(); if (!p || !p.classicMode || p._afkClassicMig >= CLASSIC_MIG || !state.running) return;
+    var conv = !!(p._afkPreClassic || NUM(p.rebirth) > 0 || p._afkGrandLv);
+    if (!conv) { p._afkClassicMig = CLASSIC_MIG; return; }
+    var pre = p._afkPreClassic || {}, cap = eraDef(era(p)).lvCap || 50;
+    var back = panaceaBack(p, p._afkPanaceaBack ? null : pre.panacea);
+    p.rebirth = 0; delete p._afkGrandLv; p.rebirthHpKeep = 0; p.rebirthMpKeep = 0;
+    p.mastery = null; p.masteryQuest = null;
+    p.lv = cap; p.exp = 0;
+    p.base = { str: 18, dex: 18, con: 18, int: 18, wis: 18, cha: 18 };
+    p.alloc = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
+    p.panacea = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 }; p.panaceaUsed = 0;
+    p.bonus = Math.max(0, cap - 50); p._afkBonusDebt = 0;
+    p._afkPanaceaBack = 1; p._afkClassicMig = CLASSIC_MIG;
+    try { calcStats(); p.hp = p.mhp; p.mp = p.mmp; updateUI(); } catch (e) {}
+    sys('<span class="text-violet-300 font-bold">🕰️ 經典模式整理：轉生紀錄已消除，等級 ' + cap + '，六大屬性回到 18，' + p.bonus + ' 點可以重新分配' + (back ? '；喝過的萬能藥 ' + back + ' 瓶已退回背包' : '') + '。HP／MP 照經典的算法重算。</span>');
+    try { saveGame(); } catch (e) {}
+  };
+  setInterval(function () { try { migrate(); } catch (e) {} }, 2000);
+  // 精通：經典角色只算自己學的那一個（轉生送的四種精通不算）
+  if (typeof W._afkM === 'function') {
+    var oM = W._afkM;
+    W._afkM = function (p, id) { if (p && p.classicMode) return p.mastery === id; return oM.apply(this, arguments); };
+    try { (0, eval)('_afkM = window._afkM'); } catch (e) {}
+  }
+  // 上限加成（轉生保留 HP／MP、各種外掛的 HP／MP 加成）：經典角色一律不算
+  if (typeof W.__afkMaxAdd === 'function') {
+    var oMax = W.__afkMaxAdd, adds = oMax.add;
+    W.__afkMaxAdd = function (p) { if (p && p.classicMode) return; return oMax.apply(this, arguments); };
+    W.__afkMaxAdd.add = adds;
+  }
+  // 總閘：經典角色把「新增的玩法、內容、劇情、成長、隱藏規則、平衡調整」全部當成關閉；
+  //   錯誤修正、效能、介面、存檔、自動化與便利功能照常。以後新增的玩法開關預設也一樣不會漏到經典。
+  var GATE_GROUPS = { '遊戲內容': 1, '遊戲玩法': 1, '劇情': 1, '成長': 1, '隱藏規則': 1, '遊戲平衡': 1 };
+  var CLASSIC_KEEP = {};
+  ('offline offlinenodeath offlinechase newbiepvp castlewar maps corrupt traditional wpnfix magefix stunfix autosupply autocancel hotcast ' +
+   'retrial attrbatch cursebatch trackmaps bosstrack matwh redguard').split(' ').forEach(function (k) { CLASSIC_KEEP[k] = 1; });
+  var TG = W.AFK_TOGGLES;
+  if (TG && typeof TG.enabled === 'function' && typeof TG.list === 'function') {
+    var oEnabled = TG.enabled, groupOf = {}, known = 0;
+    var group = function (id) {
+      if (!groupOf[id]) { try { var L = TG.list(); if (L.length !== known) { known = L.length; L.forEach(function (x) { groupOf[x.id] = x.group; }); } } catch (e) {} if (!groupOf[id]) groupOf[id] = ''; }
+      return groupOf[id];
+    };
+    TG.enabled = function (id) {
+      var r = oEnabled.apply(this, arguments);
+      if (!r || CLASSIC_KEEP[id]) return r;
+      var p = P(); if (!(p && p.classicMode)) return r;
+      return GATE_GROUPS[group(id)] ? false : r;
+    };
+  }
   console.log('[AFK-classic] 已啟用：經典模式補正（256K 撥接、不死系頭目、古魯丁地監攀爬、歐林、職業封印）');
 })();

@@ -7,7 +7,7 @@
   const checked=new WeakMap();
   const N=n=>Number(n)||0, P=()=>typeof player==='undefined'?null:player;
   function read(p){
-    if(!p||!p.cls)return null;
+    if(!p||!p.cls||p.classicMode)return null;   // 11-28 Ping：經典模式沒有天賦／巔峰
     // 11-16（隱藏規則）：天賦／巔峰資料被直接改過 → 實際計算當作沒有（面板、天賦視窗照常）
     try{if(W.__afkTpBad&&W.__afkTpBad(p,'growth')){const ov=document.getElementById('growth-overlay');if(!(ov&&!ov.hidden&&!ov.classList.contains('hidden')))return null;}}catch(e){}
     if(!p.growth||Number(p.lv)>p.growth.maxLevel||Number(p.lv)>=100&&!p.growth.unlocked){const next=C.reconcile(p);if(!next)return null;p.growth=next;}
